@@ -49,9 +49,18 @@ function AppCmd([string[]]$thamSo) {
     if ($r.Ma -ne 0) { Dung "appcmd $($thamSo -join ' '):`n$($r.Ra)" }
 }
 
-function CoTrongIis([string]$loai, [string]$ten) { (Chay $appcmd @('list', $loai, "/name:$ten")).Ma -eq 0 }
+# Có site / apppool / app tên đúng như vậy chưa? (đọc danh sách XML: "appcmd list app <tên>" báo thành công cả khi không có)
+function CoTrongIis([string]$loai, [string]$ten) {
+    $r = Chay $appcmd @('list', $loai, '/xml')
+    if ($r.Ma -ne 0) { return $false }
+    $thuocTinh = $loai.ToUpperInvariant() + '.NAME'
+    foreach ($o in @(([xml]$r.Ra).DocumentElement.ChildNodes)) {
+        if ($o.NodeType -eq 'Element' -and $o.GetAttribute($thuocTinh) -eq $ten) { return $true }
+    }
+    $false
+}
 
-function CoUngDung([string]$app) { (Chay $appcmd @('list', 'app', $app)).Ma -eq 0 }
+function CoUngDung([string]$app) { CoTrongIis 'app' $app }
 
 # Đọc lại lựa chọn của lần cài trước (site riêng hay ứng dụng con của site nào, cổng, thư mục dữ liệu)
 $caiTruoc = @{}
