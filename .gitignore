@@ -1,0 +1,12 @@
+# Bi mat - chua API key that, KHONG duoc day len GitHub
+.env
+.env.*
+!.env.example
+
+# Thu vien cai bang npm
+node_modules/
+
+# Log / rac he dieu hanh
+*.log
+.DS_Store
+Thumbs.db

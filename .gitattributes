@@ -1,0 +1,3 @@
+# Script Windows phai giu dau dong CRLF, ke ca khi tai file raw tu GitHub
+*.cmd -text
+*.bat -text
