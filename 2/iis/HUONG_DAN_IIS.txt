@@ -1,0 +1,54 @@
+CÀI MÁY CHỦ IIS CHO PHẦN MỀM "QUẢN LÝ THẤT THOÁT NƯỚC"
+=====================================================
+
+  Máy tính (phần mềm)  ─┐
+  Điện thoại (Chrome)  ─┼─ HTTPS cổng 8080 ─>  IIS trên máy chủ  ─>  ThatThoatNuoc.exe (chế độ máy chủ)  ─>  dữ liệu C:\ThatThoatNuocData
+  App Android          ─┘
+
+Dữ liệu nằm trên máy chủ (chạy 24/7, tự sao lưu mỗi ngày). Không cần ZeroTier: máy tính và điện thoại
+vào thẳng địa chỉ máy chủ qua cổng 8080 đã mở.
+
+Cần có trên máy chủ: IIS + ASP.NET Core Hosting Bundle (bản 6 trở lên, vd 9.0) + .NET Framework 4.x (có sẵn trong Windows Server).
+Không cài thêm gì.
+
+
+CÀI TỰ ĐỘNG (khuyên dùng)
+-------------------------
+1. Chép cả thư mục này sang máy chủ IIS.
+2. Nhấp đúp CaiDat-IIS.bat -> đồng ý quyền quản trị. Script sẽ:
+   - kiểm tra IIS có ASP.NET Core Module V2;
+   - chép chương trình vào C:\inetpub\ThatThoatNuoc, tạo thư mục dữ liệu C:\ThatThoatNuocData (chỉ app pool được ghi);
+   - hỏi tên + mật khẩu tài khoản QUẢN TRỊ (lần đầu);
+   - nếu cổng 8080 CHƯA có site: tạo site "ThatThoatNuoc" https cổng 8080 + chứng chỉ tự ký 10 năm;
+     nếu cổng 8080 ĐÃ có site (vd site Quản lý công văn): cài thành ứng dụng con /thatthoat của site đó
+     (địa chỉ thành https://<máy chủ>:8080/thatthoat/);
+   - mở tường lửa cổng 8080, gọi thử, in ra địa chỉ + MÃ NHẬN DẠNG chứng chỉ.
+3. Trên máy tính: phần mềm -> Cài đặt -> Máy chủ dữ liệu -> "Kết nối máy chủ…":
+   nhập địa chỉ (vd  tenmien.vn:8080  hoặc  tenmien.vn:8080/thatthoat), so mã nhận dạng, đăng nhập quản trị.
+   Lần đầu chọn "Đưa dữ liệu trên máy này lên máy chủ".
+4. Tạo tài khoản cho người dùng điện thoại: phần mềm -> Cài đặt -> Máy chủ dữ liệu -> "Tài khoản…"
+   (Chỉ xem / Nhập đồng hồ cấp 1, có thể giới hạn theo đội).
+5. Điện thoại: mở  https://<máy chủ>:8080/  bằng Chrome (lần đầu bấm "Nâng cao" -> "Tiếp tục" vì chứng chỉ tự ký),
+   có thể "Thêm vào màn hình chính"; hoặc cài app Android (tải tại  https://<máy chủ>:8080/tai-app  nếu gói có file APK).
+
+Tuỳ chọn khi chạy (mở cmd tại thư mục này):
+   CaiDat-IIS.bat -Cong 9443                     dùng cổng khác 8080
+   CaiDat-IIS.bat -DuLieu D:\ThatThoatNuocData   đặt thư mục dữ liệu khác
+   CaiDat-IIS.bat -DuongDan /thatthoat           tên ứng dụng con (khi cổng đã có site khác)
+   CaiDat-IIS.bat -ChungChi <thumbprint>         dùng chứng chỉ có sẵn (vd chứng chỉ thật của tên miền)
+   CaiDat-IIS.bat -TenMien tenmien.vn            tên miền ghi vào chứng chỉ tự tạo
+   CaiDat-IIS.bat -DatMatKhau                    đặt lại mật khẩu tài khoản quản trị
+   CaiDat-IIS.bat -KiemTra                       gọi thử máy chủ, in mã nhận dạng
+   CaiDat-IIS.bat -GoBo                          gỡ site / ứng dụng (giữ nguyên thư mục dữ liệu)
+
+CẬP NHẬT PHIÊN BẢN MỚI: tạo lại gói trong phần mềm mới, chép sang máy chủ, chạy lại CaiDat-IIS.bat
+(không mất dữ liệu, không hỏi lại mật khẩu).
+
+
+KHI CÓ LỖI
+----------
+- Không vào được từ ngoài: kiểm tra router / tường lửa mạng đã chuyển cổng 8080 tới máy chủ; trên máy chủ chạy -KiemTra.
+- Lỗi 502.5 / 500.30: xem C:\ThatThoatNuocData\loi-khoi-dong.txt và thư mục NhatKy.
+- Máy tính / app báo "mã nhận dạng khác": chứng chỉ trên máy chủ đã đổi (tạo lại, gia hạn). Nếu chính bạn đổi thì
+  kết nối lại và chấp nhận mã mới; nếu không thì có thể đang bị chặn giữa đường — đừng nhập mật khẩu.
+- Không dùng đường hầm kiểu Cloudflare Tunnel trước IIS: chúng thay chứng chỉ nên mã nhận dạng không khớp.
