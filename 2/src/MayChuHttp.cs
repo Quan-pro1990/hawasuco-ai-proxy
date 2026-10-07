@@ -153,8 +153,10 @@ namespace ThatThoatNuoc
             {
                 if (string.Equals(duongGoc, duongUngDung, StringComparison.OrdinalIgnoreCase))
                 {
-                    // "/thatthoat" → "/thatthoat/" để đường dẫn tương đối của trang web đúng
-                    Gui(ra, TraLoi.ChuyenHuong(duongUngDung + "/"), yc.PhuongThuc == "HEAD", giu);
+                    // "/thatthoat" → "/thatthoat/" để đường dẫn tương đối của trang web đúng.
+                    // Giữ chữ người dùng gõ (IIS báo ASPNETCORE_APPL_PATH dạng chữ hoa, vd /THATTHOAT).
+                    int hoiCham = dich.IndexOf('?');
+                    Gui(ra, TraLoi.ChuyenHuong(duongGoc + "/" + (hoiCham < 0 ? "" : dich.Substring(hoiCham))), yc.PhuongThuc == "HEAD", giu);
                     return giu;
                 }
                 if (dich.StartsWith(duongUngDung + "/", StringComparison.OrdinalIgnoreCase)) dich = dich.Substring(duongUngDung.Length);

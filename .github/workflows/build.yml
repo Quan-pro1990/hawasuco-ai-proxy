@@ -109,6 +109,7 @@ jobs:
           iisreset | Out-Null
           & "$env:windir\system32\inetsrv\appcmd.exe" list site
           (Get-Item "$env:ProgramFiles\IIS\Asp.Net Core Module\V2\aspnetcorev2.dll").VersionInfo.ProductVersion
+          exit 0
       - name: Cài bản cũ (thư mục 1, HTTPS cổng 8080) có sẵn dữ liệu
         shell: powershell
         run: |
@@ -128,6 +129,7 @@ jobs:
           [Net.ServicePointManager]::ServerCertificateValidationCallback = { $true }
           try { $r = Invoke-WebRequest https://127.0.0.1:8080/api/ping -UseBasicParsing; "Bản cũ HTTPS 8080: $($r.StatusCode) $($r.Content)" }
           catch { "Bản cũ HTTPS 8080 không trả lời: $($_.Exception.Message)" }
+          exit 0
       - name: Nâng cấp bằng gói mới → HTTP cổng 80 (ứng dụng con của Default Web Site)
         shell: powershell
         run: |
@@ -145,6 +147,7 @@ jobs:
           if (-not $tq.chon) { throw 'mất dữ liệu' }
           $r = Invoke-WebRequest http://localhost/thatthoat -UseBasicParsing -MaximumRedirection 0 -ErrorAction SilentlyContinue
           "Chuyển hướng /thatthoat → $($r.Headers.Location)"
+          if ($r -and $r.Headers.Location -cne '/thatthoat/') { throw "chuyển hướng sai: $($r.Headers.Location)" }
           $html = (Invoke-WebRequest http://localhost/thatthoat/ -UseBasicParsing).Content
           if ($html -notmatch 'app.js') { throw 'không có trang web' }
           $apk = Invoke-WebRequest http://localhost/thatthoat/tai-app -UseBasicParsing
@@ -154,6 +157,7 @@ jobs:
           $con8080 = $true
           try { Invoke-WebRequest https://127.0.0.1:8080/api/ping -UseBasicParsing -TimeoutSec 10 | Out-Null } catch { $con8080 = $false; "Cổng 8080 đã bỏ: $($_.Exception.Message)" }
           if ($con8080) { throw 'cổng 8080 vẫn chạy bản cũ' }
+          exit 0
       - name: Chạy lại với -ThaySiteMacDinh → http://localhost/
         shell: powershell
         run: |
@@ -173,6 +177,7 @@ jobs:
           $ping = Invoke-RestMethod http://localhost/api/ping
           if ($ping.ungDung -ne 'ThatThoatNuoc') { throw 'ping sau khi cài lại sai' }
           "OK cài lại"
+          exit 0
       - name: Gỡ (-GoBo) → Default Web Site chạy lại, dữ liệu còn
         shell: powershell
         run: |
@@ -182,3 +187,4 @@ jobs:
           $r = Invoke-WebRequest http://localhost/ -UseBasicParsing
           "Default Web Site: $($r.StatusCode)"
           if (-not (Test-Path C:\ThatThoatNuocData\thatthoat.xml)) { throw 'mất dữ liệu khi gỡ' }
+          exit 0
