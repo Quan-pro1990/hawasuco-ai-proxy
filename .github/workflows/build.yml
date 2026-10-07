@@ -121,10 +121,13 @@ jobs:
           Remove-Item Env:\THATTHOAT_MATKHAU
           powershell -NoProfile -ExecutionPolicy Bypass -File 1\CaiDat-IIS.ps1
           if ($LASTEXITCODE -ne 0) { throw "Cài bản cũ lỗi $LASTEXITCODE" }
+          & "$env:windir\system32\inetsrv\appcmd.exe" list site
+          if (-not (Get-ChildItem Cert:\LocalMachine\My | Where-Object { $_.FriendlyName -eq 'That thoat nuoc (IIS)' })) { throw 'bản cũ chưa tạo chứng chỉ' }
+          # chỉ để ghi nhận: HTTPS tự ký của bản cũ có thể không bắt tay TLS được trên Windows Server mới
           [Net.ServicePointManager]::SecurityProtocol = 'Tls12'
           [Net.ServicePointManager]::ServerCertificateValidationCallback = { $true }
-          $r = Invoke-WebRequest https://127.0.0.1:8080/api/ping -UseBasicParsing
-          "Bản cũ: $($r.StatusCode) $($r.Content)"
+          try { $r = Invoke-WebRequest https://127.0.0.1:8080/api/ping -UseBasicParsing; "Bản cũ HTTPS 8080: $($r.StatusCode) $($r.Content)" }
+          catch { "Bản cũ HTTPS 8080 không trả lời: $($_.Exception.Message)" }
       - name: Nâng cấp bằng gói mới → HTTP cổng 80 (ứng dụng con của Default Web Site)
         shell: powershell
         run: |
