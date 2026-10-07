@@ -1,0 +1,3 @@
+# File lệnh Windows luôn giữ CRLF (cmd.exe đọc sai nhãn / goto với LF)
+*.bat text eol=crlf
+*.cmd text eol=crlf

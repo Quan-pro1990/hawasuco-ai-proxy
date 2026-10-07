@@ -1,7 +1,9 @@
 # Bien dich ThatThoatNuoc.exe bang trinh bien dich C# co san trong Windows (.NET Framework 4.x).
 # Khong can cai Visual Studio hay .NET SDK.
 # Neu phan mem dang mo thi file .exe bi khoa: dong phan mem roi chay lai (hoac truyen -Out duong_dan_khac).
-param([string]$Out)
+# -Goi: bien dich xong tao luon goi cai may chu IIS (website HTTP cong 80) o thu muc ThatThoatNuoc-MayChu-IIS
+#       (kem ThatThoatNuoc-DienThoai.apk neu co canh file .exe).
+param([string]$Out, [switch]$Goi)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $src = Join-Path $root 'src'
@@ -30,3 +32,10 @@ foreach ($f in Get-ChildItem (Join-Path $root 'iis') -File) { $res += "/resource
 & $csc /nologo /target:winexe /optimize+ /codepage:65001 /warn:4 "/out:$out" "/win32manifest:$(Join-Path $src 'app.manifest')" "/win32icon:$icon" "/resource:$logo,ThatThoatNuoc.logo.png" "/resource:$icon,ThatThoatNuoc.app.ico" $res $refs $files
 if ($LASTEXITCODE -ne 0) { throw 'Bien dich that bai' }
 "Da tao: $out"
+
+if ($Goi) {
+    $goi = Join-Path $root 'ThatThoatNuoc-MayChu-IIS'
+    $p = Start-Process -FilePath $out -ArgumentList '--tao-goi-iis', "`"$goi`"" -Wait -PassThru
+    if ($p.ExitCode -ne 0) { throw "Khong tao duoc goi cai IIS (xem $goi-loi.txt)" }
+    "Da tao goi cai IIS: $goi"
+}

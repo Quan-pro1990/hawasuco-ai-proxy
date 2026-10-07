@@ -6,6 +6,10 @@ và xuất báo cáo Excel đúng mẫu "BẢNG TỔNG HỢP TỶ LỆ THẤT TH
 
 Mở phần mềm: chạy `ThatThoatNuoc.exe` (không cần cài đặt; máy có sẵn .NET Framework 4.8 của Windows 10/11).
 
+**Bản 2.0 — website HTTP cổng 80 + app Android**: cài lên máy chủ IIS (ASP.NET Core Hosting Bundle 9.0) thì mọi người
+dùng phần mềm qua trình duyệt ở `http://<máy chủ>/` (máy tính hoặc điện thoại) hay app Android, không cần chứng chỉ —
+xem mục [Website trên máy chủ IIS](#website-trên-máy-chủ-iis--http-cổng-80-trình-duyệt-app-android-nhiều-máy-tính-dùng-chung).
+
 ## Dữ liệu có sẵn
 
 Phần mềm đã nhập sẵn 22 tháng từ 2 file Excel đang dùng:
@@ -150,31 +154,56 @@ số liệu ở đây không làm thay đổi báo cáo thất thoát, bảng t�
 - **Người dùng (chỉ xem)**: xem mọi trang, xuất Excel, in — mọi nút sửa / thêm / xoá / nhập bị khoá, ô nhập chỉ đọc,
   phần mềm không lưu bất kỳ thay đổi nào.
 - **Đổi người dùng / đăng xuất**: Cài đặt → Người dùng (phần mềm mở lại để đăng nhập).
-- Khi đã nối máy chủ IIS: người dùng là **tài khoản trên máy chủ** (dùng chung cho máy tính và điện thoại):
+- Khi đã nối máy chủ IIS: người dùng là **tài khoản trên máy chủ** (dùng chung cho trang web, app Android và máy tính):
   "Admin (toàn quyền)" sửa được trên máy tính; "Chỉ xem" và "Nhập đồng hồ cấp 1" mở phần mềm máy tính ở chế độ chỉ xem
-  (tài khoản "Nhập đồng hồ cấp 1" nhập chỉ số trên điện thoại / web). Admin quản lý ở "Tài khoản người dùng (máy tính, điện thoại)…".
+  (tài khoản "Nhập đồng hồ cấp 1" nhập chỉ số trên trang web / app). Admin quản lý ở thẻ **Quản trị** của trang web
+  hoặc "Tài khoản người dùng (máy tính, điện thoại)…" trên phần mềm máy tính.
 
-## Máy chủ dữ liệu IIS — điện thoại và nhiều máy tính dùng chung (không cần ZeroTier)
+## Website trên máy chủ IIS — HTTP cổng 80, trình duyệt, app Android, nhiều máy tính dùng chung
 
-Dữ liệu chuyển lên máy chủ IIS của công ty (cổng 8080, ASP.NET Core Hosting Bundle). Máy chủ chạy chính file
-`ThatThoatNuoc.exe` ở chế độ máy chủ (IIS tự khởi chạy), giữ dữ liệu ở `C:\ThatThoatNuocData`, tự sao lưu mỗi ngày.
+Dữ liệu đặt trên máy chủ IIS của công ty; IIS (qua ASP.NET Core Module trong **ASP.NET Core Hosting Bundle 9.0**)
+chạy chính file `ThatThoatNuoc.exe` ở chế độ máy chủ, phục vụ website **HTTP cổng 80**, giữ dữ liệu ở `C:\ThatThoatNuocData`,
+tự sao lưu mỗi ngày. Không cần chứng chỉ, không cần ZeroTier.
 
-1. **Tạo gói**: Cài đặt → Máy chủ dữ liệu → **Tạo gói cài IIS…** (gói có sẵn trên Desktop: `ThatThoatNuoc-MayChu-IIS`).
-   Chép thư mục gói sang máy chủ, nhấp đúp `CaiDat-IIS.bat` (xem `HUONG_DAN_IIS.txt` trong gói): script tạo site
-   https cổng 8080 (hoặc ứng dụng con `/thatthoat` nếu cổng 8080 đã có site khác), hỏi mật khẩu tài khoản **quản trị**,
-   in ra địa chỉ và **mã nhận dạng** chứng chỉ.
-2. **Nối máy tính**: Cài đặt → Máy chủ dữ liệu → **Kết nối máy chủ…** → nhập địa chỉ (vd `tenmien.vn:8080`) → Kiểm tra
-   (mã nhận dạng phải giống mã script in ra) → tài khoản quản trị → lần đầu chọn đưa dữ liệu trên máy này lên.
-   Từ đó mỗi lần sửa vẫn lưu ngay trên máy và tự gửi lên máy chủ sau ~1 giây; số điện thoại nhập tự tải về
+```
+Trình duyệt (máy tính, điện thoại) ─┐
+App Android                         ─┼─ http://<máy chủ>/ ─> IIS ─> ThatThoatNuoc.exe (chế độ máy chủ) ─> C:\ThatThoatNuocData
+Phần mềm trên máy tính (đồng bộ)    ─┘
+```
+
+1. **Gói cài**: thư mục `ThatThoatNuoc-MayChu-IIS` (có sẵn cạnh file này; tạo lại bằng `build.bat` hoặc trong phần mềm:
+   Cài đặt → Máy chủ dữ liệu → **Tạo gói cài IIS…**). Chép thư mục gói sang máy chủ, nhấp đúp `CaiDat-IIS.bat`
+   (xem `HUONG_DAN_IIS.txt` trong gói). Script tạo site **http cổng 80** (cổng 80 đã có "Default Web Site" thì cài thành
+   ứng dụng con `http://<máy chủ>/thatthoat/`; muốn ở ngay `http://<máy chủ>/` thì chạy `CaiDat-IIS.bat -ThaySiteMacDinh`),
+   hỏi mật khẩu tài khoản **quản trị**, mở tường lửa, in ra các địa chỉ truy cập.
+2. **Trình duyệt**: mở địa chỉ đó trên máy tính hoặc điện thoại, đăng nhập. Trang web có:
+   - **Thất thoát**: tỷ lệ thất thoát tháng (toàn công ty, đội, khu vực, vùng DMA, so kế hoạch / tháng trước / cùng kỳ, lũy kế)
+     và bảng tổng hợp cả năm;
+   - **Cấp 1**: nhập chỉ số đồng hồ cấp 1 (tự tính sản lượng, tổng giếng / nước mặt, tạo tháng mới, thời gian chốt số);
+   - **Báo cáo**: tải Excel / PDF các mẫu (tháng, tóm tắt, quý, tổng hợp năm, kế hoạch, sổ cả năm, khai thác cấp 1);
+   - **Tài khoản**: đổi mật khẩu, đăng xuất;
+   - **Quản trị** (chỉ Admin): địa chỉ để gửi người dùng, thêm / sửa quyền / đặt lại mật khẩu / khoá / xoá tài khoản
+     (Chỉ xem / Nhập đồng hồ cấp 1 — có thể giới hạn 1 đội / Admin).
+   Trên điện thoại có thể "Thêm vào màn hình chính".
+3. **App Android** `ThatThoatNuoc-DienThoai.apk`: tải tại `http://<máy chủ>/tai-app`, mở app, nhập địa chỉ máy chủ, đăng nhập.
+   Giống trang web, thêm: in PDF thẳng qua máy in của điện thoại, mở / chia sẻ (Zalo, email) / lưu file Excel, PDF.
+   Mã nguồn và cách build lại: thư mục `android` (xem `android/README.md`).
+4. **Phần mềm trên máy tính** (nhập số liệu thất thoát, cấu trúc mạng lưới, kế hoạch, vùng DMA, nhập Excel…):
+   Cài đặt → Máy chủ dữ liệu → **Kết nối máy chủ…** → nhập địa chỉ (vd `192.168.1.10`, `tenmien.vn/thatthoat`;
+   cổng khác 80 thì ghi kèm, vd `tenmien.vn:8081`) → Kiểm tra → tài khoản quản trị → lần đầu chọn đưa dữ liệu trên máy này lên.
+   Từ đó mỗi lần sửa vẫn lưu ngay trên máy và tự gửi lên máy chủ sau ~1 giây; số nhập trên web / app tự tải về
    (trạng thái ● ở chân thanh menu). Mất mạng: thay đổi được giữ lại và tự gửi khi có mạng.
    Hai máy tính cùng sửa: máy gửi sau được báo và tải bản mới nhất (bản của máy đó được giữ trong SaoLuu).
-3. **Tài khoản điện thoại**: Cài đặt → Máy chủ dữ liệu → **Tài khoản điện thoại…**: Chỉ xem / Nhập đồng hồ cấp 1
-   (có thể giới hạn 1 đội) / Quản trị; đặt lại mật khẩu, khoá, xoá.
-4. **Điện thoại**: mở `https://<địa chỉ>:8080/` bằng Chrome (lần đầu bấm Nâng cao → Tiếp tục vì chứng chỉ tự ký;
-   có thể "Thêm vào màn hình chính"), hoặc cài app Android `ThatThoatNuoc-DienThoai.apk` (tải tại `https://<địa chỉ>:8080/tai-app`):
-   nhập địa chỉ, so mã nhận dạng, đăng nhập. Điện thoại xem tỷ lệ thất thoát tháng / cả năm, nhập chỉ số đồng hồ cấp 1
-   (tự tính sản lượng, tổng giếng / nước mặt, tạo tháng mới), tải Excel, in / lưu PDF (app in thẳng qua máy in của điện thoại).
-5. **Ngắt kết nối**: phần mềm quay lại dùng bản dữ liệu trên máy này; điện thoại vẫn dùng dữ liệu máy chủ.
+5. **Ngắt kết nối**: phần mềm quay lại dùng bản dữ liệu trên máy này; trang web / app vẫn dùng dữ liệu máy chủ.
+
+**Nâng cấp từ bản 1.0 (HTTPS cổng 8080, có "mã nhận dạng" chứng chỉ)**: chạy `CaiDat-IIS.bat` của gói mới trên máy chủ —
+giữ nguyên dữ liệu, tài khoản; chuyển sang HTTP cổng 80, gỡ chứng chỉ tự ký và site / ứng dụng con cũ ở cổng 8080.
+Thay `ThatThoatNuoc.exe` trên các máy tính bằng bản mới (bản mới tự đổi địa chỉ cũ `x:8080` thành `x`; sai thì
+"Kết nối lại / đổi máy chủ…"). Điện thoại: gỡ app cũ, cài app mới từ `http://<máy chủ>/tai-app`.
+
+**Bảo mật**: HTTP không mã hoá — mật khẩu và số liệu đi qua mạng ở dạng thường. Nên dùng trong mạng nội bộ / VPN.
+Khi có chứng chỉ thật cho tên miền, thêm binding https cho site trong IIS Manager: trang web, app và phần mềm máy tính
+đều dùng được địa chỉ `https://…` mà không cần sửa gì.
 
 ## Cài đặt
 
@@ -193,5 +222,10 @@ Dữ liệu chuyển lên máy chủ IIS của công ty (cổng 8080, ASP.NET Co
 
 ## Biên dịch lại (khi sửa mã nguồn)
 
-Chạy `build.bat`. Dùng trình biên dịch C# có sẵn trong Windows (.NET Framework 4), không cần Visual Studio.
-Mã nguồn nằm trong thư mục `src`.
+Chạy `build.bat`: biên dịch `ThatThoatNuoc.exe` bằng trình biên dịch C# có sẵn trong Windows (.NET Framework 4,
+không cần Visual Studio) rồi tạo lại gói cài IIS `ThatThoatNuoc-MayChu-IIS` (kèm `ThatThoatNuoc-DienThoai.apk`).
+Mã nguồn nằm trong thư mục `src`; trang web trong `web` (nhúng vào file .exe); script cài IIS trong `iis`;
+app Android trong `android`.
+
+Mỗi lần đẩy lên GitHub, GitHub Actions (`.github/workflows/build.yml`) tự build `ThatThoatNuoc.exe` + APK,
+cài thử website lên IIS thật (Windows Server + Hosting Bundle 9.0) và cho tải gói cài ở tab Actions → Artifacts.

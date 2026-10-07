@@ -184,9 +184,35 @@ table.bang td.chu-tt { font-style: italic; font-size: 12px; white-space: normal;
 .dangnhap .nut { width: 100%; margin-top: 18px; }
 
 .hop { position: fixed; inset: 0; background: rgba(15,23,42,.45); z-index: 50; display: flex; align-items: flex-end; justify-content: center; }
-.hop > div { background: #fff; width: 100%; max-width: 520px; border-radius: 16px 16px 0 0; padding: 18px 16px calc(16px + env(safe-area-inset-bottom)); }
+.hop > div, .hop > form {
+  background: #fff; width: 100%; max-width: 520px; border-radius: 16px 16px 0 0; padding: 18px 16px calc(16px + env(safe-area-inset-bottom));
+  max-height: 92vh; overflow-y: auto;
+}
 .hop h3 { margin: 0 0 8px; }
 .hop .hang { justify-content: flex-end; margin-top: 14px; }
+.hop-form label { display: block; font-size: 13px; color: var(--mo); margin: 10px 0 4px; }
+.hop-form input:not([type=checkbox]), .hop-form select { width: 100%; }
+.hop-form input[readonly] { background: #f3f5f8; }
+.hop-form label.o-chon { display: flex; gap: 8px; align-items: center; color: var(--chu); font-size: 14px; margin-top: 14px; }
+.hop-form label.o-chon input { width: 18px; height: 18px; }
+.hop-form .tb .loi { margin-bottom: 0; }
+.hop-form .hang .gian { flex: 1; }
+
+/* ---------- quản trị: tài khoản ---------- */
+button.tk {
+  display: flex; width: 100%; gap: 10px; align-items: center; text-align: left; background: transparent; border: 0;
+  border-top: 1px solid #eef1f4; padding: 10px 2px; cursor: pointer;
+}
+button.tk:hover { background: #f7f9fb; }
+button.tk .ten { flex: 1; min-width: 0; }
+button.tk .ten b { display: block; font-weight: 600; }
+button.tk .ten small, button.tk .quyen small { display: block; color: var(--mo); font-size: 12.5px; margin-top: 2px; }
+button.tk .ten b small { display: inline; font-weight: 400; }
+button.tk .quyen { text-align: right; }
+button.tk.khoa .ten b { color: var(--mo); text-decoration: line-through; }
+.nhan-q { font-size: 12px; border-radius: 999px; padding: 2px 9px; white-space: nowrap; background: #eef1f4; color: var(--chu); }
+.nhan-q.QuanTri { background: var(--chinh); color: #fff; }
+.nhan-q.NhapLieu { background: #e3f1ea; color: var(--xanh); }
 
 .toast {
   position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(86px + env(safe-area-inset-bottom)); z-index: 60;
@@ -196,4 +222,21 @@ table.bang td.chu-tt { font-style: italic; font-size: 12px; white-space: normal;
 @media (min-width: 700px) {
   .o-tong { grid-template-columns: repeat(4, 1fr); }
   .dongho .luoi { grid-template-columns: repeat(4, 1fr); }
+  .hop { align-items: center; }
+  .hop > div, .hop > form { border-radius: 16px; padding-bottom: 16px; }
+}
+
+/* ---------- màn hình máy tính: thanh điều hướng nằm dưới tiêu đề ---------- */
+@media (min-width: 900px) {
+  .dau { padding-left: max(16px, calc(50% - 560px)); padding-right: max(16px, calc(50% - 560px)); }
+  .dieuhuong {
+    position: sticky; top: 54px; bottom: auto; justify-content: center; gap: 4px;
+    border-top: 0; border-bottom: 1px solid var(--vien); padding: 0 16px;
+  }
+  .dieuhuong button { flex: 0 0 auto; flex-direction: row; gap: 8px; font-size: 14.5px; padding: 12px 18px; border-bottom: 3px solid transparent; cursor: pointer; }
+  .dieuhuong button svg { width: 19px; height: 19px; }
+  .dieuhuong button.chon { border-bottom-color: var(--chinh); }
+  .noidung { max-width: 1120px; padding: 16px 16px 32px; }
+  .toast { bottom: 28px; }
+  table.bang td:first-child, table.bang th:first-child { max-width: 260px; min-width: 200px; }
 }

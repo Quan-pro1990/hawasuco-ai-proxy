@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -11,9 +11,9 @@ using System.Threading;
 namespace ThatThoatNuoc
 {
     /// <summary>
-    /// Chế độ máy chủ của ThatThoatNuoc.exe — do IIS (ASP.NET Core Module V2 trong Hosting Bundle, chế độ out-of-process)
-    /// chạy: IIS nhận HTTPS ở cổng 8080 rồi chuyển yêu cầu dạng HTTP tới 127.0.0.1:ASPNETCORE_PORT.
-    /// Máy chủ giữ dữ liệu, phục vụ trang web cho điện thoại / app Android và đồng bộ với phần mềm trên máy tính.
+    /// Chế độ máy chủ của ThatThoatNuoc.exe — do IIS (ASP.NET Core Module V2 trong Hosting Bundle 9.0, chế độ out-of-process)
+    /// chạy: IIS nhận HTTP ở cổng 80 (website) rồi chuyển yêu cầu tới 127.0.0.1:ASPNETCORE_PORT.
+    /// Máy chủ giữ dữ liệu, phục vụ trang web cho trình duyệt (máy tính, điện thoại) / app Android và đồng bộ với phần mềm trên máy tính.
     /// </summary>
     static class MayChu
     {

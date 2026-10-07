@@ -166,7 +166,7 @@ namespace ThatThoatNuoc
             try { Icon = Ui.AppIcon(); } catch (Exception) { }
             BtnLuu.Text = "Đăng nhập";
             BtnHuy.Text = "Thoát";
-            var tieuDe = Ui.MakeLabel(kn != null ? "Dữ liệu trên máy chủ  https://" + kn.DiaChi + "/" : "Dữ liệu trên máy này", Ui.BaseBold, Ui.Text);
+            var tieuDe = Ui.MakeLabel(kn != null ? "Dữ liệu trên máy chủ  " + kn.GocUrl : "Dữ liệu trên máy này", Ui.BaseBold, Ui.Text);
             tieuDe.UseMnemonic = false;
             Dong("", tieuDe);
             txtTen = O(240, kn != null ? kn.Ten : "", null);

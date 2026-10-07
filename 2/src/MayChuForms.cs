@@ -8,17 +8,17 @@ using System.Windows.Forms;
 namespace ThatThoatNuoc
 {
     /// <summary>
-    /// Kết nối phần mềm với máy chủ IIS: địa chỉ → lấy chứng chỉ, so mã nhận dạng → đăng nhập tài khoản quản trị →
-    /// lần đầu đưa dữ liệu trên máy lên (hoặc dùng dữ liệu đã có trên máy chủ).
+    /// Kết nối phần mềm với website trên máy chủ IIS (HTTP cổng 80): địa chỉ → kiểm tra đúng máy chủ Thất thoát nước →
+    /// đăng nhập tài khoản quản trị → lần đầu đưa dữ liệu trên máy lên (hoặc dùng dữ liệu đã có trên máy chủ).
     /// </summary>
     class KetNoiMayChuForm : HopThoaiCap1
     {
         readonly PhienLam phien;
         readonly MayChuKetNoi cu;
         readonly TextBox txtDiaChi, txtTen, txtMatKhau;
-        readonly Label lblMa;
+        readonly Label lblMayChu;
         readonly Button bKiemTra;
-        string vanTay, diaChiDaKiem;
+        string diaChiDaKiem;
         Dictionary<string, object> ping;
 
         public MayChuKetNoi KetQua { get; private set; }
@@ -33,28 +33,36 @@ namespace ThatThoatNuoc
             }
         }
 
-        public KetNoiMayChuForm(PhienLam phien) : base("Kết nối máy chủ dữ liệu (IIS)", 720, 470)
+        public KetNoiMayChuForm(PhienLam phien) : base("Kết nối máy chủ dữ liệu (website trên IIS)", 720, 470)
         {
             this.phien = phien;
             cu = phien.DongBo != null ? phien.DongBo.Kn : null;
             BtnLuu.Text = "Kết nối";
-            txtDiaChi = O(330, cu != null ? cu.DiaChi : "", "vd tenmien.vn:8080  hoặc  113.161.1.2:8080/thatthoat");
+            txtDiaChi = O(330, cu != null ? cu.DiaChi : "", "vd 192.168.1.10  hoặc  tenmien.vn/thatthoat");
             bKiemTra = Ui.MakeButton("Kiểm tra", false);
             bKiemTra.Click += (s, e) => KiemTraMayChu();
             Dong("Địa chỉ máy chủ", Hang(txtDiaChi, bKiemTra));
-            GhiChu("Địa chỉ script CaiDat-IIS.bat in ra khi cài xong (tên miền hoặc IP công cộng, cổng 8080). Không ghi cổng thì lấy 8080.");
-            lblMa = Ui.MakeLabel("Bấm \"Kiểm tra\" để lấy mã nhận dạng của máy chủ.", Ui.Base, Ui.Muted);
-            lblMa.MaximumSize = new Size(Ui.S(500), 0);
-            lblMa.UseMnemonic = false;
-            Dong("Mã nhận dạng", lblMa);
+            GhiChu("Địa chỉ script CaiDat-IIS.bat in ra khi cài xong: IP trong mạng nội bộ, tên miền hoặc IP công cộng (HTTP cổng 80). " +
+                   "Cài thành ứng dụng con thì ghi kèm đường dẫn, vd 192.168.1.10/thatthoat. Cổng khác 80 thì ghi kèm, vd tenmien.vn:8081.");
+            lblMayChu = Ui.MakeLabel("Bấm \"Kiểm tra\" để thử kết nối.", Ui.Base, Ui.Muted);
+            lblMayChu.MaximumSize = new Size(Ui.S(500), 0);
+            lblMayChu.UseMnemonic = false;
+            Dong("Máy chủ", lblMayChu);
             txtTen = O(220, cu != null ? cu.Ten : "admin", null);
             Dong("Tên đăng nhập", txtTen);
             txtMatKhau = O(220, "", null);
             txtMatKhau.UseSystemPasswordChar = true;
             Dong("Mật khẩu", txtMatKhau);
             GhiChu("Phần mềm trên máy tính dùng tài khoản QUẢN TRỊ (đặt khi chạy CaiDat-IIS.bat trên máy chủ). " +
-                   "Tài khoản cho điện thoại tạo sau ở \"Tài khoản điện thoại…\".");
-            txtDiaChi.TextChanged += (s, e) => { if (MayChuKetNoi.ChuanHoaDiaChi(txtDiaChi.Text) != diaChiDaKiem) { vanTay = null; lblMa.Text = "Bấm \"Kiểm tra\"."; lblMa.ForeColor = Ui.Muted; } };
+                   "Tài khoản cho người khác tạo ở trang web (thẻ Quản trị) hoặc \"Tài khoản người dùng…\". " +
+                   "HTTP không mã hoá: nên dùng trong mạng nội bộ / VPN.");
+            txtDiaChi.TextChanged += (s, e) =>
+            {
+                if (MayChuKetNoi.ChuanHoaDiaChi(txtDiaChi.Text) == diaChiDaKiem) return;
+                diaChiDaKiem = null;
+                lblMayChu.Text = "Bấm \"Kiểm tra\".";
+                lblMayChu.ForeColor = Ui.Muted;
+            };
             Shown += (s, e) => { if (cu != null) { KiemTraMayChu(); txtMatKhau.Focus(); } else txtDiaChi.Focus(); };
         }
 
@@ -62,32 +70,28 @@ namespace ThatThoatNuoc
         {
             string dc = MayChuKetNoi.ChuanHoaDiaChi(txtDiaChi.Text);
             if (dc.Length == 0) { Ui.Error(this, "Nhập địa chỉ máy chủ."); txtDiaChi.Focus(); return false; }
+            var thu = new MayChuKetNoi { DiaChi = dc };
             Cursor = Cursors.WaitCursor;
-            lblMa.Text = "Đang kết nối " + dc + "…";
-            lblMa.ForeColor = Ui.Muted;
+            lblMayChu.Text = "Đang kết nối " + thu.GocUrl + "…";
+            lblMayChu.ForeColor = Ui.Muted;
             Application.DoEvents();
             try
             {
-                string vt = MayChuKetNoi.LayVanTay(dc);
-                var thu = new MayChuKetNoi { DiaChi = dc, VanTay = vt };
                 ping = thu.Ping();
                 if (Convert.ToString(ping.ContainsKey("ungDung") ? ping["ungDung"] : "") != "ThatThoatNuoc")
-                    throw new LoiMayChu(0, "Địa chỉ này không phải máy chủ Thất thoát nước (có thể là site khác trên IIS). Kiểm tra lại đường dẫn, vd :8080/thatthoat");
-                vanTay = vt;
+                    throw new LoiMayChu(0, "Địa chỉ này không phải máy chủ Thất thoát nước (có thể là site khác trên IIS). Kiểm tra lại đường dẫn, vd thêm /thatthoat.");
                 diaChiDaKiem = dc;
                 txtDiaChi.Text = dc;
-                bool khac = cu != null && cu.DiaChi == dc && cu.VanTay != vt;
-                lblMa.Text = MayChuKetNoi.MaNhanDang(vt) + "   — " + Convert.ToString(ping["congTy"]) +
-                             (khac ? "\nKHÁC mã đã lưu (" + MayChuKetNoi.MaNhanDang(cu.VanTay) + ")! Chỉ tiếp tục nếu máy chủ vừa đổi chứng chỉ." :
-                                     "\nSo với mã script cài máy chủ in ra — phải giống nhau.");
-                lblMa.ForeColor = khac ? Ui.Danger : Ui.Success;
+                string pb = ping.ContainsKey("phienBanPhanMem") ? Convert.ToString(ping["phienBanPhanMem"]) : "";
+                lblMayChu.Text = "Đã kết nối " + thu.GocUrl + "\n" + Convert.ToString(ping["congTy"]) + (pb.Length > 0 ? "  ·  phiên bản máy chủ " + pb : "");
+                lblMayChu.ForeColor = Ui.Success;
                 return true;
             }
             catch (LoiMayChu ex)
             {
-                vanTay = null;
-                lblMa.Text = ex.Message;
-                lblMa.ForeColor = Ui.Danger;
+                diaChiDaKiem = null;
+                lblMayChu.Text = ex.Message;
+                lblMayChu.ForeColor = Ui.Danger;
                 return false;
             }
             finally
@@ -103,10 +107,10 @@ namespace ThatThoatNuoc
 
         bool KetNoi()
         {
-            if ((vanTay == null || MayChuKetNoi.ChuanHoaDiaChi(txtDiaChi.Text) != diaChiDaKiem) && !KiemTraMayChu()) return false;
+            if ((diaChiDaKiem == null || MayChuKetNoi.ChuanHoaDiaChi(txtDiaChi.Text) != diaChiDaKiem) && !KiemTraMayChu()) return false;
             if (txtTen.Text.Trim().Length == 0 || txtMatKhau.Text.Length == 0) { Ui.Error(this, "Nhập tên đăng nhập và mật khẩu."); return false; }
             bool cungMayChu = cu != null && cu.DiaChi == diaChiDaKiem;
-            var kn = new MayChuKetNoi { DiaChi = diaChiDaKiem, VanTay = vanTay };
+            var kn = new MayChuKetNoi { DiaChi = diaChiDaKiem };
             if (cungMayChu) { kn.May = cu.May; kn.PhienBan = cu.PhienBan; kn.ChuaGui = cu.ChuaGui; }
             Cursor = Cursors.WaitCursor;
             try
@@ -120,7 +124,6 @@ namespace ThatThoatNuoc
                     phien.DongBo.Kn.Ten = kn.Ten;
                     phien.DongBo.Kn.HoTen = kn.HoTen;
                     phien.DongBo.Kn.VaiTro = kn.VaiTro;
-                    phien.DongBo.Kn.VanTay = kn.VanTay;
                     phien.DongBo.Kn.NhoDangNhap = true;
                     phien.DongBo.Kn.Ghi(phien.Kho.ThuMuc);
                     Ui.Info(this, "Đã đăng nhập " + kn.Ten + (kn.LaQuanTri ? " (Admin)" : " (chỉ xem)") + ". Phần mềm sẽ mở lại để áp dụng quyền.");
@@ -129,14 +132,13 @@ namespace ThatThoatNuoc
                 }
                 if (cungMayChu)
                 {
-                    // chỉ đăng nhập lại / đổi chứng chỉ: giữ dữ liệu và trạng thái đồng bộ
+                    // chỉ đăng nhập lại: giữ dữ liệu và trạng thái đồng bộ
                     phien.DongBo.Kn.Token = kn.Token;
-                    phien.DongBo.Kn.VanTay = kn.VanTay;
                     phien.DongBo.Kn.Ten = kn.Ten;
                     phien.DongBo.Kn.HoTen = kn.HoTen;
                     phien.DongBo.Kn.VaiTro = kn.VaiTro;
                     phien.DongBo.DaDangNhapLai();
-                    Ui.Info(this, "Đã đăng nhập lại máy chủ " + kn.DiaChi + ".");
+                    Ui.Info(this, "Đã đăng nhập lại máy chủ " + kn.GocUrl);
                     return true;
                 }
                 bool moLai = phien.ChiXem && kn.LaQuanTri;   // đang khoá chỉ xem mà vừa đăng nhập Admin
@@ -231,9 +233,9 @@ namespace ThatThoatNuoc
             kn.ChuaGui = false;
             kn.Ghi(phien.Kho.ThuMuc);
             phien.DatDongBo(new DongBoMayChu(phien, kn));
-            Ui.Info(this, (guiLen ? "Đã đưa dữ liệu lên máy chủ " : "Đã tải dữ liệu từ máy chủ ") + kn.DiaChi + ".\n\n" +
-                          "Từ giờ mỗi lần sửa đều tự gửi lên máy chủ; số điện thoại nhập tự tải về (trạng thái ở góc dưới thanh menu).\n" +
-                          "Tiếp theo: tạo tài khoản cho điện thoại ở \"Tài khoản điện thoại…\".");
+            Ui.Info(this, (guiLen ? "Đã đưa dữ liệu lên máy chủ " : "Đã tải dữ liệu từ máy chủ ") + kn.GocUrl + "\n\n" +
+                          "Từ giờ mỗi lần sửa đều tự gửi lên máy chủ; số nhập trên trang web / điện thoại tự tải về (trạng thái ở góc dưới thanh menu).\n" +
+                          "Tiếp theo: tạo tài khoản cho người dùng ở trang web (thẻ Quản trị) hoặc \"Tài khoản người dùng…\".");
             return true;
         }
     }
@@ -250,7 +252,7 @@ namespace ThatThoatNuoc
         public TaiKhoanMayChuForm(MayChuKetNoi kn)
         {
             this.kn = kn;
-            Text = "Tài khoản trên máy chủ " + kn.DiaChi;
+            Text = "Tài khoản trên máy chủ " + kn.GocUrl;
             Font = Ui.Base;
             StartPosition = FormStartPosition.CenterParent;
             AutoScaleMode = AutoScaleMode.None;
@@ -263,7 +265,7 @@ namespace ThatThoatNuoc
             {
                 Dock = DockStyle.Top, Height = Ui.S(58), Font = Ui.Small, ForeColor = Ui.Muted, Padding = Ui.Pad(16, 10, 16, 0),
                 Text = "Quyền: \"Chỉ xem\" = xem số liệu, xuất Excel, in — không sửa được (cả trên máy tính); \"Nhập đồng hồ cấp 1\" = thêm nhập chỉ số đồng hồ cấp 1 trên điện thoại / web (có thể giới hạn 1 đội); " +
-                       "\"Admin\" = toàn quyền. Đăng nhập trên phần mềm máy tính hoặc điện thoại tại https://" + kn.DiaChi + "/"
+                       "\"Admin\" = toàn quyền. Đăng nhập trên trang web " + kn.GocUrl + " (trình duyệt, app Android) hoặc phần mềm máy tính."
             };
             grid = new DataGridView { Dock = DockStyle.Fill, ReadOnly = true };
             Ui.StyleGrid(grid);
@@ -362,7 +364,7 @@ namespace ThatThoatNuoc
                     { "moi", moi }, { "ten", f.Ten }, { "hoTen", f.HoTen }, { "vaiTro", f.VaiTro }, { "doi", f.Doi }, { "khoa", f.Khoa }, { "matKhau", f.MatKhau }
                 }), f.Ten);
                 if (!string.IsNullOrEmpty(f.MatKhau))
-                    Ui.Info(this, "Đã lưu tài khoản \"" + f.Ten + "\".\nĐưa người dùng: địa chỉ https://" + kn.DiaChi + "/ , tên " + f.Ten + " và mật khẩu vừa đặt.");
+                    Ui.Info(this, "Đã lưu tài khoản \"" + f.Ten + "\".\nĐưa người dùng: địa chỉ " + kn.GocUrl + " , tên " + f.Ten + " và mật khẩu vừa đặt.");
                 return true;
             }
             catch (LoiMayChu ex)
@@ -477,9 +479,24 @@ namespace ThatThoatNuoc
                 bool coApk = File.Exists(Path.Combine(goc, "web", "ThatThoatNuoc-DienThoai.apk"));
                 if (MessageBox.Show(owner.FindForm(), "Đã tạo gói cài máy chủ:\n" + goc + "\n\n" +
                                     "Chép cả thư mục sang máy chủ IIS, nhấp đúp CaiDat-IIS.bat (xem HUONG_DAN_IIS.txt)." +
-                                    (coApk ? "\nGói có kèm app Android — điện thoại tải tại https://<máy chủ>:8080/tai-app" : "") + "\n\nMở thư mục?",
+                                    (coApk ? "\nGói có kèm app Android — điện thoại tải tại http://<máy chủ>/tai-app" : "") + "\n\nMở thư mục?",
                                     UngDung.Ten, MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
                     Ui.OpenFile(owner, goc);
+            }
+        }
+
+        /// <summary>ThatThoatNuoc.exe --tao-goi-iis &lt;thư mục&gt;: tạo gói không cần mở cửa sổ (dùng trong build.ps1). Trả mã thoát.</summary>
+        public static int TaoDongLenh(string goc)
+        {
+            try
+            {
+                Tao(Path.GetFullPath(goc));
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                try { File.WriteAllText(Path.GetFullPath(goc) + "-loi.txt", ex.ToString()); } catch (Exception) { }
+                return 1;
             }
         }
 
@@ -487,10 +504,11 @@ namespace ThatThoatNuoc
         {
             string web = Path.Combine(goc, "web");
             Directory.CreateDirectory(web);
-            File.Copy(Application.ExecutablePath, Path.Combine(web, "ThatThoatNuoc.exe"), true);
+            string exe = typeof(GoiIIS).Assembly.Location;   // chính file đang chạy (dùng được cả khi chạy dòng lệnh, chưa mở cửa sổ)
+            File.Copy(exe, Path.Combine(web, "ThatThoatNuoc.exe"), true);
             ChepTaiNguyen("web.config", Path.Combine(web, "web.config"));
             foreach (string t in new[] { "CaiDat-IIS.bat", "CaiDat-IIS.ps1", "HUONG_DAN_IIS.txt" }) ChepTaiNguyen(t, Path.Combine(goc, t));
-            string apk = Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "ThatThoatNuoc-DienThoai.apk");
+            string apk = Path.Combine(Path.GetDirectoryName(exe), "ThatThoatNuoc-DienThoai.apk");
             if (File.Exists(apk)) File.Copy(apk, Path.Combine(web, "ThatThoatNuoc-DienThoai.apk"), true);
         }
 

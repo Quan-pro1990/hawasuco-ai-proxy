@@ -1,4 +1,4 @@
-/* Thất thoát nước — trang web cho điện thoại (chạy trên máy chủ IIS). Không dùng thư viện ngoài. */
+/* Thất thoát nước — website (HTTP cổng 80 trên IIS) cho trình duyệt máy tính, điện thoại và app Android. Không dùng thư viện ngoài. */
 (function () {
   'use strict';
 
@@ -8,7 +8,7 @@
   var st = {
     token: doc(KHOA_TOKEN), nguoi: null, the: doc(KHOA_THE) || 'thatthoat',
     tq: null, tqNam: null, tqThang: null, cheDo: 'thang', th: null, thNam: null,
-    c1: null, c1Nam: null, c1Thang: null, c1Doi: null, bc: null, ping: null
+    c1: null, c1Nam: null, c1Thang: null, c1Doi: null, bc: null, tk: null, ping: null
   };
   try { st.nguoi = JSON.parse(doc(KHOA_NGUOI) || 'null'); } catch (e) { st.nguoi = null; }
 
@@ -92,7 +92,7 @@
 
   // ------------------------------------------------------------------ đăng nhập
   function dangXuatCucBo() {
-    st.token = null; st.nguoi = null; st.tq = st.th = st.c1 = st.bc = null;
+    st.token = null; st.nguoi = null; st.tq = st.th = st.c1 = st.bc = st.tk = null;
     ghi(KHOA_TOKEN, null); ghi(KHOA_NGUOI, null);
     veDangNhap();
   }
@@ -128,40 +128,47 @@
     thatthoat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3c3.5 4.5 6 7.7 6 11a6 6 0 0 1-12 0c0-3.3 2.5-6.5 6-11z"/></svg>',
     cap1: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="7"/><path d="M12 13l3-3M9 3h6"/></svg>',
     baocao: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h7"/></svg>',
-    taikhoan: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4.5-6 8-6s7 2 8 6"/></svg>'
+    taikhoan: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4.5-6 8-6s7 2 8 6"/></svg>',
+    quantri: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.4 3.6-5 6.5-5 1.3 0 2.6.3 3.7 1"/><path d="M17 13v8M13 17h8"/></svg>'
   };
-  var TEN_THE = { thatthoat: 'Thất thoát', cap1: 'Cấp 1', baocao: 'Báo cáo', taikhoan: 'Tài khoản' };
+  var TEN_THE = { thatthoat: 'Thất thoát', cap1: 'Cấp 1', baocao: 'Báo cáo', taikhoan: 'Tài khoản', quantri: 'Quản trị' };
+
+  function laAdmin() { return !!(st.nguoi && st.nguoi.vaiTro === 'QuanTri'); }
+  function cacThe() { return ['thatthoat', 'cap1', 'baocao', 'taikhoan'].concat(laAdmin() ? ['quantri'] : []); }
 
   function veKhung() {
     var n = st.nguoi || {};
     app.innerHTML = '<header class="dau"><img src="icon-192.png" alt=""><div class="tieude"><b>Thất thoát nước</b><span>' +
       esc(n.congTy || '') + '</span></div><button class="lammoi" id="lammoi" type="button">Làm mới</button></header>' +
-      '<main class="noidung" id="nd"></main><nav class="dieuhuong">' +
-      ['thatthoat', 'cap1', 'baocao', 'taikhoan'].map(function (k) {
+      '<nav class="dieuhuong">' +
+      cacThe().map(function (k) {
         return '<button type="button" data-the="' + k + '">' + BIEU_TUONG[k] + '<span>' + TEN_THE[k] + '</span></button>';
-      }).join('') + '</nav>';
+      }).join('') + '</nav><main class="noidung" id="nd"></main>';
     app.querySelector('.dieuhuong').addEventListener('click', function (e) {
       var b = e.target.closest('button');
       if (b) chonThe(b.getAttribute('data-the'));
     });
-    document.getElementById('lammoi').addEventListener('click', function () { st.tq = st.th = st.c1 = st.bc = null; chonThe(st.the); });
+    document.getElementById('lammoi').addEventListener('click', function () { st.tq = st.th = st.c1 = st.bc = st.tk = null; chonThe(st.the); });
     chonThe(st.the);
   }
 
   function nd() { return document.getElementById('nd'); }
 
   function chonThe(k) {
+    if (cacThe().indexOf(k) < 0) k = 'thatthoat';
     st.the = k; ghi(KHOA_THE, k);
     app.querySelectorAll('.dieuhuong button').forEach(function (b) { b.classList.toggle('chon', b.getAttribute('data-the') === k); });
     window.scrollTo(0, 0);
     if (k === 'thatthoat') theThatThoat();
     else if (k === 'cap1') theCap1();
     else if (k === 'baocao') theBaoCao();
+    else if (k === 'quantri') theQuanTri();
     else theTaiKhoan();
   }
 
   function dangTai() { nd().innerHTML = '<div class="dangtai">Đang tải…</div>'; }
   function loiTai(err, thuLai) {
+    if (!nd()) return;   // phiên hết hạn: đã chuyển sang màn đăng nhập
     nd().innerHTML = '<div class="loi">' + esc(err.message) + '</div><button class="nut" id="thulai">Thử lại</button>';
     document.getElementById('thulai').addEventListener('click', thuLai);
   }
@@ -507,7 +514,8 @@
       (n.coApp && !ungDung ? '<div class="the"><h3>App Android</h3><p class="mo">Cài app để mở nhanh, in thẳng file PDF.</p><a class="nut" href="tai-app" style="display:inline-block;text-decoration:none">Tải app Android</a></div>' : '') +
       '<div class="the"><button class="nut do" id="dangxuat" type="button">Đăng xuất</button>' +
       (ungDung && ungDung.doiMayChu ? ' <button class="nut" id="doimaychu" type="button">Đổi máy chủ</button>' : '') +
-      '<p class="mo">Phiên bản phần mềm ' + esc(n.phienBanPhanMem || '') + '</p></div>';
+      '<p class="mo">Máy chủ: ' + esc(diaChiWeb()) + ' · phiên bản ' + esc(n.phienBanPhanMem || '') +
+      (ungDung && ungDung.phienBan ? ' · app Android ' + esc(ungDung.phienBan()) : '') + '</p></div>';
     nd().innerHTML = h;
     var f = document.getElementById('doimk');
     f.addEventListener('submit', function (e) {
@@ -527,10 +535,123 @@
     if (dm) dm.addEventListener('click', function () { ungDung.doiMayChu(); });
   }
 
+  // ------------------------------------------------------------------ thẻ Quản trị (Admin): tài khoản người dùng
+  var QUYEN = [['Xem', 'Chỉ xem'], ['NhapLieu', 'Nhập đồng hồ cấp 1'], ['QuanTri', 'Admin (toàn quyền)']];
+
+  function diaChiWeb() { return location.href.replace(/[?#].*$/, '').replace(/index\.html$/, ''); }
+
+  function theQuanTri() {
+    if (st.tk) return veQuanTri();
+    dangTai();
+    api('GET', 'taikhoan').then(function (r) { st.tk = r; veQuanTri(); }, function (e) { loiTai(e, theQuanTri); });
+  }
+
+  function veQuanTri() {
+    var r = st.tk, toi = (st.nguoi || {}).ten, coApp = st.ping && st.ping.coApp;
+    var h = '<div class="the"><h3>Địa chỉ trang web</h3><p class="mo">Gửi địa chỉ này cùng tên đăng nhập, mật khẩu cho người dùng: mở bằng trình duyệt ' +
+      'trên máy tính / điện thoại' + (coApp ? ', hoặc nhập vào app Android' : '') + '.</p>' +
+      '<div class="hang"><input id="qt-dc" readonly value="' + esc(diaChiWeb()) + '" aria-label="Địa chỉ trang web" style="flex:1;min-width:200px">' +
+      '<button class="nut" id="qt-chep" type="button">Chép</button></div>' +
+      (coApp ? '<p class="mo">Tải app Android: ' + (ungDung ? esc(diaChiWeb()) + 'tai-app' :
+        '<a href="tai-app">' + esc(diaChiWeb()) + 'tai-app</a>') + '</p>' : '') + '</div>';
+    h += '<div class="the"><div class="hang" style="margin-bottom:4px"><h3 style="flex:1;margin:0">Tài khoản người dùng (' + r.taiKhoan.length + ')</h3>' +
+      '<button class="nut chinh nho" id="qt-them" type="button">+ Thêm tài khoản</button></div>';
+    r.taiKhoan.forEach(function (t, i) {
+      var phu = [];
+      if (t.vaiTro !== 'QuanTri') phu.push(t.tenDoi ? esc(t.tenDoi) : 'Tất cả các đội');
+      if (t.soPhien) phu.push(t.soPhien + ' thiết bị đang đăng nhập');
+      h += '<button type="button" class="tk' + (t.khoa ? ' khoa' : '') + '" data-i="' + i + '"><span class="ten"><b>' + esc(t.ten) +
+        (t.ten === toi ? ' <small class="mo">(bạn)</small>' : '') + '</b><small>' + esc(t.hoTen || '') + '</small></span>' +
+        '<span class="quyen"><span class="nhan-q ' + esc(t.vaiTro) + '">' + esc(t.tenVaiTro) + '</span><small>' +
+        (t.khoa ? '<span class="tang">Đã khoá</span>' + (phu.length ? ' · ' : '') : '') + phu.join(' · ') + '</small></span></button>';
+    });
+    h += '</div><p class="mo" style="margin:0 2px 12px">Chỉ xem: xem số liệu, tải Excel / PDF, in. Nhập đồng hồ cấp 1: thêm nhập chỉ số đồng hồ cấp 1 ' +
+      '(có thể giới hạn 1 đội). Admin: toàn quyền, quản lý tài khoản, kết nối phần mềm trên máy tính. Mật khẩu ít nhất 6 ký tự.</p>';
+    nd().innerHTML = h;
+    var o = document.getElementById('qt-dc');
+    document.getElementById('qt-chep').addEventListener('click', function () {
+      o.focus(); o.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      thongBao(ok ? 'Đã chép địa chỉ' : 'Bấm giữ vào ô địa chỉ để chép');
+    });
+    document.getElementById('qt-them').addEventListener('click', function () { suaTaiKhoan(null); });
+    nd().querySelectorAll('button.tk').forEach(function (b) {
+      b.addEventListener('click', function () { suaTaiKhoan(st.tk.taiKhoan[+b.getAttribute('data-i')]); });
+    });
+  }
+
+  function suaTaiKhoan(t) {
+    var moi = !t, toi = !moi && st.nguoi && t.ten === st.nguoi.ten;
+    t = t || { ten: '', hoTen: '', vaiTro: 'NhapLieu', doi: -1, khoa: false };
+    var h = document.createElement('div');
+    h.className = 'hop';
+    h.innerHTML = '<form class="hop-form" autocomplete="off"><h3>' + (moi ? 'Thêm tài khoản' : 'Sửa tài khoản ' + esc(t.ten)) + '</h3>' +
+      '<label for="tk-ten">Tên đăng nhập</label><input id="tk-ten" name="ten" autocapitalize="none" autocorrect="off" maxlength="40" value="' + esc(t.ten) + '"' +
+      (moi ? ' required placeholder="vd doi5, tram-dongphu"' : ' readonly') + '>' +
+      '<label for="tk-hoten">Họ tên / ghi chú</label><input id="tk-hoten" name="hoTen" maxlength="80" value="' + esc(t.hoTen) + '" placeholder="vd Nguyễn Văn A — Đội 5">' +
+      '<label for="tk-quyen">Quyền</label><select id="tk-quyen" name="vaiTro"' + (toi ? ' disabled' : '') + '>' + QUYEN.map(function (q) {
+        return '<option value="' + q[0] + '"' + (q[0] === t.vaiTro ? ' selected' : '') + '>' + q[1] + '</option>';
+      }).join('') + '</select>' +
+      '<label for="tk-doi">Đội (đồng hồ cấp 1)</label><select id="tk-doi" name="doi"><option value="-1">Tất cả các đội</option>' + st.tk.doi.map(function (d) {
+        return '<option value="' + d.id + '"' + (d.id === t.doi ? ' selected' : '') + '>' + esc(d.ten) + '</option>';
+      }).join('') + '</select>' +
+      (toi ? '<p class="mo">Đổi mật khẩu của bạn ở thẻ Tài khoản.</p>' :
+        '<label for="tk-mk">' + (moi ? 'Mật khẩu' : 'Mật khẩu mới (để trống = giữ mật khẩu cũ)') + '</label>' +
+        '<input id="tk-mk" type="password" name="mk" autocomplete="new-password"' + (moi ? ' required' : '') + '>' +
+        '<label for="tk-mk2">Nhập lại mật khẩu</label><input id="tk-mk2" type="password" name="mk2" autocomplete="new-password">' +
+        '<label class="o-chon"><input type="checkbox" name="khoa"' + (t.khoa ? ' checked' : '') + '> Khoá tài khoản (không đăng nhập được)</label>') +
+      '<div class="tb"></div><div class="hang">' + (moi || toi ? '' : '<button type="button" class="nut do" data-k="xoa">Xoá</button>') +
+      '<span class="gian"></span><button type="button" class="nut" data-k="huy">Huỷ</button><button type="submit" class="nut chinh">Lưu</button></div></form>';
+    var f = h.querySelector('form'), tb = f.querySelector('.tb');
+    function dong() { h.remove(); document.removeEventListener('keydown', phim); }
+    function phim(e) { if (e.key === 'Escape') dong(); }
+    function capNhatDoi() { f.doi.disabled = f.vaiTro.value === 'QuanTri'; }
+    function bao(s) { tb.innerHTML = '<div class="loi">' + esc(s) + '</div>'; }
+    capNhatDoi();
+    f.vaiTro.addEventListener('change', capNhatDoi);
+    document.addEventListener('keydown', phim);
+    h.addEventListener('click', function (e) {
+      var k = e.target.getAttribute('data-k');
+      if (e.target === h || k === 'huy') dong();
+      if (k === 'xoa') {
+        hoi('Xoá tài khoản ' + t.ten + '?', 'Thiết bị đang đăng nhập bằng tài khoản này sẽ bị đăng xuất.', 'Xoá').then(function (ok) {
+          if (!ok) return;
+          api('DELETE', 'taikhoan?ten=' + encodeURIComponent(t.ten)).then(function () {
+            dong(); st.tk = null; theQuanTri(); thongBao('Đã xoá tài khoản ' + t.ten);
+          }, function (er) { bao(er.message); });
+        });
+      }
+    });
+    f.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var ten = f.ten.value.trim(), mk = f.mk ? f.mk.value : '', mk2 = f.mk2 ? f.mk2.value : '';
+      if (ten.length < 2 || /\s/.test(ten)) return bao('Tên đăng nhập 2–40 ký tự, không có khoảng trắng.');
+      if ((moi || mk) && mk.length < 6) return bao('Mật khẩu phải có ít nhất 6 ký tự.');
+      if (mk !== mk2) return bao('Hai lần nhập mật khẩu không giống nhau.');
+      var nut = f.querySelector('button[type=submit]');
+      nut.disabled = true;
+      var vaiTro = f.vaiTro.value;
+      api('POST', 'taikhoan', {
+        moi: moi, ten: ten, hoTen: f.hoTen.value.trim(), vaiTro: vaiTro, doi: vaiTro === 'QuanTri' ? -1 : +f.doi.value,
+        khoa: toi ? false : f.khoa.checked, matKhau: mk
+      }).then(function (r) {
+        dong(); st.tk = r; veQuanTri();
+        thongBao(moi ? 'Đã thêm tài khoản ' + ten : 'Đã lưu tài khoản ' + ten);
+      }, function (er) { nut.disabled = false; bao(er.message); });
+    });
+    document.body.appendChild(h);
+    (moi ? f.ten : f.hoTen).focus();
+  }
+
   // ------------------------------------------------------------------ khởi động
   fetch('api/ping', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (p) { st.ping = p; }, function () { }).then(function () {
     if (!st.token) return veDangNhap();
     veKhung();
-    api('GET', 'toi').then(function (r) { st.nguoi = r; ghi(KHOA_NGUOI, JSON.stringify(r)); }, function () { });
+    api('GET', 'toi').then(function (r) {
+      var doiQuyen = !st.nguoi || st.nguoi.vaiTro !== r.vaiTro || st.nguoi.doi !== r.doi;
+      st.nguoi = r; ghi(KHOA_NGUOI, JSON.stringify(r));
+      if (doiQuyen) { st.c1 = st.bc = st.tk = null; veKhung(); }   // Admin vừa đổi quyền tài khoản này
+    }, function () { });
   });
 })();

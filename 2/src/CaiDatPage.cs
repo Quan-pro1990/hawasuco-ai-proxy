@@ -52,7 +52,7 @@ namespace ThatThoatNuoc
             cData.Controls.Add(lineData);
 
             // ---- máy chủ dữ liệu IIS
-            var cMc = Card(scroll, "Máy chủ dữ liệu (IIS) — dùng chung với điện thoại, máy tính khác", 176);
+            var cMc = Card(scroll, "Máy chủ dữ liệu (website HTTP trên IIS) — dùng chung với trình duyệt, điện thoại, máy tính khác", 176);
             lblMayChu = Ui.MakeLabel("", Ui.Small, Ui.Muted);
             lblMayChu.AutoSize = false;
             lblMayChu.UseMnemonic = false;
@@ -172,7 +172,7 @@ namespace ThatThoatNuoc
             }
             DongBoMayChu d = phien.DongBo;
             lblThuMuc.Text = d != null
-                ? "Dữ liệu chính nằm trên máy chủ " + d.Kn.DiaChi + ". Bản đệm trên máy này: " + phien.Kho.DuongDan + "\n" + phien.Dl.Thang.Count +
+                ? "Dữ liệu chính nằm trên máy chủ " + d.Kn.GocUrl + " . Bản đệm trên máy này: " + phien.Kho.DuongDan + "\n" + phien.Dl.Thang.Count +
                   " tháng số liệu. Mỗi lần sửa tự lưu và gửi lên máy chủ; máy chủ tự sao lưu mỗi ngày."
                 : "File dữ liệu: " + phien.Kho.DuongDan + "\n" + phien.Dl.Thang.Count + " tháng số liệu. Mỗi lần sửa đều tự lưu; mỗi ngày giữ 1 bản sao lưu " +
                   "trong thư mục SaoLuu (90 ngày gần nhất). Chép cả thư mục phần mềm sang máy khác là mang theo đủ dữ liệu.";
@@ -185,16 +185,16 @@ namespace ThatThoatNuoc
             DongBoMayChu d = phien.DongBo;
             if (d == null)
             {
-                lblMayChu.Text = "Đang dùng dữ liệu trên máy này (chưa có máy chủ).\nĐể điện thoại và máy tính khác dùng chung qua internet (không cần ZeroTier): bấm \"Tạo gói cài IIS…\", " +
+                lblMayChu.Text = "Đang dùng dữ liệu trên máy này (chưa có máy chủ).\nĐể trình duyệt, điện thoại và máy tính khác dùng chung (website HTTP cổng 80, không cần ZeroTier): bấm \"Tạo gói cài IIS…\", " +
                                  "chép gói sang máy chủ IIS và chạy CaiDat-IIS.bat, rồi bấm \"Kết nối máy chủ…\" và đưa dữ liệu trên máy này lên.";
                 bKetNoi.Text = "Kết nối máy chủ…";
             }
             else
             {
                 MayChuKetNoi kn = d.Kn;
-                lblMayChu.Text = "Đang dùng dữ liệu trên máy chủ  https://" + kn.DiaChi + "/   ·   tài khoản " + kn.Ten + (kn.LaQuanTri ? " (quản trị)" : "") +
-                                 "   ·   mã nhận dạng " + MayChuKetNoi.MaNhanDang(kn.VanTay) + "\nTrạng thái: " + d.TrangThai +
-                                 "\nĐiện thoại: mở địa chỉ trên bằng Chrome hoặc app Android, đăng nhập bằng tài khoản tạo ở \"Tài khoản điện thoại…\".";
+                lblMayChu.Text = "Đang dùng dữ liệu trên máy chủ  " + kn.GocUrl + "   ·   tài khoản " + kn.Ten + (kn.LaQuanTri ? " (quản trị)" : "") +
+                                 "\nTrạng thái: " + d.TrangThai +
+                                 "\nTrình duyệt / điện thoại: mở địa chỉ trên (hoặc app Android), đăng nhập bằng tài khoản tạo ở \"Tài khoản người dùng…\" hoặc thẻ Quản trị trên web.";
                 bKetNoi.Text = d.CanDangNhap ? "Đăng nhập lại…" : "Kết nối lại / đổi máy chủ…";
             }
             bTaiKhoan.Enabled = d != null && d.Kn.LaQuanTri;
@@ -259,7 +259,7 @@ namespace ThatThoatNuoc
         {
             DongBoMayChu d = phien.DongBo;
             if (d == null) return;
-            if (!Ui.Confirm(this, "Ngắt kết nối máy chủ " + d.Kn.DiaChi + "?\n\nPhần mềm sẽ dùng bản dữ liệu hiện có trên máy này (không gửi lên máy chủ nữa). " +
+            if (!Ui.Confirm(this, "Ngắt kết nối máy chủ " + d.Kn.GocUrl + " ?\n\nPhần mềm sẽ dùng bản dữ liệu hiện có trên máy này (không gửi lên máy chủ nữa). " +
                                   "Điện thoại vẫn dùng dữ liệu trên máy chủ như cũ." + (d.CoThayDoiChuaGui ? "\n\nLưu ý: còn thay đổi CHƯA gửi lên máy chủ." : ""))) return;
             d.Kn.DangXuat();
             try { MayChuKetNoi.Xoa(phien.Kho.ThuMuc); } catch (Exception) { }

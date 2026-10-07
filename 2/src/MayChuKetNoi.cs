@@ -5,11 +5,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net;
-using System.Net.Security;
-using System.Net.Sockets;
-using System.Security.Authentication;
 using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
 namespace ThatThoatNuoc
@@ -23,8 +19,8 @@ namespace ThatThoatNuoc
     }
 
     /// <summary>
-    /// Kết nối của phần mềm trên máy tính tới máy chủ IIS: địa chỉ, chứng chỉ đã ghim (mã nhận dạng SHA-256),
-    /// tài khoản, mã đăng nhập (mã hoá DPAPI theo người dùng Windows), phiên bản dữ liệu đã đồng bộ.
+    /// Kết nối của phần mềm trên máy tính tới website trên máy chủ IIS (HTTP cổng 80; dùng được cả https:// khi site có chứng chỉ thật):
+    /// địa chỉ, tài khoản, mã đăng nhập (mã hoá DPAPI theo người dùng Windows), phiên bản dữ liệu đã đồng bộ.
     /// Lưu ở DuLieu\maychu.txt.
     /// </summary>
     public class MayChuKetNoi
@@ -32,8 +28,7 @@ namespace ThatThoatNuoc
         const string TenTep = "maychu.txt";
         static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
 
-        public string DiaChi = "";      // vd tenmien.vn:8080 hoặc tenmien.vn:8080/thatthoat
-        public string VanTay = "";      // SHA-256 chứng chỉ (hex liền, chữ hoa)
+        public string DiaChi = "";      // vd 192.168.1.10, tenmien.vn/thatthoat, tenmien.vn:8081 (http) hoặc https://tenmien.vn
         public string Ten = "", HoTen = "", VaiTro = "";
         public string Token = "";
         public string May = Guid.NewGuid().ToString("N");
@@ -41,7 +36,9 @@ namespace ThatThoatNuoc
         public bool ChuaGui;            // còn thay đổi trên máy chưa gửi được lên máy chủ
         public bool NhoDangNhap = true; // false: không lưu mã đăng nhập, mở phần mềm phải đăng nhập lại
 
-        public string GocUrl { get { return "https://" + DiaChi.TrimEnd('/') + "/"; } }
+        public bool LaHttps { get { return DiaChi.StartsWith("https://", StringComparison.OrdinalIgnoreCase); } }
+        /// <summary>Địa chỉ trang web, vd http://192.168.1.10/ hoặc http://tenmien.vn/thatthoat/</summary>
+        public string GocUrl { get { return (LaHttps ? "" : "http://") + DiaChi.TrimEnd('/') + "/"; } }
         public bool LaQuanTri { get { return VaiTro == "QuanTri"; } }
 
         // ------------------------------------------------------------------ tệp cấu hình
@@ -51,6 +48,7 @@ namespace ThatThoatNuoc
             string p = Path.Combine(thuMuc, TenTep);
             if (!File.Exists(p)) return null;
             var kn = new MayChuKetNoi();
+            string vanTay = "";
             foreach (string dong in File.ReadAllLines(p, Encoding.UTF8))
             {
                 int e = dong.IndexOf('=');
@@ -59,7 +57,7 @@ namespace ThatThoatNuoc
                 switch (k)
                 {
                     case "DiaChi": kn.DiaChi = v; break;
-                    case "VanTay": kn.VanTay = v; break;
+                    case "VanTay": vanTay = v; break;
                     case "Ten": kn.Ten = v; break;
                     case "HoTen": kn.HoTen = v; break;
                     case "VaiTro": kn.VaiTro = v; break;
@@ -70,7 +68,19 @@ namespace ThatThoatNuoc
                     case "NhoDangNhap": kn.NhoDangNhap = v != "0"; break;
                 }
             }
-            return kn.DiaChi.Length > 0 && kn.VanTay.Length == 64 ? kn : null;
+            // Bản cũ: HTTPS cổng 8080 + ghim chứng chỉ tự ký (có VanTay). Máy chủ nay là website HTTP cổng 80:
+            // "ten.vn:8080/thatthoat" → "ten.vn/thatthoat" (giữ mã đăng nhập; sai thì người dùng kết nối lại).
+            if (vanTay.Length > 0 && !kn.LaHttps) kn.DiaChi = BoCong8080(kn.DiaChi);
+            kn.DiaChi = ChuanHoaDiaChi(kn.DiaChi);
+            return kn.DiaChi.Length > 0 ? kn : null;
+        }
+
+        static string BoCong8080(string diaChi)
+        {
+            int g = diaChi.IndexOf('/');
+            string host = g < 0 ? diaChi : diaChi.Substring(0, g), duong = g < 0 ? "" : diaChi.Substring(g);
+            if (host.EndsWith(":8080", StringComparison.Ordinal)) host = host.Substring(0, host.Length - 5);
+            return host + duong;
         }
 
         public void Ghi(string thuMuc)
@@ -78,8 +88,8 @@ namespace ThatThoatNuoc
             string p = Path.Combine(thuMuc, TenTep);
             var dong = new[]
             {
-                "# Kết nối máy chủ dữ liệu (IIS) — phần mềm tự ghi, đừng sửa tay",
-                "DiaChi=" + DiaChi, "VanTay=" + VanTay, "Ten=" + Ten, "HoTen=" + HoTen, "VaiTro=" + VaiTro,
+                "# Kết nối máy chủ dữ liệu (website trên IIS) — phần mềm tự ghi, đừng sửa tay",
+                "DiaChi=" + DiaChi, "Ten=" + Ten, "HoTen=" + HoTen, "VaiTro=" + VaiTro,
                 "Token=" + (NhoDangNhap ? Khoa(Token) : ""), "NhoDangNhap=" + (NhoDangNhap ? "1" : "0"), "May=" + May, "PhienBan=" + PhienBan.ToString(Inv), "ChuaGui=" + (ChuaGui ? "1" : "0")
             };
             File.WriteAllLines(p + ".tmp", dong, new UTF8Encoding(false));
@@ -106,74 +116,28 @@ namespace ThatThoatNuoc
             catch (Exception) { return ""; }   // tệp chép từ máy / người dùng khác: phải đăng nhập lại
         }
 
-        // ------------------------------------------------------------------ địa chỉ, chứng chỉ
+        // ------------------------------------------------------------------ địa chỉ
 
-        /// <summary>"https://ten.vn:8080/thatthoat/" → "ten.vn:8080/thatthoat"; không ghi cổng thì lấy 8080.</summary>
+        /// <summary>
+        /// "http://ten.vn/thatthoat/" → "ten.vn/thatthoat"; "ten.vn:80" → "ten.vn". Cổng mặc định 80 (http).
+        /// Địa chỉ https:// giữ nguyên tiền tố (site có chứng chỉ thật, kiểm tra chứng chỉ như trình duyệt).
+        /// </summary>
         public static string ChuanHoaDiaChi(string s)
         {
-            s = (s ?? "").Trim();
-            if (s.StartsWith("https://", StringComparison.OrdinalIgnoreCase)) s = s.Substring(8);
+            s = (s ?? "").Trim().Replace('\\', '/');
+            bool https = false;
+            if (s.StartsWith("https://", StringComparison.OrdinalIgnoreCase)) { https = true; s = s.Substring(8); }
             else if (s.StartsWith("http://", StringComparison.OrdinalIgnoreCase)) s = s.Substring(7);
-            s = s.TrimEnd('/');
+            int q = s.IndexOfAny(new[] { '?', '#' });
+            if (q >= 0) s = s.Substring(0, q);
+            s = s.Trim().TrimEnd('/');
+            if (s.EndsWith("/index.html", StringComparison.OrdinalIgnoreCase)) s = s.Substring(0, s.Length - 11);
             if (s.Length == 0) return "";
             int g = s.IndexOf('/');
             string host = g < 0 ? s : s.Substring(0, g), duong = g < 0 ? "" : s.Substring(g);
-            bool coCong = host.StartsWith("[") ? host.Contains("]:") : host.Contains(":");
-            if (!coCong) host += ":8080";
-            return host + duong;
-        }
-
-        static void TachHost(string diaChi, out string host, out int cong)
-        {
-            string h = diaChi.Split('/')[0];
-            int c = h.LastIndexOf(':');
-            cong = 443;
-            if (c > 0 && h.IndexOf(']') < c) int.TryParse(h.Substring(c + 1), out cong);
-            host = c > 0 && h.IndexOf(']') < c ? h.Substring(0, c) : h;
-            host = host.Trim('[', ']');
-        }
-
-        public static string VanTayCua(X509Certificate cert)
-        {
-            using (var sha = SHA256.Create())
-                return BitConverter.ToString(sha.ComputeHash(cert.GetRawCertData())).Replace("-", "");
-        }
-
-        /// <summary>Mã ngắn để người dùng so: 4 nhóm 4 ký tự đầu của SHA-256 (giống script cài máy chủ).</summary>
-        public static string MaNhanDang(string vanTay)
-        {
-            if (string.IsNullOrEmpty(vanTay) || vanTay.Length < 16) return "";
-            return string.Join("-", Enumerable.Range(0, 4).Select(i => vanTay.Substring(i * 4, 4)));
-        }
-
-        /// <summary>Bắt tay TLS lấy chứng chỉ máy chủ đưa ra (chưa tin) — để người dùng so mã nhận dạng lần đầu.</summary>
-        public static string LayVanTay(string diaChi)
-        {
-            string host;
-            int cong;
-            TachHost(diaChi, out host, out cong);
-            using (var tcp = new TcpClient())
-            {
-                try
-                {
-                    IAsyncResult ar = tcp.BeginConnect(host, cong, null, null);
-                    if (!ar.AsyncWaitHandle.WaitOne(8000)) throw new LoiMayChu(0, "Không kết nối được " + host + ":" + cong + " (quá 8 giây). Kiểm tra địa chỉ, cổng, mạng.");
-                    tcp.EndConnect(ar);
-                }
-                catch (SocketException ex)
-                {
-                    throw new LoiMayChu(0, "Không kết nối được " + host + ":" + cong + " — " + ex.Message);
-                }
-                string vt = null;
-                using (var ssl = new SslStream(tcp.GetStream(), false, (s, c, ch, e) => { vt = c == null ? null : VanTayCua(c); return true; }))
-                {
-                    ssl.ReadTimeout = ssl.WriteTimeout = 10000;
-                    try { ssl.AuthenticateAsClient(host, null, SslProtocols.Tls12, false); }
-                    catch (Exception ex) { throw new LoiMayChu(0, "Máy chủ không trả lời HTTPS ở " + host + ":" + cong + " — " + ex.Message); }
-                }
-                if (vt == null) throw new LoiMayChu(0, "Máy chủ không gửi chứng chỉ.");
-                return vt;
-            }
+            string congMacDinh = https ? ":443" : ":80";
+            if (host.EndsWith(congMacDinh, StringComparison.Ordinal)) host = host.Substring(0, host.Length - congMacDinh.Length);
+            return (https ? "https://" : "") + host.ToLowerInvariant() + duong;
         }
 
         // ------------------------------------------------------------------ gọi API
@@ -189,8 +153,6 @@ namespace ThatThoatNuoc
             r.AutomaticDecompression = DecompressionMethods.GZip;
             r.UserAgent = "ThatThoatNuoc-MayTinh/" + UngDung.PhienBan;
             r.Accept = "application/json";
-            string pin = VanTay;
-            r.ServerCertificateValidationCallback = (s, cert, chain, err) => cert != null && VanTayCua(cert) == pin;
             if (!string.IsNullOrEmpty(Token)) r.Headers["Authorization"] = "Bearer " + Token;
             return r;
         }
@@ -229,10 +191,10 @@ namespace ThatThoatNuoc
                 if (resp == null)
                 {
                     string ly = ex.Status == WebExceptionStatus.TrustFailure || ex.Status == WebExceptionStatus.SecureChannelFailure
-                        ? "Chứng chỉ máy chủ KHÁC mã nhận dạng đã lưu (" + MaNhanDang(VanTay) + "). Nếu máy chủ vừa đổi chứng chỉ, hãy kết nối lại; nếu không, có thể đang bị chặn giữa đường."
+                        ? "Chứng chỉ HTTPS của máy chủ không hợp lệ (tự ký, hết hạn hoặc sai tên miền). Dùng địa chỉ http:// hoặc gắn chứng chỉ thật cho site trên IIS."
                         : ex.Status == WebExceptionStatus.Timeout ? "Máy chủ không trả lời kịp."
                         : ex.Status == WebExceptionStatus.NameResolutionFailure ? "Không tìm thấy tên máy chủ (kiểm tra địa chỉ / mạng)."
-                        : ex.Status == WebExceptionStatus.ConnectFailure ? "Không kết nối được máy chủ (kiểm tra mạng, máy chủ IIS có đang chạy)."
+                        : ex.Status == WebExceptionStatus.ConnectFailure ? "Không kết nối được " + GocUrl + " (kiểm tra địa chỉ, mạng, máy chủ IIS có đang chạy)."
                         : "Mất kết nối với máy chủ (" + ex.Status + ").";
                     throw new LoiMayChu(0, ly);
                 }
@@ -263,7 +225,11 @@ namespace ThatThoatNuoc
             }
             WebHeaderCollection h;
             byte[] kq = Goi(r, b, false, out h);
-            return kq.Length == 0 ? new Dictionary<string, object>() : (JsonMayChu.DocGiaTri(Encoding.UTF8.GetString(kq)) as Dictionary<string, object> ?? new Dictionary<string, object>());
+            if (kq.Length == 0) return new Dictionary<string, object>();
+            object o;
+            try { o = JsonMayChu.DocGiaTri(Encoding.UTF8.GetString(kq)); }
+            catch (Exception) { throw new LoiMayChu(500, GocUrl + " không phải máy chủ Thất thoát nước (trả về trang khác). Kiểm tra lại địa chỉ, vd thêm /thatthoat."); }
+            return o as Dictionary<string, object> ?? new Dictionary<string, object>();
         }
 
         public Dictionary<string, object> Ping()

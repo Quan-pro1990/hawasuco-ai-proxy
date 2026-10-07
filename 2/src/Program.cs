@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -106,6 +106,8 @@ namespace ThatThoatNuoc
         {
             // IIS (ASP.NET Core Module) chạy file này với biến ASPNETCORE_PORT → chế độ máy chủ, không có cửa sổ.
             if (MayChu.LaCheDoMayChu(args)) return MayChu.Chay(args);
+            int goi = Array.IndexOf(args, "--tao-goi-iis");
+            if (goi >= 0) return GoiIIS.TaoDongLenh(goi + 1 < args.Length ? args[goi + 1] : "ThatThoatNuoc-MayChu-IIS");
             ChayGiaoDien(Array.IndexOf(args, "--khoi-dong-lai") >= 0);
             return 0;
         }
@@ -145,7 +147,7 @@ namespace ThatThoatNuoc
                 MayChuKetNoi kn = MayChuKetNoi.Doc(kho.ThuMuc);
                 if (!DangNhap(phien, kn)) { mutex.ReleaseMutex(); return; }
                 var form = new MainForm(phien);
-                if (kn != null) phien.DatDongBo(new DongBoMayChu(phien, kn));   // dữ liệu nằm trên máy chủ IIS
+                if (kn != null) phien.DatDongBo(new DongBoMayChu(phien, kn));   // dữ liệu nằm trên máy chủ (website trên IIS)
                 Application.Run(form);
                 mutex.ReleaseMutex();
             }

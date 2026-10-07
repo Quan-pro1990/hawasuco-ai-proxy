@@ -7,7 +7,7 @@ namespace ThatThoatNuoc
     public static class UngDung
     {
         public const string Ten = "Quản lý thất thoát nước";
-        public const string PhienBan = "1.0.0";
+        public const string PhienBan = "2.0.0";
     }
 
     /// <summary>Cách tính sản lượng phát ra của 1 dòng.</summary>

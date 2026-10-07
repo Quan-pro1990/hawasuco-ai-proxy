@@ -10,3 +10,12 @@ node_modules/
 *.log
 .DS_Store
 Thumbs.db
+
+# App Android: khoá ký (giữ riêng, không đưa lên GitHub) và thư mục build
+2/android/ky-app/
+2/android/.gradle/
+2/android/build/
+2/android/app/build/
+2/android/local.properties
+2/android/.idea/
+*.idsig
