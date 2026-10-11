@@ -4,9 +4,10 @@ from sqlalchemy.orm import Session, selectinload
 
 from ..db import get_db
 from ..geo import feature_collection, geojson_to_geom, geom_to_geojson, row_props, sql_geom
-from ..models import Customer, Meter, MeterReading, Pipe, Zone, ZoneInflow
+from ..models import Customer, Meter, MeterReading, Pipe, User, Zone, ZoneInflow
 from ..schemas import CustomerIn, CustomerUpdate, InflowIn, MeterIn, ReadingIn
-from ..security import get_current_user, require_editor
+from ..security import get_current_user, require_editor, require_field
+from ..services.readings import ReadingError, save_reading
 from ..services.topology import next_code
 
 router = APIRouter(prefix="/api", tags=["Khách hàng & đồng hồ"], dependencies=[Depends(get_current_user)])
@@ -136,27 +137,14 @@ def update_meter(mid: int, data: MeterIn, db: Session = Depends(get_db)):
 
 
 # ============================================================ Ghi chỉ số
-def _save_reading(db: Session, r: ReadingIn) -> MeterReading:
-    m = db.get(Meter, r.meter_id)
-    if not m:
-        raise HTTPException(404, f"Không tìm thấy đồng hồ {r.meter_id}")
-    prev = db.scalar(select(MeterReading).where(MeterReading.meter_id == m.id, MeterReading.period < r.period)
-                     .order_by(MeterReading.period.desc()).limit(1))
-    if prev and r.reading < prev.reading:
-        raise HTTPException(400, f"Đồng hồ {m.serial}: chỉ số mới ({r.reading}) nhỏ hơn kỳ trước ({prev.reading})")
-    cons = r.reading - prev.reading if prev else 0
-    row = db.scalar(select(MeterReading).where(MeterReading.meter_id == m.id, MeterReading.period == r.period))
-    if row:
-        row.reading, row.consumption = r.reading, cons
-    else:
-        row = MeterReading(meter_id=m.id, period=r.period, reading=r.reading, consumption=cons)
-        db.add(row)
-    return row
-
-
-@router.post("/readings", dependencies=[Depends(require_editor)])
-def save_readings(items: list[ReadingIn], db: Session = Depends(get_db)):
-    rows = [_save_reading(db, r) for r in items]
+@router.post("/readings")
+def save_readings(items: list[ReadingIn], db: Session = Depends(get_db), user: User = Depends(require_field)):
+    try:
+        rows = [save_reading(db, r.meter_id, r.period, r.reading, source="office",
+                             read_by=user.full_name or user.username) for r in items]
+    except ReadingError as e:
+        db.rollback()
+        raise HTTPException(e.status, str(e))
     db.commit()
     return [row_props(r) for r in rows]
 

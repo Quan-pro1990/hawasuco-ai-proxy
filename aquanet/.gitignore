@@ -4,3 +4,6 @@ __pycache__/
 *.pyc
 .env
 .pytest_cache/
+.ruff_cache/
+# ảnh hiện trường tải lên (UPLOAD_DIR mặc định)
+backend/data/

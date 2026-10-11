@@ -12,6 +12,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ..config import settings
+from ..geo import near_bbox
 from ..models import Customer, Node, Pipe
 
 SUPPLY_TYPES = {"source", "tank"}
@@ -33,6 +34,7 @@ def find_node_near(db: Session, lon: float, lat: float, tol_m: float | None = No
     pt = func.ST_SetSRID(func.ST_MakePoint(lon, lat), 4326)
     return db.scalars(
         select(Node)
+        .where(near_bbox(Node.geom, lon, lat, tol))
         .where(func.ST_DWithin(func.Geography(Node.geom), func.Geography(pt), tol))
         .order_by(func.ST_Distance(func.Geography(Node.geom), func.Geography(pt)))
         .limit(1)
@@ -79,9 +81,11 @@ def split_pipe_at_node(db: Session, node: Node, tol_m: float | None = None,
     """Nếu nút nằm giữa một ống (trong dung sai), tách ống đó thành 2 đoạn."""
     pt = to_shape(node.geom)
     g = func.ST_SetSRID(func.ST_MakePoint(pt.x, pt.y), 4326)
+    tol = tol_m or settings.SNAP_TOLERANCE_M
     q = (
         select(Pipe)
-        .where(func.ST_DWithin(func.Geography(Pipe.geom), func.Geography(g), tol_m or settings.SNAP_TOLERANCE_M))
+        .where(near_bbox(Pipe.geom, pt.x, pt.y, tol))
+        .where(func.ST_DWithin(func.Geography(Pipe.geom), func.Geography(g), tol))
         .where(func.coalesce(Pipe.start_node_id, 0) != node.id, func.coalesce(Pipe.end_node_id, 0) != node.id)
         .order_by(func.ST_Distance(func.Geography(Pipe.geom), func.Geography(g)))
         .limit(1)

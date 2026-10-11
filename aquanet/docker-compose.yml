@@ -25,8 +25,60 @@ services:
       DATABASE_URL: postgresql+psycopg://postgres:${DB_PASSWORD:-postgres}@db:5432/capnuoc
       SECRET_KEY: ${SECRET_KEY:-hay-doi-khoa-nay}
       SEED_DEMO: ${SEED_DEMO:-1}   # 1 = tạo dữ liệu mẫu khi CSDL trống
+      INGEST_API_KEYS: ${INGEST_API_KEYS:-}          # khóa cho cổng SCADA/AMI gửi số liệu
+      TIMEZONE: ${TIMEZONE:-Asia/Ho_Chi_Minh}
+      TILE_URL_TEMPLATE: ${TILE_URL_TEMPLATE:-/api/tiles/{z}/{x}/{y}.pbf}
+      VECTOR_TILE_THRESHOLD: ${VECTOR_TILE_THRESHOLD:-20000}
+      UPLOAD_DIR: /app/data/uploads
+    volumes:
+      - uploads:/app/data/uploads   # ảnh hiện trường
     ports:
       - "8000:8000"
 
+  # ---- Tùy chọn: bộ mô phỏng cổng SCADA (trình diễn khi chưa nối SCADA thật)
+  #   docker compose --profile demo up -d
+  scada-sim:
+    build: .
+    profiles: ["demo"]
+    restart: unless-stopped
+    depends_on:
+      - app
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:${DB_PASSWORD:-postgres}@db:5432/capnuoc
+      INGEST_API_KEYS: ${INGEST_API_KEYS:-}
+    command: ["sh", "-c", "sleep 20; python -m app.scada_sim --url http://app:8000 --interval 15 --skip P-H0010"]
+
+  # ---- Tùy chọn: tile server riêng cho mạng lưới hàng trăm nghìn đối tượng
+  #   docker compose --profile tiles up -d
+  #   rồi đặt TILE_URL_TEMPLATE=http://may-chu:3000/aquanet_network/{z}/{x}/{y} cho app
+  martin:
+    image: ghcr.io/maplibre/martin:v0.18.1
+    profiles: ["tiles"]
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # nên dùng tài khoản chỉ có quyền EXECUTE trên hàm tile (README, mục Vector tiles)
+      TILES_DATABASE_URL: postgresql://${TILES_DB_USER:-postgres}:${TILES_DB_PASSWORD:-postgres}@db:5432/capnuoc
+    volumes:
+      - ./tiles/martin.yaml:/config.yaml:ro
+    command: ["--config", "/config.yaml"]
+    ports:
+      - "3000:3000"
+
+  pg_tileserv:
+    image: pramsey/pg_tileserv:20250131
+    profiles: ["tiles"]
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${TILES_DB_USER:-postgres}:${TILES_DB_PASSWORD:-postgres}@db:5432/capnuoc
+    ports:
+      - "7800:7800"
+
 volumes:
   pgdata:
+  uploads:

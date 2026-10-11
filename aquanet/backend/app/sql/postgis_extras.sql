@@ -31,3 +31,18 @@ FROM nodes WHERE node_type = 'valve';
 CREATE OR REPLACE VIEW v_open_incidents AS
 SELECT id, code, incident_type, severity, status, title, assignee, reported_at, pipe_id, geom
 FROM incidents WHERE status NOT IN ('resolved', 'closed');
+
+-- 3) View cho SCADA và bảo trì
+CREATE OR REPLACE VIEW v_sensors AS
+SELECT s.id, s.code, s.name, s.sensor_type, s.unit, s.last_value, s.last_ts,
+       s.min_alarm, s.max_alarm,
+       (SELECT count(*) FROM alarms a WHERE a.sensor_id = s.id AND a.cleared_at IS NULL) AS active_alarms,
+       COALESCE(s.geom, n.geom) AS geom
+FROM sensors s LEFT JOIN nodes n ON n.id = s.node_id
+WHERE s.active;
+
+CREATE OR REPLACE VIEW v_maintenance_due AS
+SELECT t.id, t.code, t.task_type, t.status, t.due_date, t.assignee,
+       (t.due_date < CURRENT_DATE) AS overdue, n.code AS node_code, n.node_type, n.geom
+FROM maintenance_tasks t JOIN nodes n ON n.id = t.node_id
+WHERE t.status IN ('planned', 'assigned', 'in_progress');

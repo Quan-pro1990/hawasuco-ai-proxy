@@ -1,14 +1,18 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import Response
 from geoalchemy2.shape import from_shape, to_shape
 from shapely.geometry import LineString, MultiPolygon, Polygon, shape
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from ..db import get_db
-from ..geo import bbox_filter, feature_collection, geojson_to_geom, sql_geom, to_feature
-from ..models import Customer, Node, Pipe, Zone
+from ..geo import bbox_filter, feature_collection, geojson_to_geom, near_bbox, sql_geom, to_feature
+from ..models import Customer, Incident, Node, Pipe, Zone
 from ..schemas import NodeIn, NodeUpdate, PipeIn, PipeUpdate, ZoneIn
 from ..security import get_current_user, require_editor
+from ..services.epanet import build_inp
 from ..services.topology import connect_pipe, isolation_report, next_code, split_pipe_at_node
 
 router = APIRouter(prefix="/api", tags=["Mạng lưới"], dependencies=[Depends(get_current_user)])
@@ -152,8 +156,6 @@ def list_pipes(
 def get_pipe(pid: int, db: Session = Depends(get_db)):
     p = _get(db, Pipe, pid)
     n_cust = db.scalar(select(func.count()).select_from(Customer).where(Customer.pipe_id == pid))
-    from ..models import Incident
-
     n_inc = db.scalar(select(func.count()).select_from(Incident).where(Incident.pipe_id == pid))
     return to_feature(p, {"customer_count": n_cust, "incident_count": n_inc})
 
@@ -222,12 +224,85 @@ def nearest_pipe(lon: float, lat: float, max_m: float = 50, db: Session = Depend
     pt = func.ST_SetSRID(func.ST_MakePoint(lon, lat), 4326)
     row = db.execute(
         select(Pipe, func.ST_Distance(func.Geography(Pipe.geom), func.Geography(pt)).label("d"))
+        .where(near_bbox(Pipe.geom, lon, lat, max_m))
         .where(func.ST_DWithin(func.Geography(Pipe.geom), func.Geography(pt), max_m))
         .order_by("d").limit(1)
     ).first()
     if not row:
         return None
     return to_feature(row[0], {"distance_m": round(row[1], 1)})
+
+
+@router.get("/network/identify")
+def identify(lon: float, lat: float, tol_m: float = Query(10, ge=0.5, le=500),
+             layers: str = Query("incident,node,customer,pipe,zone", description="Thứ tự ưu tiên"),
+             node_types: str | None = Query(None, description="Chỉ xét các loại nút đang hiển thị"),
+             open_incidents_only: bool = True, db: Session = Depends(get_db)):
+    """Tìm đối tượng tại điểm nhấp (dùng cho bản đồ vector tiles – tile không mang đủ thuộc tính)."""
+    pt = func.ST_SetSRID(func.ST_MakePoint(lon, lat), 4326)
+    for layer in layers.split(","):
+        if layer == "zone":
+            z = db.scalars(select(Zone).where(func.ST_Intersects(Zone.geom, pt)).limit(1)).first()
+            if z:
+                return {"layer": "zone", "feature": to_feature(z)}
+            continue
+        model = {"incident": Incident, "node": Node, "customer": Customer, "pipe": Pipe}.get(layer)
+        if model is None:
+            continue
+        d = func.ST_Distance(func.Geography(model.geom), func.Geography(pt))
+        q = (select(model).where(model.geom.isnot(None), near_bbox(model.geom, lon, lat, tol_m))
+             .where(func.ST_DWithin(func.Geography(model.geom), func.Geography(pt), tol_m)).order_by(d).limit(1))
+        if model is Node and node_types:
+            q = q.where(Node.node_type.in_(node_types.split(",")))
+        if model is Incident and open_incidents_only:
+            q = q.where(Incident.status.notin_(["resolved", "closed"]))
+        obj = db.scalars(q).first()
+        if obj:
+            return {"layer": layer, "feature": to_feature(obj)}
+    return None
+
+
+# ============================================================ Mô phỏng thủy lực (EPANET)
+def _epanet(db: Session, zone_id, include_planned, source_pressure_m, srid, demand_months):
+    try:
+        return build_inp(db, zone_id=zone_id, include_planned=include_planned,
+                         source_pressure_m=source_pressure_m, srid=srid, demand_months=demand_months)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+EPANET_PARAMS = dict(
+    zone_id=Query(None, description="Chỉ xuất một DMA (nút biên thành RESERVOIR)"),
+    include_planned=Query(False, description="Gồm cả ống quy hoạch"),
+    source_pressure_m=Query(40.0, ge=0, le=300, description="Áp lực đầu nguồn / biên (m cột nước)"),
+    srid=Query(None, description="Hệ tọa độ phẳng cho [COORDINATES]; mặc định UTM tự chọn"),
+    demand_months=Query(3, ge=1, le=24, description="Số kỳ ghi chỉ số để tính nhu cầu trung bình"),
+)
+
+
+@router.get("/network/epanet/summary")
+def epanet_summary(zone_id: int | None = EPANET_PARAMS["zone_id"],
+                   include_planned: bool = EPANET_PARAMS["include_planned"],
+                   source_pressure_m: float = EPANET_PARAMS["source_pressure_m"],
+                   srid: int | None = EPANET_PARAMS["srid"],
+                   demand_months: int = EPANET_PARAMS["demand_months"], db: Session = Depends(get_db)):
+    """Xem trước kết quả chuyển đổi sang EPANET: số phần tử, tổng nhu cầu, cảnh báo dữ liệu."""
+    return _epanet(db, zone_id, include_planned, source_pressure_m, srid, demand_months)[1]
+
+
+@router.get("/network/epanet.inp")
+def epanet_inp(zone_id: int | None = EPANET_PARAMS["zone_id"],
+               include_planned: bool = EPANET_PARAMS["include_planned"],
+               source_pressure_m: float = EPANET_PARAMS["source_pressure_m"],
+               srid: int | None = EPANET_PARAMS["srid"],
+               demand_months: int = EPANET_PARAMS["demand_months"], db: Session = Depends(get_db)):
+    """Tải tệp EPANET 2.2 (.inp) để mô phỏng thủy lực trong EPANET, WaterGEMS, WNTR…"""
+    inp, stats = _epanet(db, zone_id, include_planned, source_pressure_m, srid, demand_months)
+    zcode = db.scalar(select(Zone.code).where(Zone.id == zone_id)) if zone_id else "toan-mang"
+    fname = f"aquanet_{zcode}_{date.today():%Y%m%d}.inp"
+    return Response(inp, media_type="text/plain; charset=utf-8",
+                    headers={"Content-Disposition": f'attachment; filename="{fname}"',
+                             "X-Epanet-Warnings": str(len(stats["warnings"]))})
 
 
 @router.get("/network/validate")

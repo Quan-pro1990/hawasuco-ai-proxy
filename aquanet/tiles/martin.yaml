@@ -1,0 +1,17 @@
+# Martin (https://maplibre.org/martin/) – tile server hiệu năng cao cho mạng lưới lớn.
+# Chỉ xuất bản hàm postgisftw.aquanet_network (không tự xuất bản bảng – tránh lộ dữ liệu khách hàng).
+# Chạy: docker compose --profile tiles up -d martin
+#   -> http://may-chu:3000/aquanet_network/{z}/{x}/{y}
+#   -> danh mục: http://may-chu:3000/catalog
+listen_addresses: '0.0.0.0:3000'
+cache_size_mb: 256
+postgres:
+  # nên dùng tài khoản chỉ có quyền EXECUTE trên hàm tile (xem README, mục Vector tiles)
+  connection_string: '${TILES_DATABASE_URL}'
+  auto_publish: false
+  functions:
+    aquanet_network:
+      schema: postgisftw
+      function: aquanet_network
+      minzoom: 0
+      maxzoom: 22
