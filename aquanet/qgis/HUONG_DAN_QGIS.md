@@ -19,6 +19,9 @@
 | `incidents` | Point | Sự cố |
 | `v_pipes` | LineString | View chỉ đọc, có sẵn `age_years`, `incident_count`, `customer_count` để làm bản đồ chuyên đề |
 | `v_valves`, `v_open_incidents` | Point | Lọc sẵn van và sự cố đang mở |
+| `v_sensors` | Point | Điểm đo SCADA kèm giá trị mới nhất, số cảnh báo đang mở |
+| `v_maintenance_due` | Point | Lệnh bảo trì đang mở, cột `overdue` để tô màu quá hạn |
+| `maintenance_tasks`, `materials` | – | Bảng lệnh bảo trì, kho vật tư (không có hình học) |
 
 Hệ tọa độ lưu trong CSDL là **EPSG:4326 (WGS84)**. Muốn đo vẽ theo mét trong QGIS thì đặt hệ tọa độ
 của project là **VN-2000 / múi chiếu địa phương**, ví dụ EPSG:9210 (VN-2000 / TM-3 105-45) hoặc
@@ -79,3 +82,15 @@ GRANT SELECT ON ALL TABLES IN SCHEMA public TO qgis_viewer;
   - `"node_type"='valve' AND "status"='closed'`: vòng tròn rỗng viền đỏ
   - `"node_type"='valve'`: chấm xanh lá
   - `"node_type"='hydrant'`: chấm đỏ
+
+## 6. Mở lớp vector tiles trong QGIS (mạng lưới lớn)
+
+Với mạng lưới hàng trăm nghìn đối tượng, mở lớp vector tiles nhẹ hơn nhiều so với lớp PostGIS đầy đủ:
+
+1. Chạy Martin (`docker compose --profile tiles up -d`).
+2. Trong QGIS: **Layer › Add Layer › Add Vector Tile Layer › New › New Generic Connection**.
+3. URL: `http://may-chu:3000/aquanet_network/{z}/{x}/{y}`, Min zoom 0, Max zoom 22.
+4. Lớp có các lớp con `zones`, `pipes`, `nodes`, `customers`, `incidents`; tô màu theo thuộc tính
+   (`material`, `diameter_mm`, `node_type`, `status`…) như lớp thường.
+
+Lớp vector tiles chỉ để xem; muốn biên tập vẫn mở bảng `pipes`, `nodes` qua kết nối PostGIS (mục 1).
