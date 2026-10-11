@@ -37,7 +37,35 @@ export const SEVERITY = {
   high: { label: 'Cao', color: '#ea580c' }, critical: { label: 'Khẩn cấp', color: '#dc2626' },
 }
 export const CUSTOMER_TYPES = { household: 'Hộ gia đình', business: 'Kinh doanh', agency: 'Cơ quan', industrial: 'Sản xuất' }
-export const ROLES = { admin: 'Quản trị', engineer: 'Kỹ thuật', viewer: 'Chỉ xem' }
+export const ROLES = { admin: 'Quản trị', engineer: 'Kỹ thuật', field: 'Tổ hiện trường', viewer: 'Chỉ xem' }
+
+export const SENSOR_TYPES = {
+  pressure: 'Áp lực', flow: 'Lưu lượng', level: 'Mực nước', totalizer: 'Chỉ số tổng',
+  quality: 'Chất lượng nước', smart_meter: 'Đồng hồ thông minh',
+}
+export const SENSOR_STATUS = {
+  normal: { label: 'Bình thường', color: '#16a34a' }, alarm: { label: 'Cảnh báo', color: '#dc2626' },
+  offline: { label: 'Mất kết nối', color: '#94a3b8' }, inactive: { label: 'Ngưng', color: '#cbd5e1' },
+}
+export const ALARM_KIND = { high: 'Vượt ngưỡng trên', low: 'Dưới ngưỡng' }
+
+export const MAINT_TASK_TYPES = {
+  exercise: 'Vận hành van', inspect: 'Kiểm tra', flush: 'Xả rửa', lubricate: 'Bôi trơn', repair: 'Sửa chữa', replace: 'Thay thế',
+}
+export const MAINT_STATUS = {
+  planned: { label: 'Kế hoạch', color: '#64748b' }, assigned: { label: 'Đã giao', color: '#0a6ebd' },
+  in_progress: { label: 'Đang làm', color: '#ca8a04' }, done: { label: 'Hoàn thành', color: '#16a34a' },
+  skipped: { label: 'Bỏ qua', color: '#94a3b8' }, cancelled: { label: 'Hủy', color: '#94a3b8' },
+}
+export const MAINT_RESULTS = {
+  ok: { label: 'Hoạt động tốt', color: '#16a34a' }, needs_repair: { label: 'Cần sửa chữa', color: '#ea580c' },
+  inoperable: { label: 'Không vận hành được', color: '#dc2626' },
+}
+export const MATERIAL_CATEGORIES = {
+  pipe: 'Ống', fitting: 'Phụ kiện', valve: 'Van', hydrant: 'Trụ cứu hỏa', meter: 'Đồng hồ', clamp: 'Đai sửa ống', other: 'Khác',
+}
+export const STOCK_KIND = { in: 'Nhập', out: 'Xuất', adjust: 'Kiểm kê' }
+export const READING_SOURCE = { office: 'Văn phòng', field: 'Hiện trường', smart: 'Đồng hồ thông minh' }
 
 export const AGE_COLORS = [
   [10, '#16a34a', '< 10 năm'], [20, '#84cc16', '10–20 năm'], [30, '#f59e0b', '20–30 năm'], [999, '#dc2626', '≥ 30 năm'],
@@ -66,8 +94,19 @@ export function pipeColor(p, mode) {
   return '#2563eb'
 }
 
+export const thisPeriod = () => new Date().toISOString().slice(0, 7)
+
 export const fmt = {
   num: (v, d = 0) => (v == null ? '—' : Number(v).toLocaleString('vi-VN', { maximumFractionDigits: d })),
   date: (v) => (v ? new Date(v).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' }) : '—'),
   money: (v) => (v == null ? '—' : Number(v).toLocaleString('vi-VN') + ' đ'),
+  day: (v) => (v ? new Date(v).toLocaleDateString('vi-VN') : '—'),
+  ago: (v) => {
+    if (!v) return '—'
+    const s = (Date.now() - new Date(v).getTime()) / 1000
+    if (s < 90) return 'vừa xong'
+    if (s < 3600) return `${Math.round(s / 60)} phút trước`
+    if (s < 86400) return `${Math.round(s / 3600)} giờ trước`
+    return `${Math.round(s / 86400)} ngày trước`
+  },
 }

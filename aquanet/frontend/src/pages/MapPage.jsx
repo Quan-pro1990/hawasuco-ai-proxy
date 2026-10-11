@@ -3,10 +3,11 @@ import { GeoJSON, LayersControl, MapContainer, ScaleControl, TileLayer, useMap, 
 import { useSearchParams } from 'react-router-dom'
 import L from 'leaflet'
 import '@geoman-io/leaflet-geoman-free'
-import { api, auth } from '../api'
-import { AGE_COLORS, INCIDENT_STATUS, MATERIALS, NODE_TYPES, SEVERITY, pipeColor, pipeWeight } from '../labels'
+import { api, auth, subscribeRealtime } from '../api'
+import { AGE_COLORS, INCIDENT_STATUS, MATERIALS, NODE_TYPES, SENSOR_STATUS, SENSOR_TYPES, SEVERITY, pipeColor, pipeWeight } from '../labels'
 import FeaturePanel from '../components/FeaturePanel'
 import IsolationPanel from '../components/IsolationPanel'
+import { VectorTileLayer } from '../components/VectorTileLayer'
 
 const renderer = L.canvas({ tolerance: 6 })
 const EMPTY = { type: 'FeatureCollection', features: [] }
@@ -16,6 +17,38 @@ function geomCenter(g) {
   if (g.type === 'Point') return [g.coordinates[1], g.coordinates[0]]
   const b = L.geoJSON(g).getBounds()
   return b.isValid() ? b : null
+}
+
+const fmtVal = (p) => (p.last_value == null ? '—' : `${Number(p.last_value).toLocaleString('vi-VN', { maximumFractionDigits: 2 })} ${p.unit}`)
+
+/** Lấy đầy đủ một đối tượng theo id (chế độ vector tiles không giữ toàn bộ dữ liệu ở trình duyệt). */
+async function fetchFeature(layer, id) {
+  if (layer === 'customer') {
+    const c = await api.get(`/api/customers/${id}`)
+    const { geometry, meters, ...props } = c
+    return { type: 'Feature', id, geometry, properties: props }
+  }
+  const url = { pipe: '/api/pipes/', node: '/api/nodes/', incident: '/api/incidents/', sensor: '/api/scada/sensors/' }[layer]
+  return url ? api.get(url + id) : null
+}
+
+/* -------- lớp vector tiles: thêm/bỏ khỏi bản đồ, vẽ lại khi đổi kiểu, tải lại khi dữ liệu đổi -------- */
+function TileNetwork({ url, draw, version }) {
+  const map = useMap()
+  const layer = useRef(null)
+  useEffect(() => {
+    const sameOrigin = url.startsWith('/')
+    if (!map.getPane('aquanetTiles')) map.createPane('aquanetTiles').style.zIndex = 350 // dưới lớp vector (400): đối tượng chọn, sự cố
+    layer.current = new VectorTileLayer({
+      url, draw, pane: 'aquanetTiles',
+      headers: () => (sameOrigin && auth.token ? { Authorization: `Bearer ${auth.token}` } : {}),
+    }).addTo(map)
+    return () => { map.removeLayer(layer.current); layer.current = null }
+  }, [map, url]) // eslint-disable-line
+  useEffect(() => { layer.current?.setDraw(draw) }, [draw])
+  const first = useRef(true)
+  useEffect(() => { if (first.current) { first.current = false; return } layer.current?.refresh() }, [version])
+  return null
 }
 
 /* -------- điều khiển bản đồ (sự kiện, vẽ, sửa) -------- */
@@ -48,9 +81,14 @@ function MapController({ mode, setMode, onMapClick, onDrawn, mapRef, setCoord })
 
 export default function MapPage() {
   const [params, setParams] = useSearchParams()
-  const [data, setData] = useState({ zones: EMPTY, pipes: EMPTY, nodes: EMPTY, customers: EMPTY, incidents: EMPTY })
+  const [data, setData] = useState({ zones: EMPTY, pipes: EMPTY, nodes: EMPTY, customers: EMPTY, incidents: EMPTY, sensors: EMPTY })
   const [ver, setVer] = useState(0)
-  const [show, setShow] = useState({ zones: true, pipes: true, junction: false, valve: true, hydrant: true, pump: true, tank: true, source: true, bulk_meter: true, customers: false, incidents: true, closedIncidents: false })
+  const [tileVer, setTileVer] = useState(0)
+  const [tileInfo, setTileInfo] = useState(null)
+  const [renderMode, setRenderMode] = useState(() => localStorage.getItem('aquanet_render') || 'auto')
+  const [live, setLive] = useState(null)
+  const [sensorTick, setSensorTick] = useState(0)
+  const [show, setShow] = useState({ zones: true, pipes: true, junction: false, valve: true, hydrant: true, pump: true, tank: true, source: true, bulk_meter: true, customers: false, incidents: true, closedIncidents: false, sensors: true })
   const [styleMode, setStyleMode] = useState('material')
   const [sel, setSel] = useState(null)
   const [iso, setIso] = useState(null)
@@ -65,38 +103,68 @@ export default function MapPage() {
   modeRef.current = mode
   const canEdit = auth.canEdit()
 
-  const load = useCallback(async (which = ['zones', 'pipes', 'nodes', 'customers', 'incidents']) => {
-    const urls = { zones: '/api/zones', pipes: '/api/pipes', nodes: '/api/nodes', customers: '/api/customers/geojson', incidents: '/api/incidents' }
-    const res = await Promise.all(which.map((k) => api.get(urls[k])))
+  // chế độ hiển thị: GeoJSON (sửa trực tiếp, mạng nhỏ) hoặc vector tiles (mạng hàng trăm nghìn đối tượng)
+  useEffect(() => { api.get('/api/tiles/info').then(setTileInfo).catch(() => setTileInfo({ recommended: 'geojson' })) }, [])
+  const useTiles = renderMode === 'tiles' || (renderMode === 'auto' && tileInfo?.recommended === 'tiles')
+  const tilesRef = useRef(useTiles)
+  tilesRef.current = useTiles
+
+  const load = useCallback(async (which) => {
+    const urls = { zones: '/api/zones', pipes: '/api/pipes', nodes: '/api/nodes', customers: '/api/customers/geojson', incidents: '/api/incidents', sensors: '/api/scada/sensors?include_smart=false' }
+    // chế độ tiles: ống, nút, khách hàng, vùng đến từ vector tiles – chỉ tải sự cố và điểm đo
+    which = (which || Object.keys(urls)).filter((k) => !tilesRef.current || ['incidents', 'sensors'].includes(k))
+    const res = await Promise.all(which.map((k) => api.get(urls[k]).catch(() => EMPTY)))
     setData((d) => { const n = { ...d }; which.forEach((k, i) => { n[k] = res[i] }); return n })
     setVer((v) => v + 1)
   }, [])
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    if (!tileInfo) return
+    if (useTiles) setData((d) => ({ ...d, zones: EMPTY, pipes: EMPTY, nodes: EMPTY, customers: EMPTY }))
+    load()
+  }, [tileInfo, useTiles, load])
   const fitted = useRef(false)
   useEffect(() => { // lần đầu: phóng tới toàn mạng lưới
-    if (fitted.current || !mapRef.current || !data.pipes.features.length || params.toString()) return
-    const b = L.geoJSON(data.pipes).getBounds()
-    if (b.isValid()) { mapRef.current.fitBounds(b, { padding: [40, 40] }); fitted.current = true }
-  }, [data.pipes]) // eslint-disable-line
+    if (fitted.current || !mapRef.current || params.toString()) return
+    let b
+    if (useTiles && tileInfo?.bounds) { const [x1, y1, x2, y2] = tileInfo.bounds; b = L.latLngBounds([y1, x1], [y2, x2]) }
+    else if (data.pipes.features.length) b = L.geoJSON(data.pipes).getBounds()
+    if (b?.isValid()) { mapRef.current.fitBounds(b, { padding: [40, 40] }); fitted.current = true }
+  }, [data.pipes, useTiles, tileInfo]) // eslint-disable-line
+
+  // số liệu SCADA trực tiếp trên bản đồ
+  useEffect(() => {
+    if (!show.sensors) return undefined
+    return subscribeRealtime((ev) => {
+      if (ev.type !== 'values') return
+      const byId = Object.fromEntries(ev.items.map((it) => [it.id, it]))
+      setData((d) => ({
+        ...d,
+        sensors: { ...d.sensors, features: d.sensors.features.map((f) => (byId[f.id] ? { ...f, properties: { ...f.properties, last_value: byId[f.id].value, last_ts: byId[f.id].ts, status: f.properties.status === 'offline' ? 'normal' : f.properties.status } } : f)) },
+      }))
+      setSensorTick((t) => t + 1)
+    }, setLive)
+  }, [show.sensors])
   useEffect(() => {
     const h = (e) => { if (e.key === 'Escape') setMode('select') }
     window.addEventListener('keydown', h)
     return () => window.removeEventListener('keydown', h)
   }, [])
 
-  // focus từ URL: ?pipe=1 | ?node=1 | ?incident=1 | ?customer=1
+  // focus từ URL: ?pipe=1 | ?node=1 | ?incident=1 | ?customer=1 | ?sensor=1
   useEffect(() => {
-    const entry = ['pipe', 'node', 'incident', 'customer'].find((k) => params.get(k))
-    if (!entry || !mapRef.current) return
+    const entry = ['pipe', 'node', 'incident', 'customer', 'sensor'].find((k) => params.get(k))
+    if (!entry || !mapRef.current || !tileInfo) return
     const id = Number(params.get(entry))
-    const fc = data[entry + 's']
-    const f = fc.features.find((x) => x.id === id)
-    if (!f) return
-    select(entry, f)
-    flyTo(f.geometry)
-    if (entry === 'incident') setShow((s) => ({ ...s, incidents: true, closedIncidents: true }))
+    const local = data[entry + 's'].features.find((x) => x.id === id)
+    if (!local && !useTiles && ver < 1) return // chờ tải xong lớp GeoJSON
     setParams({}, { replace: true })
-  }, [params, data]) // eslint-disable-line
+    ;(local ? Promise.resolve(local) : fetchFeature(entry, id)).then((f) => {
+      if (!f) return
+      select(entry, f)
+      flyTo(f.geometry)
+      if (entry === 'incident') setShow((s) => ({ ...s, incidents: true, closedIncidents: true }))
+    }).catch(() => {})
+  }, [params, data, tileInfo]) // eslint-disable-line
 
   // dung sai bắt điểm ~12 pixel màn hình, quy ra mét theo mức zoom hiện tại
   function snapM() {
@@ -128,6 +196,20 @@ export default function MapPage() {
     if (layer === 'node') l.bindTooltip(`${NODE_TYPES[f.properties.node_type]?.label} ${f.properties.code}${f.properties.node_type === 'valve' ? (f.properties.status === 'closed' ? ' (ĐÓNG)' : ' (mở)') : ''}`)
     if (layer === 'customer') l.bindTooltip(`${f.properties.code} – ${f.properties.name}`)
     if (layer === 'incident') l.bindTooltip(`${f.properties.code}: ${f.properties.title}`)
+    if (layer === 'sensor') l.bindTooltip(`${f.properties.name}: <b>${fmtVal(f.properties)}</b> · ${SENSOR_STATUS[f.properties.status]?.label}`)
+  }
+
+  // chế độ tiles: nhấp bản đồ -> hỏi máy chủ đối tượng tại điểm đó (dung sai ~8 px)
+  async function identifyAt(latlng) {
+    const nodeTypes = Object.keys(NODE_TYPES).filter((k) => show[k]).join(',')
+    const layers = ['incident', nodeTypes && 'node', show.customers && 'customer', show.pipes && 'pipe', show.zones && 'zone'].filter(Boolean).join(',')
+    const qs = new URLSearchParams({ lon: latlng.lng, lat: latlng.lat, tol_m: Math.max(0.5, snapM() * 0.7), layers, open_incidents_only: !show.closedIncidents })
+    if (nodeTypes) qs.set('node_types', nodeTypes)
+    try {
+      const r = await api.get('/api/network/identify?' + qs)
+      if (r) select(r.layer, r.feature)
+      else setSel(null)
+    } catch { /* bỏ qua */ }
   }
 
   function onMapClick(latlng) {
@@ -138,6 +220,8 @@ export default function MapPage() {
     } else if (mode === 'report') {
       setSel({ layer: 'incident', isNew: true, geometry, props: { incident_type: 'leak', severity: 'medium', title: 'Rò rỉ nước' } })
       setMode('select')
+    } else if (mode === 'select' && useTiles && !editing) {
+      identifyAt(latlng)
     }
   }
 
@@ -151,8 +235,9 @@ export default function MapPage() {
   }
 
   function onSaved(layer, r) {
-    const reload = { pipe: ['pipes', 'nodes'], node: ['nodes', 'pipes'], incident: ['incidents'] }[layer]
-    load(reload)
+    const reload = { pipe: ['pipes', 'nodes'], node: ['nodes', 'pipes'], incident: ['incidents'], sensor: ['sensors'] }[layer]
+    if (useTiles && ['pipe', 'node', 'incident'].includes(layer)) setTileVer((v) => v + 1)
+    if (reload) load(reload)
     if (r) setSel({ layer, id: r.id, props: r.properties, geometry: r.geometry })
   }
 
@@ -194,9 +279,25 @@ export default function MapPage() {
   }
 
   const nodesFiltered = useMemo(() => ({ ...data.nodes, features: data.nodes.features.filter((f) => show[f.properties.node_type]) }), [data.nodes, show])
+  const tileDraw = useMemo(() => ({
+    order: ['zones', 'pipes', 'customers', 'nodes'],
+    style(layer, p, z) {
+      if (layer === 'zones') return show.zones && { color: '#0ea5e9', weight: 2, dash: [6, 4], fill: 'rgba(14,165,233,0.04)' }
+      if (layer === 'pipes') return show.pipes && { color: pipeColor(p, styleMode), weight: pipeWeight(p.diameter_mm) * (z < 13 ? 0.45 : z < 15 ? 0.7 : 1), dash: p.status === 'planned' ? [6, 6] : null }
+      if (layer === 'customers') return show.customers && { radius: 3, color: '#475569', weight: 1, fill: '#fde68a' }
+      if (layer === 'nodes') {
+        if (!show[p.node_type]) return null
+        const t = NODE_TYPES[p.node_type] || NODE_TYPES.junction
+        const closed = p.node_type === 'valve' && p.status === 'closed'
+        return { radius: t.r * (z < 16 ? 0.75 : 1), color: closed ? '#dc2626' : '#fff', weight: closed ? 3 : 1.5, fill: closed ? '#fff' : t.color }
+      }
+      return null
+    },
+  }), [show, styleMode])
   const incFiltered = useMemo(() => ({ ...data.incidents, features: data.incidents.features.filter((f) => show.closedIncidents || !['resolved', 'closed'].includes(f.properties.status)) }), [data.incidents, show])
   const showKey = JSON.stringify(show) + styleMode + ver
 
+  const nFeatures = tileInfo ? (tileInfo.pipes || 0) + (tileInfo.nodes || 0) : null
   const hint = { 'draw-pipe': 'Nhấp để thêm đỉnh ống, nhấp đúp để kết thúc. Đầu ống tự bắt dính vào nút/van gần nhất.', 'add-node': `Nhấp lên bản đồ để đặt ${NODE_TYPES[newNodeType].label.toLowerCase()} (đặt trên ống sẽ tự tách ống).`, report: 'Nhấp vào vị trí xảy ra sự cố.' }[mode]
 
   return (
@@ -217,6 +318,7 @@ export default function MapPage() {
         <MapController mode={mode} setMode={setMode} onMapClick={onMapClick} mapRef={mapRef} setCoord={setCoord}
           onDrawn={(geometry) => setSel({ layer: 'pipe', isNew: true, snapM: snapM(), geometry, props: { material: 'HDPE', diameter_mm: 110, pipe_class: 'distribution', status: 'active', install_year: new Date().getFullYear() } })} />
 
+        {useTiles && tileInfo && <TileNetwork url={tileInfo.url_template} draw={tileDraw} version={tileVer} />}
         {show.zones && <GeoJSON key={'z' + showKey} data={data.zones} onEachFeature={featureClick('zone')}
           style={() => ({ color: '#0ea5e9', weight: 2, dashArray: '6,4', fillOpacity: 0.04 })} />}
         {show.pipes && <GeoJSON key={'p' + showKey} data={data.pipes} onEachFeature={featureClick('pipe')}
@@ -229,6 +331,8 @@ export default function MapPage() {
             const closed = f.properties.node_type === 'valve' && f.properties.status === 'closed'
             return L.circleMarker(ll, { radius: t.r, color: closed ? '#dc2626' : '#fff', weight: closed ? 3 : 1.5, fillColor: closed ? '#fff' : t.color, fillOpacity: 1 })
           }} />
+        {show.sensors && <GeoJSON key={'s' + showKey + sensorTick} data={data.sensors} onEachFeature={featureClick('sensor')}
+          pointToLayer={(f, ll) => L.marker(ll, { icon: L.divIcon({ className: '', iconSize: [16, 16], html: `<div class="sensor-pin" style="background:${SENSOR_STATUS[f.properties.status]?.color}"><span>${{ pressure: 'P', flow: 'Q', level: 'H', totalizer: 'Σ', quality: 'C' }[f.properties.sensor_type] || 'S'}</span></div>` }) })} />}
         {show.incidents && <GeoJSON key={'i' + showKey} data={incFiltered} onEachFeature={featureClick('incident')}
           pointToLayer={(f, ll) => {
             const c = SEVERITY[f.properties.severity]?.color || '#dc2626'
@@ -265,8 +369,9 @@ export default function MapPage() {
               {results.map((r) => (
                 <li key={r.layer + r.id} onClick={() => {
                   setResults([]); setQ(r.label); flyTo(r.geometry)
-                  const fc = data[r.layer + 's']; const f = fc.features.find((x) => x.id === r.id)
+                  const f = data[r.layer + 's'].features.find((x) => x.id === r.id)
                   if (f) select(r.layer, f)
+                  else fetchFeature(r.layer, r.id).then((x) => x && select(r.layer, x)).catch(() => {})
                 }}>{r.label}<small>{{ node: 'thiết bị', pipe: 'đường ống', customer: 'khách hàng' }[r.layer]}</small></li>
               ))}
             </ul>
@@ -290,7 +395,7 @@ export default function MapPage() {
       {/* bảng lớp + chú giải */}
       <div className="layer-panel floating">
         <h4 style={{ marginTop: 0 }}>Lớp dữ liệu</h4>
-        {[['zones', 'Vùng DMA'], ['pipes', 'Đường ống'], ['customers', 'Khách hàng'], ['incidents', 'Sự cố đang xử lý'], ['closedIncidents', 'Sự cố đã xử lý']].map(([k, l]) => (
+        {[['zones', 'Vùng DMA'], ['pipes', 'Đường ống'], ['customers', 'Khách hàng'], ['incidents', 'Sự cố đang xử lý'], ['closedIncidents', 'Sự cố đã xử lý'], ['sensors', 'Điểm đo SCADA']].map(([k, l]) => (
           <label key={k}><input type="checkbox" checked={show[k]} onChange={(e) => setShow({ ...show, [k]: e.target.checked })} />{l}</label>
         ))}
         <h4>Thiết bị</h4>
@@ -308,7 +413,14 @@ export default function MapPage() {
           {styleMode === 'diameter' && [['≥ 300', '#1e3a8a'], ['200–299', '#1d4ed8'], ['150–199', '#3b82f6'], ['100–149', '#60a5fa'], ['< 100', '#93c5fd']].map(([l, c]) => <span key={l}><i style={{ background: c }} />D {l} mm</span>)}
           <span><b style={{ background: '#fff', border: '3px solid #dc2626' }} />Van đang đóng</span>
           <span><b style={{ background: INCIDENT_STATUS.new.color }} />Sự cố</span>
+          {show.sensors && Object.entries(SENSOR_STATUS).slice(0, 3).map(([k, v]) => <span key={k}><b style={{ background: v.color, borderRadius: 3 }} />Điểm đo: {v.label.toLowerCase()}</span>)}
+          {show.sensors && live && <span className="small muted">Số liệu SCADA: {live === 'live' ? '● trực tiếp' : 'đang kết nối lại…'}</span>}
         </div>
+        <h4>Hiển thị mạng lưới</h4>
+        <select value={renderMode} onChange={(e) => { setRenderMode(e.target.value); try { localStorage.setItem('aquanet_render', e.target.value) } catch { /* */ } }}>
+          <option value="auto">Tự động</option><option value="geojson">GeoJSON (sửa trực tiếp)</option><option value="tiles">Vector tiles (mạng lớn)</option>
+        </select>
+        {nFeatures != null && <div className="small muted" style={{ marginTop: 4 }}>{nFeatures.toLocaleString('vi-VN')} ống + nút · đang dùng {useTiles ? 'vector tiles' : 'GeoJSON'}</div>}
       </div>
 
       {hint && <div className="hint">{hint} <button className="btn sm" style={{ marginLeft: 8 }} onClick={() => setMode('select')}>Hủy (Esc)</button></div>}

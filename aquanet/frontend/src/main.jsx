@@ -13,3 +13,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     </BrowserRouter>
   </React.StrictMode>,
 )
+
+// Service worker: cho phép mở ứng dụng hiện trường khi mất sóng (chỉ bản build, cần HTTPS hoặc localhost)
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}))
+}

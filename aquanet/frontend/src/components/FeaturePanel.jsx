@@ -1,8 +1,42 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api, auth } from '../api'
-import { CUSTOMER_TYPES, INCIDENT_STATUS, INCIDENT_TYPES, MATERIALS, NODE_TYPES, PIPE_CLASS, PIPE_STATUS, SEVERITY, fmt } from '../labels'
+import { CUSTOMER_TYPES, INCIDENT_STATUS, INCIDENT_TYPES, MAINT_RESULTS, MAINT_STATUS, MAINT_TASK_TYPES, MATERIALS, NODE_TYPES, PIPE_CLASS, PIPE_STATUS, SENSOR_STATUS, SENSOR_TYPES, SEVERITY, fmt } from '../labels'
 import { Form } from './Form'
+
+const OPEN = ['planned', 'assigned', 'in_progress']
+
+/** Tình trạng bảo trì của thiết bị: lần gần nhất, lệnh đang mở, tạo lệnh mới. */
+function NodeMaintenance({ node }) {
+  const [tasks, setTasks] = useState(null)
+  const [msg, setMsg] = useState(null)
+  const load = () => api.get(`/api/maintenance/tasks?node_id=${node.id}&limit=20`).then(setTasks).catch(() => setTasks([]))
+  useEffect(() => { setTasks(null); load() }, [node.id]) // eslint-disable-line
+  if (!tasks) return null
+  const open = tasks.find((t) => OPEN.includes(t.status))
+  const last = tasks.find((t) => t.status === 'done')
+  async function create() {
+    const task_type = { valve: 'exercise', hydrant: 'flush' }[node.node_type] || 'inspect'
+    try {
+      await api.post('/api/maintenance/tasks', { node_id: node.id, task_type, due_date: new Date().toISOString().slice(0, 10) })
+      setMsg(null)
+      load()
+    } catch (e) { setMsg(e.message) }
+  }
+  return (
+    <div className="card" style={{ padding: '8px 12px', margin: '6px 0 10px' }}>
+      <div className="row" style={{ justifyContent: 'space-between' }}><b>Bảo trì</b><Link className="small" to={`/maintenance?node=${node.id}`}>Lịch sử →</Link></div>
+      <dl className="kv" style={{ margin: '6px 0' }}>
+        <dt>Lần gần nhất</dt>
+        <dd>{last ? <>{fmt.day(last.completed_at)} · {MAINT_TASK_TYPES[last.task_type]} · <span style={{ color: MAINT_RESULTS[last.result]?.color }}>{MAINT_RESULTS[last.result]?.label}</span></> : <span className="muted">chưa có</span>}</dd>
+        <dt>Lệnh đang mở</dt>
+        <dd>{open ? <>{open.code} · hạn <b style={{ color: open.overdue ? '#dc2626' : null }}>{fmt.day(open.due_date)}</b> · {MAINT_STATUS[open.status]?.label}</> : <span className="muted">không</span>}</dd>
+      </dl>
+      {auth.canEdit() && !open && <button className="btn sm" onClick={create}>+ Tạo lệnh bảo trì</button>}
+      {msg && <div className="alert error">{msg}</div>}
+    </div>
+  )
+}
 
 const PIPE_FIELDS = [
   { name: 'code', label: 'Mã ống' },
@@ -94,7 +128,7 @@ export default function FeaturePanel({ sel, onClose, onSaved, onIsolate, onRepor
 
   const title = sel.isNew
     ? { pipe: 'Thêm đường ống', node: `Thêm ${NODE_TYPES[v.node_type]?.label?.toLowerCase() || 'nút'}`, incident: 'Báo sự cố mới' }[sel.layer]
-    : `${{ pipe: 'Đường ống', node: NODE_TYPES[v.node_type]?.label, customer: 'Khách hàng', incident: 'Sự cố', zone: 'Vùng DMA' }[sel.layer] || ''} ${v.code || ''}`
+    : `${{ pipe: 'Đường ống', node: NODE_TYPES[v.node_type]?.label, customer: 'Khách hàng', incident: 'Sự cố', zone: 'Vùng DMA', sensor: 'Điểm đo' }[sel.layer] || ''} ${v.code || ''}`
 
   return (
     <div className="side-panel floating">
@@ -112,8 +146,21 @@ export default function FeaturePanel({ sel, onClose, onSaved, onIsolate, onRepor
             <Form fields={PIPE_FIELDS} values={v} onChange={change} disabled={!canEdit} />
           </>
         )}
+        {sel.layer === 'sensor' && (
+          <dl className="kv">
+            <dt>Tên</dt><dd>{v.name}</dd>
+            <dt>Loại</dt><dd>{SENSOR_TYPES[v.sensor_type]}</dd>
+            <dt>Giá trị</dt><dd><b style={{ fontSize: 18 }}>{v.last_value == null ? '—' : fmt.num(v.last_value, 2)}</b> {v.unit}</dd>
+            <dt>Cập nhật</dt><dd>{fmt.ago(v.last_ts)}</dd>
+            <dt>Trạng thái</dt><dd><span className="badge" style={{ background: SENSOR_STATUS[v.status]?.color }}>{SENSOR_STATUS[v.status]?.label}</span></dd>
+            <dt>Ngưỡng</dt><dd>{v.min_alarm ?? '—'} … {v.max_alarm ?? '—'} {v.unit}</dd>
+            <dt>Tag SCADA</dt><dd><code>{v.external_id || '—'}</code></dd>
+            <dt></dt><dd><Link to={`/scada?sensor=${sel.id}`}>Xem biểu đồ, cảnh báo →</Link></dd>
+          </dl>
+        )}
         {sel.layer === 'node' && (
           <>
+            {!sel.isNew && sel.id && v.node_type && v.node_type !== 'junction' && <NodeMaintenance node={{ id: sel.id, node_type: v.node_type }} />}
             <Form fields={nodeFields(v.node_type)} values={v} onChange={change} disabled={!canEdit} />
             {extra?.connected_pipes && (
               <p className="small muted">Ống nối: {extra.connected_pipes.map((p) => `${p.code} (D${p.diameter_mm})`).join(', ') || 'không có'}</p>

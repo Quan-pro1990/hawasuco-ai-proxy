@@ -1,10 +1,12 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '../api'
 
 export default function Login() {
   const nav = useNavigate()
-  const [f, setF] = useState({ username: 'admin', password: '' })
+  const [params] = useSearchParams()
+  const next = params.get('next')
+  const [f, setF] = useState({ username: next === '/field' ? '' : 'admin', password: '' })
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -13,8 +15,9 @@ export default function Login() {
     setBusy(true)
     setErr('')
     try {
-      await api.login(f.username, f.password)
-      nav('/map')
+      const user = await api.login(f.username, f.password)
+      // tổ hiện trường vào thẳng ứng dụng di động; chỉ cho phép quay về đường dẫn nội bộ
+      nav(next?.startsWith('/') && !next.startsWith('//') ? next : user.role === 'field' ? '/field' : '/map')
     } catch (ex) {
       setErr(ex.message)
     } finally {
@@ -32,7 +35,7 @@ export default function Login() {
         <label>Mật khẩu<input type="password" value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} /></label>
         {err && <div className="alert error">{err}</div>}
         <button className="btn primary block" disabled={busy}>{busy ? 'Đang đăng nhập…' : 'Đăng nhập'}</button>
-        <p className="muted small">Tài khoản mẫu: admin / admin123 · kythuat / kythuat123 · xem / xem123</p>
+        <p className="muted small">Tài khoản mẫu: admin / admin123 · kythuat / kythuat123 · hientruong / hientruong123 · xem / xem123</p>
       </form>
     </div>
   )

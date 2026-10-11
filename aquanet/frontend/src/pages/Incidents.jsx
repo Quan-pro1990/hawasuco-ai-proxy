@@ -2,6 +2,42 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { api, auth } from '../api'
 import { INCIDENT_STATUS, INCIDENT_TYPES, SEVERITY, fmt } from '../labels'
+import MaterialRows, { materialPayload } from '../components/MaterialRows'
+import Photos from '../components/Photos'
+
+/** Vật tư đã xuất cho phiếu sự cố + xuất thêm. */
+function IncidentMaterials({ id }) {
+  const [usage, setUsage] = useState(null)
+  const [materials, setMaterials] = useState([])
+  const [rows, setRows] = useState([])
+  const [err, setErr] = useState(null)
+  const load = () => api.get(`/api/materials/usage?ref_type=incident&ref_id=${id}`).then(setUsage)
+  useEffect(() => { setRows([]); setErr(null); load(); if (auth.canField()) api.get('/api/materials').then(setMaterials) }, [id]) // eslint-disable-line
+  async function issue() {
+    try {
+      setUsage(await api.post('/api/materials/issue', { ref_type: 'incident', ref_id: id, items: materialPayload(rows) }))
+      setRows([]); setErr(null)
+    } catch (e) { setErr(e.message) }
+  }
+  if (!usage) return null
+  return (
+    <>
+      {usage.items.length > 0 ? (
+        <table className="tbl">
+          <tbody>{usage.items.map((m) => <tr key={m.id}><td>{m.code} – {m.name}</td><td className="num">{fmt.num(m.qty, 2)} {m.unit}</td><td className="num">{fmt.money(m.amount)}</td></tr>)}</tbody>
+          <tfoot><tr><td colSpan={2}><b>Chi phí vật tư</b></td><td className="num"><b>{fmt.money(usage.total_cost)}</b></td></tr></tfoot>
+        </table>
+      ) : <p className="muted small">Chưa xuất vật tư cho phiếu này.</p>}
+      {auth.canField() && (
+        <div style={{ marginTop: 6 }}>
+          <MaterialRows materials={materials} rows={rows} setRows={setRows} />
+          {rows.length > 0 && <button className="btn sm primary" style={{ marginTop: 6 }} onClick={issue}>Xuất kho cho sự cố</button>}
+          {err && <div className="alert error">{err}</div>}
+        </div>
+      )}
+    </>
+  )
+}
 
 const FLOW = ['new', 'assigned', 'in_progress', 'resolved', 'closed']
 
@@ -134,6 +170,11 @@ export default function Incidents() {
                   {msg && <div className={`alert ${msg.ok ? 'ok' : 'error'}`}>{msg.text}</div>}
                 </>
               )}
+
+              <h3 style={{ marginTop: 16 }}>Ảnh hiện trường</h3>
+              <Photos ownerType="incident" ownerId={selId} canUpload />
+              <h3 style={{ marginTop: 16 }}>Vật tư sử dụng</h3>
+              <IncidentMaterials id={selId} />
 
               <h3 style={{ marginTop: 16 }}>Nhật ký xử lý</h3>
               <ul className="timeline">

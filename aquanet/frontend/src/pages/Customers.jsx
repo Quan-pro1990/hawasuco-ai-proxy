@@ -2,10 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { api, auth } from '../api'
-import { CUSTOMER_TYPES, fmt } from '../labels'
+import { CUSTOMER_TYPES, READING_SOURCE, fmt, thisPeriod } from '../labels'
 import { Form } from '../components/Form'
-
-const thisPeriod = () => new Date().toISOString().slice(0, 7)
 
 const CUST_FIELDS = [
   { name: 'code', label: 'Mã KH (bỏ trống để tự sinh)' },
@@ -154,8 +152,9 @@ function CustomerList() {
                       </BarChart>
                     </ResponsiveContainer>
                     <table className="tbl">
-                      <thead><tr><th>Kỳ</th><th className="num">Chỉ số</th><th className="num">Tiêu thụ (m³)</th></tr></thead>
-                      <tbody>{[...meter.readings].reverse().map((r) => <tr key={r.id}><td>{r.period}</td><td className="num">{fmt.num(r.reading)}</td><td className="num">{fmt.num(r.consumption)}</td></tr>)}</tbody>
+                      <thead><tr><th>Kỳ</th><th className="num">Chỉ số</th><th className="num">Tiêu thụ (m³)</th><th>Nguồn</th></tr></thead>
+                      <tbody>{[...meter.readings].reverse().map((r) => <tr key={r.id}><td>{r.period}</td><td className="num">{fmt.num(r.reading, 2)}</td><td className="num">{fmt.num(r.consumption, 2)}</td>
+                        <td className="small">{READING_SOURCE[r.source] || ''}{r.read_by ? ` – ${r.read_by}` : ''}</td></tr>)}</tbody>
                     </table>
                   </>
                 )}
