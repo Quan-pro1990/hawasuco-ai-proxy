@@ -135,7 +135,7 @@ function TimPython {
     $caNhan = $null
     foreach ($u in $ung) {
         if (-not $u -or -not (Test-Path $u)) { continue }
-        $r = Chay $u @('-c', 'import sys; print("%d.%d" % sys.version_info[:2])')
+        $r = Chay $u @('-c', "import sys; print('%d.%d' % sys.version_info[:2])")
         if ($r.Ma -ne 0) { continue }
         $ver = $r.Ra.Trim()
         if ([version]$ver -lt [version]'3.11' -or [version]$ver -ge [version]'3.14') { continue }
@@ -151,13 +151,15 @@ function TimPython {
 }
 
 function TimNode {
-    $n = Get-Command node.exe -ErrorAction SilentlyContinue
+    $n = Get-Command node.exe -ErrorAction SilentlyContinue | ForEach-Object { $_.Source } | Select-Object -First 1
+    if (-not $n -and (Test-Path "$env:ProgramFiles\nodejs\node.exe")) { $n = "$env:ProgramFiles\nodejs\node.exe" }   # PATH chưa cập nhật
     if (-not $n) { return $null }
-    $v = (Chay $n.Source @('-v')).Ra.Trim().TrimStart('v')
+    $v = (Chay $n @('-v')).Ra.Trim().TrimStart('v')
     if ([version]$v -lt [version]'18.0') { CanhBao "Node.js $v quá cũ (cần 18 trở lên)."; return $null }
-    $npm = Join-Path (Split-Path $n.Source) 'npm.cmd'
+    $npm = Join-Path (Split-Path $n) 'npm.cmd'
     if (-not (Test-Path $npm)) { return $null }
-    [pscustomobject]@{ Node = $n.Source; Npm = $npm; Ver = $v }
+    $env:Path = (Split-Path $n) + ';' + $env:Path   # npm gọi node.exe theo PATH
+    [pscustomobject]@{ Node = $n; Npm = $npm; Ver = $v }
 }
 
 function TimPgBin {
@@ -274,7 +276,7 @@ if ($TaoGoi) {
     exit 0
 }
 
-if (-not (Test-Path $appcmd)) { Dung 'Máy này chưa bật IIS (xem Phần 1, bước 2 trong HUONG_DAN_IIS.md).' }
+if (-not (Test-Path $appcmd)) { Dung 'Máy này chưa bật IIS. Chạy ChuanBi-MayChu.bat (cùng thư mục) để cài phần mềm nền, hoặc xem Phần 1, bước 2 trong HUONG_DAN_IIS.md.' }
 
 # ------------------------------------------------------------------ kiểm tra
 
@@ -319,11 +321,11 @@ if ($GoBo) {
 
 Buoc '1/9 Kiểm tra máy chủ'
 if ((Chay $appcmd @('list', 'config', '-section:system.webServer/globalModules')).Ra -notmatch 'AspNetCoreModuleV2') {
-    Dung 'IIS chưa có ASP.NET Core Module V2. Cài "ASP.NET Core Hosting Bundle" (Phần 1, bước 3) rồi chạy lại.'
+    Dung 'IIS chưa có ASP.NET Core Module V2. Chạy ChuanBi-MayChu.bat, hoặc cài "ASP.NET Core Hosting Bundle" (Phần 1, bước 3), rồi chạy lại.'
 }
 Write-Host 'IIS + ASP.NET Core Module V2: có.'
 $py = TimPython
-if (-not $py) { Dung 'Chưa cài Python 3.11–3.13 (Phần 1, bước 5). Nhớ chọn "Install Python for all users".' }
+if (-not $py) { Dung 'Chưa cài Python 3.11–3.13. Chạy ChuanBi-MayChu.bat, hoặc cài tay (Phần 1, bước 5) – nhớ chọn "Install Python for all users".' }
 Write-Host "Python $($py.Ver): $($py.Exe)"
 $banh = Join-Path $goc 'wheels'
 if (Test-Path (Join-Path $banh 'PYTHON.txt')) {
@@ -335,7 +337,7 @@ $pgBin = TimPgBin
 $laMayNay = $PgHost -in @('localhost', '127.0.0.1', $env:COMPUTERNAME)
 if ($laMayNay) {
     $dv = @(Get-Service -Name 'postgresql*' -ErrorAction SilentlyContinue)
-    if (-not $dv.Count) { Dung 'Chưa cài PostgreSQL trên máy này (Phần 1, bước 4).' }
+    if (-not $dv.Count) { Dung 'Chưa cài PostgreSQL trên máy này. Chạy ChuanBi-MayChu.bat, hoặc cài tay (Phần 1, bước 4).' }
     foreach ($s in $dv) { if ($s.Status -ne 'Running') { Start-Service $s.Name -ErrorAction SilentlyContinue } }
     Write-Host "PostgreSQL: $(($dv | ForEach-Object { $_.Name }) -join ', ')"
 }
@@ -385,7 +387,7 @@ Write-Host 'Đã chép mã nguồn và giao diện.'
 
 Buoc '4/9 Thư viện Python'
 if (Test-Path $venvPy) {
-    $r = Chay $venvPy @('-c', 'import sys; print("%d.%d" % sys.version_info[:2])')
+    $r = Chay $venvPy @('-c', "import sys; print('%d.%d' % sys.version_info[:2])")
     if ($r.Ma -ne 0 -or $r.Ra.Trim() -ne $py.Ver) {
         CanhBao 'Môi trường Python cũ không khớp phiên bản – tạo lại.'
         Remove-Item -Recurse -Force (Join-Path $ThuMuc 'venv')

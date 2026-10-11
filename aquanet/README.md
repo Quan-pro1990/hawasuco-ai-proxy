@@ -10,14 +10,17 @@ tổ kỹ thuật, tổng đài và ban lãnh đạo cùng dùng.
 
 Hướng dẫn từng bước, chỉ rõ từng lựa chọn cần đánh dấu khi cài: **[iis/HUONG_DAN_IIS.md](iis/HUONG_DAN_IIS.md)**. Tóm tắt:
 
-1. **Chuẩn bị máy chủ (làm một lần):** bật IIS · cài *ASP.NET Core Hosting Bundle* · cài PostgreSQL 16 và
-   PostGIS (ghi lại mật khẩu `postgres`) · cài Python 3.12, **chọn "Install for all users"** · cài Node.js LTS.
-   Máy chủ đã chạy phần mềm *Quản lý thất thoát nước* thì đã có sẵn IIS và Hosting Bundle.
-2. **Tải mã nguồn** (GitHub › *Code › Download ZIP*, nhớ *Unblock* tệp zip) và giải nén, ví dụ vào `C:\CaiDat`.
-3. **Nhấp đúp `aquanet\iis\CaiDat-IIS.bat`**, nhập mật khẩu `postgres` và đặt mật khẩu cho `admin`. Bộ cài tự
-   làm hết: dựng giao diện, cài thư viện Python, tạo CSDL riêng, site IIS HTTPS cổng **8443**, tường lửa, sao lưu
-   hằng đêm.
-4. **Mở** `https://<máy chủ>:8443` và đăng nhập `admin`.
+0. **Máy chủ Windows mới cài:** đặt tên máy, IP tĩnh, chạy Windows Update đến hết, bật Remote Desktop
+   (Phần 0 của hướng dẫn).
+1. **Tải mã nguồn** (GitHub › *Code › Download ZIP*, nhớ *Unblock* tệp zip) và giải nén, ví dụ vào `C:\CaiDat`.
+2. **Nhấp đúp `aquanet\iis\ChuanBi-MayChu.bat`** – tự tải và cài phần mềm nền: IIS, *ASP.NET Core Hosting
+   Bundle*, PostgreSQL 16 + PostGIS (hỏi mật khẩu `postgres` – ghi lại), Python 3.12 cho mọi người dùng, Node.js LTS.
+   Phần mềm đã có thì bỏ qua (máy chủ đang chạy *Quản lý thất thoát nước* đã có IIS và Hosting Bundle).
+3. **Nhấp đúp `aquanet\iis\CaiDat-IIS.bat`** (hoặc để `ChuanBi-MayChu.bat` chạy luôn), nhập mật khẩu `postgres`
+   và đặt mật khẩu cho `admin`. Bộ cài tự làm hết: dựng giao diện, cài thư viện Python, tạo CSDL riêng, site IIS
+   HTTPS cổng **8443**, tường lửa, sao lưu hằng đêm.
+4. **Mở** `https://<máy chủ>:8443` và đăng nhập `admin`. Hoàn thiện máy chủ (tên miền, chứng chỉ thật, sao lưu ra
+   ngoài, bảo mật): Phần 4 và Phần 8 của hướng dẫn.
 
 Cập nhật phiên bản mới: tải mã nguồn mới rồi chạy lại `CaiDat-IIS.bat` (không mất dữ liệu). Ứng dụng hiện trường
 trên điện thoại cần chứng chỉ HTTPS thật để chạy offline – xem Phần 4 của hướng dẫn. Cài bằng Docker (Linux): xem
