@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: capnuoc
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"          # mở cho QGIS kết nối trực tiếp (đóng lại nếu không cần)
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d capnuoc"]
+      interval: 5s
+      retries: 20
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:${DB_PASSWORD:-postgres}@db:5432/capnuoc
+      SECRET_KEY: ${SECRET_KEY:-hay-doi-khoa-nay}
+      SEED_DEMO: ${SEED_DEMO:-1}   # 1 = tạo dữ liệu mẫu khi CSDL trống
+    ports:
+      - "8000:8000"
+
+volumes:
+  pgdata:
