@@ -15,6 +15,8 @@ class Settings:
     # Dung sai bắt điểm (m) khi nối đầu ống vào nút có sẵn
     SNAP_TOLERANCE_M: float = float(os.getenv("SNAP_TOLERANCE_M", "2.0"))
     CORS_ORIGINS: list[str] = os.getenv("CORS_ORIGINS", "*").split(",")
+    # máy chủ dùng thử có dữ liệu mẫu: trang đăng nhập hiện gợi ý tài khoản mẫu
+    DEMO: bool = os.getenv("SEED_DEMO", "0") == "1"
     # Múi giờ dùng cho dữ liệu SCADA không kèm múi giờ và tính lưu lượng đêm nhỏ nhất
     TIMEZONE: str = os.getenv("TIMEZONE", "Asia/Ho_Chi_Minh")
 

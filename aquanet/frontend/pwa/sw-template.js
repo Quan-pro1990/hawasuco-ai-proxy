@@ -6,7 +6,7 @@
  */
 const VERSION = '__VERSION__'
 const CACHE = `aquanet-${VERSION}`
-const PRECACHE = ['/', '/index.html', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png',
+const PRECACHE = ['/', '/index.html', '/manifest.webmanifest', '/logo.png', '/favicon.ico', '/icons/icon-192.png', '/icons/icon-512.png',
   ...__PRECACHE__]
 
 self.addEventListener('install', (event) => {

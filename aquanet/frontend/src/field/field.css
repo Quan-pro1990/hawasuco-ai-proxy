@@ -4,6 +4,8 @@
 .field label { font-size: 13px; margin-bottom: 10px; }
 .f-hd { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: calc(env(safe-area-inset-top) + 10px) 14px 10px; background: #0b1f33; color: #fff; }
 .f-hd b { display: block; font-size: 16px; } .f-hd small { color: #7dd3fc; font-size: 12px; }
+.f-logo { width: 36px; height: 36px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px #fff; flex-shrink: 0; }
+.f-title { flex: 1; min-width: 0; }
 .f-net { border: 0; border-radius: 99px; padding: 6px 12px; font: inherit; font-size: 12px; background: #7f1d1d; color: #fff; }
 .f-net.on { background: #14532d; }
 .f-main { flex: 1; overflow: auto; padding: 12px 12px 90px; -webkit-overflow-scrolling: touch; }

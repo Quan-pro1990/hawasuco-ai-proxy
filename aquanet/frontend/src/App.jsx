@@ -40,7 +40,7 @@ function Layout({ children }) {
     <div className="app">
       <aside className="sidebar">
         <div className="brand">
-          <svg width="26" height="26" viewBox="0 0 24 24"><path fill="#38bdf8" d="M12 2C8 7 5 10.5 5 14a7 7 0 0014 0c0-3.5-3-7-7-12z" /></svg>
+          <img className="brand-logo" src="/logo.png" alt="Logo HAWASUCO" width="40" height="40" />
           <div><b>AquaNet GIS</b><small>Mạng lưới cấp nước</small></div>
         </div>
         <nav>

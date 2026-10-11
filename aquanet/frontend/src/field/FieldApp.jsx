@@ -498,7 +498,8 @@ export default function FieldApp() {
   return (
     <div className="field">
       <header className="f-hd">
-        <div><b>AquaNet Hiện trường</b><small>{user.full_name || user.username}</small></div>
+        <img className="f-logo" src="/logo.png" alt="Logo HAWASUCO" width="36" height="36" />
+        <div className="f-title"><b>AquaNet Hiện trường</b><small>{user.full_name || user.username}</small></div>
         <button className={`f-net ${online ? 'on' : ''}`} onClick={() => setTab('sync')}>
           {online ? 'Online' : 'Offline'}{queue.length ? ` · ${queue.length} chờ gửi` : ''}{errors ? ` · ${errors} lỗi` : ''}
         </button>

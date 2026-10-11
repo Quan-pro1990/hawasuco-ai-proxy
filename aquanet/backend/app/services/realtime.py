@@ -8,6 +8,7 @@ import asyncio
 import contextlib
 import json
 import logging
+import sys
 
 import psycopg
 from sqlalchemy import text
@@ -61,6 +62,11 @@ class Hub:
                 q.put_nowait(payload)
 
     async def _listen(self):
+        if sys.platform == "win32" and isinstance(asyncio.get_running_loop(), asyncio.ProactorEventLoop):
+            # psycopg bất đồng bộ không chạy trên ProactorEventLoop (mặc định của uvicorn trên Windows)
+            log.warning("Tắt số liệu thời gian thực: hãy chạy bằng iis/run_iis.py hoặc "
+                        "uvicorn --loop asyncio:SelectorEventLoop")
+            return
         delay = 1.0
         while True:
             try:

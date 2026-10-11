@@ -61,6 +61,7 @@ def meta():
         "maintenance_status": MAINT_STATUS,
         "maintenance_results": MAINT_RESULTS,
         "material_categories": MATERIAL_CATEGORIES,
+        "demo": settings.DEMO,
     }
 
 

@@ -371,6 +371,10 @@ def test_identify():
     assert client.get("/api/network/identify?lon=0&lat=0&tol_m=5", headers=H).json() is None
 
 
+def test_meta_hides_demo_hint_by_default():
+    assert client.get("/api/meta").json()["demo"] is False
+
+
 def test_spa_blocks_path_traversal():
     if not any(getattr(r, "path", "") == "/{path:path}" for r in app.routes):
         pytest.skip("Chưa build giao diện (frontend/dist)")

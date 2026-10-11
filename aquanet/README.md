@@ -1,8 +1,27 @@
+<img src="frontend/public/logo.png" alt="Logo HAWASUCO" width="96" align="right" />
+
 # AquaNet GIS – Phần mềm quản lý mạng lưới cấp nước
 
 Hệ thống web GIS quản lý mạng lưới cấp nước. Dữ liệu nằm trên **PostgreSQL/PostGIS**,
 nên mở và chỉnh sửa trực tiếp được trong **QGIS**. Phần mềm có thêm giao diện web để
 tổ kỹ thuật, tổng đài và ban lãnh đạo cùng dùng.
+
+## Cài đặt trên máy chủ Windows (IIS) – dành cho người mới
+
+Hướng dẫn từng bước, chỉ rõ từng lựa chọn cần đánh dấu khi cài: **[iis/HUONG_DAN_IIS.md](iis/HUONG_DAN_IIS.md)**. Tóm tắt:
+
+1. **Chuẩn bị máy chủ (làm một lần):** bật IIS · cài *ASP.NET Core Hosting Bundle* · cài PostgreSQL 16 và
+   PostGIS (ghi lại mật khẩu `postgres`) · cài Python 3.12, **chọn "Install for all users"** · cài Node.js LTS.
+   Máy chủ đã chạy phần mềm *Quản lý thất thoát nước* thì đã có sẵn IIS và Hosting Bundle.
+2. **Tải mã nguồn** (GitHub › *Code › Download ZIP*, nhớ *Unblock* tệp zip) và giải nén, ví dụ vào `C:\CaiDat`.
+3. **Nhấp đúp `aquanet\iis\CaiDat-IIS.bat`**, nhập mật khẩu `postgres` và đặt mật khẩu cho `admin`. Bộ cài tự
+   làm hết: dựng giao diện, cài thư viện Python, tạo CSDL riêng, site IIS HTTPS cổng **8443**, tường lửa, sao lưu
+   hằng đêm.
+4. **Mở** `https://<máy chủ>:8443` và đăng nhập `admin`.
+
+Cập nhật phiên bản mới: tải mã nguồn mới rồi chạy lại `CaiDat-IIS.bat` (không mất dữ liệu). Ứng dụng hiện trường
+trên điện thoại cần chứng chỉ HTTPS thật để chạy offline – xem Phần 4 của hướng dẫn. Cài bằng Docker (Linux): xem
+mục [Cài đặt bằng Docker](#cài-đặt-bằng-docker-linux).
 
 ## Chức năng
 
@@ -59,7 +78,10 @@ tổ kỹ thuật, tổng đài và ban lãnh đạo cùng dùng.
   - `src/components/VectorTileLayer.js`: lớp vector tiles vẽ bằng canvas cho Leaflet
 - **tiles/martin.yaml**: cấu hình Martin.
 
-## Cài đặt nhanh bằng Docker (khuyến nghị)
+## Cài đặt bằng Docker (Linux)
+
+Dành cho máy chủ Linux hoặc máy có Docker. Máy chủ Windows + IIS: xem mục đầu tiên.
+
 
 ```bash
 cp .env.example .env        # đổi DB_PASSWORD, SECRET_KEY
