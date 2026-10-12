@@ -5,7 +5,9 @@ Khách hàng nhắn tin cho Zalo Official Account (OA) của công ty để:
 - **liên kết** tài khoản Zalo với mã khách hàng (xác minh bằng 4 số cuối số điện thoại đã đăng ký trong EOS);
 - xem **thông tin khách hàng**: tên, địa chỉ, đồng hồ, đối tượng giá, tình trạng;
 - xem **lịch sử sử dụng**: chỉ số cũ / mới, m³ tiêu thụ, tiền nước các kỳ gần nhất, bình quân;
-- xem **danh sách hoá đơn** (đã / chưa thanh toán) và **nhận file PDF hoá đơn** ngay trong khung chat Zalo.
+- xem **danh sách hoá đơn** (đã / chưa thanh toán) và **nhận file PDF hoá đơn** ngay trong khung chat Zalo;
+- **thanh toán** tiền nước bằng mã QR (VietQR) qua **app ngân hàng hoặc ví điện tử**, nhận tin xác nhận khi tiền về
+  (tuỳ chọn, xem [Bước 6](#bước-6--thanh-toán-qua-app-ngân-hàng--ví-điện-tử-tuỳ-chọn)).
 
 Thư mục này là **máy chủ trung gian** đứng giữa Zalo và EOS (Node.js, không cần cài thư viện ngoài).
 
@@ -47,6 +49,7 @@ không phải sửa code (trừ trường hợp hiếm).
 | 2 | `GET /api/khachhang/{maKH}/tieuthu?soKy=6` | Các kỳ gần nhất: kỳ, chỉ số cũ, chỉ số mới, m³ tiêu thụ, tổng tiền. |
 | 3 | `GET /api/khachhang/{maKH}/hoadon?soKy=6` | Các hoá đơn gần nhất: số hoá đơn, kỳ, tổng tiền, đã thanh toán chưa, mã tra cứu HĐĐT, link PDF (nếu có). |
 | 4 | `GET /api/hoadon/{soHD}/pdf` | File PDF hoá đơn (`application/pdf`), hoặc JSON `{"pdf": "<base64>"}`, hoặc JSON `{"url": "<link PDF>"}`. |
+| 5 | (tuỳ chọn) `POST /api/hoadon/{soHD}/thanhtoan` | Ghi nhận thanh toán (gạch nợ) khi ngân hàng báo đã nhận tiền — xem [Bước 6.3](#63-gạch-nợ-trên-eos). Đây là quyền **ghi** duy nhất, cấp riêng. |
 
 Mẫu dữ liệu:
 
@@ -184,9 +187,110 @@ Thấy đúng tên, địa chỉ, chỉ số, tiền → đã nối đúng EOS. 
    | Thông tin khách hàng | `TT` |
    | Lịch sử dùng nước | `LS` |
    | Hoá đơn tiền nước | `HD` |
+   | Thanh toán | `THANH TOAN` |
    | Hướng dẫn | `MENU` |
 
 3. In mã QR của OA và cú pháp `DK <mã KH> <4 số cuối SĐT>` lên hoá đơn / giấy báo tiền nước.
+
+---
+
+## Bước 6 — Thanh toán qua app ngân hàng / ví điện tử (tuỳ chọn)
+
+Khách gửi `THANH TOAN` → OA gửi **ảnh mã QR VietQR** kèm thông tin chuyển khoản. Khách mở **app ngân hàng bất kỳ**
+hoặc **ví điện tử có chức năng quét VietQR** → quét mã (chọn ảnh vừa lưu) → số tài khoản, số tiền, nội dung đã điền sẵn → xác nhận.
+
+- Tiền vào **thẳng tài khoản ngân hàng của công ty**, không qua bên giữ tiền trung gian, **không cần ký hợp đồng cổng thanh toán**.
+- VietQR là chuẩn chung của NAPAS: mọi app ngân hàng trong nước quét được; phần lớn ví điện tử (MoMo, ZaloPay…) có chức năng
+  quét VietQR để chuyển tiền tới tài khoản ngân hàng — nên thử với các ví khách hay dùng trước khi thông báo rộng.
+- Mỗi lần khách yêu cầu, máy chủ tạo **mã thanh toán riêng** (vd `TN8K2F7QXA`) gắn với các hoá đơn còn nợ; nội dung chuyển khoản
+  là `<mã thanh toán> <mã KH>`. Nhờ mã này, khi tiền về máy chủ biết chính xác tiền của hoá đơn nào.
+
+```
+ Khách: THANH TOAN ─► OA gửi ảnh QR (TK công ty, 711.000 đ, nội dung "TN8K2F7QXA KH0002")
+ Khách quét QR bằng app ngân hàng / ví ─► tiền vào tài khoản công ty
+ Ngân hàng / dịch vụ báo số dư ─► POST /thanh-toan/webhook ─► tìm mã TN8K2F7QXA ─► kiểm số tiền
+      ─► gạch nợ trên EOS (nếu có API) ─► OA nhắn "Đã nhận 711.000 đ…" ─► lưu để kế toán đối soát
+```
+
+### 6.1. Khai tài khoản nhận tiền
+
+Trong `.env` (giải thích chi tiết trong `.env.example`):
+
+```ini
+TT_NGAN_HANG_BIN=970405              # mã BIN 6 số của ngân hàng nhận (Agribank 970405, Vietcombank 970436, VietinBank 970415, BIDV 970418…)
+TT_TEN_NGAN_HANG=Agribank
+TT_SO_TAI_KHOAN=7700xxxxxxxxx
+TT_TEN_TAI_KHOAN=CONG TY CP CAP THOAT NUOC ...
+```
+
+Nên dùng **1 tài khoản (hoặc tài khoản ảo) riêng cho tiền nước** để dễ đối soát. Thử trên máy:
+
+```bat
+npm run thu "DK KH0002 5678" "THANH TOAN"
+```
+
+Ảnh QR được lưu trong `du-lieu\thu\` — quét thử bằng app ngân hàng (chưa cần chuyển) để kiểm tra đúng **tên chủ tài khoản**
+và số tiền. Giả lập ngân hàng báo tiền về ngay trong khung chat thử: `!ck 711000 <nội dung chuyển khoản>`.
+
+### 6.2. Xác nhận tự động khi tiền về (nên có)
+
+Cần một nguồn **báo biến động số dư** gọi vào máy chủ mỗi khi tài khoản nhận tiền:
+
+| Cách | Ưu điểm | Lưu ý |
+|---|---|---|
+| **API của chính ngân hàng nhận tiền** (dịch vụ thông báo biến động số dư / Open API cho doanh nghiệp) | Chính thống, dữ liệu không qua bên thứ ba | Làm việc, ký với ngân hàng; định dạng mỗi ngân hàng một khác, có thể cần chỉnh tên trường |
+| **Dịch vụ trung gian** đọc biến động số dư rồi gửi webhook (vd SePay, Casso) | Cài nhanh, hỗ trợ nhiều ngân hàng | Bên thứ ba được xem giao dịch của tài khoản — cân nhắc theo quy định nội bộ; có phí dịch vụ |
+
+Khai trong dịch vụ báo số dư:
+
+- **URL webhook**: `https://zalo.tencongty.vn/thanh-toan/webhook` (POST, JSON);
+- **Xác thực**: kiểu API Key → header `Authorization: Apikey <TT_KHOA_WEBHOOK>` (chấp nhận cả `Bearer <khoá>` hoặc chỉ `<khoá>`;
+  tên header khác thì đặt `TT_HEADER_WEBHOOK`). Điền cùng khoá đó vào `TT_KHOA_WEBHOOK` trong `.env`.
+
+Máy chủ đọc sẵn dữ liệu kiểu SePay (`id`, `transferType`, `transferAmount`, `content`, `accountNumber`) và kiểu Casso
+(`data: [{ tid, amount, description }]`). Dạng khác: thêm tên trường vào danh sách `GD` trong `src/thanhtoan.js`.
+
+Cách xử lý từng khoản tiền về:
+
+| Trường hợp | Máy chủ làm |
+|---|---|
+| Đủ tiền | Gạch nợ trên EOS (nếu có API), nhắn khách "đã thanh toán". |
+| Thừa tiền | Như trên, ghi "thừa" để kế toán trừ kỳ sau / hoàn lại. |
+| Thiếu tiền | **Không** gạch nợ; nhắn khách số còn thiếu; ghi "cần đối soát". |
+| Chuyển lần 2 cho mã đã trả | **Không** gạch nợ lại; ghi "cần đối soát" để hoàn / trừ kỳ sau. |
+| Nội dung không có mã thanh toán | Bỏ qua (giao dịch khác) — kế toán xử lý theo sao kê như hiện nay. |
+| Tiền ra, tài khoản khác | Bỏ qua. |
+| Dịch vụ báo lặp lại cùng 1 giao dịch | Chỉ xử lý 1 lần. |
+
+Chưa nối báo số dư (`TT_KHOA_WEBHOOK` trống): khách vẫn thanh toán được, OA báo "được ghi nhận sau khi kế toán đối soát".
+
+### 6.3. Gạch nợ trên EOS
+
+Đề nghị nhà cung cấp EOS thêm 1 API ghi thanh toán, vd `POST /api/hoadon/{soHD}/thanhtoan` nhận JSON:
+
+```json
+{ "maKH": "KH0002", "soHD": "0001300", "ky": "09/2026", "soTien": 387000,
+  "maGiaoDich": "FT26285123456", "thoiGian": "2026-10-12 09:05:00", "kenh": "VietQR-Zalo" }
+```
+
+EOS phải **bỏ qua nếu `maGiaoDich` đã ghi** (gọi lại không ghi 2 lần). Khai `EOS_DUONG_GHI_THANH_TOAN=POST /api/hoadon/{soHD}/thanhtoan`.
+Chưa có API này: kế toán gạch nợ tay theo file đối soát.
+
+### 6.4. Đối soát
+
+Mở `https://zalo.tencongty.vn/thanh-toan/doi-soat?khoa=<KHOA_QUAN_TRI>&tu=2026-10-01&den=2026-10-31` → tải file Excel:
+thời gian nhận, mã giao dịch ngân hàng, mã thanh toán, mã KH, kỳ, số tiền hoá đơn, số tiền nhận, chênh lệch, trạng thái,
+kết quả gạch nợ EOS, nội dung chuyển khoản. Bỏ `tu` / `den` để lấy tất cả.
+
+### 6.5. Kênh thu hộ đang có
+
+Công ty đã có hợp đồng **thu hộ** với ngân hàng / ví điện tử (khách vào app → Thanh toán hoá đơn → Nước → nhập mã KH) thì khai
+`TT_THU_HO` để OA hướng dẫn thêm cách này (`{maKH}` tự thay bằng mã của khách). Chưa khai tài khoản nhận tiền (6.1) thì lệnh
+`THANH TOAN` chỉ hiện hướng dẫn thu hộ.
+
+> **Cổng thanh toán (MoMo, ZaloPay, VNPAY…)** — khách bấm 1 chạm trong ví, cổng tự báo kết quả: cần ký hợp đồng đơn vị chấp nhận
+> thanh toán với từng cổng, tính phí theo giao dịch. Có thể bổ sung sau vào `src/thanhtoan.js` (tạo đơn → link thanh toán → nhận IPN)
+> khi công ty đã có hợp đồng.
 
 ---
 
@@ -201,6 +305,8 @@ Gõ có dấu hay không dấu, hoa hay thường đều được (vd `đk kh000
 | `LS` (lịch sử) — `LS KH0002` | Lịch sử chỉ số, m³, tiền các kỳ gần nhất + bình quân. Liên kết nhiều mã thì thêm mã sau lệnh. |
 | `HD` (hoá đơn) | Danh sách hoá đơn gần nhất: số tiền, đã / chưa thanh toán. |
 | `HD 09/2026` | Gửi file PDF hoá đơn kỳ 09/2026. |
+| `THANH TOAN` (đóng tiền, QR) | Mã QR + thông tin chuyển khoản cho **tất cả hoá đơn còn nợ** của 1 mã KH. |
+| `THANH TOAN 09/2026` | Mã QR cho riêng hoá đơn kỳ 09/2026. |
 | `HUY` — `HUY KH0001` | Huỷ tất cả liên kết / huỷ 1 mã. |
 | `MENU` hoặc `?` | Hướng dẫn. |
 | Tin khác (vd "nhà tôi bị mất nước") | Nhắc menu tối đa 1 lần / 30 phút; tin vẫn nằm trong hộp thư OA để nhân viên CSKH trả lời như bình thường. |
@@ -211,6 +317,16 @@ Ví dụ:
 Khách:  HD 09/2026
 OA:     Hoá đơn kỳ 09/2026 – mã KH0001: 153.000 đ – chưa thanh toán
 OA:     [file đính kèm] HoaDon_KH0001_09-2026.pdf
+
+Khách:  thanh toán
+OA:     THANH TOÁN TIỀN NƯỚC – mã KH0001
+        Kỳ 09/2026: 153.000 đ
+        Tổng cộng: 153.000 đ
+        Cách 1 – Quét mã QR … Cách 2 – Chuyển khoản: … Nội dung: TN8K2F7QXA KH0001
+OA:     [ảnh] mã QR
+        … (khách quét bằng app ngân hàng, chuyển tiền) …
+OA:     Đã nhận 153.000 đ – mã KH KH0001 (mã giao dịch 9001).
+        Hoá đơn kỳ 09/2026 đã được thanh toán. Cảm ơn quý khách!
 ```
 
 ---
@@ -243,20 +359,24 @@ trong `TRUONG` (vd `ten: ['TenChuHo', 'tenKH', ...]`), chạy lại `npm run thu
 
 | File | Việc |
 |---|---|
-| `src/server.js` | Máy chủ HTTP: nhận webhook, kiểm chữ ký, trang cấp quyền, liên kết tải hoá đơn tạm, trang trạng thái. |
-| `src/zalo.js` | Gọi Zalo OA API: OAuth v4 + PKCE, tự làm mới token, gửi tin tư vấn (`/v3.0/oa/message/cs`), tải file lên (`/v2.0/oa/upload/file`) rồi gửi file. |
+| `src/server.js` | Máy chủ HTTP: nhận webhook Zalo và webhook ngân hàng, kiểm chữ ký / khoá, trang cấp quyền, liên kết tải tạm, đối soát, trạng thái. |
+| `src/zalo.js` | Gọi Zalo OA API: OAuth v4 + PKCE, tự làm mới token, gửi tin tư vấn (`/v3.0/oa/message/cs`), tải file / ảnh lên (`/v2.0/oa/upload/file`, `/v2.0/oa/upload/image`) rồi gửi. |
 | `src/eos.js` | Lớp nối EOS: chế độ `mau` (dữ liệu mẫu) và `api` (REST/JSON). |
 | `src/hoithoai.js` | Kịch bản trò chuyện: hiểu lệnh, xác minh khách, định dạng tin trả lời. |
-| `src/thu.js` | Khung chat giả lập (`npm run thu`). |
+| `src/thanhtoan.js` | Thanh toán: tạo mã thanh toán + QR, nhận báo tiền về, gạch nợ EOS, nhắn xác nhận, file đối soát. |
+| `src/vietqr.js`, `src/qrcode.js` | Chuỗi VietQR (chuẩn EMVCo / NAPAS) và vẽ mã QR ra ảnh PNG — không cần thư viện, không gửi dữ liệu ra ngoài. |
+| `src/xlsx.js` | Ghi file Excel đối soát. |
+| `src/thu.js` | Khung chat giả lập (`npm run thu`), có giả lập ngân hàng báo tiền về (`!ck`). |
 | `test/` | Kiểm tra tự động (`npm test`). |
 
 - **Token Zalo**: access token hạn khoảng 25 giờ, refresh token hạn 3 tháng và **mỗi refresh token chỉ dùng được 1 lần**.
   Máy chủ tự làm mới (kiểm mỗi giờ, và khi Zalo báo token hỏng), ghi ngay token mới vào `C:\ZaloEosData\zalo-token.json`.
   Chỉ phải cấp quyền lại (Bước 4.3) khi: máy chủ ngừng chạy quá 3 tháng, mất file token, hoặc OA gỡ quyền ứng dụng.
-- **Dữ liệu lưu trên máy chủ trung gian**: chỉ `lien-ket.json` (Zalo user id ↔ mã KH) và token. Thông tin khách hàng, chỉ số,
-  hoá đơn **không lưu lại**, lần nào cũng hỏi EOS — EOS sửa gì khách thấy ngay.
+- **Dữ liệu lưu trên máy chủ trung gian**: `lien-ket.json` (Zalo user id ↔ mã KH), token, `ma-thanh-toan.json` (mã thanh toán ↔
+  hoá đơn, giữ 180 ngày), `giao-dich.json` (khoản tiền đã nhận, giữ 400 ngày). Thông tin khách hàng, chỉ số, hoá đơn
+  **không lưu lại**, lần nào cũng hỏi EOS — EOS sửa gì khách thấy ngay.
 - **Gửi file**: PDF ≤ 5 MB tải lên Zalo rồi gửi dạng file. Zalo không nhận (file lớn, lỗi) thì gửi **liên kết tải tạm**
-  `https://zalo.tencongty.vn/hd/<mã ngẫu nhiên>`, dùng được 30 phút.
+  `https://zalo.tencongty.vn/tai/<mã ngẫu nhiên>`, dùng được 30 phút. Ảnh QR (≤ 1 MB) cũng vậy.
 - Zalo chỉ cho OA gửi **tin tư vấn** trong một khoảng thời gian sau khi khách nhắn / tương tác (theo chính sách tin nhắn OA hiện hành).
   Máy chủ chỉ trả lời ngay khi khách nhắn nên luôn nằm trong khoảng đó.
 
@@ -269,7 +389,10 @@ trong `TRUONG` (vd `ten: ['TenChuHo', 'tenKH', ...]`), chạy lại `npm run thu
 - Khi gửi `DK`, khách được báo rõ mục đích dùng dữ liệu (đồng ý theo Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân);
   `HUY` huỷ bất cứ lúc nào; khách **bỏ quan tâm OA** thì liên kết tự xoá.
 - Sự kiện webhook phải đúng chữ ký `X-ZEvent-Signature` (OA Secret Key) mới được xử lý. Trang cấp quyền / trạng thái cần `KHOA_QUAN_TRI`.
-- API EOS chỉ đọc, chỉ nhận IP máy chủ trung gian, không mở ra Internet.
+- API EOS chỉ đọc, chỉ nhận IP máy chủ trung gian, không mở ra Internet (riêng API gạch nợ là quyền ghi, cấp riêng).
+- Thanh toán: báo tiền về chỉ được nhận khi đúng `TT_KHOA_WEBHOOK`; chỉ tính tiền **vào** đúng tài khoản đã khai; chỉ gạch nợ khi
+  **đủ số tiền** và mã thanh toán chưa trả; mã thanh toán ngẫu nhiên, không đoán được. Ảnh QR tạo ngay trên máy chủ,
+  không gửi số tài khoản / số tiền cho dịch vụ tạo QR bên ngoài.
 - `.env` (khoá bí mật) và thư mục dữ liệu (token, liên kết) đã có trong `.gitignore` — **không bao giờ** đưa lên GitHub.
   Lỡ lộ `ZALO_SECRET_KEY` / `ZALO_OA_SECRET_KEY`: đổi khoá trên developers.zalo.me, sửa `.env`, cấp quyền lại.
 
@@ -281,7 +404,8 @@ trong `TRUONG` (vd `ten: ['TenChuHo', 'tenKH', ...]`), chạy lại `npm run thu
   khách chưa nhắn OA. Cần đăng ký mẫu tin ZNS (Zalo duyệt), tính phí theo tin. EOS xuất danh sách hoá đơn kỳ mới → gọi API ZNS.
 - **Liên kết bằng số điện thoại Zalo**: gửi tin "yêu cầu chia sẻ thông tin", khách bấm đồng ý → Zalo gửi số điện thoại về
   (sự kiện `user_submit_info`) → tìm khách hàng theo SĐT (cần thêm API tìm theo SĐT bên EOS).
-- **Thanh toán**: gửi kèm mã QR / liên kết thanh toán nếu EOS hoặc ngân hàng hỗ trợ.
+- **Cổng thanh toán MoMo / ZaloPay / VNPAY** (thanh toán 1 chạm trong ví) khi công ty đã ký hợp đồng — xem cuối Bước 6.
+- **Nhắc nợ**: kết hợp ZNS gửi hoá đơn kèm câu "gửi THANH TOAN cho OA để nhận mã QR".
 
 ---
 
@@ -300,4 +424,8 @@ Nhật ký máy chủ: `C:\inetpub\ZaloEos\logs\stdout_*.log`.
 | `EOS trả lỗi HTTP 401 / 403` | Sai khoá API / tài khoản EOS. |
 | Khách báo "không khớp với hồ sơ" dù gõ đúng | Hồ sơ EOS chưa có / sai số điện thoại → CSKH cập nhật số trong EOS. |
 | Khách nhận liên kết thay vì file | Zalo không nhận file (vd lớn hơn 5 MB); liên kết vẫn tải được trong 30 phút. Cần `URL_CONG_KHAI` đúng. |
+| Quét QR báo không đọc được / sai tên chủ tài khoản | App / ví đó chưa hỗ trợ VietQR → khách dùng Cách 2 (chuyển khoản tay). Sai tên chủ tài khoản → sai `TT_NGAN_HANG_BIN` hoặc `TT_SO_TAI_KHOAN`. |
+| `Từ chối báo thanh toán: sai khoá` | Khoá khai trong dịch vụ báo số dư khác `TT_KHOA_WEBHOOK`, hoặc dịch vụ dùng header khác (`TT_HEADER_WEBHOOK`). |
+| Tiền đã về nhưng khách không nhận xác nhận | Khách sửa / xoá nội dung chuyển khoản (không có mã thanh toán) → kế toán xử lý theo sao kê. Hoặc Zalo không cho gửi tin tư vấn lúc đó → xem nhật ký; giao dịch vẫn nằm trong file đối soát. |
+| `Lỗi ghi EOS: …` | API gạch nợ EOS lỗi — giao dịch vẫn được lưu; kế toán gạch nợ tay theo file đối soát rồi báo nhà cung cấp EOS. |
 | IIS báo 502.5 / 500.30 | Sai đường dẫn `node.exe` trong `web.config`, hoặc app pool không đọc được thư mục site / ghi được `C:\ZaloEosData`. |

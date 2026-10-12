@@ -2,7 +2,7 @@
 // Gọi Zalo Official Account API:
 //  - cấp quyền lần đầu bằng OAuth v4 + PKCE (quản trị viên OA bấm đồng ý 1 lần),
 //  - tự làm mới access token (hạn ~25 giờ) bằng refresh token (hạn 3 tháng, mỗi refresh token chỉ dùng 1 lần),
-//  - gửi tin tư vấn dạng chữ, gửi file PDF (tải file lên Zalo lấy token rồi gửi),
+//  - gửi tin tư vấn dạng chữ, gửi file PDF / ảnh (tải lên Zalo lấy token / attachment_id rồi gửi),
 //  - kiểm chữ ký sự kiện webhook (header X-ZEvent-Signature).
 const crypto = require('crypto');
 const path = require('path');
@@ -13,6 +13,7 @@ const OPENAPI = 'https://openapi.zalo.me';
 const MA_LOI_TOKEN = new Set([-216, -124]);   // access token sai / hết hạn → làm mới rồi gọi lại 1 lần
 const TOI_DA_KY_TU = 2000;                      // giới hạn 1 tin tư vấn dạng chữ
 const TOI_DA_FILE = 5 * 1024 * 1024;            // giới hạn file tải lên Zalo
+const TOI_DA_ANH = 1024 * 1024;                 // giới hạn ảnh tải lên Zalo
 
 class LoiZalo extends Error {
   constructor(thongBao, ma, chiTiet) {
@@ -146,6 +147,27 @@ class Zalo {
     await this.goi('/v3.0/oa/message/cs', {
       method: 'POST',
       json: { recipient: { user_id: userId }, message: { attachment: { type: 'file', payload: { token: tl.token } } } },
+    });
+  }
+
+  /** Tải ảnh PNG lên Zalo rồi gửi cho khách (ảnh mã QR thanh toán). */
+  async guiAnh(userId, duLieu, tenFile) {
+    if (duLieu.length > TOI_DA_ANH) throw new LoiZalo('Ảnh lớn hơn 1 MB, Zalo không nhận');
+    const fd = new FormData();
+    fd.append('file', new Blob([duLieu], { type: 'image/png' }), tenFile);
+    const tl = await this.goi('/v2.0/oa/upload/image', { method: 'POST', formData: fd });
+    if (!tl || !tl.attachment_id) throw new LoiZalo('Zalo không trả attachment_id của ảnh vừa tải lên');
+    await this.goi('/v3.0/oa/message/cs', {
+      method: 'POST',
+      json: {
+        recipient: { user_id: userId },
+        message: {
+          attachment: {
+            type: 'template',
+            payload: { template_type: 'media', elements: [{ media_type: 'image', attachment_id: tl.attachment_id }] },
+          },
+        },
+      },
     });
   }
 

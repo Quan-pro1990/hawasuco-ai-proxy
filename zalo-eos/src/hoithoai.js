@@ -15,6 +15,7 @@ const LENH = [
   ['dk', /^(DANG KY|DANGKY|LIEN KET|DK)(\s|$)/],
   ['tt', /^(THONG TIN|TRA CUU|TRACUU|TT)(\s|$)/],
   ['ls', /^(LICH SU|LICHSU|CHI SO|TIEU THU|LS)(\s|$)/],
+  ['thanhtoan', /^(THANH TOAN|THANHTOAN|NOP TIEN|TRA TIEN|DONG TIEN|CHUYEN KHOAN|QR)(\s|$)/],
   ['hd', /^(HOA DON|HOADON|TIEN NUOC|HD)(\s|$)/],
   ['menu', /^(MENU|HUONG DAN|TRO GIUP|HELP|BAT DAU|START|\?)(\s|$)/],
 ];
@@ -54,11 +55,14 @@ class HoiThoai {
   /**
    * gui.chu(userId, text)  — gửi tin chữ
    * gui.file(userId, tep)  — tep = { duLieu: Buffer, ten } hoặc { url }
+   * gui.anh(userId, tep)   — ảnh PNG (mã QR thanh toán): { duLieu: Buffer, ten }
+   * thanhToan              — ThanhToan (src/thanhtoan.js); không có thì lệnh THANH TOAN chỉ hướng dẫn thu hộ
    */
-  constructor({ cfg, eos, gui, bayGio = Date.now }) {
+  constructor({ cfg, eos, gui, thanhToan = null, bayGio = Date.now }) {
     this.cfg = cfg;
     this.eos = eos;
     this.gui = gui;
+    this.tt = thanhToan;
     this.bayGio = bayGio;
     this.lienKet = new TepJson(path.join(cfg.thuMucDuLieu, 'lien-ket.json'), {});
     this.daXuLy = new Set();    // msg_id đã xử lý: Zalo có thể gửi lại cùng 1 sự kiện
@@ -93,6 +97,7 @@ class HoiThoai {
         case 'tt': return await this.thongTin(uid);
         case 'ls': return await this.lichSu(uid, thamSo);
         case 'hd': return await this.hoaDon(uid, thamSo);
+        case 'thanhtoan': return await this.thanhToan(uid, thamSo);
         case 'huy': return await this.huy(uid, thamSo);
         case 'menu': return await this.gui.chu(uid, this.menu());
         default: return await this.nhacMenu(uid);
@@ -189,8 +194,10 @@ class HoiThoai {
     if (!ky) {
       if (!ds.length) return this.gui.chu(uid, `Chưa có hoá đơn của mã ${chon.ma}.`);
       const dong = ds.map(h => `Kỳ ${h.ky}: ${tienVn(h.tongTien)} – ${trangThaiTien(h.daThanhToan)}`);
+      const goiY = this.moTaThanhToan() && ds.some(h => h.daThanhToan === false)
+        ? `\nGửi THANH TOAN: ${this.moTaThanhToan()}.` : '';
       return this.gui.chu(uid, `HOÁ ĐƠN TIỀN NƯỚC – ${chon.ma}\n\n${dong.join('\n')}\n\n`
-        + `Để nhận file hoá đơn, gửi HD kèm kỳ, ví dụ: HD ${ds[0].ky}` + chon.ghiChu);
+        + `Để nhận file hoá đơn, gửi HD kèm kỳ, ví dụ: HD ${ds[0].ky}` + goiY + chon.ghiChu);
     }
 
     const hd = ds.find(h => h.ky === ky);
@@ -201,8 +208,66 @@ class HoiThoai {
       return this.gui.chu(uid, dau + '\nChưa lấy được file hoá đơn này'
         + (hd.maTraCuu ? `. Mã tra cứu hoá đơn điện tử: ${hd.maTraCuu}` : '') + '.' + this.dongCskh());
     }
-    await this.gui.chu(uid, dau);
+    const goiY = this.moTaThanhToan() && hd.daThanhToan === false ? `\nGửi THANH TOAN ${hd.ky} để thanh toán hoá đơn này.` : '';
+    await this.gui.chu(uid, dau + goiY);
     return this.gui.file(uid, tep);
+  }
+
+  /**
+   * THANH TOAN: mã QR VietQR cho mọi hoá đơn còn nợ của 1 mã KH; THANH TOAN 09/2026: chỉ hoá đơn kỳ đó.
+   * App ngân hàng / ví điện tử quét QR là điền sẵn tài khoản, số tiền, nội dung chuyển khoản.
+   */
+  async thanhToan(uid, thamSo) {
+    const chon = this.chonMa(uid, thamSo);
+    if (!chon.ma) return this.gui.chu(uid, chon.loi);
+    const thuHo = this.dongThuHo(chon.ma);
+    if (!this.tt || !this.tt.bat) {
+      return this.gui.chu(uid, (thuHo || 'Hiện chưa hỗ trợ thanh toán qua Zalo.') + this.dongCskh());
+    }
+
+    const ky = thamSo.map(docKy).find(Boolean);
+    const ds = await this.eos.dsHoaDon(chon.ma, 24);
+    let can;
+    if (ky) {
+      const hd = ds.find(h => h.ky === ky);
+      if (!hd) return this.gui.chu(uid, `Không tìm thấy hoá đơn kỳ ${ky} của mã ${chon.ma}.`);
+      if (hd.daThanhToan === true) return this.gui.chu(uid, `Hoá đơn kỳ ${ky} của mã ${chon.ma} đã được thanh toán. Cảm ơn quý khách!`);
+      can = [hd];
+    } else {
+      can = ds.filter(h => h.daThanhToan === false);
+      if (!can.length) {
+        return this.gui.chu(uid, `Mã ${chon.ma} không còn hoá đơn chưa thanh toán. Cảm ơn quý khách!`
+          + (ds.some(h => h.daThanhToan == null) ? '\nMuốn thanh toán 1 kỳ cụ thể, gửi THANH TOAN kèm kỳ, vd: THANH TOAN ' + ds[0].ky : ''));
+      }
+    }
+    can = can.filter(h => h.tongTien > 0);
+    if (!can.length) return this.gui.chu(uid, 'Chưa có số tiền của hoá đơn này, vui lòng liên hệ CSKH.' + this.dongCskh());
+
+    const yc = this.tt.taoYeuCau({ uid, maKH: chon.ma, hoaDon: can });
+    const c = this.tt.c;
+    const dong = [
+      `THANH TOÁN TIỀN NƯỚC – mã ${chon.ma}`,
+      ...yc.hoaDon.map(h => `Kỳ ${h.ky}: ${tienVn(h.soTien)}`),
+      `Tổng cộng: ${tienVn(yc.tong)}`,
+      '',
+      'Cách 1 – Quét mã QR (ảnh gửi ngay sau tin này): lưu ảnh về máy, mở app ngân hàng hoặc ví điện tử '
+        + '→ Quét mã QR → chọn ảnh vừa lưu. Số tài khoản, số tiền, nội dung được điền sẵn.',
+      '',
+      'Cách 2 – Chuyển khoản:',
+      c.tenNganHang ? `Ngân hàng: ${c.tenNganHang}` : null,
+      `Số tài khoản: ${c.soTaiKhoan}`,
+      c.tenTaiKhoan ? `Chủ tài khoản: ${c.tenTaiKhoan}` : null,
+      `Số tiền: ${tienVn(yc.tong)}`,
+      `Nội dung: ${yc.noiDung}`,
+      '(ghi đúng nội dung để tiền được ghi nhận tự động)',
+      thuHo ? '\n' + thuHo : null,
+      '',
+      this.tt.coWebhook
+        ? 'Khi nhận được tiền, OA sẽ nhắn xác nhận cho bạn.'
+        : 'Khoản thanh toán được ghi nhận sau khi bộ phận kế toán đối soát (trong giờ làm việc).',
+    ].filter(x => x !== null);
+    await this.gui.chu(uid, dong.join('\n') + chon.ghiChu);
+    return this.gui.anh(uid, { duLieu: yc.png, ten: `QR_${yc.ma}.png` });
   }
 
   async huy(uid, thamSo) {
@@ -267,6 +332,7 @@ class HoiThoai {
       '• LS: lịch sử chỉ số, lượng nước các kỳ gần nhất',
       '• HD: danh sách hoá đơn',
       '• HD 09/2026: nhận file hoá đơn kỳ 09/2026',
+      this.moTaThanhToan() ? `• THANH TOAN: ${this.moTaThanhToan()}` : null,
       daLienKet ? '• DK <mã KH> <4 số cuối SĐT>: liên kết thêm mã khác' : null,
       '• HUY: huỷ liên kết',
     ].filter(Boolean);
@@ -284,6 +350,15 @@ class HoiThoai {
   }
 
   dongCskh() { return this.cfg.sdtCskh ? `\nHỗ trợ: ${this.cfg.sdtCskh}` : ''; }
+
+  /** Dòng mô tả lệnh THANH TOAN trong menu / gợi ý; null khi chưa có cách thanh toán nào. */
+  moTaThanhToan() {
+    if (this.tt && this.tt.bat) return 'mã QR thanh toán qua app ngân hàng / ví điện tử';
+    return this.cfg.thanhToan.thuHo ? 'cách thanh toán tiền nước' : null;
+  }
+
+  /** Hướng dẫn nộp tiền qua kênh thu hộ có sẵn (TT_THU_HO trong .env), {maKH} thay bằng mã khách hàng. */
+  dongThuHo(maKH) { return (this.cfg.thanhToan.thuHo || '').replace(/\{maKH\}/g, maKH).trim(); }
 }
 
 function trangThaiTien(v) {

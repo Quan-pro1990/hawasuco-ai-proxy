@@ -112,3 +112,17 @@ test('tin dài được cắt theo dòng, mỗi đoạn ≤ 2000 ký tự', () =
   assert.ok(doan.every(d => d.length <= 2000));
   assert.equal(doan.join('\n'), dong.join('\n'));
 });
+
+test('gửi ảnh: tải lên /v2.0/oa/upload/image rồi gửi tin media kèm attachment_id', async () => {
+  const cfg = cauHinhThu();
+  ghiToken(cfg);
+  const f = zaloGia(m => (m.url.endsWith('/upload/image') ? { error: 0, data: { attachment_id: 'IMG-9' } } : null));
+  const z = new Zalo(cfg, { fetch: f });
+  await z.guiAnh('u1', Buffer.from('png'), 'QR_TNABC.png');
+  assert.equal(f.goi[0].url, 'https://openapi.zalo.me/v2.0/oa/upload/image');
+  assert.equal(f.goi[0].opts.body.get('file').type, 'image/png');
+  assert.deepEqual(f.tinDaGui()[0].message.attachment, {
+    type: 'template', payload: { template_type: 'media', elements: [{ media_type: 'image', attachment_id: 'IMG-9' }] },
+  });
+  await assert.rejects(z.guiAnh('u1', Buffer.alloc(1024 * 1024 + 1), 'to.png'), /lớn hơn 1 MB/);
+});

@@ -3,6 +3,7 @@
 // Biến môi trường có sẵn (vd khai trong web.config của IIS) được ưu tiên hơn file .env.
 const fs = require('fs');
 const path = require('path');
+const { boDau } = require('./tienich');
 
 const GOC = path.join(__dirname, '..');
 
@@ -72,7 +73,20 @@ function taiCauHinh(env = process.env, tepEnv = path.join(GOC, '.env')) {
         lichSu: duong('EOS_DUONG_LICH_SU', '/api/khachhang/{maKH}/tieuthu?soKy={soKy}'),
         hoaDon: duong('EOS_DUONG_HOA_DON', '/api/khachhang/{maKH}/hoadon?soKy={soKy}'),
         taiHoaDon: duong('EOS_DUONG_TAI_HOA_DON', '/api/hoadon/{soHD}/pdf'),
+        ghiThanhToan: duong('EOS_DUONG_GHI_THANH_TOAN', ''),
       },
+    },
+
+    // Thanh toán bằng VietQR vào tài khoản ngân hàng của công ty (app ngân hàng / ví điện tử quét được)
+    thanhToan: {
+      bin: g('TT_NGAN_HANG_BIN'),
+      tenNganHang: g('TT_TEN_NGAN_HANG'),
+      soTaiKhoan: g('TT_SO_TAI_KHOAN').replace(/\s+/g, ''),
+      tenTaiKhoan: g('TT_TEN_TAI_KHOAN'),
+      tienTo: boDau(g('TT_TIEN_TO', 'TN')).replace(/[^A-Z]/g, '').slice(0, 4) || 'TN',
+      thuHo: g('TT_THU_HO').replace(/\\n/g, '\n'),
+      khoaWebhook: g('TT_KHOA_WEBHOOK'),
+      headerWebhook: g('TT_HEADER_WEBHOOK', 'Authorization'),
     },
   };
 }
@@ -86,6 +100,9 @@ function kiemTraThieu(cfg) {
   if (!cfg.zalo.secretKey) thieu.push('ZALO_SECRET_KEY');
   if (cfg.zalo.kiemChuKy && !cfg.zalo.oaSecretKey) thieu.push('ZALO_OA_SECRET_KEY');
   if (cfg.eos.cheDo === 'api' && !cfg.eos.url) thieu.push('EOS_URL');
+  const tt = cfg.thanhToan;
+  if ((tt.bin || tt.soTaiKhoan) && !/^\d{6}$/.test(tt.bin)) thieu.push('TT_NGAN_HANG_BIN (6 chữ số)');
+  if ((tt.bin || tt.soTaiKhoan) && !tt.soTaiKhoan) thieu.push('TT_SO_TAI_KHOAN');
   return thieu;
 }
 

@@ -4,6 +4,7 @@
 //   lichSu(maKH, soKy)        → [{ ky: 'MM/YYYY', chiSoCu, chiSoMoi, tieuThu, tienNuoc }]   (kỳ mới nhất trước)
 //   dsHoaDon(maKH, soKy)      → [{ soHD, ky, tongTien, daThanhToan, ngayPhatHanh, maTraCuu, urlPdf }]
 //   taiHoaDon(maKH, hoaDon)   → { duLieu: Buffer, ten } | { url } | null
+//   ghiThanhToan(thanhToan)   → true khi EOS đã ghi nhận (gạch nợ); false khi chưa khai API ghi thanh toán
 //
 // EOS_CHE_DO=mau : dữ liệu mẫu để chạy thử khi chưa có API EOS.
 // EOS_CHE_DO=api : gọi API REST/JSON của EOS. Đường dẫn và cách xác thực khai trong .env.
@@ -45,11 +46,11 @@ class LoiEos extends Error {}
 
 function khoa(k) { return String(k).toLowerCase().replace(/[^a-z0-9]/g, ''); }
 
-/** Lấy giá trị trường đầu tiên có trong obj theo danh sách tên TRUONG[loai]. */
+/** Lấy giá trị trường đầu tiên có trong obj theo danh sách tên TRUONG[loai] (hoặc mảng tên truyền thẳng). */
 function lay(obj, loai) {
   if (!obj || typeof obj !== 'object') return undefined;
   const theoKhoa = new Map(Object.keys(obj).map(k => [khoa(k), k]));
-  for (const ten of TRUONG[loai]) {
+  for (const ten of Array.isArray(loai) ? loai : TRUONG[loai]) {
     const k = theoKhoa.get(khoa(ten));
     if (k !== undefined && obj[k] !== null && obj[k] !== '') return obj[k];
   }
@@ -208,6 +209,17 @@ class EosApi {
     return null;
   }
 
+  /**
+   * Gạch nợ 1 hoá đơn sau khi ngân hàng báo đã nhận tiền. Gửi sang EOS các tham số
+   * { maKH, soHD, ky, soTien, maGiaoDich, thoiGian, kenh } (POST thì gửi dạng JSON).
+   */
+  async ghiThanhToan(tt) {
+    if (!this.c.duong.ghiThanhToan) return false;
+    const d = await this._goi(this.c.duong.ghiThanhToan, tt);
+    if (d === null) throw new LoiEos(`EOS không tìm thấy hoá đơn ${tt.soHD || tt.ky} để ghi thanh toán`);
+    return true;
+  }
+
   /** Link PDF thật thì tải về để gửi file; link trang tra cứu hoá đơn điện tử thì gửi nguyên link. */
   async _taiTuUrl(url, ten) {
     try {
@@ -309,19 +321,22 @@ function duongGon(url) { return String(url).split('?')[0]; }
 
 const KH_MAU = [
   { maKH: 'KH0001', ten: 'Nguyễn Văn Mẫu', diaChi: 'Số 1 Đường Mẫu, Phường 1', soDienThoai: '0901234567',
-    maDongHo: 'DH-0001', doiTuongGia: 'Sinh hoạt', trangThai: 'Đang sử dụng', binhQuan: 15 },
+    maDongHo: 'DH-0001', doiTuongGia: 'Sinh hoạt', trangThai: 'Đang sử dụng', binhQuan: 15, soKyNo: 1 },
   { maKH: 'KH0002', ten: 'Cửa hàng Thử Nghiệm', diaChi: 'Số 2 Đường Mẫu, Phường 2', soDienThoai: '0912345678',
-    maDongHo: 'DH-0002', doiTuongGia: 'Kinh doanh dịch vụ', trangThai: 'Đang sử dụng', binhQuan: 40 },
+    maDongHo: 'DH-0002', doiTuongGia: 'Kinh doanh dịch vụ', trangThai: 'Đang sử dụng', binhQuan: 40, soKyNo: 2 },
 ];
 const DON_GIA_MAU = 9000;   // đ/m³, đã gồm thuế phí — chỉ để chạy thử
 
 class EosMau {
-  constructor({ bayGio = Date.now } = {}) { this.bayGio = bayGio; }
+  constructor({ bayGio = Date.now } = {}) {
+    this.bayGio = bayGio;
+    this.daTra = new Set();   // "maKH|kỳ" đã ghi thanh toán khi chạy thử
+  }
 
   async timKhachHang(maKH) {
     const kh = KH_MAU.find(k => k.maKH === maKH);
     if (!kh) return null;
-    const { binhQuan, ...thongTin } = kh;
+    const { binhQuan, soKyNo, ...thongTin } = kh;
     return { ...thongTin };
   }
 
@@ -345,15 +360,21 @@ class EosMau {
   async lichSu(maKH, soKyLay) { return this._cacKy(maKH).slice(0, soKyLay); }
 
   async dsHoaDon(maKH, soKyLay) {
+    const soKyNo = (KH_MAU.find(k => k.maKH === maKH) || {}).soKyNo || 0;
     return this._cacKy(maKH).slice(0, soKyLay).map((k, i) => ({
       soHD: 'HD' + k.ky.slice(3) + k.ky.slice(0, 2) + '-' + maKH,
       ky: k.ky,
       tongTien: k.tienNuoc,
-      daThanhToan: i > 0,          // kỳ mới nhất chưa thanh toán
+      daThanhToan: i >= soKyNo || this.daTra.has(maKH + '|' + k.ky),   // các kỳ mới nhất còn nợ
       ngayPhatHanh: '',
       maTraCuu: '',
       urlPdf: '',
     }));
+  }
+
+  async ghiThanhToan(tt) {
+    this.daTra.add(tt.maKH + '|' + tt.ky);
+    return true;
   }
 
   async taiHoaDon(maKH, hd) {

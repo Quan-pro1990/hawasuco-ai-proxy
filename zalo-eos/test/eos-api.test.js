@@ -123,3 +123,18 @@ test('link hoá đơn điện tử không phải PDF → trả link; EOS lỗi 5
   assert.deepEqual(await eos.taiHoaDon('KH0001', { ky: '09/2026', urlPdf: g.url + '/tra-cuu-hddt' }), { url: g.url + '/tra-cuu-hddt' });
   await assert.rejects(eos.timKhachHang('KH0001'), /EOS trả lỗi HTTP 500 \(GET http:\/\/127\.0\.0\.1:\d+\/api\/khachhang\/KH0001\) loi CSDL/);
 });
+
+test('gạch nợ: POST thông tin thanh toán sang EOS; chưa khai đường dẫn thì trả false', async t => {
+  const g = await eosGia((req, than) => {
+    if (req.method === 'POST' && req.url === '/api/hoadon/0001300/thanhtoan') return json({ success: true, data: JSON.parse(than) });
+    return null;
+  });
+  t.after(() => g.sv.close());
+  const tt = { maKH: 'KH0001', soHD: '0001300', ky: '09/2026', soTien: 135000, maGiaoDich: 'FT1', thoiGian: '2026-10-12 09:05:00', kenh: 'VietQR-Zalo' };
+  const cfg = cauHinhThu({ EOS_CHE_DO: 'api', EOS_URL: g.url, EOS_DUONG_GHI_THANH_TOAN: 'POST /api/hoadon/{soHD}/thanhtoan' });
+  assert.equal(await new EosApi(cfg.eos).ghiThanhToan(tt), true);
+  assert.deepEqual(JSON.parse(g.yeuCau[0].than), tt);
+  await assert.rejects(new EosApi(cfg.eos).ghiThanhToan({ ...tt, soHD: 'KHONGCO' }), /không tìm thấy hoá đơn KHONGCO/);
+  const cfg2 = cauHinhThu({ EOS_CHE_DO: 'api', EOS_URL: g.url });
+  assert.equal(await new EosApi(cfg2.eos).ghiThanhToan(tt), false);
+});
