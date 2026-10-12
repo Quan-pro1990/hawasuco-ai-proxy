@@ -32,6 +32,7 @@ function taiCauHinh(env = process.env, tepEnv = path.join(GOC, '.env')) {
   };
   // đường dẫn API EOS: ghi "khong" để bỏ hẳn bước đó (vd EOS không có API tải PDF)
   const duong = (k, md) => (/^(khong|-)$/i.test(g(k)) ? '' : g(k, md));
+  const moiTruong = k => (/^(that|thật|production|prod)$/i.test(g(k)) ? 'that' : 'thu');
   const so = (k, md) => {
     const n = Number(g(k));
     return g(k) !== '' && Number.isFinite(n) ? n : md;
@@ -87,6 +88,30 @@ function taiCauHinh(env = process.env, tepEnv = path.join(GOC, '.env')) {
       thuHo: g('TT_THU_HO').replace(/\\n/g, '\n'),
       khoaWebhook: g('TT_KHOA_WEBHOOK'),
       headerWebhook: g('TT_HEADER_WEBHOOK', 'Authorization'),
+
+      // Cổng thanh toán đã ký hợp đồng; khai đủ khoá cổng nào thì bật cổng đó.
+      // *_MOI_TRUONG: "thu" = môi trường thử (sandbox, mặc định), "that" = thu tiền thật.
+      cong: {
+        momo: {
+          partnerCode: g('MOMO_PARTNER_CODE'),
+          accessKey: g('MOMO_ACCESS_KEY'),
+          secretKey: g('MOMO_SECRET_KEY'),
+          loai: g('MOMO_LOAI', 'captureWallet'),
+          moiTruong: moiTruong('MOMO_MOI_TRUONG'),
+        },
+        zalopay: {
+          appId: g('ZALOPAY_APP_ID'),
+          key1: g('ZALOPAY_KEY1'),
+          key2: g('ZALOPAY_KEY2'),
+          moiTruong: moiTruong('ZALOPAY_MOI_TRUONG'),
+        },
+        vnpay: {
+          tmnCode: g('VNPAY_TMN_CODE'),
+          hashSecret: g('VNPAY_HASH_SECRET'),
+          maNganHang: g('VNPAY_MA_NGAN_HANG'),
+          moiTruong: moiTruong('VNPAY_MOI_TRUONG'),
+        },
+      },
     },
   };
 }
@@ -103,6 +128,11 @@ function kiemTraThieu(cfg) {
   const tt = cfg.thanhToan;
   if ((tt.bin || tt.soTaiKhoan) && !/^\d{6}$/.test(tt.bin)) thieu.push('TT_NGAN_HANG_BIN (6 chữ số)');
   if ((tt.bin || tt.soTaiKhoan) && !tt.soTaiKhoan) thieu.push('TT_SO_TAI_KHOAN');
+  const { momo, zalopay, vnpay } = tt.cong;
+  const doDu = ds => { if (ds.some(([, v]) => v) && ds.some(([, v]) => !v)) thieu.push(...ds.filter(([, v]) => !v).map(([k]) => k)); };
+  doDu([['MOMO_PARTNER_CODE', momo.partnerCode], ['MOMO_ACCESS_KEY', momo.accessKey], ['MOMO_SECRET_KEY', momo.secretKey]]);
+  doDu([['ZALOPAY_APP_ID', zalopay.appId], ['ZALOPAY_KEY1', zalopay.key1], ['ZALOPAY_KEY2', zalopay.key2]]);
+  doDu([['VNPAY_TMN_CODE', vnpay.tmnCode], ['VNPAY_HASH_SECRET', vnpay.hashSecret]]);
   return thieu;
 }
 

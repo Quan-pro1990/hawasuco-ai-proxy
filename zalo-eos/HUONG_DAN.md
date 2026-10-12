@@ -6,8 +6,8 @@ Khách hàng nhắn tin cho Zalo Official Account (OA) của công ty để:
 - xem **thông tin khách hàng**: tên, địa chỉ, đồng hồ, đối tượng giá, tình trạng;
 - xem **lịch sử sử dụng**: chỉ số cũ / mới, m³ tiêu thụ, tiền nước các kỳ gần nhất, bình quân;
 - xem **danh sách hoá đơn** (đã / chưa thanh toán) và **nhận file PDF hoá đơn** ngay trong khung chat Zalo;
-- **thanh toán** tiền nước bằng mã QR (VietQR) qua **app ngân hàng hoặc ví điện tử**, nhận tin xác nhận khi tiền về
-  (tuỳ chọn, xem [Bước 6](#bước-6--thanh-toán-qua-app-ngân-hàng--ví-điện-tử-tuỳ-chọn)).
+- **thanh toán** tiền nước qua **Ví MoMo, ZaloPay, VNPAY** (app ngân hàng, thẻ ATM) hoặc **quét mã QR / chuyển khoản**,
+  nhận tin xác nhận khi tiền về và tự gạch nợ (tuỳ chọn, xem [Bước 6](#bước-6--thanh-toán-qua-ví-điện-tử--app-ngân-hàng-tuỳ-chọn)).
 
 Thư mục này là **máy chủ trung gian** đứng giữa Zalo và EOS (Node.js, không cần cài thư viện ngoài).
 
@@ -49,7 +49,7 @@ không phải sửa code (trừ trường hợp hiếm).
 | 2 | `GET /api/khachhang/{maKH}/tieuthu?soKy=6` | Các kỳ gần nhất: kỳ, chỉ số cũ, chỉ số mới, m³ tiêu thụ, tổng tiền. |
 | 3 | `GET /api/khachhang/{maKH}/hoadon?soKy=6` | Các hoá đơn gần nhất: số hoá đơn, kỳ, tổng tiền, đã thanh toán chưa, mã tra cứu HĐĐT, link PDF (nếu có). |
 | 4 | `GET /api/hoadon/{soHD}/pdf` | File PDF hoá đơn (`application/pdf`), hoặc JSON `{"pdf": "<base64>"}`, hoặc JSON `{"url": "<link PDF>"}`. |
-| 5 | (tuỳ chọn) `POST /api/hoadon/{soHD}/thanhtoan` | Ghi nhận thanh toán (gạch nợ) khi ngân hàng báo đã nhận tiền — xem [Bước 6.3](#63-gạch-nợ-trên-eos). Đây là quyền **ghi** duy nhất, cấp riêng. |
+| 5 | (tuỳ chọn) `POST /api/hoadon/{soHD}/thanhtoan` | Ghi nhận thanh toán (gạch nợ) khi tiền về qua cổng thanh toán hoặc chuyển khoản — xem [Bước 6.4](#64-gạch-nợ-trên-eos). Đây là quyền **ghi** duy nhất, cấp riêng. |
 
 Mẫu dữ liệu:
 
@@ -194,25 +194,66 @@ Thấy đúng tên, địa chỉ, chỉ số, tiền → đã nối đúng EOS. 
 
 ---
 
-## Bước 6 — Thanh toán qua app ngân hàng / ví điện tử (tuỳ chọn)
+## Bước 6 — Thanh toán qua ví điện tử / app ngân hàng (tuỳ chọn)
 
-Khách gửi `THANH TOAN` → OA gửi **ảnh mã QR VietQR** kèm thông tin chuyển khoản. Khách mở **app ngân hàng bất kỳ**
-hoặc **ví điện tử có chức năng quét VietQR** → quét mã (chọn ảnh vừa lưu) → số tài khoản, số tiền, nội dung đã điền sẵn → xác nhận.
+Khách gửi `THANH TOAN` → OA gửi tin gồm:
 
-- Tiền vào **thẳng tài khoản ngân hàng của công ty**, không qua bên giữ tiền trung gian, **không cần ký hợp đồng cổng thanh toán**.
-- VietQR là chuẩn chung của NAPAS: mọi app ngân hàng trong nước quét được; phần lớn ví điện tử (MoMo, ZaloPay…) có chức năng
-  quét VietQR để chuyển tiền tới tài khoản ngân hàng — nên thử với các ví khách hay dùng trước khi thông báo rộng.
-- Mỗi lần khách yêu cầu, máy chủ tạo **mã thanh toán riêng** (vd `TN8K2F7QXA`) gắn với các hoá đơn còn nợ; nội dung chuyển khoản
-  là `<mã thanh toán> <mã KH>`. Nhờ mã này, khi tiền về máy chủ biết chính xác tiền của hoá đơn nào.
+- **liên kết trang thanh toán** của khách: nút **Ví MoMo**, **ZaloPay**, **VNPAY** (app ngân hàng, thẻ ATM, VNPAY-QR) — bấm là sang
+  cổng, app ví / ngân hàng tự mở, trả xong quay về trang; cổng báo kết quả ngay nên OA nhắn xác nhận gần như tức thì;
+- **ảnh mã QR VietQR** + thông tin chuyển khoản vào tài khoản công ty (mọi app ngân hàng, ví có quét VietQR đều dùng được).
+
+Cổng nào / VietQR có khai trong `.env` thì mới hiện. Mỗi lần khách yêu cầu, máy chủ tạo **mã thanh toán riêng** (vd `TN8K2F7QXA`)
+gắn với các hoá đơn còn nợ — dùng làm mã đơn gửi cổng và nội dung chuyển khoản, nên tiền về từ kênh nào cũng biết đúng hoá đơn.
 
 ```
- Khách: THANH TOAN ─► OA gửi ảnh QR (TK công ty, 711.000 đ, nội dung "TN8K2F7QXA KH0002")
- Khách quét QR bằng app ngân hàng / ví ─► tiền vào tài khoản công ty
- Ngân hàng / dịch vụ báo số dư ─► POST /thanh-toan/webhook ─► tìm mã TN8K2F7QXA ─► kiểm số tiền
-      ─► gạch nợ trên EOS (nếu có API) ─► OA nhắn "Đã nhận 711.000 đ…" ─► lưu để kế toán đối soát
+ Khách: THANH TOAN ─► OA gửi liên kết trang thanh toán + ảnh QR (711.000 đ, mã TN8K2F7QXA)
+   ├─ bấm Ví MoMo / ZaloPay / VNPAY ─► máy chủ tạo đơn ở cổng ─► khách trả trong app ─► cổng gọi IPN /cong/<cổng>/ipn (có chữ ký)
+   └─ quét QR / chuyển khoản ─► tiền vào TK công ty ─► dịch vụ báo số dư gọi /thanh-toan/webhook
+ ─► kiểm chữ ký, số tiền ─► gạch nợ trên EOS (nếu có API) ─► OA nhắn "Đã nhận 711.000 đ qua Ví MoMo…" ─► lưu để đối soát
 ```
 
-### 6.1. Khai tài khoản nhận tiền
+![Trang thanh toán trên điện thoại](tai-lieu/trang-thanh-toan.png)
+
+### 6.1. Cổng thanh toán Ví MoMo, ZaloPay, VNPAY
+
+Khai khoá do từng cổng cấp khi ký hợp đồng vào `.env` (chi tiết trong `.env.example`):
+
+| Cổng | Khai trong `.env` | Lấy ở đâu |
+|---|---|---|
+| Ví MoMo | `MOMO_PARTNER_CODE`, `MOMO_ACCESS_KEY`, `MOMO_SECRET_KEY` | Trang MoMo Business → thông tin tích hợp |
+| ZaloPay | `ZALOPAY_APP_ID`, `ZALOPAY_KEY1`, `ZALOPAY_KEY2` | Trang quản lý merchant ZaloPay |
+| VNPAY | `VNPAY_TMN_CODE` (vnp_TmnCode), `VNPAY_HASH_SECRET` (vnp_HashSecret) | Email / trang quản lý merchant VNPAY |
+
+Địa chỉ nhận kết quả (máy chủ tự gửi kèm mỗi đơn cho MoMo, ZaloPay):
+
+| Cổng | Báo kết quả (IPN / callback) | Khách quay về |
+|---|---|---|
+| Ví MoMo | `https://zalo.tencongty.vn/cong/momo/ipn` (POST) | `/cong/momo/ve` |
+| ZaloPay | `https://zalo.tencongty.vn/cong/zalopay/ipn` (POST) | `/cong/zalopay/ve` |
+| VNPAY | `https://zalo.tencongty.vn/cong/vnpay/ipn` (GET) — **gửi VNPAY nhờ khai IPN URL** cho mã website | `/cong/vnpay/ve` |
+
+Các bước:
+
+1. **Thử trước bằng môi trường sandbox**: dùng bộ khoá thử của từng cổng, để `*_MOI_TRUONG=thu` (mặc định). Khởi động máy chủ,
+   nhật ký in "Cổng Ví MoMo: môi trường THỬ…". Nhắn `THANH TOAN` trên Zalo → mở liên kết → bấm từng cổng → trả bằng ví / thẻ thử
+   theo tài liệu sandbox của cổng → kiểm tra: OA nhắn xác nhận, `HD` báo đã thanh toán, file đối soát có dòng kênh tương ứng.
+2. **Chuyển sang thu tiền thật**: thay bằng khoá thật, đặt `MOMO_MOI_TRUONG=that`, `ZALOPAY_MOI_TRUONG=that`, `VNPAY_MOI_TRUONG=that`,
+   recycle app pool. Trang `/trang-thai?khoa=…` hiện môi trường từng cổng (`"cong": {"momo": "thật", …}`).
+3. Thử 1 giao dịch nhỏ thật trên mỗi cổng trước khi thông báo cho khách.
+
+Tuỳ chọn: `MOMO_LOAI=payWithMethod` để trang MoMo cho chọn thêm thẻ (nếu hợp đồng cho phép); `VNPAY_MA_NGAN_HANG=VNPAYQR`
+(vào thẳng màn hình quét QR) hoặc `VNBANK` (thẻ ATM nội địa) — để trống thì khách chọn trên trang VNPAY.
+
+Máy chủ xử lý kết quả cổng:
+
+- **Mọi kết quả phải đúng chữ ký** của cổng (MoMo, ZaloPay: HMAC-SHA256; VNPAY: HMAC-SHA512); sai thì từ chối, không ghi nhận.
+- Cổng gửi lại nhiều lần / khách vừa quay về vừa có IPN: mỗi giao dịch (mã giao dịch của cổng) chỉ ghi nhận 1 lần.
+- VNPAY nhận đúng mã phản hồi VNPAY quy định: `00` thành công, `01` không có đơn, `02` đã xác nhận, `04` sai số tiền, `97` sai chữ ký.
+- ZaloPay chỉ gọi callback khi đã thu tiền; nếu khách quay về trước khi callback tới, máy chủ hỏi trạng thái đơn ở ZaloPay để ghi nhận ngay.
+- Khách đã trả mã thanh toán đó (qua kênh khác) mà vẫn trả tiếp: ghi "cần đối soát" để hoàn tiền, không gạch nợ lần 2.
+- Phí giao dịch theo hợp đồng từng cổng; tiền về tài khoản công ty theo lịch quyết toán của cổng.
+
+### 6.2. VietQR — khai tài khoản nhận tiền
 
 Trong `.env` (giải thích chi tiết trong `.env.example`):
 
@@ -232,9 +273,9 @@ npm run thu "DK KH0002 5678" "THANH TOAN"
 Ảnh QR được lưu trong `du-lieu\thu\` — quét thử bằng app ngân hàng (chưa cần chuyển) để kiểm tra đúng **tên chủ tài khoản**
 và số tiền. Giả lập ngân hàng báo tiền về ngay trong khung chat thử: `!ck 711000 <nội dung chuyển khoản>`.
 
-### 6.2. Xác nhận tự động khi tiền về (nên có)
+### 6.3. Xác nhận chuyển khoản tự động (nên có nếu dùng VietQR)
 
-Cần một nguồn **báo biến động số dư** gọi vào máy chủ mỗi khi tài khoản nhận tiền:
+Tiền qua cổng (6.1) đã được cổng báo về. Riêng chuyển khoản / quét VietQR cần thêm nguồn báo biến động số dư:
 
 | Cách | Ưu điểm | Lưu ý |
 |---|---|---|
@@ -264,33 +305,32 @@ Cách xử lý từng khoản tiền về:
 
 Chưa nối báo số dư (`TT_KHOA_WEBHOOK` trống): khách vẫn thanh toán được, OA báo "được ghi nhận sau khi kế toán đối soát".
 
-### 6.3. Gạch nợ trên EOS
+### 6.4. Gạch nợ trên EOS
 
 Đề nghị nhà cung cấp EOS thêm 1 API ghi thanh toán, vd `POST /api/hoadon/{soHD}/thanhtoan` nhận JSON:
 
 ```json
 { "maKH": "KH0002", "soHD": "0001300", "ky": "09/2026", "soTien": 387000,
-  "maGiaoDich": "FT26285123456", "thoiGian": "2026-10-12 09:05:00", "kenh": "VietQR-Zalo" }
+  "maGiaoDich": "MOMO-4088878653", "thoiGian": "2026-10-12 09:05:00", "kenh": "Ví MoMo" }
 ```
+
+`kenh` là `Ví MoMo`, `ZaloPay`, `VNPAY` hoặc `Chuyển khoản / VietQR`; `maGiaoDich` là mã giao dịch của cổng / ngân hàng.
 
 EOS phải **bỏ qua nếu `maGiaoDich` đã ghi** (gọi lại không ghi 2 lần). Khai `EOS_DUONG_GHI_THANH_TOAN=POST /api/hoadon/{soHD}/thanhtoan`.
 Chưa có API này: kế toán gạch nợ tay theo file đối soát.
 
-### 6.4. Đối soát
+### 6.5. Đối soát
 
 Mở `https://zalo.tencongty.vn/thanh-toan/doi-soat?khoa=<KHOA_QUAN_TRI>&tu=2026-10-01&den=2026-10-31` → tải file Excel:
-thời gian nhận, mã giao dịch ngân hàng, mã thanh toán, mã KH, kỳ, số tiền hoá đơn, số tiền nhận, chênh lệch, trạng thái,
-kết quả gạch nợ EOS, nội dung chuyển khoản. Bỏ `tu` / `den` để lấy tất cả.
+thời gian nhận, **kênh** (Ví MoMo / ZaloPay / VNPAY / chuyển khoản), mã giao dịch (của cổng hoặc ngân hàng), mã thanh toán, mã KH, kỳ,
+số tiền hoá đơn, số tiền nhận, chênh lệch, trạng thái, kết quả gạch nợ EOS, nội dung chuyển khoản / mã đơn. Bỏ `tu` / `den` để lấy
+tất cả. Đối chiếu với báo cáo đối soát mà từng cổng gửi hằng ngày.
 
-### 6.5. Kênh thu hộ đang có
+### 6.6. Kênh thu hộ đang có
 
 Công ty đã có hợp đồng **thu hộ** với ngân hàng / ví điện tử (khách vào app → Thanh toán hoá đơn → Nước → nhập mã KH) thì khai
-`TT_THU_HO` để OA hướng dẫn thêm cách này (`{maKH}` tự thay bằng mã của khách). Chưa khai tài khoản nhận tiền (6.1) thì lệnh
-`THANH TOAN` chỉ hiện hướng dẫn thu hộ.
-
-> **Cổng thanh toán (MoMo, ZaloPay, VNPAY…)** — khách bấm 1 chạm trong ví, cổng tự báo kết quả: cần ký hợp đồng đơn vị chấp nhận
-> thanh toán với từng cổng, tính phí theo giao dịch. Có thể bổ sung sau vào `src/thanhtoan.js` (tạo đơn → link thanh toán → nhận IPN)
-> khi công ty đã có hợp đồng.
+`TT_THU_HO` để OA hướng dẫn thêm cách này (`{maKH}` tự thay bằng mã của khách). Chưa khai cổng (6.1) và tài khoản nhận tiền (6.2)
+thì lệnh `THANH TOAN` chỉ hiện hướng dẫn thu hộ.
 
 ---
 
@@ -305,8 +345,8 @@ Gõ có dấu hay không dấu, hoa hay thường đều được (vd `đk kh000
 | `LS` (lịch sử) — `LS KH0002` | Lịch sử chỉ số, m³, tiền các kỳ gần nhất + bình quân. Liên kết nhiều mã thì thêm mã sau lệnh. |
 | `HD` (hoá đơn) | Danh sách hoá đơn gần nhất: số tiền, đã / chưa thanh toán. |
 | `HD 09/2026` | Gửi file PDF hoá đơn kỳ 09/2026. |
-| `THANH TOAN` (đóng tiền, QR) | Mã QR + thông tin chuyển khoản cho **tất cả hoá đơn còn nợ** của 1 mã KH. |
-| `THANH TOAN 09/2026` | Mã QR cho riêng hoá đơn kỳ 09/2026. |
+| `THANH TOAN` (đóng tiền, QR) | Liên kết trang thanh toán (Ví MoMo, ZaloPay, VNPAY) + mã QR chuyển khoản cho **tất cả hoá đơn còn nợ** của 1 mã KH. |
+| `THANH TOAN 09/2026` | Như trên, cho riêng hoá đơn kỳ 09/2026. |
 | `HUY` — `HUY KH0001` | Huỷ tất cả liên kết / huỷ 1 mã. |
 | `MENU` hoặc `?` | Hướng dẫn. |
 | Tin khác (vd "nhà tôi bị mất nước") | Nhắc menu tối đa 1 lần / 30 phút; tin vẫn nằm trong hộp thư OA để nhân viên CSKH trả lời như bình thường. |
@@ -322,10 +362,12 @@ Khách:  thanh toán
 OA:     THANH TOÁN TIỀN NƯỚC – mã KH0001
         Kỳ 09/2026: 153.000 đ
         Tổng cộng: 153.000 đ
-        Cách 1 – Quét mã QR … Cách 2 – Chuyển khoản: … Nội dung: TN8K2F7QXA KH0001
+        Cách 1 – Thanh toán online qua Ví MoMo, ZaloPay, VNPAY (VNPAY: app ngân hàng, thẻ ATM) – bấm:
+        https://zalo.tencongty.vn/tt/…
+        Cách 2 – Quét mã QR … Cách 3 – Chuyển khoản: … Nội dung: TN8K2F7QXA KH0001
 OA:     [ảnh] mã QR
-        … (khách quét bằng app ngân hàng, chuyển tiền) …
-OA:     Đã nhận 153.000 đ – mã KH KH0001 (mã giao dịch 9001).
+        … (khách bấm liên kết → Ví MoMo → xác nhận trong app MoMo) …
+OA:     Đã nhận 153.000 đ qua Ví MoMo – mã KH KH0001 (mã giao dịch MOMO-4088878653).
         Hoá đơn kỳ 09/2026 đã được thanh toán. Cảm ơn quý khách!
 ```
 
@@ -363,7 +405,9 @@ trong `TRUONG` (vd `ten: ['TenChuHo', 'tenKH', ...]`), chạy lại `npm run thu
 | `src/zalo.js` | Gọi Zalo OA API: OAuth v4 + PKCE, tự làm mới token, gửi tin tư vấn (`/v3.0/oa/message/cs`), tải file / ảnh lên (`/v2.0/oa/upload/file`, `/v2.0/oa/upload/image`) rồi gửi. |
 | `src/eos.js` | Lớp nối EOS: chế độ `mau` (dữ liệu mẫu) và `api` (REST/JSON). |
 | `src/hoithoai.js` | Kịch bản trò chuyện: hiểu lệnh, xác minh khách, định dạng tin trả lời. |
-| `src/thanhtoan.js` | Thanh toán: tạo mã thanh toán + QR, nhận báo tiền về, gạch nợ EOS, nhắn xác nhận, file đối soát. |
+| `src/thanhtoan.js` | Thanh toán: tạo mã thanh toán + QR, nhận báo tiền về (cổng, ngân hàng), gạch nợ EOS, nhắn xác nhận, file đối soát. |
+| `src/congthanhtoan.js` | Ví MoMo (API v2), ZaloPay (API v2), VNPAY (2.1.0): tạo đơn, kiểm chữ ký IPN / callback / trang về. |
+| `src/trangthanhtoan.js` | Trang thanh toán khách mở từ Zalo (`/tt/<khoá>`). |
 | `src/vietqr.js`, `src/qrcode.js` | Chuỗi VietQR (chuẩn EMVCo / NAPAS) và vẽ mã QR ra ảnh PNG — không cần thư viện, không gửi dữ liệu ra ngoài. |
 | `src/xlsx.js` | Ghi file Excel đối soát. |
 | `src/thu.js` | Khung chat giả lập (`npm run thu`), có giả lập ngân hàng báo tiền về (`!ck`). |
@@ -404,7 +448,7 @@ trong `TRUONG` (vd `ten: ['TenChuHo', 'tenKH', ...]`), chạy lại `npm run thu
   khách chưa nhắn OA. Cần đăng ký mẫu tin ZNS (Zalo duyệt), tính phí theo tin. EOS xuất danh sách hoá đơn kỳ mới → gọi API ZNS.
 - **Liên kết bằng số điện thoại Zalo**: gửi tin "yêu cầu chia sẻ thông tin", khách bấm đồng ý → Zalo gửi số điện thoại về
   (sự kiện `user_submit_info`) → tìm khách hàng theo SĐT (cần thêm API tìm theo SĐT bên EOS).
-- **Cổng thanh toán MoMo / ZaloPay / VNPAY** (thanh toán 1 chạm trong ví) khi công ty đã ký hợp đồng — xem cuối Bước 6.
+- **Hoàn tiền tự động** qua API hoàn tiền của MoMo / ZaloPay / VNPAY cho các khoản "trả trùng" (hiện kế toán xử lý theo file đối soát).
 - **Nhắc nợ**: kết hợp ZNS gửi hoá đơn kèm câu "gửi THANH TOAN cho OA để nhận mã QR".
 
 ---
@@ -424,6 +468,8 @@ Nhật ký máy chủ: `C:\inetpub\ZaloEos\logs\stdout_*.log`.
 | `EOS trả lỗi HTTP 401 / 403` | Sai khoá API / tài khoản EOS. |
 | Khách báo "không khớp với hồ sơ" dù gõ đúng | Hồ sơ EOS chưa có / sai số điện thoại → CSKH cập nhật số trong EOS. |
 | Khách nhận liên kết thay vì file | Zalo không nhận file (vd lớn hơn 5 MB); liên kết vẫn tải được trong 30 phút. Cần `URL_CONG_KHAI` đúng. |
+| Bấm nút cổng báo "Chưa mở được cổng thanh toán" | Xem nhật ký dòng `Không tạo được đơn …`: sai khoá, dùng khoá thật mà `*_MOI_TRUONG=thu` (hoặc ngược lại), số tiền dưới mức tối thiểu của cổng. |
+| Đã trả qua cổng mà không nhận xác nhận | Kết quả cổng không tới máy chủ: kiểm tra `URL_CONG_KHAI`, HTTPS, VNPAY đã khai IPN URL chưa. Nhật ký `IPN MoMo: sai_chu_ky` → sai `MOMO_SECRET_KEY`; `IPN VNPAY` trả 97 → sai `VNPAY_HASH_SECRET`; ZaloPay `mac not equal` → sai `ZALOPAY_KEY2`. |
 | Quét QR báo không đọc được / sai tên chủ tài khoản | App / ví đó chưa hỗ trợ VietQR → khách dùng Cách 2 (chuyển khoản tay). Sai tên chủ tài khoản → sai `TT_NGAN_HANG_BIN` hoặc `TT_SO_TAI_KHOAN`. |
 | `Từ chối báo thanh toán: sai khoá` | Khoá khai trong dịch vụ báo số dư khác `TT_KHOA_WEBHOOK`, hoặc dịch vụ dùng header khác (`TT_HEADER_WEBHOOK`). |
 | Tiền đã về nhưng khách không nhận xác nhận | Khách sửa / xoá nội dung chuyển khoản (không có mã thanh toán) → kế toán xử lý theo sao kê. Hoặc Zalo không cho gửi tin tư vấn lúc đó → xem nhật ký; giao dịch vẫn nằm trong file đối soát. |

@@ -221,3 +221,20 @@ function docTepZip(buf, ten) {
   }
   return null;
 }
+
+test('khách trả cùng lúc qua 2 kênh: chỉ 1 khoản gạch nợ, khoản kia ghi trả trùng', async () => {
+  const { gui, ht, tt, eos } = tao();
+  let soLanGhi = 0;
+  const goc = eos.ghiThanhToan.bind(eos);
+  eos.ghiThanhToan = async x => { soLanGhi++; await new Promise(r => setTimeout(r, 20)); return goc(x); };
+  await ht.xuLyTin('u1', 'DK KH0001 4567');
+  await ht.xuLyTin('u1', 'THANH TOAN');
+  const ma = /Nội dung: (TN[A-Z0-9]{8})/.exec(gui.tin.at(-2).text)[1];
+  const tong = tt.maTT.doc()[ma].tong;
+  const [a, b] = await Promise.all([
+    tt.nhanWebhook({ id: 'NH1', transferType: 'in', transferAmount: tong, content: ma }, gui.chu),
+    tt.nhanWebhook({ id: 'NH2', transferType: 'in', transferAmount: tong, content: ma }, gui.chu),
+  ]);
+  assert.deepEqual([a[0].kq, b[0].kq], ['du', 'trung']);
+  assert.equal(soLanGhi, 1);
+});
