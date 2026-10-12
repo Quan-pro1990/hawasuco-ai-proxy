@@ -1,0 +1,16 @@
+{
+  "name": "zalo-eos",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Kết nối Zalo OA với phần mềm quản lý khách hàng nước EOS: tra cứu thông tin khách hàng, lịch sử sử dụng, tải hoá đơn",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "thu": "node src/thu.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18.17"
+  },
+  "license": "UNLICENSED"
+}
