@@ -1,0 +1,62 @@
+CÀI MÁY CHỦ IIS CHO PHẦN MỀM "QUẢN LÝ TÀI SẢN"
+==============================================
+
+  Máy tính (trình duyệt)  ─┐
+  Điện thoại (Chrome)     ─┼─ HTTPS cổng 8080 ─>  IIS trên máy chủ  ─>  QuanLyTaiSan.exe (chế độ máy chủ)  ─>  dữ liệu C:\QuanLyTaiSanData
+  Camera điện thoại quét tem ┘   (tem QR chứa địa chỉ https://<máy chủ>:8080/taisan/t/<mã tài sản>)
+
+Dùng chung máy chủ IIS với phần mềm "Quản lý thất thoát nước": nếu cổng 8080 đã có site Thất thoát nước,
+script tự cài thành ứng dụng con /taisan của site đó (địa chỉ https://<máy chủ>:8080/taisan/), dùng chung chứng chỉ.
+
+Cần có trên máy chủ: IIS + ASP.NET Core Hosting Bundle (bản 6 trở lên) + .NET Framework 4.x (có sẵn trong Windows Server).
+Camera quét QR trong trình duyệt điện thoại CHỈ chạy với https — vì vậy phải cài qua IIS (không dùng http thường).
+
+
+CÀI TỰ ĐỘNG (khuyên dùng)
+-------------------------
+1. Chép cả thư mục GoiCaiDat-IIS (do build.bat tạo) sang máy chủ IIS.
+2. Nhấp đúp CaiDat-IIS.bat -> đồng ý quyền quản trị. Script sẽ:
+   - kiểm tra IIS có ASP.NET Core Module V2;
+   - chép chương trình vào C:\inetpub\QuanLyTaiSan, tạo thư mục dữ liệu C:\QuanLyTaiSanData (chỉ app pool được ghi);
+   - hỏi tên + mật khẩu tài khoản QUẢN TRỊ (lần đầu);
+   - cổng 8080 CHƯA có site: tạo site "QuanLyTaiSan" https cổng 8080 + chứng chỉ tự ký 10 năm;
+     cổng 8080 ĐÃ có site (vd Thất thoát nước): cài thành ứng dụng con /taisan của site đó;
+   - mở tường lửa cổng 8080, gọi thử, in ra địa chỉ + MÃ NHẬN DẠNG chứng chỉ.
+3. Mở địa chỉ in ra bằng trình duyệt, đăng nhập quản trị:
+   - Cài đặt -> "Địa chỉ in trong mã QR" = địa chỉ điện thoại dùng để vào (vd https://tenmien.vn:8080/taisan);
+   - Danh mục -> loại tài sản, đơn vị; Nhập từ Excel -> sổ tài sản; In tem QR;
+   - Tài khoản -> tạo tài khoản cho nhân viên.
+4. Điện thoại: mở địa chỉ bằng Chrome (chứng chỉ tự ký: lần đầu bấm "Nâng cao" -> "Tiếp tục"), menu ⋮ -> "Thêm vào màn hình chính".
+   Nên dùng chứng chỉ thật của tên miền (vd Let's Encrypt qua win-acme) để không bị cảnh báo: CaiDat-IIS.bat -ChungChi <thumbprint>.
+
+Tuỳ chọn khi chạy (mở cmd tại thư mục này):
+   CaiDat-IIS.bat -Cong 9443                     dùng cổng khác 8080
+   CaiDat-IIS.bat -DuLieu D:\QuanLyTaiSanData    đặt thư mục dữ liệu khác
+   CaiDat-IIS.bat -DuongDan /taisan              tên ứng dụng con (khi cổng đã có site khác)
+   CaiDat-IIS.bat -ChungChi <thumbprint>         dùng chứng chỉ có sẵn (vd chứng chỉ thật của tên miền)
+   CaiDat-IIS.bat -TenMien tenmien.vn            tên miền ghi vào chứng chỉ tự tạo
+   CaiDat-IIS.bat -DatMatKhau                    đặt lại mật khẩu tài khoản quản trị
+   CaiDat-IIS.bat -KiemTra                       gọi thử máy chủ, in mã nhận dạng
+   CaiDat-IIS.bat -GoBo                          gỡ site / ứng dụng (giữ nguyên thư mục dữ liệu)
+
+CẬP NHẬT PHIÊN BẢN MỚI: chạy build.bat trên máy có mã nguồn, chép GoiCaiDat-IIS sang máy chủ, chạy lại CaiDat-IIS.bat
+(không mất dữ liệu, không hỏi lại mật khẩu).
+
+
+SAO LƯU
+-------
+Toàn bộ dữ liệu nằm trong thư mục dữ liệu (mặc định C:\QuanLyTaiSanData):
+   taisan.xml          danh mục, tài sản, đợt kiểm kê (mỗi ngày tự giữ 1 bản trong SaoLuu, 90 ngày)
+   LichSu\*.jsonl      lịch sử kiểm tra, bảo dưỡng, điều chuyển, kiểm kê (chỉ ghi thêm)
+   Anh\<mã số>\*.jpg   ảnh tài sản
+   taikhoan.xml        tài khoản, mật khẩu đã băm
+Hãy sao lưu CẢ thư mục này định kỳ ra ổ khác / máy khác (Windows Server Backup, hoặc lệnh
+   robocopy C:\QuanLyTaiSanData \\may-sao-luu\QuanLyTaiSan /MIR /R:1 /W:5   đặt lịch chạy hằng đêm).
+
+
+KHI CÓ LỖI
+----------
+- Không vào được từ ngoài: kiểm tra router / tường lửa đã chuyển cổng 8080 tới máy chủ; trên máy chủ chạy -KiemTra.
+- Lỗi 502.5 / 500.30: xem C:\QuanLyTaiSanData\loi-khoi-dong.txt và thư mục NhatKy.
+- Điện thoại không mở được camera: phải vào bằng https (không phải http); cho phép quyền Camera cho trang.
+  Vẫn có thể dùng ứng dụng Camera của điện thoại quét tem (tem mở thẳng trang tài sản), hoặc nút "Chụp ảnh mã QR".

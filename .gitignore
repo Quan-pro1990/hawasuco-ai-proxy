@@ -10,3 +10,6 @@ node_modules/
 *.log
 .DS_Store
 Thumbs.db
+
+# Du lieu chay thu cua phan mem Quan ly tai san (tai khoan, anh, so lieu that)
+QuanLyTaiSan/DuLieu/
