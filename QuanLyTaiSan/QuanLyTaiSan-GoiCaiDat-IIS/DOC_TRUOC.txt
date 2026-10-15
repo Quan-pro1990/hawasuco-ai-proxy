@@ -1,0 +1,26 @@
+﻿GÓI CÀI ĐẶT MÁY CHỦ — PHẦN MỀM QUẢN LÝ TÀI SẢN (quét tem QR xem thông tin, hình ảnh tài sản)
+Công ty TNHH MTV Cấp nước Hậu Giang · phiên bản 1.0
+
+HƯỚNG DẪN ĐẦY ĐỦ: mở file HUONG_DAN_CAI_DAT.html (nhấp đúp, mở bằng trình duyệt).
+
+CÀI NHANH (máy chủ đã chạy phần mềm Thất thoát nước — đã có IIS + ASP.NET Core Hosting Bundle):
+  1. Chép cả thư mục này vào máy chủ, vd C:\CaiDat\QuanLyTaiSan-GoiCaiDat-IIS
+     (file .zip tải về: bấm chuột phải -> Properties -> Unblock TRƯỚC khi giải nén).
+  2. Nhấp đúp CaiDat-IIS.bat -> Yes -> đặt tên + mật khẩu quản trị (lần đầu).
+  3. Mở https://<máy chủ>:8080/taisan/ , đăng nhập quản trị.
+  4. Cài đặt -> "Địa chỉ in trong mã QR" = địa chỉ điện thoại dùng để vào máy chủ.
+  5. Nhấp đúp SaoLuu-DatLich.bat để đặt lịch sao lưu hằng đêm.
+
+MÁY CHỦ MỚI: cài IIS và ASP.NET Core Hosting Bundle trước (mục 3, 4 trong HUONG_DAN_CAI_DAT.html).
+
+CÁC FILE
+  CaiDat-IIS.bat             cài đặt / cập nhật (chạy lại khi có bản mới, không mất dữ liệu)
+  KiemTra.bat                gọi thử máy chủ
+  DatLaiMatKhauQuanTri.bat   đặt lại mật khẩu quản trị
+  SaoLuu-DatLich.bat         đặt lịch sao lưu thư mục dữ liệu
+  GoCaiDat.bat               gỡ khỏi IIS (giữ dữ liệu)
+  web\QuanLyTaiSan.exe       chương trình (nhấp đúp để chạy thử trên 1 máy: http://localhost:18090)
+  web\web.config             cấu hình IIS
+
+Dữ liệu sau khi cài: C:\QuanLyTaiSanData (tài sản, ảnh, lịch sử) — sao lưu cả thư mục này.
+Lỗi khởi động: xem C:\QuanLyTaiSanData\loi-khoi-dong.txt và mục 14 của hướng dẫn.

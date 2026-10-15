@@ -15,9 +15,9 @@ Thêm: [tổng quan](anh-man-hinh/tong-quan.png) · [in tem QR](anh-man-hinh/in-
 | Tệp | Dùng để |
 |---|---|
 | `QuanLyTaiSan.exe` | chạy thử trên 1 máy tính (nhấp đúp) |
-| `GoiCaiDat-IIS\` | gói cài lên máy chủ IIS (chép sang máy chủ, chạy `CaiDat-IIS.bat`) — xem `HUONG_DAN_IIS.txt` trong gói |
+| `QuanLyTaiSan-GoiCaiDat-IIS\` (và file `.zip` cùng tên) | **gói cài lên máy chủ IIS**: chép sang máy chủ, chạy `CaiDat-IIS.bat` — hướng dẫn chi tiết trong gói: [`HUONG_DAN_CAI_DAT.html`](iis/HUONG_DAN_CAI_DAT.html) |
 | `src\`, `web\`, `iis\` | mã nguồn: máy chủ C#, giao diện web, script cài IIS |
-| `build.bat` | biên dịch lại trên Windows (tạo `QuanLyTaiSan.exe` và `GoiCaiDat-IIS`) |
+| `build.bat` | biên dịch lại trên Windows (tạo `QuanLyTaiSan.exe`, thư mục và file zip gói cài) |
 
 Cần .NET Framework 4.5 trở lên (có sẵn trong Windows 10/11, Windows Server 2016 trở lên).
 
@@ -32,9 +32,10 @@ Chạy thử chỉ dùng trên chính máy đó. Để điện thoại quét đ�
 
 ## Cài lên máy chủ IIS (dùng thật)
 
-Chép thư mục `GoiCaiDat-IIS` sang máy chủ đang chạy phần mềm Thất thoát nước, nhấp đúp `CaiDat-IIS.bat`.
+Chép thư mục `QuanLyTaiSan-GoiCaiDat-IIS` (hoặc file zip, giải nén) sang máy chủ đang chạy phần mềm Thất thoát nước, nhấp đúp `CaiDat-IIS.bat`.
 Cổng 8080 đã có site Thất thoát nước thì phần mềm được cài thành **ứng dụng con** `https://<máy chủ>:8080/taisan/` (dùng chung chứng chỉ).
-Script hỏi tài khoản quản trị, in ra địa chỉ. Chi tiết, tuỳ chọn, xử lý lỗi: `HUONG_DAN_IIS.txt`.
+Script hỏi tài khoản quản trị, in ra địa chỉ. Hướng dẫn từng bước (cài IIS, Hosting Bundle, chứng chỉ, mở cổng, sao lưu, cập nhật, xử lý lỗi):
+`HUONG_DAN_CAI_DAT.html` trong gói.
 
 Sau khi cài, đăng nhập quản trị → **Cài đặt** → *Địa chỉ in trong mã QR* = địa chỉ điện thoại dùng để vào, vd `https://tenmien.vn:8080/taisan`.
 

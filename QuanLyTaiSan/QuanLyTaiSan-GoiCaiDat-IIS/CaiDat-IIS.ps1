@@ -62,6 +62,10 @@ $caiTruoc = @{}
 if (Test-Path $tepCaiDat) {
     Get-Content $tepCaiDat -Encoding UTF8 | ForEach-Object { if ($_ -match '^\s*([A-Za-z]+)\s*=\s*(.*)$') { $caiTruoc[$Matches[1]] = $Matches[2].Trim() } }
 }
+# Chạy lại (cập nhật phiên bản) không kèm tham số: giữ thư mục dữ liệu và cổng của lần cài trước,
+# tránh web.config bị trỏ về thư mục dữ liệu mặc định (trống) khi lần đầu cài với -DuLieu / -Cong khác.
+if (-not $PSBoundParameters.ContainsKey('DuLieu') -and $caiTruoc['DuLieu']) { $DuLieu = $caiTruoc['DuLieu'] }
+if (-not $PSBoundParameters.ContainsKey('Cong') -and $caiTruoc['Cong']) { $Cong = [int]$caiTruoc['Cong'] }
 
 # Gọi https://127.0.0.1:cổng/đường-dẫn/api/ping, lấy cả chứng chỉ máy chủ đưa ra
 function GoiThu([int]$cong, [string]$duong) {
@@ -135,7 +139,7 @@ if ($GoBo) {
     exit 0
 }
 
-if (-not (Test-Path $exeGoi)) { Dung 'Thiếu web\QuanLyTaiSan.exe trong gói. Trên máy có mã nguồn chạy build.bat để tạo gói GoiCaiDat-IIS.' }
+if (-not (Test-Path $exeGoi)) { Dung 'Thiếu web\QuanLyTaiSan.exe trong gói. Chép lại đủ thư mục QuanLyTaiSan-GoiCaiDat-IIS (hoặc chạy build.bat trên máy có mã nguồn để tạo gói).' }
 
 Buoc 'Kiểm tra IIS và ASP.NET Core Hosting Bundle'
 if ((Chay $appcmd @('list', 'config', '-section:system.webServer/globalModules')).Ra -notmatch 'AspNetCoreModuleV2') {

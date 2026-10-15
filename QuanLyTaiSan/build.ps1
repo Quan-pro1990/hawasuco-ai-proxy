@@ -1,6 +1,6 @@
 ﻿# Biên dịch QuanLyTaiSan.exe bằng trình biên dịch C# có sẵn trong Windows (.NET Framework 4.x) và tạo gói cài IIS.
 # Không cần cài Visual Studio hay .NET SDK.
-#   build.bat                 tạo QuanLyTaiSan.exe + thư mục GoiCaiDat-IIS (chép sang máy chủ, chạy CaiDat-IIS.bat)
+#   build.bat                 tạo QuanLyTaiSan.exe + thư mục / file zip QuanLyTaiSan-GoiCaiDat-IIS (chép sang máy chủ, chạy CaiDat-IIS.bat)
 #   build.bat -Out D:\x.exe   chỉ biên dịch ra file khác
 param([string]$Out)
 $ErrorActionPreference = 'Stop'
@@ -25,11 +25,17 @@ if ($LASTEXITCODE -ne 0) { throw 'Bien dich that bai' }
 "Da tao: $out"
 
 if (-not $Out) {
-    # Gói cài IIS: GoiCaiDat-IIS\CaiDat-IIS.bat + web\QuanLyTaiSan.exe + web\web.config
-    $goi = Join-Path $root 'GoiCaiDat-IIS'
+    # Gói cài IIS: script cài đặt, tiện ích, hướng dẫn + web\QuanLyTaiSan.exe + web\web.config; nén thêm 1 file zip
+    $ten = 'QuanLyTaiSan-GoiCaiDat-IIS'
+    $goi = Join-Path $root $ten
     New-Item -ItemType Directory -Force (Join-Path $goi 'web') | Out-Null
     Copy-Item $out (Join-Path $goi 'web\QuanLyTaiSan.exe') -Force
     Copy-Item (Join-Path $root 'iis\web.config') (Join-Path $goi 'web\web.config') -Force
-    foreach ($f in 'CaiDat-IIS.bat', 'CaiDat-IIS.ps1', 'HUONG_DAN_IIS.txt') { Copy-Item (Join-Path $root "iis\$f") (Join-Path $goi $f) -Force }
+    foreach ($f in 'CaiDat-IIS.bat', 'CaiDat-IIS.ps1', 'KiemTra.bat', 'DatLaiMatKhauQuanTri.bat', 'GoCaiDat.bat', 'SaoLuu-DatLich.bat',
+                   'DOC_TRUOC.txt', 'HUONG_DAN_CAI_DAT.html') { Copy-Item (Join-Path $root "iis\$f") (Join-Path $goi $f) -Force }
+    $zip = Join-Path $root "$ten.zip"
+    if (Test-Path $zip) { Remove-Item $zip }
+    Compress-Archive -Path $goi -DestinationPath $zip
     "Da tao goi cai IIS: $goi"
+    "Da nen: $zip"
 }
