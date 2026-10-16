@@ -281,7 +281,134 @@ namespace ThatThoatNuoc
                 root.Add(te);
             }
             if (!d.Cap1.Trong) root.Add(GhiCap1(d.Cap1));
+            if (!d.Nl.Trong) root.Add(GhiNl(d.Nl));
             return new XDocument(new XDeclaration("1.0", "utf-8", null), root);
+        }
+
+        // ------------------------------------------------------------------ noise logger
+
+        static XElement GhiNl(DuLieuNl n)
+        {
+            var e = new XElement("NoiseLogger", new XAttribute("nextId", n.NextId));
+            NguongNl g = n.Nguong;
+            e.Add(new XElement("Nguong", new XAttribute("roRi", D(g.RoRi)), new XAttribute("theoDoi", D(g.TheoDoi)), new XAttribute("doTrai", D(g.DoTrai)),
+                               new XAttribute("soDem", g.SoDem), new XAttribute("tang", D(g.Tang))));
+            foreach (ThietBiNl t in n.ThietBi)
+            {
+                var x = new XElement("ThietBi", new XAttribute("id", t.Id), new XAttribute("ma", t.Ma));
+                Attr(x, "loai", t.Loai);
+                if (t.Hong) x.SetAttributeValue("hong", 1);
+                Attr(x, "ghiChu", t.GhiChu);
+                e.Add(x);
+            }
+            foreach (DiemNl p in n.Diem)
+            {
+                var x = new XElement("Diem", new XAttribute("id", p.Id), new XAttribute("ten", p.Ten), new XAttribute("loai", p.Loai.ToString()));
+                if (p.DonViId >= 0) x.SetAttributeValue("donVi", p.DonViId);
+                Attr(x, "duongOng", p.DuongOng);
+                Attr(x, "toaDo", p.ToaDo);
+                if (p.Ngung) x.SetAttributeValue("ngung", 1);
+                Attr(x, "ghiChu", p.GhiChu);
+                e.Add(x);
+            }
+            foreach (LapDatNl l in n.LapDat)
+            {
+                var x = new XElement("LapDat", new XAttribute("id", l.Id), new XAttribute("tb", l.ThietBiId), new XAttribute("diem", l.DiemId));
+                Attr(x, "tu", (DateTime?)l.TuNgay);
+                Attr(x, "den", l.DenNgay);
+                Attr(x, "ghiChu", l.GhiChu);
+                e.Add(x);
+            }
+            foreach (RoRiNl r in n.RoRi)
+            {
+                var x = new XElement("RoRi", new XAttribute("id", r.Id), new XAttribute("diem", r.DiemId), new XAttribute("trangThai", r.TrangThai.ToString()));
+                Attr(x, "ngay", (DateTime?)r.NgayPhatHien);
+                Attr(x, "viTri", r.ViTri);
+                Attr(x, "hangMuc", r.HangMuc);
+                Attr(x, "ngaySua", r.NgaySua);
+                Attr(x, "luuLuong", r.LuuLuong);
+                Attr(x, "ghiChu", r.GhiChu);
+                e.Add(x);
+            }
+            foreach (int id in n.DiemCoSoDo.OrderBy(i => i))
+            {
+                var x = new XElement("SoDo", new XAttribute("diem", id));
+                foreach (SoDoNl s in n.SoDoCua(id))
+                {
+                    var y = new XElement("D");
+                    Attr(y, "n", (DateTime?)s.Ngay);
+                    Attr(y, "m", s.MucOn);
+                    Attr(y, "t", s.DoTrai);
+                    Attr(y, "f", s.TanSo);
+                    if (s.ThietBiId >= 0) y.SetAttributeValue("tb", s.ThietBiId);
+                    x.Add(y);
+                }
+                e.Add(x);
+            }
+            return e;
+        }
+
+        static DuLieuNl DocNl(XElement e)
+        {
+            var n = new DuLieuNl();
+            int max = 0;
+            XElement g = e.Element("Nguong");
+            if (g != null)
+            {
+                n.Nguong.RoRi = N(g, "roRi") ?? NguongNl.MacDinhRoRi;
+                n.Nguong.TheoDoi = N(g, "theoDoi") ?? NguongNl.MacDinhTheoDoi;
+                n.Nguong.DoTrai = N(g, "doTrai") ?? NguongNl.MacDinhDoTrai;
+                n.Nguong.SoDem = I(g, "soDem", NguongNl.MacDinhSoDem);
+                n.Nguong.Tang = N(g, "tang") ?? NguongNl.MacDinhTang;
+            }
+            foreach (XElement x in e.Elements("ThietBi"))
+            {
+                var t = new ThietBiNl { Id = I(x, "id", 0), Ma = S(x, "ma"), Loai = S(x, "loai"), Hong = I(x, "hong", 0) == 1, GhiChu = S(x, "ghiChu") };
+                n.ThietBi.Add(t);
+                max = Math.Max(max, t.Id);
+            }
+            foreach (XElement x in e.Elements("Diem"))
+            {
+                var p = new DiemNl
+                {
+                    Id = I(x, "id", 0), Ten = S(x, "ten"), Loai = En(x, "loai", LoaiDiemNl.Van), DonViId = I(x, "donVi", -1),
+                    DuongOng = S(x, "duongOng"), ToaDo = S(x, "toaDo"), Ngung = I(x, "ngung", 0) == 1, GhiChu = S(x, "ghiChu")
+                };
+                n.Diem.Add(p);
+                max = Math.Max(max, p.Id);
+            }
+            foreach (XElement x in e.Elements("LapDat"))
+            {
+                DateTime? tu = Dt(x, "tu");
+                if (!tu.HasValue) continue;
+                var l = new LapDatNl { Id = I(x, "id", 0), ThietBiId = I(x, "tb", 0), DiemId = I(x, "diem", 0), TuNgay = tu.Value, DenNgay = Dt(x, "den"), GhiChu = S(x, "ghiChu") };
+                n.LapDat.Add(l);
+                max = Math.Max(max, l.Id);
+            }
+            foreach (XElement x in e.Elements("RoRi"))
+            {
+                DateTime? ngay = Dt(x, "ngay");
+                if (!ngay.HasValue) continue;
+                var r = new RoRiNl
+                {
+                    Id = I(x, "id", 0), DiemId = I(x, "diem", 0), NgayPhatHien = ngay.Value, TrangThai = En(x, "trangThai", TrangThaiRoRi.ChoDoTim),
+                    ViTri = S(x, "viTri"), HangMuc = S(x, "hangMuc"), NgaySua = Dt(x, "ngaySua"), LuuLuong = N(x, "luuLuong"), GhiChu = S(x, "ghiChu")
+                };
+                n.RoRi.Add(r);
+                max = Math.Max(max, r.Id);
+            }
+            foreach (XElement x in e.Elements("SoDo"))
+            {
+                int diem = I(x, "diem", 0);
+                foreach (XElement y in x.Elements("D"))
+                {
+                    DateTime? ngay = Dt(y, "n");
+                    if (!ngay.HasValue) continue;
+                    n.DatSoDo(new SoDoNl { DiemId = diem, Ngay = ngay.Value, MucOn = N(y, "m"), DoTrai = N(y, "t"), TanSo = N(y, "f"), ThietBiId = I(y, "tb", -1) });
+                }
+            }
+            n.NextId = Math.Max(I(e, "nextId", 1), max + 1);
+            return n;
         }
 
         // ------------------------------------------------------------------ đồng hồ cấp 1
@@ -523,6 +650,8 @@ namespace ThatThoatNuoc
             if (d.NextId <= maxId) d.NextId = maxId + 1;
             XElement c1 = root.Element("Cap1");
             if (c1 != null) d.Cap1 = DocCap1(c1);
+            XElement nl = root.Element("NoiseLogger");
+            if (nl != null) d.Nl = DocNl(nl);
             d.SapXep();
             return d;
         }

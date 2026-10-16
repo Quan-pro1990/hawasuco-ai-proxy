@@ -40,6 +40,7 @@ namespace ThatThoatNuoc
         public long PhienBan;
         public bool ChuaGui;            // còn thay đổi trên máy chưa gửi được lên máy chủ
         public bool NhoDangNhap = true; // false: không lưu mã đăng nhập, mở phần mềm phải đăng nhập lại
+        public string PhienBanPhanMem = "";   // phiên bản phần mềm đang chạy trên máy chủ ("" = chưa biết); không lưu vào tệp
 
         public string GocUrl { get { return "https://" + DiaChi.TrimEnd('/') + "/"; } }
         public bool LaQuanTri { get { return VaiTro == "QuanTri"; } }
@@ -282,6 +283,15 @@ namespace ThatThoatNuoc
             Ten = Convert.ToString(r["ten"]);
             HoTen = r.ContainsKey("hoTen") ? Convert.ToString(r["hoTen"]) : "";
             VaiTro = Convert.ToString(r["vaiTro"]);
+            PhienBanPhanMem = r.ContainsKey("phienBanPhanMem") ? Convert.ToString(r["phienBanPhanMem"]) : "";
+        }
+
+        /// <summary>So 2 phiên bản dạng "1.1.0": âm nếu a cũ hơn b.</summary>
+        public static int SoSanhPhienBan(string a, string b)
+        {
+            Version va, vb;
+            if (!Version.TryParse(a ?? "", out va) || !Version.TryParse(b ?? "", out vb)) return 0;
+            return va.CompareTo(vb);
         }
 
         public byte[] TaiDuLieu(out long phienBan)

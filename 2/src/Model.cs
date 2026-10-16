@@ -7,7 +7,7 @@ namespace ThatThoatNuoc
     public static class UngDung
     {
         public const string Ten = "Quản lý thất thoát nước";
-        public const string PhienBan = "1.0.0";
+        public const string PhienBan = "1.1.0";
     }
 
     /// <summary>Cách tính sản lượng phát ra của 1 dòng.</summary>
@@ -269,6 +269,7 @@ namespace ThatThoatNuoc
         public Dictionary<int, Dictionary<int, ChiTieu>> KeHoach = new Dictionary<int, Dictionary<int, ChiTieu>>();
         public Dictionary<int, Dictionary<int, SoSanhQuy>> Quy = new Dictionary<int, Dictionary<int, SoSanhQuy>>();
         public DuLieuCap1 Cap1 = new DuLieuCap1();   // đồng hồ cấp 1 / sản lượng khai thác (tách riêng báo cáo thất thoát)
+        public DuLieuNl Nl = new DuLieuNl();         // noise logger dò tìm rò rỉ (tách riêng báo cáo thất thoát)
         public int NextId = 1;
 
         public int CapId()
