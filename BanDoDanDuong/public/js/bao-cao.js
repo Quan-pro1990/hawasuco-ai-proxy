@@ -17,6 +17,9 @@ function goc() {
 
 export function dungMayChu() { return coMayChu === true; }
 
+/** Địa chỉ gốc của API máy chủ (vd. "api" hoặc "https://may-chu/api"). */
+export function diaChiApi() { return goc(); }
+
 export async function kiemTraMayChu() {
   try {
     const r = await fetch(goc() + '/trang-thai', { cache: 'no-store' });
@@ -44,9 +47,10 @@ export async function taiBaoCao(khung) {
   return duLieu;
 }
 
-export async function guiBaoCao({ loai, viTri, huong, ghiChu }) {
+export async function guiBaoCao({ loai, phu, viTri, huong, ghiChu }) {
   if (!LOAI_BAO_CAO[loai]) throw new Error('Loại báo cáo không hợp lệ');
   const than = { loai, lng: viTri[0], lat: viTri[1], huong: huong == null ? null : Math.round(huong), ghiChu: ghiChu || '', thietBi: maThietBi };
+  if (phu && LOAI_BAO_CAO[loai].phu && LOAI_BAO_CAO[loai].phu[phu]) than.phu = phu;
   let bc;
   if (coMayChu) {
     const r = await fetch(goc() + '/bao-cao', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(than) });
@@ -55,7 +59,7 @@ export async function guiBaoCao({ loai, viTri, huong, ghiChu }) {
     bc = d.baoCao;
   } else {
     const bayGio = Date.now(), han = LOAI_BAO_CAO[loai].hetHan;
-    bc = { id: 'cb' + bayGio.toString(36) + Math.random().toString(36).slice(2, 6), loai, lng: than.lng, lat: than.lat, huong: than.huong,
+    bc = { id: 'cb' + bayGio.toString(36) + Math.random().toString(36).slice(2, 6), loai, phu: than.phu, lng: than.lng, lat: than.lat, huong: than.huong,
       ghiChu: than.ghiChu, taoLuc: bayGio, hetHan: han ? bayGio + han * 60000 : 0, conTon: 0, khongCon: 0, cuaToi: true };
     ghi('baocao', [...cucBo(), bc]);
   }

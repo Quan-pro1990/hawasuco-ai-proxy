@@ -4,8 +4,10 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.speech.tts.TextToSpeech
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -20,7 +22,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import org.json.JSONObject
+import vn.hawasuco.hawamap.cau.BongBong
 import vn.hawasuco.hawamap.cau.GiongNoi
+import vn.hawasuco.hawamap.cau.KetNoiObd
+import vn.hawasuco.hawamap.cau.LienKet
 import vn.hawasuco.hawamap.cau.LuuTep
 import vn.hawasuco.hawamap.cau.NguonViTri
 import vn.hawasuco.hawamap.cau.TrangWeb
@@ -32,6 +37,8 @@ class MainActivity : ComponentActivity() {
     private lateinit var webView: WebView
     private lateinit var trang: TrangWeb
     private var yeuCauWeb: PermissionRequest? = null
+    private var obd: KetNoiObd? = null
+    private var choQuyenObd = false
 
     private val xinQuyen = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { kq ->
         if (kq[Manifest.permission.ACCESS_FINE_LOCATION] == true || kq[Manifest.permission.ACCESS_COARSE_LOCATION] == true) {
@@ -39,6 +46,11 @@ class MainActivity : ComponentActivity() {
         }
         yeuCauWeb?.let { capQuyenWeb(it) }
         yeuCauWeb = null
+        if (choQuyenObd) {
+            choQuyenObd = false
+            if (coQuyenBluetooth()) ketNoiObd().chonThietBi()
+            else trang.goi("window.hawamap&&hawamap.goc.obd('loi','Cần quyền Thiết bị lân cận (Bluetooth) để kết nối OBD')")
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -69,6 +81,7 @@ class MainActivity : ComponentActivity() {
         TrungTam.dangKy(trang)
         trang.tai()
         xinQuyenBanDau()
+        if (savedInstanceState == null) moTuIntent(intent)
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -78,6 +91,46 @@ class MainActivity : ComponentActivity() {
                 }
             }
         })
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        moTuIntent(intent)
+    }
+
+    /** Liên kết / văn bản chia sẻ từ ứng dụng khác: trang đọc ra địa điểm (public/js/lien-ket.js); lệnh xếp hàng tới khi trang sẵn sàng. */
+    private fun moTuIntent(intent: Intent?) {
+        val chuoi = when (intent?.action) {
+            Intent.ACTION_VIEW -> intent.dataString
+            Intent.ACTION_SEND -> listOfNotNull(intent.getStringExtra(Intent.EXTRA_SUBJECT), intent.getStringExtra(Intent.EXTRA_TEXT))
+                .joinToString("\n")
+            else -> null
+        }
+        if (chuoi.isNullOrBlank()) return
+        // liên kết rút gọn: mở ra liên kết đầy đủ trên luồng nền trước
+        val rutGon = LienKet.timRutGon(chuoi)
+        if (rutGon == null) { guiLienKet(chuoi); return }
+        Thread {
+            val day = try { LienKet.moRutGon(rutGon) } catch (e: Exception) { null }
+            runOnUiThread { guiLienKet(day ?: chuoi) }
+        }.start()
+    }
+
+    private fun guiLienKet(chuoi: String) {
+        trang.lenh("moLienKet", JSONObject().put("chuoi", chuoi.take(4000))) { kq, _ ->
+            if (kq != true) Toast.makeText(this, "HawaMap không đọc được địa điểm từ nội dung được chia sẻ", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        BongBong.an(this)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (!isChangingConfigurations && BongBong.nenHien(this)) BongBong.hien(this)
     }
 
     override fun onResume() {
@@ -90,6 +143,8 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        obd?.ngat()
+        BongBong.an(this)
         TrungTam.huyDangKy(trang)
         if (TrungTam.dienThoai == null) TrungTam.ngheDienThoai = null
         trang.huy()
@@ -128,8 +183,27 @@ class MainActivity : ComponentActivity() {
         if (duoc.isEmpty()) request.deny() else request.grant(duoc.toTypedArray())
     }
 
+    private fun coQuyenBluetooth(): Boolean = Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
+        checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
+
+    private fun ketNoiObd(): KetNoiObd = obd ?: KetNoiObd(this, trang).also { obd = it }
+
     private fun xuLyTin(loai: String, du: JSONObject) {
         when (loai) {
+            "obdKetNoi" -> if (coQuyenBluetooth()) ketNoiObd().chonThietBi() else {
+                choQuyenObd = true
+                xinQuyen.launch(arrayOf(Manifest.permission.BLUETOOTH_CONNECT))
+            }
+            "obdGui" -> obd?.gui(du.optString("chuoi"))
+            "hud" -> BongBong.capNhat(du)
+            // người dùng bật bong bóng nổi: mở trang cấp quyền "Hiển thị trên ứng dụng khác" nếu chưa có
+            "xinQuyenNoi" -> if (!Settings.canDrawOverlays(this)) {
+                Toast.makeText(this, "Bật \"Cho phép hiển thị trên ứng dụng khác\" cho HawaMap", Toast.LENGTH_LONG).show()
+                try {
+                    startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
+                } catch (e: Exception) { /* máy không có trang cài đặt này */ }
+            }
+            "obdNgat" -> obd?.ngat()
             "giuManHinh" ->
                 if (du.optBoolean("bat")) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)

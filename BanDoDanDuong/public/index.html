@@ -41,6 +41,7 @@
   <div class="hud" id="hud-chinh" hidden></div>
   <button class="nut-thoat-lai-xe" data-hd="thoat-lai-xe">Thoát chế độ lái xe</button>
   <button class="chip-rec" id="chip-rec" data-hd="mo-camera" hidden>REC</button>
+  <button class="chip-tai" id="chip-tai" data-hd="trang-offline" hidden></button>
 </div>
 
 <!-- ================= LẬP LỘ TRÌNH ================= -->
@@ -107,6 +108,9 @@
   <button data-hd="trang-da-luu" data-icon="sao">Địa điểm đã lưu</button>
   <button data-hd="trang-hanh-trinh" data-icon="dongho">Lịch sử hành trình</button>
   <button data-hd="che-do-lai-xe" data-icon="laixe">Chế độ lái xe</button>
+  <button data-hd="mo-hud" data-icon="hud">HUD kính lái</button>
+  <button data-hd="trang-offline" data-icon="taive">Bản đồ offline</button>
+  <button data-hd="trang-obd" data-icon="obd">Thông số xe (OBD-II)</button>
   <button data-hd="mo-camera" data-icon="camera">Camera hành trình</button>
   <button data-hd="trang-bao-cao" data-icon="loabao">Báo cáo của tôi</button>
   <hr>
@@ -122,12 +126,23 @@
   <div class="camera-dau">
     <button class="nut-icon" data-hd="thu-camera" data-icon="quaylai" aria-label="Về bản đồ (vẫn ghi)"></button>
     <span id="trang-thai-camera">Sẵn sàng</span>
+    <button class="nut-icon" data-hd="doi-camera" data-icon="doicamera" aria-label="Đổi camera (trước / sau / webcam USB)"></button>
+    <button class="nut-icon" data-hd="chup-anh" data-icon="mayanh" aria-label="Chụp ảnh"></button>
   </div>
   <div class="camera-nut">
     <button class="nut-tron" data-hd="ds-doan" data-icon="danhsach" aria-label="Danh sách video"></button>
     <button class="nut-ghi" id="nut-ghi" data-hd="doi-ghi" aria-label="Bắt đầu ghi"><span></span></button>
     <button class="nut-tron" data-hd="khoa-doan" data-icon="khoa" aria-label="Khoá đoạn đang ghi"></button>
     <button class="nut-tron" data-hd="tat-camera" data-icon="dong" aria-label="Tắt camera"></button>
+  </div>
+</section>
+
+<!-- ================= HUD KÍNH LÁI: đặt điện thoại dưới kính chắn gió, hình phản chiếu lên kính ================= -->
+<section id="man-hud" class="man-hud" data-hd="hud-cham" hidden>
+  <div class="hud-noi" id="hud-noi"></div>
+  <div class="hud-nut" id="hud-nut" hidden>
+    <button class="nut vien" data-hd="hud-lat" id="nut-hud-lat"></button>
+    <button class="nut" data-hd="thoat-hud">Thoát HUD</button>
   </div>
 </section>
 

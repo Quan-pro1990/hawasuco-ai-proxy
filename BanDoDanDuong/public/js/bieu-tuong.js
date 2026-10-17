@@ -46,6 +46,10 @@ const P = {
   chon: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
   loabao: '<path d="M3 10v4h3l7 4V6l-7 4z"/><path d="M17 9a4 4 0 0 1 0 6M6 14l1.5 5H10l-1.3-4.5"/>',
   keo: '<path d="M12 3v18M3 12h18M12 3L9 6M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3"/>',
+  mayanh: '<path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h2.5l1.5-2.5h7L17 7h2.5A1.5 1.5 0 0 1 21 8.5v10a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z"/><circle cx="12" cy="13" r="3.5"/>',
+  doicamera: '<path d="M4 9a8 8 0 0 1 14-3l2 2M20 4v4h-4M20 15a8 8 0 0 1-14 3l-2-2M4 20v-4h4"/><circle cx="12" cy="12" r="2.5"/>',
+  obd: '<path d="M3 9h3l2-2.5h7L17 9h4v8h-3l-2 2.5H8L6 17H3z"/><path d="M9.5 11.5v3M14.5 11.5v3M12 11.5v3"/>',
+  hud: '<path d="M5 11L8 4h8l3 7"/><rect x="3" y="13" width="18" height="7" rx="1.5"/><path d="M9.5 7.5h5M8 16.5h8"/>',
   laixe: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2"/><path d="M3.5 10.5c3-1.5 14-1.5 17 0M10.2 13.5L7 20M13.8 13.5L17 20"/>',
   // danh mục địa điểm
   xang: '<path d="M5 20V5a1.5 1.5 0 0 1 1.5-1.5h6A1.5 1.5 0 0 1 14 5v15M3.5 20h12M5 10h9"/><path d="M14 8h2l2.5 2.5V17a1.5 1.5 0 0 1-3 0v-3H14"/>',
@@ -71,8 +75,37 @@ const P = {
   // điểm cảnh báo cố định
   cameratocdo: '<rect x="3" y="5" width="12" height="7" rx="1.5"/><path d="M15 7l5-2v7l-5-2M8.5 12v8M5.5 20h6"/><circle cx="7" cy="8.5" r="1.2"/>',
   duongsat: '<path d="M5 5l14 14M19 5L5 19" stroke-width="2.6"/>',
-  thuphi: '<path d="M3 20.5h18M5 20.5V9h7v11.5M4 9l4.5-4.5L13 9M12 13h9M15 13v-1M18 13v-1"/>'
+  thuphi: '<path d="M3 20.5h18M5 20.5V9h7v11.5M4 9l4.5-4.5L13 9M12 13h9M15 13v-1M18 13v-1"/>',
+  cameraden: '<rect x="3" y="3" width="6.5" height="15" rx="2"/><circle cx="6.25" cy="7" r="1.3" fill="currentColor"/><circle cx="6.25" cy="10.5" r="1.3"/><circle cx="6.25" cy="14" r="1.3"/><path d="M6.25 18v3"/><rect x="12" y="6" width="7.5" height="5.5" rx="1.2"/><path d="M19.5 7.8l2-1v3.9l-2-1M15.5 11.5V21M13 21h5"/>',
+  cameratb: '<rect x="3" y="3.5" width="11" height="7" rx="1.5"/><path d="M14 5.5l5-2v7l-5-2M3 17.5h18M6 14.5l-3 3 3 3M18 14.5l3 3-3 3"/>',
+  cameragiamsat: '<path d="M3 8.5l11.5-4 1.8 5-11.5 4z"/><path d="M16.3 9.5l3.2-1.1M9.5 12l1.2 3.5H5.5M5.5 13v8"/>',
+  kiemtra: '<path d="M12 2.5l8 3v6c0 5-3.4 8.6-8 10-4.6-1.4-8-5-8-10v-6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>',
+  tocke: '<path d="M3.5 17.5a8.5 8.5 0 1 1 17 0"/><path d="M12 17.5l4.5-5.5M6.3 12.5l1 .6M17.7 12.5l-1 .6M12 9.2v1.2"/><circle cx="12" cy="17.5" r="1.3" fill="currentColor"/>',
+  cuaphai: '<path d="M7 21v-8c0-5 3.5-7.5 8.5-7.5H19"/><path d="M16 2.5l3 3-3 3"/>',
+  cuatrai: '<path d="M17 21v-8c0-5-3.5-7.5-8.5-7.5H5"/><path d="M8 2.5l-3 3 3 3"/>',
+  truonghoc: '<circle cx="8" cy="4.8" r="2"/><circle cx="16.5" cy="6.5" r="1.7"/><path d="M8 7.5v6l-2 6.5M8 13.5l2 6.5M4.8 11l3.2-2 3.2 2M16.5 8.7v5l-1.6 6M16.5 13.7l1.6 6M13.9 11.6l2.6-1.8 2.6 1.8"/>',
+  gogiam: '<path d="M2.5 18.5h3.5c2.5 0 3.5-6.5 6-6.5s3.5 6.5 6 6.5h3.5M12 4v4.5M9.5 6.5L12 9l2.5-2.5"/>',
+  ham: '<path d="M2.5 20.5h19M4 20.5v-8.5a8 8 0 0 1 16 0v8.5"/><path d="M12 20.5v-2.5M12 15.5V14"/>',
+  tramdung: '<path d="M4.5 10h11v3.5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M15.5 11.5h1.5a2.5 2.5 0 0 1 0 5h-2M3 21h14M8 3.5V7M12 3.5V7"/>',
+  dentinhieu: '<rect x="7.5" y="2.5" width="9" height="19" rx="3"/><circle cx="12" cy="7" r="1.7" fill="currentColor"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="17" r="1.7"/>',
+  vachqua: '<circle cx="12" cy="4.3" r="1.8"/><path d="M12 7v5l-2.5 4M12 12l2.5 4M8.8 9.5h6.4M3 20.5h3M8.5 20.5h3M14 20.5h3M19.5 20.5h1.5"/>',
+  khudancu: '<path d="M2.5 20.5h19M4 20.5V12l4.5-4 4.5 4v8.5M13 20.5v-6l3.75-3.5 3.75 3.5v6M7 20.5v-4h3v4"/>'
 };
+
+/** Mũi tên trên biển cấm rẽ / chỉ được rẽ (vẽ trong khung 24×24). */
+const MUI_BIEN = {
+  trai: '<path d="M15 20v-7a3 3 0 0 0-3-3H6.5M9.5 7l-3 3 3 3"/>',
+  phai: '<path d="M9 20v-7a3 3 0 0 1 3-3h5.5M14.5 7l3 3-3 3"/>',
+  thang: '<path d="M12 20V5M8.5 8.5L12 5l3.5 3.5"/>',
+  quaydau: '<path d="M15.5 20v-9a3.75 3.75 0 0 0-7.5 0v4M5 12l3 3 3-3"/>'
+};
+const GACH_CAM = '<path d="M5 5l14 14"/>';
+/** Tên biểu tượng biển → [mũi tên, cấm?]. */
+const BIEN = {
+  camretrai: ['trai', true], camrephai: ['phai', true], camquaydau: ['quaydau', true], camdithang: ['thang', true],
+  chiretrai: ['trai', false], chirephai: ['phai', false], chidithang: ['thang', false]
+};
+for (const [ten, [mui, cam]] of Object.entries(BIEN)) P[ten] = MUI_BIEN[mui] + (cam ? GACH_CAM : '');
 
 export function coBieuTuong(ten) { return ten in P; }
 
@@ -137,6 +170,18 @@ export function svgBieuTuongBanDo(ten, mau) {
     `<circle cx="16" cy="16" r="13.5" fill="${mau}" stroke="#fff" stroke-width="2.5"/>` +
     `<g transform="translate(6.4 6.4) scale(0.8)" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${P[ten] || P.ghim}</g></svg>`;
 }
+
+/** Biểu tượng biển báo trên bản đồ: biển cấm (nền trắng viền đỏ, gạch chéo) hoặc biển hiệu lệnh (nền xanh). */
+export function svgBienBao(ten) {
+  const [mui, cam] = BIEN[ten] || ['thang', true];
+  const nen = cam ? '<circle cx="16" cy="16" r="13.5" fill="#fff" stroke="#d32f2f" stroke-width="3.2"/>'
+    : '<circle cx="16" cy="16" r="13.5" fill="#1565c0" stroke="#fff" stroke-width="2.2"/>';
+  const gach = cam ? '<path d="M7.2 7.2l17.6 17.6" stroke="#d32f2f" stroke-width="3" stroke-linecap="round"/>' : '';
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 32 32">${nen}` +
+    `<g transform="translate(6.4 6.4) scale(0.8)" fill="none" stroke="${cam ? '#1f2937' : '#fff'}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">${MUI_BIEN[mui]}</g>${gach}</svg>`;
+}
+
+export function laBienBao(ten) { return ten in BIEN; }
 
 export const SVG_MUI_TEN_TUYEN = '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 20 20">' +
   '<path d="M7 5l5 5-5 5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';

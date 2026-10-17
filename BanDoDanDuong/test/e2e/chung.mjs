@@ -30,6 +30,8 @@ const xang = { elements: [
   { type: 'node', id: 7002, lat: 21.0281, lon: 105.8531, tags: { amenity: 'fuel', name: 'PVOil Hàng Bài' } }
 ] };
 
+// ô ảnh 1×1 điểm (cho bản đồ vệ tinh)
+const ANH_O = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
 const json = (route, du) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(du), headers: { 'Access-Control-Allow-Origin': '*' } });
 
 export async function giaLapMang(ctx) {
@@ -38,6 +40,7 @@ export async function giaLapMang(ctx) {
     if (/openfreemap\.org\/styles|voyager-gl-style/.test(url)) return json(route, style(false));
     if (/dark-matter-gl-style/.test(url)) return json(route, style(true));
     if (/router\.project-osrm\.org|routing\.openstreetmap\.de/.test(url)) return json(route, mau.tuyenOsrm());
+    if (/server\.arcgisonline\.com\/.*\/tile\//.test(url)) return route.fulfill({ status: 200, contentType: 'image/png', body: ANH_O, headers: { 'Access-Control-Allow-Origin': '*' } });
     if (/photon\.komoot\.io/.test(url)) return json(route, mau.photon());
     if (/nominatim.*\/reverse/.test(url)) return json(route, mau.nominatimNguoc());
     if (/nominatim.*\/search/.test(url)) return json(route, []);

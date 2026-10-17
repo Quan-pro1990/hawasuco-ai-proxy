@@ -2,11 +2,13 @@
  * Service worker: cho cài ứng dụng lên màn hình chính và dùng được khi mất mạng tạm thời.
  *  - Trang & mã nguồn: lấy bản mới từ mạng trước, mất mạng thì dùng bản đã lưu.
  *  - Ô bản đồ, phông chữ, biểu tượng bản đồ: dùng bản đã lưu trước (bản đồ khu vực đã xem vẫn hiện khi mất mạng).
+ *    Vùng tải về để dùng offline (ban-do-offline.js) nằm trong bộ đệm riêng KHO_TAI, không bị cắt bớt.
  *  - Tìm kiếm, chỉ đường, báo cáo: luôn lấy từ mạng.
  */
-const PHIEN_BAN = 'hawamap-v1';
+const PHIEN_BAN = 'hawamap-v2';
 const KHO_TRANG = PHIEN_BAN + '-trang';
 const KHO_BAN_DO = 'hawamap-ban-do';
+const KHO_TAI = 'hawamap-ban-do-tai';
 const TOI_DA_O_BAN_DO = 4000;
 
 const VO_UNG_DUNG = [
@@ -15,7 +17,8 @@ const VO_UNG_DUNG = [
   'js/main.js', 'js/cau-hinh.js', 'js/kho.js', 'js/hinh-hoc.js', 'js/dinh-dang.js', 'js/bieu-tuong.js', 'js/ban-do.js',
   'js/giao-dien.js', 'js/tim-kiem.js', 'js/chi-duong.js', 'js/dan-duong.js', 'js/vi-tri.js', 'js/mo-phong.js',
   'js/giong-noi.js', 'js/cau-noi.js', 'js/duong-xa.js', 'js/canh-bao.js', 'js/bao-cao.js', 'js/loai-bao-cao.js', 'js/dia-diem.js',
-  'js/hanh-trinh.js', 'js/camera-hanh-trinh.js'
+  'js/hanh-trinh.js', 'js/camera-hanh-trinh.js', 'js/loai-canh-bao.js', 'js/nhac-nho.js', 'js/ban-do-offline.js',
+  'js/lien-ket.js', 'js/obd.js'
 ];
 
 const NGUON_BAN_DO = [
@@ -54,8 +57,10 @@ self.addEventListener('fetch', e => {
   }
 
   if (NGUON_BAN_DO.includes(url.hostname) && !url.pathname.includes('/api/')) {
+    // trang đang tự tải vùng offline (cache: 'no-store'): để trang tự lưu vào KHO_TAI, không lưu thêm bản nữa ở đây
+    if (req.cache === 'no-store') return;
     e.respondWith(caches.open(KHO_BAN_DO).then(async c => {
-      const da = await c.match(req);
+      const da = await caches.open(KHO_TAI).then(t => t.match(req)) || await c.match(req);
       if (da) return da;
       const r = await fetch(req);
       if (r.ok) {

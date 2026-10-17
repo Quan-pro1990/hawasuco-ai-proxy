@@ -104,7 +104,10 @@ try {
   await page.waitForSelector('.br-lan', { timeout: 30000 });
   await chup(page, '06b-lan-duong');
   await page.waitForSelector('#canh-bao-dd:not([hidden])', { timeout: 40000 });
-  kiem((await page.innerText('#canh-bao-dd')).includes('Camera'), 'cảnh báo camera tốc độ phía trước');
+  const theDau = await page.innerText('#canh-bao-dd');
+  kiem(/giới hạn tốc độ/.test(theDau) && /30/.test(theDau), 'báo trước giới hạn 30 km/h của đường phía trước');
+  await page.waitForFunction(() => /Camera/.test(document.querySelector('#canh-bao-dd').innerText), null, { timeout: 30000 }).catch(() => {});
+  kiem((await page.innerText('#canh-bao-dd')).includes('Camera phạt tốc độ'), 'cảnh báo camera tốc độ phía trước');
   await page.waitForFunction(() => document.querySelector('#hud-dd .bien-toc-do b')?.textContent === '30', null, { timeout: 20000 });
   kiem(true, 'biển giới hạn 30 km/h của Tràng Tiền');
   await page.click('[data-hd="mp-toc"][data-d="10"]');
@@ -140,9 +143,27 @@ try {
   kiem(await page.locator('.pbc').count() === 1, 'bấm biểu tượng báo cáo trên bản đồ mở thông tin báo cáo');
   kiem((await page.innerText('.pbc')).includes('vừa xong'), 'thời gian báo cáo hiển thị "vừa xong"');
   await chup(page, '10-popup-bao-cao');
+  await page.keyboard.press('Escape');
+  await page.click('#lop-chinh [data-hd="bao-cao"]');
+  await page.click('[data-hd="gui-bc"][data-loai="camera"]');
+  await page.waitForSelector('[data-hd="gui-bc"][data-phu="dendo"]');
+  await chup(page, '10b-loai-camera');
+  await page.click('[data-hd="gui-bc"][data-phu="dendo"]');
+  await page.waitForSelector('.thong-bao.hien');
+  const ds2 = await (await fetch(GOC + 'api/bao-cao')).json();
+  kiem(ds2.baoCao.some(b => b.loai === 'camera' && b.phu === 'dendo'), 'báo cáo camera phạt đèn đỏ (chọn loại camera)');
+
+  console.log('Liên kết Google Maps');
+  await page.keyboard.press('Escape');
+  await page.click('.o-tim');
+  await page.fill('#o-tim', 'https://www.google.com/maps/place/H%E1%BB%93+G%C6%B0%C6%A1m/@21.03,105.85,17z/data=!4m2!3d21.0287!4d105.8522');
+  await page.waitForFunction(() => /Hồ Gươm/.test(document.querySelector('#tam-duoi').innerText), null, { timeout: 5000 }).catch(() => {});
+  kiem((await page.innerText('#tam-duoi')).includes('Hồ Gươm') && await page.locator('#man-tim').isHidden(), 'dán liên kết Google Maps vào ô tìm kiếm mở đúng địa điểm');
+  kiem(await page.evaluate(() => JSON.stringify(window.hawamap.st.diaDiem.viTri)) === '[105.8522,21.0287]', 'lấy toạ độ của địa điểm trong liên kết');
+  await chup(page, '10c-lien-ket-google');
+  await page.click('#tam-duoi [data-hd="dong-tam"]');
 
   console.log('Cây xăng quanh đây, menu, cài đặt, kiểu bản đồ');
-  await page.keyboard.press('Escape');
   await page.click('.chip[data-id="xang"]');
   await page.waitForSelector('.dong-tim[data-hd="chon-dm"]');
   kiem((await page.innerText('#tam-duoi')).includes('Petrolimex'), 'tìm cây xăng quanh đây');
@@ -157,6 +178,11 @@ try {
   await chup(page, '13-cai-dat');
   await page.locator('select[data-cd="kcCanhBaoCamera"]').selectOption('800');
   kiem(await page.evaluate(() => window.hawamap.caiDat.kcCanhBaoCamera) === 800, 'đổi cài đặt khoảng cách báo camera');
+  kiem(await page.locator('input[data-cd="bongBongNoi"]').count() === 0, 'trên web không có cài đặt bong bóng nổi (chỉ ứng dụng Android)');
+  await page.locator('select[data-muc="dentinhieu"]').selectOption('2');
+  kiem(await page.evaluate(() => window.hawamap.caiDat.mucCanhBao.dentinhieu) === 2, 'bật cảnh báo đèn tín hiệu (mức từng loại cảnh báo)');
+  await page.locator('select[data-muc="dentinhieu"]').scrollIntoViewIfNeeded();
+  await chup(page, '13b-tung-loai-canh-bao');
   await page.click('[data-hd="dong-trang"]');
   await page.click('[data-hd="menu"]');
   await page.click('[data-hd="trang-da-luu"]');
@@ -168,6 +194,29 @@ try {
   await page.waitForTimeout(1500);
   kiem(await page.evaluate(() => !!window.hawamap.banDo.map.getLayer('tuyen')), 'đổi kiểu bản đồ vẫn giữ các lớp riêng');
   await chup(page, '14-ban-dem');
+
+  console.log('Bản đồ offline');
+  await page.click('[data-hd="doi-kieu"][data-k="vetinh"]');
+  await page.click('#tam-duoi [data-hd="dong-tam"]');
+  await page.waitForTimeout(1500);
+  await page.evaluate(() => { const m = window.hawamap.banDo; m.datTheoDoi('khong'); m.map.jumpTo({ center: [105.8522, 21.0287], zoom: 15 }); });
+  await page.waitForTimeout(800);
+  await page.click('[data-hd="menu"]');
+  await page.click('#menu [data-hd="trang-offline"]');
+  await page.waitForSelector('#muc-offline');
+  await page.locator('#muc-offline').selectOption('tongquat');
+  await page.waitForSelector('[data-hd="tai-offline"]:not([disabled])', { timeout: 5000 }).catch(() => {});
+  await chup(page, '14b-ban-do-offline');
+  await page.click('[data-hd="tai-offline"]');
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem('hawamap.vungtai') || '[]').length === 1, null, { timeout: 20000 }).catch(() => {});
+  const vung = await page.evaluate(() => JSON.parse(localStorage.getItem('hawamap.vungtai') || '[]'));
+  kiem(vung.length === 1 && vung[0].soO > 3 && vung[0].kieu === 'vetinh', 'tải vùng bản đồ offline (' + (vung[0] ? vung[0].soO + ' ô' : 'không có') + ')');
+  const soODaLuu = await page.evaluate(async () => (await (await caches.open('hawamap-ban-do-tai')).keys()).length);
+  kiem(vung[0] && soODaLuu === vung[0].soO, 'ô bản đồ nằm trong bộ nhớ đệm offline (' + soODaLuu + ')');
+  await page.waitForSelector('[data-hd="xoa-offline"]', { timeout: 5000 }).catch(() => {});
+  await chup(page, '14c-vung-da-tai');
+  await page.click('[data-hd="dong-trang"]');
+  await page.click('[data-hd="lop-ban-do"]');
   await page.click('[data-hd="doi-kieu"][data-k="tieuchuan"]');
   await page.click('#tam-duoi [data-hd="dong-tam"]');
 
@@ -181,16 +230,37 @@ try {
   await page.click('#lop-chinh [data-hd="mo-camera"]');
   await page.waitForSelector('#man-camera:not([hidden])');
   await page.waitForTimeout(1500);
-  await page.click('#nut-ghi');
+  // xe bắt đầu chạy (vị trí từ ứng dụng gốc / GPS, 36 km/h): camera tự ghi
+  await page.evaluate(() => window.hawamap.goc.viTri(105.8500, 21.0262, 10, 0, 5, Date.now()));
+  await page.waitForTimeout(300);
+  kiem(await page.evaluate(() => document.querySelector('#nut-ghi').classList.contains('dang-ghi')), 'camera tự ghi khi xe chạy trên 5 km/h');
   await page.waitForTimeout(2500);
   await chup(page, '16-camera-hanh-trinh');
+  await page.click('[data-hd="chup-anh"]');
+  await page.waitForTimeout(600);
   await page.click('#nut-ghi');
   await page.waitForTimeout(800);
   await page.click('[data-hd="ds-doan"]');
-  await page.waitForSelector('#than-trang .dong-ds', { timeout: 5000 }).catch(() => {});
-  kiem(await page.locator('#than-trang .dong-ds').count() === 1, 'lưu đoạn video camera hành trình');
+  await page.waitForFunction(() => document.querySelector('#tieu-de-trang').textContent.includes('Video camera'), null, { timeout: 5000 }).catch(() => {});
+  const dsDoan = await page.locator('#than-trang .dong-ds').allInnerTexts();
+  kiem(dsDoan.length === 2 && dsDoan.some(x => x.includes('Ảnh')), 'lưu đoạn video và ảnh chụp camera hành trình (' + dsDoan.join(' / ').replace(/\s+/g, ' ') + ')');
+  await chup(page, '16b-danh-sach-video');
   await page.click('[data-hd="dong-trang"]');
   await page.click('[data-hd="tat-camera"]');
+
+  console.log('HUD kính lái');
+  await page.click('[data-hd="menu"]');
+  await page.click('[data-hd="mo-hud"]');
+  await page.waitForSelector('#man-hud:not([hidden]) .hn-toc');
+  kiem(await page.getAttribute('#man-hud', 'data-lat') === 'doc', 'HUD kính lái mặc định lật dọc để phản chiếu lên kính');
+  const bienHud = await page.evaluate(() => getComputedStyle(document.querySelector('.hud-noi')).transform);
+  kiem(bienHud.startsWith('matrix(1, 0, 0, -1'), 'nội dung HUD được lật gương (' + bienHud + ')');
+  await chup(page, '17-hud');
+  await page.click('#man-hud');
+  await page.click('#nut-hud-lat');
+  kiem(await page.evaluate(() => window.hawamap.caiDat.latHud) === 'ngang', 'đổi kiểu lật HUD');
+  await page.keyboard.press('Escape');
+  kiem(await page.locator('#man-hud').isHidden(), 'thoát HUD bằng phím Esc / nút Back');
 
   kiem(loi.length === 0, 'không có lỗi JavaScript' + (loi.length ? ':\n    ' + loi.join('\n    ') : ''));
   await ctx.close();

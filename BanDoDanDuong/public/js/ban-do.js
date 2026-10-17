@@ -6,13 +6,13 @@
 import { CAU_HINH } from './cau-hinh.js';
 import { caiDat, doc, ghi } from './kho.js';
 import { lechGoc, khungBao } from './hinh-hoc.js';
-import { svgBieuTuongBanDo, SVG_MUI_TEN_TUYEN, taiAnh, icon } from './bieu-tuong.js';
+import { svgBieuTuongBanDo, svgBienBao, SVG_MUI_TEN_TUYEN, taiAnh, icon } from './bieu-tuong.js';
 import { LOAI_BAO_CAO } from './loai-bao-cao.js';
+import { LOAI_CANH_BAO, BIEN_RE } from './loai-canh-bao.js';
 import { DANH_MUC } from './dia-diem.js';
 
 const RONG = { type: 'FeatureCollection', features: [] };
 const NGUON = ['hanh-trinh', 'tuyen-phu', 'tuyen', 'da-di', 'canh-bao', 'bao-cao', 'ket-qua'];
-const MAU_DIEM = { cameratocdo: '#6d28d9', duongsat: '#b45309', thuphi: '#0f766e' };
 
 function duong(toaDo, props = {}) {
   return { type: 'Feature', properties: props, geometry: { type: 'LineString', coordinates: toaDo } };
@@ -88,7 +88,8 @@ export class BanDo {
   async taiCacAnh() {
     const ds = { 'mui-ten-tuyen': SVG_MUI_TEN_TUYEN };
     for (const [k, v] of Object.entries(LOAI_BAO_CAO)) ds['bc-' + k] = svgBieuTuongBanDo(v.icon, v.mau);
-    for (const [k, mau] of Object.entries(MAU_DIEM)) ds['cb-' + k] = svgBieuTuongBanDo(k, mau);
+    for (const v of Object.values(LOAI_CANH_BAO)) if (!v.khongBanDo) ds['cb-' + v.icon] = svgBieuTuongBanDo(v.icon, v.mau);
+    for (const v of Object.values(BIEN_RE)) ds['cb-' + v.icon] = svgBienBao(v.icon);
     for (const d of DANH_MUC) ds['dm-' + d.id] = svgBieuTuongBanDo(d.icon, d.mau);
     ds['dm-ghim'] = svgBieuTuongBanDo('ghim', '#e53935');
     const kq = {};
@@ -119,8 +120,13 @@ export class BanDo {
       id: 'tuyen-mui-ten', type: 'symbol', source: 'tuyen', minzoom: 13,
       layout: { 'symbol-placement': 'line', 'symbol-spacing': 90, 'icon-image': 'mui-ten-tuyen', 'icon-size': ['interpolate', ['linear'], ['zoom'], 13, 0.5, 18, 0.9], 'icon-allow-overlap': true, 'icon-rotation-alignment': 'map' }
     }, 'da-di');
+    // điểm nhỏ, dày đặc (đèn tín hiệu, vạch qua đường, gờ giảm tốc) chỉ vẽ khi phóng to
     them({
-      id: 'canh-bao', type: 'symbol', source: 'canh-bao', minzoom: 11,
+      id: 'canh-bao-nho', type: 'symbol', source: 'canh-bao', minzoom: 15, filter: ['==', ['get', 'nho'], true],
+      layout: { 'icon-image': ['concat', 'cb-', ['get', 'icon']], 'icon-size': ['interpolate', ['linear'], ['zoom'], 15, 0.5, 18, 0.8], 'icon-allow-overlap': false }
+    });
+    them({
+      id: 'canh-bao', type: 'symbol', source: 'canh-bao', minzoom: 11, filter: ['!=', ['get', 'nho'], true],
       layout: { 'icon-image': ['concat', 'cb-', ['get', 'icon']], 'icon-size': ['interpolate', ['linear'], ['zoom'], 11, 0.55, 16, 1], 'icon-allow-overlap': true }
     });
     them({
@@ -133,7 +139,7 @@ export class BanDo {
     });
     this.dat3D(caiDat.nha3D);
     this.hienLop(['bao-cao'], caiDat.hienBaoCao);
-    this.hienLop(['canh-bao'], caiDat.hienDiemCanhBao);
+    this.hienLop(['canh-bao', 'canh-bao-nho'], caiDat.hienDiemCanhBao);
     for (const n of NGUON) m.getSource(n).setData(this.duLieu[n]);
     if (this.cb.daiTaiStyle) this.cb.daiTaiStyle();
   }
@@ -190,7 +196,7 @@ export class BanDo {
   }
 
   datDiemCanhBao(ds) {
-    this.datNguon('canh-bao', { type: 'FeatureCollection', features: ds.map(d => diem(d.viTri, { id: d.id, icon: d.loai === 'camera' ? 'cameratocdo' : d.loai })) });
+    this.datNguon('canh-bao', { type: 'FeatureCollection', features: ds.map(d => diem(d.viTri, { id: d.id, icon: d.icon, nho: d.nho })) });
   }
 
   datKetQua(ds) {
@@ -294,7 +300,7 @@ export class BanDo {
     }
     // chạm vào biểu tượng địa điểm có sẵn trên nền bản đồ
     m.on('click', e => {
-      const lopRieng = ['bao-cao', 'ket-qua', 'tuyen-phu', 'canh-bao'].filter(l => m.getLayer(l));
+      const lopRieng = ['bao-cao', 'ket-qua', 'tuyen-phu', 'canh-bao', 'canh-bao-nho'].filter(l => m.getLayer(l));
       if (lopRieng.length && m.queryRenderedFeatures(e.point, { layers: lopRieng }).length) return;
       const f = m.queryRenderedFeatures([[e.point.x - 6, e.point.y - 6], [e.point.x + 6, e.point.y + 6]])
         .find(x => x.layer.type === 'symbol' && x.properties && x.properties.name && x.sourceLayer === 'poi');

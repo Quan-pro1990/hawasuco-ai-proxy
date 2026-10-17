@@ -17,11 +17,16 @@ import { MoPhong } from './mo-phong.js';
 import { noi, imLang, moKhoaAmThanh, bip, danhSachGiong, doiGiong, coGiongNoi } from './giong-noi.js';
 import { ThongTinDuong } from './duong-xa.js';
 import { CanhBao } from './canh-bao.js';
-import { LOAI_BAO_CAO, kiemTraMayChu, dungMayChu, taiBaoCao, guiBaoCao, xacNhan, xoaBaoCao, baoCaoHienTai, baoCaoCuaToi } from './bao-cao.js';
+import { LOAI_CANH_BAO, MUC_CANH_BAO, mucCanhBao } from './loai-canh-bao.js';
+import { NhacNho, laBanDem } from './nhac-nho.js';
+import { docLienKet } from './lien-ket.js';
+import { THONG_SO, PhienElm, DocXe, CongBle, CongGoc } from './obd.js';
+import { LOAI_BAO_CAO, kiemTraMayChu, dungMayChu, diaChiApi, taiBaoCao, guiBaoCao, xacNhan, xoaBaoCao, baoCaoHienTai, baoCaoCuaToi } from './bao-cao.js';
 import { DANH_MUC, layDanhMuc, timQuanh, timDocTuyen } from './dia-diem.js';
-import { GhiHanhTrinh, danhSachHanhTrinh, xoaHanhTrinh, tongKet, xuatGpx } from './hanh-trinh.js';
-import { CameraHanhTrinh, hoTroCamera, danhSachDoan, doiKhoaDoan, xoaDoan, layDoan } from './camera-hanh-trinh.js';
+import { GhiHanhTrinh, danhSachHanhTrinh, xoaHanhTrinh, tongKet, xuatGpx, svgBieuDoTocDo } from './hanh-trinh.js';
+import { CameraHanhTrinh, hoTroCamera, danhSachDoan, doiKhoaDoan, xoaDoan, layDoan, TuDongGhi, CHAT_LUONG } from './camera-hanh-trinh.js';
 import { laAppGoc, cheDoXe, cauHinhGoc, guiGoc } from './cau-noi.js';
+import { tepCuaKieu, diaChiVung, demOVung, taiDiaChi, vungDaTai, luuVung, xoaVung, canCapNhat, dangDungWifi, TOI_DA_O } from './ban-do-offline.js';
 
 const st = {
   cheDo: 'chinh',          // chinh | diadiem | danhmuc | lotrinh | danduong
@@ -60,7 +65,10 @@ const banDo = new BanDo('ban-do', {
   chamTuyenPhu: i => chonTuyen(i),
   chamDiaDiem: dd => { if (st.cheDo === 'chinh' || st.cheDo === 'diadiem') chonDiaDiem({ ...dd, diaChi: '' }, { timDiaChi: true }); },
   boTheoDoi: () => capNhatNutViTri(),
-  daiTaiStyle: () => document.documentElement.dataset.giaoDien = banDo.laKieuToi() ? 'toi' : 'sang'
+  daiTaiStyle: () => {
+    document.documentElement.dataset.giaoDien = banDo.laKieuToi() ? 'toi' : 'sang';
+    setTimeout(tuCapNhatOffline, 15000);
+  }
 }, kieuMongMuon());
 const tam = new TamDuoi($('#tam-duoi'), { doiChieuCao: () => capNhatLe() });
 tam.onAn = () => {
@@ -72,8 +80,11 @@ const nguonViTri = new NguonViTri(xuLyViTri, (loi, ma) => {
 });
 const thongTinDuong = new ThongTinDuong();
 const canhBao = new CanhBao({ thongTinDuong, layBaoCao: baoCaoHienTai, noi, bip });
+const laAppAndroid = laAppGoc && cauHinhGoc.nenTang === 'android';
+const nhacNho = new NhacNho({ noi, bip, bao: (chu, loai) => thongBao(chu, { loai }) });
 const ghiHT = new GhiHanhTrinh();
 let camera = null;
+const tuGhi = new TuDongGhi();
 
 document.documentElement.dataset.giaoDien = layKieuBanDo(kieuMongMuon()).toi ? 'toi' : 'sang';
 if (!(window.SpeechRecognition || window.webkitSpeechRecognition)) document.documentElement.classList.add('khong-mic');
@@ -88,8 +99,20 @@ setInterval(() => banDo.doiKieu(kieuMongMuon()), 5 * 60000);
 setInterval(taiBaoCaoKhuVuc, 90000);
 window.addEventListener('resize', capNhatLe);
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && (st.dd || st.laiXe)) giuManHinh(true);
+  if (document.visibilityState !== 'visible') return;
+  nhacNho.choThem();
+  if (st.dd || st.laiXe) giuManHinh(true);
 });
+// mất tín hiệu GPS khi đang đi (trình duyệt dừng GPS khi trang bị ẩn nên chỉ xét lúc trang đang hiện)
+setInterval(() => {
+  if (!laAppGoc && document.visibilityState !== 'visible') return;
+  const dangDi = !st.moPhong && !!(st.dd || st.laiXe || cheDoXe || Date.now() - st.lucDiChuyen < 60000);
+  const mat = nhacNho.kiemTra(dangDi);
+  if (mat !== document.body.classList.contains('mat-gps')) {
+    document.body.classList.toggle('mat-gps', mat);
+    if (mat) $$('.hud .dong-ho b').forEach(b => { b.textContent = '--'; });
+  }
+}, 3000);
 if (!cheDoXe) moLienKet();
 // trong ứng dụng gốc trang được nạp từ gói cài đặt: không cần service worker
 if (!laAppGoc && 'serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
@@ -178,7 +201,6 @@ function xuLyViTri(vt) {
   const dauTien = !st.viTri;
   st.viTri = vt;
   banDo.capNhatViTri(vt);
-  if (!vt.moPhong) ghiHT.them(vt);
   thongTinDuong.capNhat(vt.viTri);
 
   if (dauTien && !st.daBayDenViTri && st.cheDo === 'chinh' && !st.lienKet) {
@@ -193,13 +215,30 @@ function xuLyViTri(vt) {
   const cb = canhBao.capNhat(vt, st.dd && tt ? { tuyen: st.dd.tuyen, tt } : null, st.dd ? st.dd.phuongTien : caiDat.phuongTien);
   st.cbCuoi = cb;
   if (tt) baoGoc(tt);              // sau khi có tốc độ / giới hạn / cảnh báo của lần cập nhật này
+  st.ttCuoi = tt;
+  if (st.hud) renderManHud();
+  if (laAppAndroid && !cheDoXe) baoBongBong(cb);
   if (cb.kmh >= 5) st.lucDiChuyen = Date.now();
+  if (!vt.moPhong) { ghiHT.them(vt, { vuotToc: cb.vuotToc }); nhacNho.viTri(vt, cb.kmh); document.body.classList.remove('mat-gps'); xetTuGhi(cb.kmh); }
   renderHud(cb);
   renderCanhBao(st.dd ? $('#canh-bao-dd') : $('#canh-bao-chinh'), (st.dd || st.laiXe || cheDoXe || cb.kmh >= 5) ? cb.canhBao : null);
   if (st.dd) $('#canh-bao-chinh').hidden = true;
 
-  const soDiem = thongTinDuong.diem.size;
-  if (soDiem !== st.soDiemCanhBao) { st.soDiemCanhBao = soDiem; banDo.datDiemCanhBao(thongTinDuong.danhSachDiem()); }
+  if (thongTinDuong.phienDiem !== st.phienDiemVe) veDiemCanhBao();
+}
+
+/** Dữ liệu cho bong bóng nổi của ứng dụng Android (cau/BongBong.kt), hiện khi HawaMap chạy nền. */
+function baoBongBong(cb) {
+  guiGoc('hud', {
+    bat: !!caiDat.bongBongNoi, dangDanDuong: !!st.dd, dangDi: !!(st.laiXe || cb.kmh >= 5 || Date.now() - st.lucDiChuyen < 60000),
+    tocDo: cb.kmh, gioiHan: cb.gioiHan || 0, vuotToc: !!cb.vuotToc,
+    canhBao: cb.canhBao ? { ten: cb.canhBao.ten, kcChu: quangDuong(cb.canhBao.kc), icon: cb.canhBao.icon } : null
+  });
+}
+
+function veDiemCanhBao() {
+  st.phienDiemVe = thongTinDuong.phienDiem;
+  banDo.datDiemCanhBao(canhBao.diemBanDo());
 }
 
 function batGps() { nguonViTri.batDau(); }
@@ -245,6 +284,7 @@ async function giuManHinh(bat) {
 function renderHud(cb) {
   const html = `${cb.gioiHan ? `<div class="bien-toc-do${cb.uocTinh ? ' uoc' : ''}" title="${cb.uocTinh ? 'Giới hạn tốc độ ước tính theo loại đường' : 'Giới hạn tốc độ'}"><b>${cb.gioiHan}</b></div>` : ''}
     <div class="dong-ho${cb.vuotToc ? ' vuot' : ''}"><b>${cb.kmh}</b><span>km/h</span></div>
+    ${cb.khuDanCu ? `<div class="nhan-kdc" title="Đang trong khu đông dân cư (ước tính)">${icon('khudancu')}<span>Khu dân cư</span></div>` : ''}
     ${cb.duong && (cb.duong.ten || cb.duong.ref) ? `<div class="ten-duong">${esc(cb.duong.ten || cb.duong.ref)}</div>` : ''}`;
   if (st.dd) { $('#hud-dd').innerHTML = html; return; }
   const el = $('#hud-chinh');
@@ -252,16 +292,12 @@ function renderHud(cb) {
   el.innerHTML = html;
 }
 
-function mauCanhBao(d) {
-  if (d.loai === 'baocao' || d.loaiBaoCao) return (LOAI_BAO_CAO[d.loaiBaoCao] || {}).mau || '#e53935';
-  return { camera: '#6d28d9', duongsat: '#b45309', thuphi: '#0f766e' }[d.loai] || '#e53935';
-}
-
 function renderCanhBao(el, d) {
   if (!d) { el.hidden = true; return; }
   el.hidden = false;
   const pt = Math.max(0, Math.min(100, 100 - d.kc / d.kcBao * 100));
-  el.innerHTML = `<div class="cb-icon" style="background:${mauCanhBao(d)}">${icon(d.icon)}</div>
+  el.dataset.loai = d.loai;
+  el.innerHTML = `<div class="cb-icon" style="background:${d.mau || '#e53935'}">${icon(d.icon)}</div>
     <div class="cb-chu"><b>${quangDuong(d.kc)}</b><span>${esc(d.ten)}</span></div>
     ${d.gioiHan ? `<div class="bien-toc-do nho"><b>${d.gioiHan}</b></div>` : ''}
     <div class="cb-thanh"><i style="width:${pt}%"></i></div>`;
@@ -529,7 +565,17 @@ async function chiaSe(dd) {
 function moLienKet() {
   const q = new URLSearchParams(location.search);
   const d = q.get('diem');
-  if (d) {
+  // chia sẻ từ ứng dụng khác vào HawaMap (share_target của PWA) hoặc ?lienKet=…
+  const chiaSe = ['tieuDe', 'chu', 'lienKet'].map(k => q.get(k)).filter(Boolean).join('\n');
+  if (chiaSe) {
+    moChuoiChiaSe(chiaSe).then(ok => {
+      if (ok) return;
+      moTimKiem('xem');
+      $('#o-tim').value = q.get('chu') || q.get('tieuDe') || '';
+      if ($('#o-tim').value) timGoiY($('#o-tim').value);
+    });
+    history.replaceState(null, '', location.pathname);
+  } else if (d) {
     const [lat, lng] = d.split(',').map(Number);
     if (isFinite(lat) && isFinite(lng)) {
       st.lienKet = true;
@@ -542,6 +588,41 @@ function moLienKet() {
     $('#o-tim').value = q.get('q');
     timGoiY(q.get('q'));
   }
+}
+
+/**
+ * Mở địa điểm từ liên kết / văn bản chia sẻ (Google Maps, Apple Maps, geo:, toạ độ).
+ * Liên kết rút gọn maps.app.goo.gl được máy chủ HawaMap mở ra. Trả về false nếu không nhận ra.
+ */
+async function moChuoiChiaSe(chuoi) {
+  let kq = docLienKet(chuoi);
+  if (!kq) return false;
+  st.lienKet = true;
+  if (kq.rutGon) {
+    thongBao('Đang mở liên kết Google Maps…');
+    try {
+      const r = await fetch(`${diaChiApi()}/mo-lien-ket?url=${encodeURIComponent(kq.rutGon)}`);
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d.diaDiem) throw new Error(d.loi || 'máy chủ không trả lời');
+      kq = d.diaDiem;
+    } catch (e) {
+      thongBao('Không mở được liên kết rút gọn: ' + e.message + '. Hãy mở liên kết trong trình duyệt rồi chia sẻ lại liên kết đầy đủ.', { loai: 'loi', thoiGian: 6000 });
+      return true;
+    }
+  }
+  if (kq.viTri) {
+    const dd = { ten: kq.ten || 'Vị trí được chia sẻ', diaChi: '', viTri: kq.viTri };
+    if (kq.chiDuong && !st.dd) { dongTimKiem(); moLoTrinh(dd); return true; }
+    dongTimKiem();
+    chonDiaDiem(dd, { timDiaChi: !kq.ten });
+    if (kq.ten) diaChiTuToaDo(kq.viTri).then(x => { if (st.diaDiem && st.diaDiem.ten === dd.ten) { st.diaDiem.diaChi = x.diaChi; renderDiaDiem(); } }).catch(() => {});
+  } else {
+    moTimKiem(kq.chiDuong ? 'chi-duong' : 'xem');
+    $('#o-tim').value = kq.truyVan;
+    $('#nut-xoa-tim').hidden = false;
+    timGoiY(kq.truyVan);
+  }
+  return true;
 }
 
 // ================================================================== danh mục (cây xăng, ATM…)
@@ -774,6 +855,7 @@ function batDauDanDuong({ moPhong = false, tuGoc = false } = {}) {
   capNhatNutViTri();
   giuManHinh(true);
   if (caiDat.tuGhiHanhTrinh && !moPhong) ghiHT.batDau(st.dd.tenDen);
+  if (!moPhong) tuMoCamera();
   noi(st.dd.may.loiBatDau(), { chen: true });
   renderBangRe(null);
   renderThanhDd(null);
@@ -990,6 +1072,7 @@ function batLaiXe(bat) {
     banDo.datTheoDoi('huong');
     giuManHinh(true);
     if (caiDat.tuGhiHanhTrinh && !ghiHT.dangGhi) ghiHT.batDau('Lái xe');
+    tuMoCamera();
     thongBao('Chế độ lái xe: cảnh báo tốc độ, camera và báo cáo phía trước');
   } else {
     banDo.datTheoDoi(st.viTri ? 'bac' : 'khong');
@@ -1000,6 +1083,55 @@ function batLaiXe(bat) {
   capNhatNutViTri();
   if (st.cbCuoi) renderHud(st.cbCuoi);
   capNhatLe();
+}
+
+// ================================================================== HUD kính lái
+const KIEU_LAT_HUD = { doc: 'Lật dọc (phản chiếu kính lái)', ngang: 'Lật ngang', khong: 'Không lật' };
+
+function batHud(bat) {
+  st.hud = bat;
+  const el = $('#man-hud');
+  el.hidden = !bat;
+  if (bat) {
+    moKhoaAmThanh();
+    batGps();
+    giuManHinh(true);
+    datKieuLatHud();
+    renderManHud();
+    if (document.fullscreenEnabled && !document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+    hienNutHud();
+  } else {
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    giuManHinh(!!(st.dd || st.laiXe));
+  }
+}
+
+function datKieuLatHud() {
+  const el = $('#man-hud');
+  el.dataset.lat = caiDat.latHud;
+  $('#nut-hud-lat').textContent = KIEU_LAT_HUD[caiDat.latHud] || KIEU_LAT_HUD.doc;
+}
+
+/** Chạm vào màn hình HUD: hiện nút (lật / thoát) trong vài giây, không lật theo hình. */
+function hienNutHud() {
+  $('#hud-nut').hidden = false;
+  clearTimeout(st.henNutHud);
+  st.henNutHud = setTimeout(() => { $('#hud-nut').hidden = true; }, 4000);
+}
+
+function renderManHud() {
+  const cb = st.cbCuoi || { kmh: st.viTri ? tocDoKmh(st.viTri.tocDo) : 0 };
+  const g = st.dd ? trangThaiGoc(st.ttCuoi) : null;
+  const ke = g && g.ke;
+  const d = cb.canhBao;
+  const matGps = document.body.classList.contains('mat-gps');
+  $('#hud-noi').innerHTML = `
+    <div class="hn-toc${cb.vuotToc ? ' vuot' : ''}"><b>${matGps ? '--' : cb.kmh}</b><span>${matGps ? 'Mất GPS' : 'km/h'}</span></div>
+    ${cb.gioiHan ? `<div class="hn-bien${cb.uocTinh ? ' uoc' : ''}"><b>${cb.gioiHan}</b></div>` : ''}
+    ${ke ? `<div class="hn-re">${muiTenRe(ke)}<div><b>${quangDuong(ke.kc || 0)}</b><span>${esc(ke.ten || ke.chiDan || '')}</span></div></div>` : ''}
+    ${d ? `<div class="hn-cb">${icon(d.icon)}<b>${quangDuong(d.kc)}</b><span>${esc(d.ten)}</span></div>` : ''}
+    <div class="hn-duoi">${g ? `<span>${esc(g.conLaiChu)}</span><span>Đến ${esc(g.gioDenChu)}</span>`
+    : `<span>${esc(cb.duong ? cb.duong.ten || cb.duong.ref || '' : '')}</span><span>${new Date().toTimeString().slice(0, 5)}</span>`}</div>`;
 }
 
 // ================================================================== báo cáo giao thông
@@ -1020,10 +1152,18 @@ function moBaoCao(viTriRieng) {
     ${dungMayChu() ? 'Báo cáo được chia sẻ với mọi người dùng.' : 'Chưa kết nối máy chủ: báo cáo chỉ lưu trên máy này.'}</p>`);
 }
 
-async function guiBc(loai) {
+async function guiBc(loai, phu) {
+  const kieu = LOAI_BAO_CAO[loai];
+  if (kieu.phu && !phu) {
+    // camera: hỏi loại camera trước khi gửi
+    return hienTamPhu(`<div class="dd-dau"><div class="tieu-de-tam">${icon(kieu.icon)}Loại camera</div>
+        <button class="nut-icon" data-hd="bao-cao-lai" aria-label="Quay lại">${icon('quaylai')}</button></div>
+      <div class="ds-lua-chon">${Object.entries(kieu.phu).map(([k, v]) =>
+        `<button class="dong-ds" data-hd="gui-bc" data-loai="${loai}" data-phu="${k}"><span class="dt-icon tron" style="background:${LOAI_CANH_BAO[v.canhBao].mau}">${icon(LOAI_CANH_BAO[v.canhBao].icon)}</span><span class="dong-ds-chu"><b>${esc(v.ten)}</b></span></button>`).join('')}</div>`);
+  }
   const p = st.viTriBaoCao || (st.viTri ? st.viTri.viTri : banDo.tam());
   try {
-    await guiBaoCao({ loai, viTri: p, huong: st.viTriBaoCao ? null : st.viTri && st.viTri.huong });
+    await guiBaoCao({ loai, phu, viTri: p, huong: st.viTriBaoCao ? null : st.viTri && st.viTri.huong });
     banDo.datBaoCao(baoCaoHienTai());
     thongBao(`Đã gửi báo cáo "${LOAI_BAO_CAO[loai].ten}". Cảm ơn bạn!`, { loai: 'tot' });
     dongTam();
@@ -1040,7 +1180,7 @@ function moPopupBaoCao(id, p) {
   if (popupBc) popupBc.remove();
   popupBc = new maplibregl.Popup({ offset: 18, maxWidth: '280px', className: 'popup-bc' })
     .setLngLat(p)
-    .setHTML(`<div class="pbc"><div class="pbc-dau"><span style="background:${k.mau}">${icon(k.icon)}</span><div><b>${esc(k.ten)}</b>
+    .setHTML(`<div class="pbc"><div class="pbc-dau"><span style="background:${k.mau}">${icon(k.icon)}</span><div><b>${esc(k.phu && k.phu[b.phu] ? k.phu[b.phu].ten : k.ten)}</b>
       <small>Báo cáo ${thoiGianTruoc(b.taoLuc)}${b.conTon ? ` · ${b.conTon} người xác nhận` : ''}</small></div></div>
       ${b.ghiChu ? `<p>${esc(b.ghiChu)}</p>` : ''}
       <div class="pbc-nut">${b.cuaToi ? `<button class="nut vien" data-hd="xoa-bc" data-id="${esc(id)}">Xoá báo cáo</button>`
@@ -1050,10 +1190,7 @@ function moPopupBaoCao(id, p) {
 
 // ================================================================== kiểu bản đồ
 function kieuMongMuon() {
-  if (caiDat.tuDongBanDem && caiDat.kieuBanDo === 'tieuchuan') {
-    const h = new Date().getHours();
-    if (h >= 18 || h < 6) return 'bandem';
-  }
+  if (caiDat.tuDongBanDem && caiDat.kieuBanDo === 'tieuchuan' && laBanDem(st.viTri ? st.viTri.viTri : CAU_HINH.viTriMacDinh.tam)) return 'bandem';
   return caiDat.kieuBanDo;
 }
 
@@ -1065,8 +1202,8 @@ function moLopBanDo() {
       <button class="nut-icon" data-hd="dong-tam" aria-label="Đóng">${icon('dong')}</button></div>
     <div class="luoi-kieu">${Object.entries(kieu).map(([k, v]) =>
       `<button class="${caiDat.kieuBanDo === k ? 'chon' : ''}" data-hd="doi-kieu" data-k="${k}"><span style="background:${v.mau}"></span>${esc(v.ten)}</button>`).join('')}</div>
-    <div class="ds-cong-tac">${bat('tuDongBanDem', 'Tự chuyển bản đồ ban đêm (18h – 6h)')}${bat('nha3D', 'Nhà 3D')}
-      ${bat('hienBaoCao', 'Báo cáo giao thông')}${bat('hienDiemCanhBao', 'Camera, đường sắt, trạm thu phí')}</div>`);
+    <div class="ds-cong-tac">${bat('tuDongBanDem', 'Tự chuyển bản đồ ban đêm (khi mặt trời lặn)')}${bat('nha3D', 'Nhà 3D')}
+      ${bat('hienBaoCao', 'Báo cáo giao thông')}${bat('hienDiemCanhBao', 'Điểm cảnh báo (camera, biển báo, đèn tín hiệu…)')}</div>`);
 }
 
 // ================================================================== trang: cài đặt
@@ -1083,12 +1220,14 @@ const NHOM_CAI_DAT = [
     { k: 'nguongVuot', loai: 'chon', ten: 'Cảnh báo khi vượt quá', so: true, ds: () => [[0, '0 km/h'], [5, '5 km/h'], [10, '10 km/h'], [15, '15 km/h']] },
     { k: 'bipVuotToc', loai: 'bat', ten: 'Âm báo liên tục khi vượt tốc độ' },
     { k: 'uocTinhGioiHan', loai: 'bat', ten: 'Ước tính giới hạn khi đường chưa có biển trong dữ liệu' },
-    { k: 'canhBaoCamera', loai: 'bat', ten: 'Cảnh báo camera giám sát' },
-    { k: 'kcCanhBaoCamera', loai: 'chon', ten: 'Báo trước camera', so: true, ds: () => [[300, '300 m'], [500, '500 m'], [800, '800 m'], [1000, '1 km']] },
-    { k: 'canhBaoDuongSat', loai: 'bat', ten: 'Cảnh báo đường sắt giao cắt' },
-    { k: 'canhBaoThuPhi', loai: 'bat', ten: 'Cảnh báo trạm thu phí' },
-    { k: 'canhBaoBaoCao', loai: 'bat', ten: 'Cảnh báo báo cáo giao thông (kẹt xe, tai nạn…)' }
+    { k: 'hieuChinhTocDo', loai: 'chon', ten: 'Hiệu chỉnh tốc độ GPS cho khớp đồng hồ xe', so: true,
+      ds: () => [-5, -3, 0, 2, 3, 5, 7, 10].map(x => [x, x ? `${x > 0 ? '+' : ''}${x}%` : 'Không']) },
+    { k: 'canhBaoMatGps', loai: 'bat', ten: 'Báo khi mất tín hiệu GPS' },
+    { k: 'nhacDen', loai: 'bat', ten: 'Nhắc bật đèn khi trời tối, tắt đèn khi trời sáng' },
+    { k: 'bongBongNoi', loai: 'bat', ten: 'Bong bóng tốc độ và cảnh báo nổi trên ứng dụng khác', chiAndroid: true },
+    { k: 'kcCanhBaoCamera', loai: 'chon', ten: 'Báo trước camera', so: true, ds: () => [[300, '300 m'], [500, '500 m'], [800, '800 m'], [1000, '1 km']] }
   ] },
+  { ten: 'Từng loại cảnh báo', muc: Object.entries(LOAI_CANH_BAO).map(([k, v]) => ({ muc: k, ten: v.ten, icon: v.icon, mau: v.mau })) },
   { ten: 'Dẫn đường', muc: [
     { k: 'phuongTien', loai: 'chon', ten: 'Phương tiện mặc định', ds: () => Object.entries(PHUONG_TIEN).map(([k, v]) => [k, v.ten]) },
     { k: 'tranhCaoToc', loai: 'bat', ten: 'Tránh đường cao tốc' },
@@ -1098,15 +1237,20 @@ const NHOM_CAI_DAT = [
   ] },
   { ten: 'Bản đồ', muc: [
     { k: 'kieuBanDo', loai: 'chon', ten: 'Kiểu bản đồ', ds: () => [...Object.entries(CAU_HINH.kieuBanDo).map(([k, v]) => [k, v.ten]), ...(caiDat.styleVietmap ? [['vietmap', 'VietMap']] : [])] },
-    { k: 'tuDongBanDem', loai: 'bat', ten: 'Tự chuyển bản đồ ban đêm (18h – 6h)' },
+    { k: 'tuDongBanDem', loai: 'bat', ten: 'Tự chuyển bản đồ ban đêm (theo giờ mặt trời lặn / mọc)' },
     { k: 'nha3D', loai: 'bat', ten: 'Hiện nhà 3D' },
     { k: 'hienBaoCao', loai: 'bat', ten: 'Hiện báo cáo giao thông' },
-    { k: 'hienDiemCanhBao', loai: 'bat', ten: 'Hiện camera, đường sắt, trạm thu phí' }
+    { k: 'hienDiemCanhBao', loai: 'bat', ten: 'Hiện điểm cảnh báo (camera, biển báo…)' }
   ] },
   { ten: 'Camera hành trình', muc: [
     { k: 'doDaiDoanCamera', loai: 'chon', ten: 'Độ dài mỗi đoạn video', so: true, ds: () => [[1, '1 phút'], [3, '3 phút'], [5, '5 phút']] },
     { k: 'soDoanToiDa', loai: 'chon', ten: 'Giữ tối đa (ghi vòng)', so: true, ds: () => [[5, '5 đoạn'], [10, '10 đoạn'], [20, '20 đoạn'], [50, '50 đoạn']] },
-    { k: 'camGhiAm', loai: 'bat', ten: 'Ghi âm thanh' }
+    { k: 'camGhiAm', loai: 'bat', ten: 'Ghi âm thanh' },
+    { k: 'camTuGhi', loai: 'bat', ten: 'Tự ghi khi xe chạy trên 5 km/h, tự dừng sau 20 giây đứng yên' },
+    { k: 'camTuMo', loai: 'bat', ten: 'Tự mở camera (thu nhỏ) khi dẫn đường hoặc lái xe' },
+    { k: 'camChatLuong', loai: 'chon', ten: 'Chất lượng video', ds: () => Object.entries(CHAT_LUONG).map(([k, v]) => [k, v.ten]) },
+    { k: 'camGioiHanMB', loai: 'chon', ten: 'Dung lượng tối đa cho video', so: true,
+      ds: () => [[500, '500 MB'], [1024, '1 GB'], [2048, '2 GB'], [5120, '5 GB'], [0, 'Không giới hạn']] }
   ] },
   { ten: 'Nâng cao', muc: [
     { k: 'mayChuBaoCao', loai: 'chu', ten: 'Máy chủ báo cáo', goiY: 'Để trống = máy chủ của trang này (api)' },
@@ -1119,6 +1263,11 @@ const NHOM_CAI_DAT = [
 
 function trangCaiDat() {
   const dong = m => {
+    if (m.muc) {
+      const v = mucCanhBao(m.muc);
+      return `<label class="cd-dong cd-muc"><span class="cd-ic" style="background:${m.mau}">${icon(m.icon)}</span><span>${esc(m.ten)}</span>
+        <select data-muc="${m.muc}">${MUC_CANH_BAO.map(([g, t]) => `<option value="${g}"${g === v ? ' selected' : ''}>${t}</option>`).join('')}</select></label>`;
+    }
     if (m.hd) return `<button class="cd-dong cd-nut" data-hd="${m.hd}">${icon(m.icon)}<span>${esc(m.ten)}</span></button>`;
     const v = caiDat[m.k];
     if (m.loai === 'bat') return `<label class="cd-dong"><span>${esc(m.ten)}</span><span class="cong-tac"><input type="checkbox" data-cd="${m.k}" data-kieu="bat"${v ? ' checked' : ''}><span></span></span></label>`;
@@ -1129,7 +1278,7 @@ function trangCaiDat() {
     if (m.loai === 'truot') return `<label class="cd-dong"><span>${esc(m.ten)}</span><input type="range" min="${m.min}" max="${m.max}" step="${m.buoc}" value="${v}" data-cd="${m.k}" data-kieu="so"></label>`;
     return `<label class="cd-dong cot"><span>${esc(m.ten)}</span><input class="o-nhap" type="text" value="${esc(v)}" placeholder="${esc(m.goiY || '')}" data-cd="${m.k}" data-kieu="chu" spellcheck="false" autocomplete="off"></label>`;
   };
-  moTrang('Cài đặt', NHOM_CAI_DAT.map(n => `<div class="nhom"><h4>${esc(n.ten)}</h4>${n.muc.map(dong).join('')}</div>`).join('') +
+  moTrang('Cài đặt', NHOM_CAI_DAT.map(n => `<div class="nhom"><h4>${esc(n.ten)}</h4>${n.muc.filter(m => !m.chiAndroid || laAppAndroid).map(dong).join('')}</div>`).join('') +
     (coGiongNoi() && !danhSachGiong().length ? '<p class="ghi-chu">Thiết bị chưa có giọng đọc tiếng Việt. Trên Android: Cài đặt → Hệ thống → Ngôn ngữ → Chuyển văn bản thành giọng nói → tải gói tiếng Việt.</p>' : ''));
 }
 
@@ -1140,12 +1289,203 @@ ngheDoiCaiDat(thay => {
   }
   if ('nha3D' in thay) banDo.dat3D(caiDat.nha3D);
   if ('hienBaoCao' in thay) banDo.hienLop(['bao-cao'], caiDat.hienBaoCao);
-  if ('hienDiemCanhBao' in thay) banDo.hienLop(['canh-bao'], caiDat.hienDiemCanhBao);
+  if ('hienDiemCanhBao' in thay) banDo.hienLop(['canh-bao', 'canh-bao-nho'], caiDat.hienDiemCanhBao);
+  if ('mucCanhBao' in thay || 'phuongTien' in thay) veDiemCanhBao();
+  if ('bongBongNoi' in thay && caiDat.bongBongNoi && laAppAndroid) guiGoc('xinQuyenNoi');
   if ('tenGiong' in thay) doiGiong();
   if ('mayChuBaoCao' in thay) kiemTraMayChu().then(taiBaoCaoKhuVuc);
   if ('giongNoi' in thay) { $('#nut-loa').innerHTML = icon(caiDat.giongNoi ? 'loa' : 'tatloa'); if (!caiDat.giongNoi) imLang(); }
   if ('phuongTien' in thay && st.lt && !st.lt.tuyen.length) st.lt.phuongTien = caiDat.phuongTien;
+  // đổi chất lượng / âm thanh: mở lại camera nếu đang mở mà chưa ghi (đang ghi thì áp dụng ở lần mở sau)
+  if (('camChatLuong' in thay || 'camGhiAm' in thay) && camera && camera.dangMo && !camera.dangGhi) {
+    camera.dong();
+    camera.mo().catch(e => thongBao('Không mở lại được camera: ' + e.message, { loai: 'loi' }));
+  }
 });
+
+// ================================================================== trang: bản đồ offline
+const MUC_OFFLINE = { tongquat: { ten: 'Tổng quát (đường lớn)', z: 12 }, duong: { ten: 'Đường phố (đủ tên đường)', z: 14 }, chitiet: { ten: 'Chi tiết nhất (ảnh vệ tinh rõ hơn)', z: 16 } };
+const KB_MOI_O = 35 * 1024;
+
+function hoTroOffline() {
+  return !laAppGoc && typeof caches !== 'undefined' && 'serviceWorker' in navigator;
+}
+
+function tepKieuHienTai() {
+  const k = layKieuBanDo(banDo.kieu);
+  return tepCuaKieu(banDo.map, typeof k.style === 'string' ? k.style : null);
+}
+
+async function trangOffline() {
+  if (!hoTroOffline()) {
+    return moTrang('Bản đồ offline', `<p class="trong">${laAppGoc ? 'Bản đồ offline hiện dùng được trên bản web / PWA (mở HawaMap bằng Chrome hoặc Safari và cài lên màn hình chính). Ứng dụng vẫn giữ các ô bản đồ đã xem gần đây.'
+      : 'Trình duyệt này không hỗ trợ lưu bản đồ offline. Hãy mở HawaMap qua HTTPS bằng Chrome, Edge hoặc Safari bản mới.'}</p>`);
+  }
+  const muc = st.mucOffline || 'duong';
+  const t = tepKieuHienTai();
+  const khung = banDo.khungHienTai();
+  const soO = demOVung(t.nguon, khung, 6, MUC_OFFLINE[muc].z);
+  const ds = vungDaTai();
+  let boNho = '';
+  try {
+    const u = await navigator.storage.estimate();
+    boNho = `Bộ nhớ trình duyệt đã dùng ${kichThuoc(u.usage)} / ${kichThuoc(u.quota)}.`;
+  } catch (e) { /* không hỗ trợ */ }
+  const tai = st.taiOffline;
+  moTrang('Bản đồ offline', `<div class="nhom"><h4>Vùng đang xem trên bản đồ</h4>
+      <label class="cd-dong"><span>Mức chi tiết</span><select id="muc-offline">${Object.entries(MUC_OFFLINE).map(([k, v]) =>
+        `<option value="${k}"${k === muc ? ' selected' : ''}>${esc(v.ten)}</option>`).join('')}</select></label>
+      <p class="ghi-chu">Kiểu bản đồ: ${esc(layKieuBanDo(banDo.kieu).ten)} · ${soO.toLocaleString('vi-VN')} ô · khoảng ${kichThuoc(soO * KB_MOI_O)}.
+      ${soO > TOI_DA_O ? `<b class="chu-do">Vùng quá lớn (tối đa ${TOI_DA_O.toLocaleString('vi-VN')} ô): phóng to bản đồ hoặc chọn mức chi tiết thấp hơn.</b>` : ''}</p>
+      ${tai ? `<div class="tien-do-tai"><div class="thanh"><i id="tien-do-offline" style="width:${tai.pt || 0}%"></i></div>
+        <span id="chu-tien-do-offline">${esc(tai.chu || 'Đang chuẩn bị…')}</span><button class="nut vien" data-hd="huy-offline">Huỷ</button></div>`
+      : `<div class="hang-nut"><button class="nut" data-hd="tai-offline"${soO > TOI_DA_O || !t.nguon.length ? ' disabled' : ''}>${icon('taive')}Tải vùng này</button></div>`}</div>
+    <div class="nhom"><h4>Vùng đã tải (${ds.length})</h4>${ds.length ? ds.map(v => `<div class="dong-ds">
+      <span class="dt-icon">${icon('lop')}</span>
+      <button class="dong-ds-chu" data-hd="xem-vung-offline" data-id="${v.id}"><b>${esc(v.ten)}</b>
+        <small>${esc(layKieuBanDo(v.kieu).ten)} · ${ngayGio(v.luc)} · ${kichThuoc(v.kichThuoc || 0)}</small></button>
+      <button class="nut-icon" data-hd="cap-nhat-offline" data-id="${v.id}" aria-label="Tải lại">${icon('doicamera')}</button>
+      <button class="nut-icon" data-hd="xoa-offline" data-id="${v.id}" aria-label="Xoá">${icon('xoa')}</button></div>`).join('')
+    : '<p class="trong">Chưa tải vùng nào. Kéo bản đồ tới khu vực cần dùng khi mất mạng rồi bấm "Tải vùng này".</p>'}
+      <label class="cd-dong"><span>Tự cập nhật khi có Wi-Fi (vùng đã tải quá 30 ngày)</span><span class="cong-tac"><input type="checkbox" data-cd="capNhatOffline" data-kieu="bat"${caiDat.capNhatOffline ? ' checked' : ''}><span></span></span></label></div>
+    <p class="ghi-chu">${boNho} Khi mất mạng vẫn xem được bản đồ và vị trí của bạn ở vùng đã tải; tìm kiếm, chỉ đường, dữ liệu camera / giới hạn tốc độ cần có mạng.</p>`);
+}
+
+function capNhatTienDoOffline() {
+  const tai = st.taiOffline;
+  const chip = $('#chip-tai');
+  chip.hidden = !tai;
+  if (!tai) return;
+  chip.textContent = `Bản đồ ${tai.pt || 0}%`;
+  const thanh = $('#tien-do-offline');
+  if (thanh) { thanh.style.width = (tai.pt || 0) + '%'; $('#chu-tien-do-offline').textContent = tai.chu; }
+}
+
+/** Tải (hoặc tải lại) một vùng. Không truyền `cu` thì tải vùng đang xem với mức chi tiết đã chọn. */
+async function taiVungOffline(cu = null, { imLang = false } = {}) {
+  if (st.taiOffline) return thongBao('Đang tải một vùng khác');
+  const cungKieu = !cu || cu.kieu === banDo.kieu;
+  const t = cungKieu ? tepKieuHienTai() : { nguon: cu.nguon, tepPhu: cu.tepPhu };
+  const vung = cu ? { ...cu, ...t } : {
+    id: 'vung' + Date.now(), kieu: banDo.kieu, khung: banDo.khungHienTai().map(x => +x.toFixed(5)), zTu: 6,
+    zDen: MUC_OFFLINE[st.mucOffline || 'duong'].z, ten: 'Vùng đã tải', ...t
+  };
+  const ds = diaChiVung(vung);
+  const ac = new AbortController();
+  st.taiOffline = { ac, pt: 0, chu: 'Đang chuẩn bị…' };
+  if (!$('#trang').hidden && $('#tieu-de-trang').textContent === 'Bản đồ offline') trangOffline();
+  capNhatTienDoOffline();
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) { /* không hỗ trợ */ }
+  if (!cu) {
+    const tam = [(vung.khung[0] + vung.khung[2]) / 2, (vung.khung[1] + vung.khung[3]) / 2];
+    diaChiTuToaDo(tam).then(d => { vung.ten = 'Quanh ' + (d.ten || d.diaChi); }).catch(() => { vung.ten = `Vùng ${tam[1].toFixed(3)}, ${tam[0].toFixed(3)}`; });
+  }
+  try {
+    const kq = await taiDiaChi(ds, {
+      tinHieu: ac.signal,
+      tienDo: (xong, tong, kt) => {
+        st.taiOffline.pt = Math.floor(xong / tong * 100);
+        st.taiOffline.chu = `${xong.toLocaleString('vi-VN')} / ${tong.toLocaleString('vi-VN')} tệp · ${kichThuoc(kt)}`;
+        capNhatTienDoOffline();
+      }
+    });
+    Object.assign(vung, { luc: Date.now(), soO: ds.length, kichThuoc: kq.kichThuoc });
+    luuVung(vung);
+    if (!imLang || kq.loi) thongBao(kq.loi ? `Đã tải, ${kq.loi} tệp lỗi (thử tải lại sau)` : `Đã tải bản đồ offline (${kichThuoc(kq.kichThuoc)})`, { loai: kq.loi ? '' : 'tot' });
+  } catch (e) {
+    if (e.name !== 'AbortError') thongBao('Tải bản đồ lỗi: ' + e.message, { loai: 'loi' });
+  } finally {
+    st.taiOffline = null;
+    capNhatTienDoOffline();
+    if (!$('#trang').hidden && $('#tieu-de-trang').textContent === 'Bản đồ offline') trangOffline();
+  }
+}
+
+/** Mỗi lần mở ứng dụng, khi đang dùng Wi-Fi: tải lại một vùng đã cũ (quá 30 ngày hoặc máy chủ đổi phiên bản ô). */
+function tuCapNhatOffline() {
+  if (st.daXetOffline || !caiDat.capNhatOffline || !hoTroOffline() || !navigator.onLine || !dangDungWifi()) return;
+  st.daXetOffline = true;
+  const nguonNay = tepKieuHienTai().nguon;
+  const v = vungDaTai().find(x => canCapNhat(x, x.kieu === banDo.kieu ? nguonNay : []));
+  if (v) taiVungOffline(v, { imLang: true });
+}
+
+// ================================================================== trang: thông số xe (OBD-II)
+const TRANG_THAI_OBD = { dangnoi: 'Đang kết nối bộ chuyển…', khoitao: 'Đang kết nối với xe…', ketnoi: 'Đã kết nối', ngat: 'Chưa kết nối' };
+
+function congObd() {
+  if (laAppGoc) return cauHinhGoc.nenTang === 'android' ? new CongGoc(guiGoc) : null;
+  return CongBle.hoTro() ? new CongBle() : null;
+}
+
+function trangObd() {
+  const o = st.obd || { trangThai: 'ngat' };
+  const v = (o.xe && o.xe.giaTri) || {};
+  const hoTro = o.xe && o.xe.hoTro;           // đã kết nối: chỉ hiện thông số xe có
+  const o1 = (k, ten, donVi) => `<div class="o-obd"><small>${esc(ten)}</small><b id="obd-${k}">${v[k] != null ? v[k] : '—'}</b><span>${esc(donVi)}</span></div>`;
+  const ketNoi = o.trangThai === 'ketnoi';
+  moTrang('Thông số xe (OBD-II)', `<div class="obd-dau"><span class="cham ${o.trangThai}"></span><b>${esc(TRANG_THAI_OBD[o.trangThai])}${o.ten ? ' · ' + esc(o.ten) : ''}</b>
+      ${o.trangThai === 'ngat' ? `<button class="nut" data-hd="obd-ket-noi">${icon('obd')}Kết nối ELM327</button>` : `<button class="nut vien" data-hd="obd-ngat">Ngắt</button>`}</div>
+    ${o.vin ? `<p class="ghi-chu obd-vin">Số khung (VIN): <b>${esc(o.vin)}</b></p>` : ''}
+    <div class="luoi-obd">${Object.entries(THONG_SO).filter(([k]) => !hoTro || hoTro.has(k)).map(([k, t]) => o1(k, t.ten, t.donVi)).join('')}${o1('ATRV', 'Điện áp ắc quy', 'V')}</div>
+    <div class="nhom"><h4>Mã lỗi động cơ</h4>
+      <div id="obd-loi" class="obd-loi">${o.maLoi ? (o.maLoi.length ? o.maLoi.map(m => `<span>${esc(m)}</span>`).join('') : 'Không có mã lỗi.') : 'Bấm "Đọc mã lỗi" khi đã kết nối.'}</div>
+      <div class="hang-nut"><button class="nut vien" data-hd="obd-doc-loi"${ketNoi ? '' : ' disabled'}>Đọc mã lỗi</button>
+      <button class="nut vien nguy" data-hd="obd-xoa-loi"${ketNoi ? '' : ' disabled'}>Xoá mã lỗi</button></div></div>
+    <p class="ghi-chu">Cắm bộ chuyển ELM327 vào cổng OBD-II (thường dưới vô lăng), bật khoá điện hoặc nổ máy.
+    ${laAppGoc ? 'Ghép đôi bộ chuyển Bluetooth trong Cài đặt Android trước (mã PIN thường là 1234 hoặc 0000), rồi bấm Kết nối và chọn thiết bị.'
+    : 'Trên Chrome / Edge cần bộ chuyển <b>Bluetooth LE</b> (BLE); bộ chuyển Bluetooth thường dùng được trong ứng dụng HawaMap trên Android. Safari / iPhone chưa hỗ trợ Bluetooth trên web.'}
+    Xoá mã lỗi cũng xoá dữ liệu tự chẩn đoán của xe; chỉ xoá sau khi đã sửa lỗi.</p>`);
+}
+
+function trangObdDangMo() { return !$('#trang').hidden && $('#tieu-de-trang').textContent === 'Thông số xe (OBD-II)'; }
+
+async function ketNoiObd() {
+  if (st.obd && st.obd.trangThai !== 'ngat') return;
+  const cong = congObd();
+  if (!cong) return thongBao(laAppGoc ? 'Thiết bị này chưa hỗ trợ kết nối OBD' : 'Trình duyệt chưa hỗ trợ Bluetooth: dùng Chrome / Edge hoặc ứng dụng HawaMap trên Android', { loai: 'loi', thoiGian: 5000 });
+  const o = st.obd = { cong, trangThai: 'dangnoi' };
+  const phien = new PhienElm(cong);
+  try {
+    // gọi ngay trong sự kiện bấm: Web Bluetooth chỉ cho chọn thiết bị khi người dùng vừa bấm
+    const cho = cong.ketNoi(s => phien.nhan(s), () => ngatObd('Bộ chuyển OBD đã ngắt kết nối'));
+    if (trangObdDangMo()) trangObd();
+    o.ten = await cho;
+    o.phien = phien;
+    o.xe = new DocXe(phien, { baoDoi: capNhatObd });
+    o.trangThai = 'khoitao';
+    if (trangObdDangMo()) trangObd();
+    await o.xe.khoiTao();
+    o.trangThai = 'ketnoi';
+    o.vin = await o.xe.docVin();
+    if (trangObdDangMo()) trangObd();
+    thongBao('Đã kết nối OBD-II', { loai: 'tot' });
+    o.xe.batDau().catch(e => ngatObd(e.message));
+  } catch (e) {
+    ngatObd(e.name === 'NotFoundError' ? null : (e.message || 'Không kết nối được bộ chuyển OBD'));
+  }
+}
+
+function ngatObd(loi) {
+  const o = st.obd;
+  if (!o || o.trangThai === 'ngat') return;
+  if (o.xe) o.xe.dung();
+  if (o.phien) o.phien.huy();
+  try { o.cong.ngat(); } catch (e) { /* đã ngắt */ }
+  o.trangThai = 'ngat';
+  if (loi) thongBao(loi, { loai: 'loi', thoiGian: 5000 });
+  if (trangObdDangMo()) trangObd();
+}
+
+function capNhatObd(v) {
+  for (const k of [...Object.keys(THONG_SO), 'ATRV']) { const el = document.getElementById('obd-' + k); if (el && v[k] != null) el.textContent = v[k]; }
+  // nước làm mát quá nóng: đọc cảnh báo (tối đa 10 phút một lần)
+  if (v['0105'] >= 110 && Date.now() - (st.obd.baoNongLuc || 0) > 600000) {
+    st.obd.baoNongLuc = Date.now();
+    bip('canhbao');
+    noi(`Cảnh báo, nhiệt độ nước làm mát ${v['0105']} độ. Hãy dừng xe kiểm tra.`, { chen: true });
+  }
+}
 
 // ================================================================== trang: địa điểm đã lưu
 function trangDaLuu() {
@@ -1185,6 +1525,10 @@ function xemHanhTrinh(id) {
       <button class="nut-icon" data-hd="dong-hanh-trinh" aria-label="Đóng">${icon('dong')}</button></div>
     <div class="tong-ket"><div><b>${quangDuong(h.quangDuong)}</b><small>quãng đường</small></div><div><b>${thoiGian(h.thoiGian)}</b><small>thời gian</small></div>
       <div><b>${h.tocDoTB}</b><small>km/h trung bình</small></div><div><b>${h.tocDoMax}</b><small>km/h cao nhất</small></div></div>
+    ${h.tgDung != null ? `<div class="tong-ket phu"><div><b>${thoiGian(h.tgDung)}</b><small>dừng / chờ</small></div>
+      <div><b class="${h.soLanVuot ? 'chu-do' : ''}">${h.soLanVuot || 0}</b><small>lần vượt tốc độ</small></div>
+      <div><b>${thoiGian(h.tgVuot || 0)}</b><small>thời gian vượt</small></div></div>` : ''}
+    ${svgBieuDoTocDo(h.bieuDo)}
     <div class="hang-nut"><button class="nut vien" data-hd="gpx-hanh-trinh">${icon('taive')}Xuất GPX</button>
       <button class="nut vien nguy" data-hd="xoa-hanh-trinh">${icon('xoa')}Xoá</button></div>`);
   setTimeout(() => banDo.vuaKhung(h.toaDo), 50);
@@ -1211,13 +1555,22 @@ function trangHuongDan() {
     <h4>Dẫn đường</h4><p>Bấm <b>Bắt đầu</b>. Ứng dụng đọc hướng dẫn rẽ bằng tiếng Việt, hiện làn đường nên đi, tự tính lại khi đi sai đường.
     Bấm thanh phía dưới để xem tổng quan, các bước, tìm cây xăng dọc đường. <b>Chạy thử</b> để xem trước lộ trình mà không cần di chuyển.</p>
     <h4>Cảnh báo</h4><p>Khi đang đi (kể cả không dẫn đường), góc trái hiện tốc độ của bạn và biển giới hạn tốc độ của con đường.
-    Vượt tốc độ: đồng hồ chuyển đỏ và có âm báo. Ứng dụng báo trước camera giám sát, đường sắt giao cắt, trạm thu phí và các báo cáo kẹt xe, tai nạn, CSGT…
+    Vượt tốc độ: đồng hồ chuyển đỏ và có âm báo. Ứng dụng báo trước camera (phạt tốc độ, đèn đỏ, đo tốc độ trung bình, giám sát), giới hạn tốc độ thay đổi,
+    khúc cua, biển cấm rẽ, đường sắt giao cắt, trường học, gờ giảm tốc, hầm, trạm thu phí, trạm dừng nghỉ và các báo cáo kẹt xe, tai nạn, CSGT…
+    Trong <b>Cài đặt → Từng loại cảnh báo</b> chọn cho mỗi loại: tắt, chỉ hiển thị, hoặc hiển thị kèm giọng nói (đèn tín hiệu và vạch qua đường mặc định tắt).
     Biển giới hạn có viền nét đứt là giới hạn <i>ước tính</i> theo loại đường (Thông tư 38/2024/TT-BGTVT) khi dữ liệu chưa có biển báo — luôn tuân theo biển báo thực tế.</p>
     <h4>Chế độ lái xe</h4><p>Menu → <b>Chế độ lái xe</b>: bản đồ xoay theo hướng đi, chỉ hiện tốc độ, giới hạn và cảnh báo, không cần lộ trình.</p>
+    <h4>HUD kính lái</h4><p>Menu → <b>HUD kính lái</b>, đặt điện thoại nằm ngửa dưới kính chắn gió: chữ được lật gương để đọc được trên kính.
+    Chạm màn hình để đổi kiểu lật hoặc thoát. Nên dùng ban đêm, độ sáng màn hình cao nhất.</p>
+    <h4>Bản đồ offline</h4><p>Menu → <b>Bản đồ offline</b>: kéo bản đồ tới vùng cần dùng khi mất mạng, chọn mức chi tiết rồi bấm <b>Tải vùng này</b>.</p>
+    <h4>Mở liên kết Google Maps</h4><p>Dán liên kết Google Maps vào ô tìm kiếm, hoặc trong Google Maps bấm <b>Chia sẻ</b> → HawaMap (ứng dụng Android / PWA đã cài).</p>
+    <h4>Thông số xe (OBD-II)</h4><p>Cắm bộ chuyển ELM327 Bluetooth vào cổng OBD-II, bật khoá điện, rồi Menu → <b>Thông số xe</b> → Kết nối:
+    xem vòng tua, nhiệt độ nước, điện áp…, đọc và xoá mã lỗi động cơ.</p>
     <h4>Báo cáo giao thông</h4><p>Bấm nút loa đỏ để báo kẹt xe, tai nạn, CSGT, camera, ngập nước, công trình… tại vị trí của bạn.
     Bấm vào biểu tượng báo cáo trên bản đồ để xác nhận "Vẫn còn" hoặc "Không còn".</p>
-    <h4>Camera hành trình</h4><p>Dùng camera sau của điện thoại để quay video, có in giờ, tốc độ, toạ độ lên hình. Video ghi thành từng đoạn, tự xoá đoạn cũ khi đầy;
-    bấm <b>khoá</b> để giữ lại đoạn quan trọng. Xem / tải video trong danh sách đoạn.</p>
+    <h4>Camera hành trình</h4><p>Dùng camera sau của điện thoại (hoặc webcam USB: nút đổi camera) để quay video, có in giờ, tốc độ, toạ độ lên hình.
+    Khi camera đang mở, video tự ghi lúc xe chạy và tự dừng sau 20 giây đứng yên. Video ghi thành từng đoạn, tự xoá đoạn cũ khi vượt số đoạn hoặc dung lượng đặt trong Cài đặt;
+    bấm <b>khoá</b> để giữ lại đoạn quan trọng, nút máy ảnh để chụp ảnh. Xem / tải video trong danh sách đoạn.</p>
     <h4>Cài lên điện thoại</h4><p>Mở trang bằng Chrome (Android) hoặc Safari (iPhone) → menu → <b>Thêm vào màn hình chính</b>. Cần mở qua HTTPS để dùng GPS.</p></div>`);
 }
 
@@ -1233,12 +1586,25 @@ function trangGioiThieu() {
 
 // ================================================================== camera hành trình
 function layHudCamera() {
-  return { tocDo: st.viTri ? tocDoKmh(st.viTri.tocDo) : null, viTri: st.viTri && st.viTri.viTri, tenDuong: st.cbCuoi && st.cbCuoi.duong ? st.cbCuoi.duong.ten : '' };
+  return { tocDo: st.cbCuoi ? st.cbCuoi.kmh : st.viTri ? tocDoKmh(st.viTri.tocDo) : null, viTri: st.viTri && st.viTri.viTri, tenDuong: st.cbCuoi && st.cbCuoi.duong ? st.cbCuoi.duong.ten : '' };
 }
 
-async function moCamera() {
+/** Camera đang mở (kể cả đang thu nhỏ) thì tự ghi khi xe chạy, tự dừng khi xe đứng yên lâu. */
+function xetTuGhi(kmh) {
+  if (!caiDat.camTuGhi || !camera || !camera.dangMo) return;
+  const viec = tuGhi.xet(kmh, { dangGhi: camera.dangGhi, tuBat: camera.tuBat });
+  if (viec === 'batdau') { camera.batDauGhi(); camera.tuBat = true; thongBao('Camera hành trình: tự ghi khi xe chạy'); }
+  else if (viec === 'dung') { camera.dungGhi(); thongBao('Camera hành trình: đã dừng ghi (xe đứng yên 20 giây)'); }
+}
+
+/** Tự mở camera (thu nhỏ, không che bản đồ) khi bắt đầu dẫn đường / lái xe nếu đã bật trong cài đặt. */
+function tuMoCamera() {
+  if (caiDat.camTuMo && hoTroCamera() && !(camera && camera.dangMo)) moCamera({ an: true });
+}
+
+async function moCamera({ an = false } = {}) {
   if (!hoTroCamera()) return thongBao('Trình duyệt không hỗ trợ camera hành trình', { loai: 'loi' });
-  $('#man-camera').hidden = false;
+  if (!an) $('#man-camera').hidden = false;
   if (!camera) camera = new CameraHanhTrinh({ canvas: $('#canvas-camera'), video: $('#video-camera'), layHud: layHudCamera, baoDoi: capNhatCameraUi });
   try {
     await camera.mo();
@@ -1262,13 +1628,16 @@ async function trangDoanCamera() {
   try { ds = await danhSachDoan(); } catch (e) { /* IndexedDB lỗi */ }
   let tong = 0;
   ds.forEach(d => { tong += d.kichThuoc; });
-  moTrang('Video camera hành trình', `<p class="ghi-chu">${ds.length} đoạn · ${kichThuoc(tong)}. Đoạn chưa khoá sẽ tự xoá khi vượt ${caiDat.soDoanToiDa} đoạn.</p>` +
+  const soVideo = ds.filter(d => !d.anh).length, soAnh = ds.length - soVideo;
+  const gioiHan = caiDat.camGioiHanMB ? ` hoặc ${kichThuoc(caiDat.camGioiHanMB * 1024 * 1024)}` : '';
+  moTrang('Video camera hành trình', `<p class="ghi-chu">${soVideo} đoạn video${soAnh ? `, ${soAnh} ảnh` : ''} · ${kichThuoc(tong)}.
+    Đoạn chưa khoá sẽ tự xoá khi vượt ${caiDat.soDoanToiDa} đoạn${gioiHan}.</p>` +
     (ds.length ? ds.map(d => `<div class="dong-ds">
-      <span class="dt-icon">${icon(d.khoa ? 'khoa' : 'camera')}</span>
-      <span class="dong-ds-chu"><b>${ngayGio(d.batDau)}</b><small>${thoiGian((d.ketThuc - d.batDau) / 1000)} · ${kichThuoc(d.kichThuoc)}${d.khoa ? ' · đã khoá' : ''}</small></span>
-      <button class="nut-icon" data-hd="xem-doan" data-id="${d.id}" aria-label="Xem">${icon('phat')}</button>
+      <span class="dt-icon">${icon(d.anh ? 'mayanh' : d.khoa ? 'khoa' : 'camera')}</span>
+      <span class="dong-ds-chu"><b>${ngayGio(d.batDau)}</b><small>${d.anh ? 'Ảnh' : thoiGian((d.ketThuc - d.batDau) / 1000)} · ${kichThuoc(d.kichThuoc)}${d.khoa && !d.anh ? ' · đã khoá' : ''}</small></span>
+      <button class="nut-icon" data-hd="xem-doan" data-id="${d.id}" aria-label="Xem">${icon(d.anh ? 'timkiem' : 'phat')}</button>
       <button class="nut-icon" data-hd="tai-doan" data-id="${d.id}" aria-label="Tải về">${icon('taive')}</button>
-      <button class="nut-icon" data-hd="khoa-doan-ds" data-id="${d.id}" aria-label="${d.khoa ? 'Mở khoá' : 'Khoá'}">${icon(d.khoa ? 'mokhoa' : 'khoa')}</button>
+      ${d.anh ? '' : `<button class="nut-icon" data-hd="khoa-doan-ds" data-id="${d.id}" aria-label="${d.khoa ? 'Mở khoá' : 'Khoá'}">${icon(d.khoa ? 'mokhoa' : 'khoa')}</button>`}
       <button class="nut-icon" data-hd="xoa-doan" data-id="${d.id}" aria-label="Xoá">${icon('xoa')}</button></div>`).join('')
       : '<p class="trong">Chưa có đoạn video nào.</p>'));
 }
@@ -1326,7 +1695,8 @@ const HD = {
   'lop-ban-do': () => moLopBanDo(),
   'doi-kieu': el => { doiCaiDat({ kieuBanDo: el.dataset.k }); moLopBanDo(); },
   'bao-cao': () => { moKhoaAmThanh(); moBaoCao(); },
-  'gui-bc': el => guiBc(el.dataset.loai),
+  'bao-cao-lai': () => moBaoCao(st.viTriBaoCao),
+  'gui-bc': el => guiBc(el.dataset.loai, el.dataset.phu),
   'xac-nhan-bc': async el => {
     try {
       const kq = await xacNhan(el.dataset.id, el.dataset.con === '1');
@@ -1369,6 +1739,42 @@ const HD = {
   'mp-toc': el => { st.moPhong.congThem = Math.max(-40, Math.min(60, st.moPhong.congThem + +el.dataset.d)); renderDkMoPhong(); },
   // lái xe
   'che-do-lai-xe': () => { moMenu(false); batLaiXe(!st.laiXe); },
+  'mo-hud': () => { moMenu(false); batHud(true); },
+  'trang-offline': () => { moMenu(false); trangOffline(); },
+  'trang-obd': () => { moMenu(false); trangObd(); },
+  'obd-ket-noi': () => ketNoiObd(),
+  'obd-ngat': () => ngatObd(null),
+  'obd-doc-loi': async () => {
+    try { st.obd.maLoi = await st.obd.xe.docLoi(); trangObd(); } catch (e) { thongBao(e.message, { loai: 'loi' }); }
+  },
+  'obd-xoa-loi': async () => {
+    if (!await hoiXacNhan('Xoá mã lỗi động cơ? Đèn báo lỗi sẽ tắt cho tới khi xe phát hiện lại lỗi.', { chuCo: 'Xoá', nguy: true })) return;
+    try { await st.obd.xe.xoaLoi(); st.obd.maLoi = []; thongBao('Đã xoá mã lỗi', { loai: 'tot' }); trangObd(); } catch (e) { thongBao(e.message, { loai: 'loi' }); }
+  },
+  'tai-offline': () => taiVungOffline(),
+  'huy-offline': () => { if (st.taiOffline) st.taiOffline.ac.abort(); },
+  'cap-nhat-offline': el => { const v = vungDaTai().find(x => x.id === el.dataset.id); if (v) taiVungOffline(v); },
+  'xoa-offline': async el => {
+    if (!await hoiXacNhan('Xoá vùng bản đồ offline này?', { chuCo: 'Xoá', nguy: true })) return;
+    await xoaVung(el.dataset.id);
+    trangOffline();
+  },
+  'xem-vung-offline': el => {
+    const v = vungDaTai().find(x => x.id === el.dataset.id);
+    if (!v) return;
+    dongTrang();
+    banDo.datTheoDoi('khong');
+    banDo.vuaKhung([[v.khung[0], v.khung[1]], [v.khung[2], v.khung[3]]]);
+  },
+  'thoat-hud': (el, e) => { e.stopPropagation(); batHud(false); },
+  'hud-cham': () => hienNutHud(),
+  'hud-lat': (el, e) => {
+    e.stopPropagation();
+    const ds = Object.keys(KIEU_LAT_HUD);
+    doiCaiDat({ latHud: ds[(ds.indexOf(caiDat.latHud) + 1) % ds.length] });
+    datKieuLatHud();
+    hienNutHud();
+  },
   'thoat-lai-xe': () => batLaiXe(false),
   // trang
   'trang-cai-dat': () => { moMenu(false); trangCaiDat(); },
@@ -1408,22 +1814,38 @@ const HD = {
   'mo-camera': () => { moMenu(false); moCamera(); },
   'thu-camera': () => { $('#man-camera').hidden = true; capNhatCameraUi(); },
   'tat-camera': () => { if (camera) camera.dong(); $('#man-camera').hidden = true; capNhatCameraUi(); },
-  'doi-ghi': () => { if (!camera) return; if (camera.dangGhi) camera.dungGhi(); else camera.batDauGhi(); },
+  'doi-ghi': () => {
+    if (!camera) return;
+    if (camera.dangGhi) {
+      // tự dừng khi xe đang chạy: không tự ghi lại cho tới khi xe dừng hẳn
+      if (st.cbCuoi && st.cbCuoi.kmh > 5) tuGhi.boQua = true;
+      camera.dungGhi();
+    } else camera.batDauGhi();
+  },
+  'chup-anh': async () => {
+    if (!camera || !camera.dangMo) return;
+    try { await camera.chupAnh(); thongBao('Đã chụp ảnh (xem trong danh sách video)', { loai: 'tot' }); } catch (e) { thongBao(e.message, { loai: 'loi' }); }
+  },
+  'doi-camera': async () => {
+    if (!camera) return;
+    try { thongBao('Đang dùng: ' + await camera.doiCamera(doiCaiDat)); } catch (e) { thongBao(e.message, { loai: 'loi' }); }
+  },
   'khoa-doan': () => { if (camera && camera.dangGhi) { camera.khoaDoanHienTai(); thongBao('Đoạn video đang ghi sẽ được giữ lại'); } else thongBao('Chưa ghi hình'); },
   'ds-doan': () => trangDoanCamera(),
   'xem-doan': async el => {
     const d = await layDoan(el.dataset.id);
     if (!d) return;
     const url = URL.createObjectURL(d.blob);
-    await hopThoai({ tieuDe: ngayGio(d.batDau), noiDung: `<video class="video-xem" src="${url}" controls autoplay playsinline></video>` });
+    await hopThoai({ tieuDe: ngayGio(d.batDau), noiDung: d.anh ? `<img class="video-xem" src="${url}" alt="Ảnh chụp camera hành trình">`
+      : `<video class="video-xem" src="${url}" controls autoplay playsinline></video>` });
     URL.revokeObjectURL(url);
   },
   'tai-doan': async el => {
     const d = await layDoan(el.dataset.id);
-    if (d) taiXuong(`camera-${new Date(d.batDau).toISOString().replace(/[:.]/g, '-')}.${/mp4/.test(d.kieu) ? 'mp4' : 'webm'}`, d.blob);
+    if (d) taiXuong(`camera-${new Date(d.batDau).toISOString().replace(/[:.]/g, '-')}.${d.anh ? 'jpg' : /mp4/.test(d.kieu) ? 'mp4' : 'webm'}`, d.blob);
   },
   'khoa-doan-ds': async el => { await doiKhoaDoan(el.dataset.id); trangDoanCamera(); },
-  'xoa-doan': async el => { if (await hoiXacNhan('Xoá đoạn video này?', { chuCo: 'Xoá', nguy: true })) { await xoaDoan(el.dataset.id); trangDoanCamera(); } }
+  'xoa-doan': async el => { if (await hoiXacNhan(el.dataset.id.startsWith('a') ? 'Xoá ảnh này?' : 'Xoá đoạn video này?', { chuCo: 'Xoá', nguy: true })) { await xoaDoan(el.dataset.id); trangDoanCamera(); } }
 };
 
 function chonNhaCoQuan(loai) {
@@ -1443,7 +1865,12 @@ document.addEventListener('click', e => {
 
 document.addEventListener('change', e => {
   const el = e.target;
-  if (el.dataset.cd) {
+  if (el.id === 'muc-offline') {
+    st.mucOffline = el.value;
+    trangOffline();
+  } else if (el.dataset.muc) {
+    doiCaiDat({ mucCanhBao: { ...caiDat.mucCanhBao, [el.dataset.muc]: Number(el.value) } });
+  } else if (el.dataset.cd) {
     const k = el.dataset.cd, kieu = el.dataset.kieu;
     const v = kieu === 'bat' ? el.checked : kieu === 'so' ? Number(el.value) : el.value.trim();
     doiCaiDat({ [k]: v });
@@ -1455,6 +1882,8 @@ document.addEventListener('change', e => {
 
 $('#o-tim').addEventListener('input', e => {
   const s = e.target.value;
+  // dán liên kết Google Maps / geo: / toạ độ vào ô tìm kiếm: mở thẳng địa điểm
+  if (/^\s*(https?:\/\/|geo:|google\.navigation:)/i.test(s) && docLienKet(s)) { moChuoiChiaSe(s); return; }
   $('#nut-xoa-tim').hidden = !s;
   clearTimeout(henGoiY);
   if (!s.trim()) { if (huyGoiY) huyGoiY.abort(); renderTimRong(); return; }
@@ -1468,6 +1897,8 @@ $('#o-tim').addEventListener('keydown', e => {
 function quayLai() {
   const hop = $('.hop-thoai-nen');
   if (hop) { hop.click(); return true; }
+  if (popupBc && popupBc.isOpen()) { popupBc.remove(); popupBc = null; return true; }
+  if (st.hud) { batHud(false); return true; }
   if (!$('#man-camera').hidden) { HD['thu-camera'](); return true; }
   if (!$('#trang').hidden) { dongTrang(); return true; }
   if (!$('#man-tim').hidden) { dongTimKiem(); return true; }
@@ -1521,7 +1952,7 @@ function trangThaiGoc(tt) {
     conLai: Math.round(tt ? tt.conLai : dd.tuyen.quangDuong), conLaiChu: quangDuong(tt ? tt.conLai : dd.tuyen.quangDuong),
     thoiGianConLai: Math.round(tg), thoiGianChu: thoiGian(tg), gioDen: Date.now() + tg * 1000, gioDenChu: gioDen(tg),
     tocDo: cb ? cb.kmh : null, gioiHan: cb ? cb.gioiHan : null, vuotToc: !!(cb && cb.vuotToc),
-    canhBao: cb && cb.canhBao ? { id: cb.canhBao.id, loai: cb.canhBao.loai, ten: cb.canhBao.ten, kc: Math.round(cb.canhBao.kc), gioiHan: cb.canhBao.gioiHan || null } : null
+    canhBao: cb && cb.canhBao ? { id: cb.canhBao.id, loai: cb.canhBao.loai, ten: cb.canhBao.ten, icon: cb.canhBao.icon, kc: Math.round(cb.canhBao.kc), gioiHan: cb.canhBao.gioiHan || null } : null
   };
 }
 
@@ -1580,6 +2011,7 @@ const LENH_GOC = {
     return st.lt.tuyen.map(tomTatTuyen);
   },
   chonTuyen: ({ i }) => { chonTuyen(+i); return true; },
+  moLienKet: async ({ chuoi }) => moChuoiChiaSe(String(chuoi || '')),
   batDau: ({ moPhong }) => { batDauDanDuong({ moPhong: !!moPhong }); return trangThaiGoc(null); },
   ketThuc: () => { ketThucDanDuong(); return true; },
   huyXemTruoc: () => { if (st.cheDo === 'lotrinh') dongLoTrinh(); return true; },
@@ -1641,7 +2073,9 @@ window.hawamap = {
     lenh: (id, ten, thamSo) => { chayLenh(id, ten, thamSo); },
     dongBoBatDau: du => dongBoBatDau(typeof du === 'string' ? JSON.parse(du) : du),
     dongBoKetThuc: () => ketThucDanDuong({ tuGoc: true }),
-    quayLai: () => quayLai()
+    quayLai: () => quayLai(),
+    // bộ chuyển OBD-II Bluetooth thường của ứng dụng Android (cau/Obd.kt)
+    obd: (loai, du) => { if (st.obd && st.obd.cong instanceof CongGoc) st.obd.cong.suKien(loai, du); }
   }
 };
 guiGoc('sanSang', { xe: cheDoXe, phienBan: CAU_HINH.phienBan });

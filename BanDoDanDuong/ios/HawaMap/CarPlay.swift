@@ -396,12 +396,13 @@ final class DieuKhienCarPlay: NSObject, CPMapTemplateDelegate, CPSearchTemplateD
         return CPTrip(origin: MKMapItem.forCurrentLocation(), destination: den, routeChoices: [luaChon])
     }
 
-    /// Cảnh báo camera / đường sắt / trạm thu phí / báo cáo phía trước (giọng nói do trang đọc).
+    /// Cảnh báo phía trước (camera, biển báo, khúc cua, báo cáo…) với biểu tượng của từng loại; giọng nói do trang đọc.
     private func hienCanhBao(_ cb: [String: Any]) {
         var phu = MeasurementFormatter().string(from: DieuKhienCarPlay.khoangCach(DieuKhienCarPlay.so(cb["kc"])))
         if let gh = cb["gioiHan"] as? NSNumber { phu += " · tối đa \(gh.intValue) km/h" }
         let canhBao = CPNavigationAlert(
-            titleVariants: [cb["ten"] as? String ?? "Cảnh báo"], subtitleVariants: [phu], image: anh("ic_canhbao"),
+            titleVariants: [cb["ten"] as? String ?? "Cảnh báo"], subtitleVariants: [phu],
+            image: anh("ic_" + (cb["icon"] as? String ?? "canhbao")) ?? anh("ic_canhbao"),
             primaryAction: CPAlertAction(title: "Đóng", style: .cancel) { _ in }, secondaryAction: nil, duration: 8
         )
         if banDo.currentNavigationAlert != nil {

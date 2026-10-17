@@ -23,18 +23,36 @@ export const CAI_DAT_MAC_DINH = {
   giongNoi: true, amLuong: 1, tocDoNoi: 1, tenGiong: '',
   // cảnh báo
   canhBaoTocDo: true, nguongVuot: 5, bipVuotToc: true, uocTinhGioiHan: true,
-  canhBaoCamera: true, kcCanhBaoCamera: 500, canhBaoDuongSat: true, canhBaoThuPhi: true, canhBaoBaoCao: true,
+  hieuChinhTocDo: 0,         // % cộng thêm vào tốc độ GPS cho khớp đồng hồ xe
+  canhBaoMatGps: true, nhacDen: true,
+  bongBongNoi: true,         // ứng dụng Android: bong bóng tốc độ / cảnh báo nổi trên ứng dụng khác khi chạy nền
+  kcCanhBaoCamera: 500,
+  mucCanhBao: {},            // loại → 0 tắt / 1 chỉ hiển thị / 2 hiển thị + giọng nói (xem loai-canh-bao.js)
   // dẫn đường
   phuongTien: 'oto', tranhCaoToc: false, tranhThuPhi: false, giuManHinh: true, tuGhiHanhTrinh: true,
   // bản đồ
-  kieuBanDo: 'tieuchuan', tuDongBanDem: true, nha3D: true, hienBaoCao: true, hienDiemCanhBao: true,
+  kieuBanDo: 'tieuchuan', tuDongBanDem: true, nha3D: true, hienBaoCao: true, hienDiemCanhBao: true, capNhatOffline: true,
   // camera hành trình
+  latHud: 'doc',             // HUD kính lái: doc (lật dọc, phản chiếu lên kính) | ngang | khong
   doDaiDoanCamera: 3, soDoanToiDa: 10, camGhiAm: false,
+  camTuGhi: true, camTuMo: false, camChatLuong: 'vua', camGioiHanMB: 2048, camThietBi: '',
   // nâng cao
   mayChuBaoCao: '', khoaVietmap: '', styleVietmap: ''
 };
 
-export const caiDat = Object.assign({}, CAI_DAT_MAC_DINH, doc('caidat', {}));
+export const caiDat = Object.assign({}, CAI_DAT_MAC_DINH, chuyenCaiDatCu(doc('caidat', {})));
+
+/** Bản 1.0 bật / tắt từng nhóm cảnh báo; nay mỗi loại có mức riêng. */
+function chuyenCaiDatCu(cu) {
+  if (cu.mucCanhBao) return cu;
+  const muc = {};
+  const nhom = {
+    canhBaoCamera: ['camera', 'cameraden', 'cameratb', 'cameragiamsat', 'kiemtra'],
+    canhBaoDuongSat: ['duongsat'], canhBaoThuPhi: ['thuphi'], canhBaoBaoCao: ['baocao']
+  };
+  for (const [k, ds] of Object.entries(nhom)) if (cu[k] === false) ds.forEach(l => { muc[l] = 0; });
+  return { ...cu, mucCanhBao: muc };
+}
 const nguoiNghe = new Set();
 
 export function doiCaiDat(thay) {

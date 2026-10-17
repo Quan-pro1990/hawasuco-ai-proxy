@@ -7,9 +7,10 @@
  * API
  *   GET    /api/trang-thai
  *   GET    /api/bao-cao?bbox=tây,nam,đông,bắc&thietBi=…
- *   POST   /api/bao-cao                       { loai, lng, lat, huong?, ghiChu?, thietBi }
+ *   POST   /api/bao-cao                       { loai, phu?, lng, lat, huong?, ghiChu?, thietBi }
  *   POST   /api/bao-cao/:id/xac-nhan          { conTon: true|false, thietBi }
  *   DELETE /api/bao-cao/:id?thietBi=…          (chỉ người gửi)
+ *   GET    /api/mo-lien-ket?url=https://maps.app.goo.gl/…   (mở liên kết rút gọn Google Maps → địa điểm)
  */
 import http from 'node:http';
 import fs from 'node:fs';
@@ -18,6 +19,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { LOAI_BAO_CAO, soPhieuGo } from './public/js/loai-bao-cao.js';
+import { docLienKet, laMienGoogle, boQuaTrangDongY, MIEN_RUT_GON } from './public/js/lien-ket.js';
 
 const THU_MUC = path.dirname(fileURLToPath(import.meta.url));
 const THU_MUC_WEB = path.join(THU_MUC, 'public');
@@ -32,7 +34,10 @@ const MIME = {
 
 const bam = s => crypto.createHash('sha256').update(String(s)).digest('hex').slice(0, 16);
 
-export function taoMayChu({ thuMucDuLieu = process.env.BANDO_DULIEU || path.join(THU_MUC, 'du-lieu'), ghiLog = true } = {}) {
+/**
+ * @param layMang  hàm fetch dùng để mở liên kết rút gọn (thay được khi kiểm thử)
+ */
+export function taoMayChu({ thuMucDuLieu = process.env.BANDO_DULIEU || path.join(THU_MUC, 'du-lieu'), ghiLog = true, layMang = globalThis.fetch } = {}) {
   const fileBaoCao = path.join(thuMucDuLieu, 'bao-cao.json');
   let baoCao = [];
   try { baoCao = JSON.parse(fs.readFileSync(fileBaoCao, 'utf8')); } catch (e) { baoCao = []; }
@@ -70,6 +75,37 @@ export function taoMayChu({ thuMucDuLieu = process.env.BANDO_DULIEU || path.join
     ds.push(bayGio);
     luotGui.set(ip, ds);
     return ds.length > toiDa;
+  }
+
+  /**
+   * Mở liên kết rút gọn của Google Maps (maps.app.goo.gl…) ra liên kết đầy đủ rồi đọc địa điểm.
+   * Chỉ đi theo chuyển hướng trong các tên miền Google (không cho dùng máy chủ để gọi địa chỉ tuỳ ý).
+   */
+  async function moLienKetRutGon(diaChi) {
+    let u;
+    try { u = new URL(diaChi); } catch (e) { return { loi: 'Liên kết không hợp lệ' }; }
+    if (u.protocol !== 'https:' || !MIEN_RUT_GON.includes(u.hostname) || u.username || u.port) {
+      return { loi: 'Chỉ mở được liên kết rút gọn của Google Maps' };
+    }
+    let hienTai = u.href;
+    for (let i = 0; i < 6; i++) {
+      let r;
+      try {
+        r = await layMang(hienTai, { redirect: 'manual', headers: { 'User-Agent': 'Mozilla/5.0 (HawaMap)' }, signal: AbortSignal.timeout(8000) });
+      } catch (e) {
+        return { loi: 'Không kết nối được tới Google Maps', ma: 502 };
+      }
+      if (r.body && r.body.cancel) r.body.cancel().catch(() => {});
+      const den = r.headers.get('location');
+      if (r.status < 300 || r.status >= 400 || !den) break;
+      let tiep;
+      try { tiep = new URL(boQuaTrangDongY(new URL(den, hienTai).href)); } catch (e) { break; }
+      if (tiep.protocol !== 'https:' || !laMienGoogle(tiep.hostname)) return { loi: 'Liên kết dẫn ra ngoài Google Maps' };
+      hienTai = tiep.href;
+      const dd = docLienKet(hienTai);
+      if (dd && !dd.rutGon) return { url: hienTai, diaDiem: dd };
+    }
+    return { loi: 'Không đọc được địa điểm từ liên kết', ma: 422 };
   }
 
   function congKhai(b, thietBi) {
@@ -117,6 +153,12 @@ export function taoMayChu({ thuMucDuLieu = process.env.BANDO_DULIEU || path.join
       return guiJson(res, 200, { ok: true, ten: 'HawaMap', phienBan: PHIEN_BAN, soBaoCao: baoCao.length });
     }
 
+    if (p === '/api/mo-lien-ket' && req.method === 'GET') {
+      if (quaGioiHan('lk:' + ip, 60)) return guiJson(res, 429, { loi: 'Bạn mở quá nhiều liên kết, vui lòng thử lại sau ít phút' });
+      const kq = await moLienKetRutGon(url.searchParams.get('url') || '');
+      return guiJson(res, kq.loi ? kq.ma || 400 : 200, kq);
+    }
+
     if (p === '/api/bao-cao' && req.method === 'GET') {
       donDep();
       const thietBi = url.searchParams.get('thietBi') || '';
@@ -139,7 +181,7 @@ export function taoMayChu({ thuMucDuLieu = process.env.BANDO_DULIEU || path.join
       if (!d.thietBi || String(d.thietBi).length > 100) return guiJson(res, 400, { loi: 'Thiếu mã thiết bị' });
       const bayGio = Date.now();
       // báo cáo cùng loại rất gần (< 60 m) trong 10 phút: coi như xác nhận lại báo cáo cũ
-      const trung = baoCao.find(b => b.loai === d.loai && bayGio - b.taoLuc < 10 * 60000 &&
+      const trung = baoCao.find(b => b.loai === d.loai && (b.phu || '') === (d.phu || '') && bayGio - b.taoLuc < 10 * 60000 &&
         Math.abs(b.lat - lat) < 0.00055 && Math.abs(b.lng - lng) < 0.00055 * 1.1);
       if (trung) {
         const ai = bam(d.thietBi);
@@ -154,7 +196,8 @@ export function taoMayChu({ thuMucDuLieu = process.env.BANDO_DULIEU || path.join
       }
       const huong = d.huong == null || d.huong === '' ? null : Math.round(Number(d.huong)) % 360;
       const b = {
-        id: crypto.randomBytes(6).toString('hex'), loai: d.loai, lng: +lng.toFixed(6), lat: +lat.toFixed(6),
+        id: crypto.randomBytes(6).toString('hex'), loai: d.loai, phu: kieu.phu && kieu.phu[d.phu] ? d.phu : undefined,
+        lng: +lng.toFixed(6), lat: +lat.toFixed(6),
         huong: isFinite(huong) ? huong : null, ghiChu: String(d.ghiChu || '').slice(0, 200),
         taoLuc: bayGio, hetHan: kieu.hetHan ? bayGio + kieu.hetHan * 60000 : 0, conTon: 0, khongCon: 0,
         thietBiBam: bam(d.thietBi), phieu: {}

@@ -79,8 +79,14 @@ test('máy chủ: gửi, lọc, xác nhận, gỡ và xoá báo cáo', async () 
     assert.equal((await goi('/api/bao-cao')).json.baoCao.length, 0);
 
     // camera: người gửi tự xoá được; dữ liệu được lưu ra file
-    const cam = await goi('/api/bao-cao', { method: 'POST', body: { loai: 'camera', lng: 105.86, lat: 21.04, thietBi: 'may-a' } });
+    const cam = await goi('/api/bao-cao', { method: 'POST', body: { loai: 'camera', phu: 'dendo', lng: 105.86, lat: 21.04, thietBi: 'may-a' } });
     assert.equal(cam.json.baoCao.hetHan, 0);
+    assert.equal(cam.json.baoCao.phu, 'dendo');                  // loại camera
+    // camera loại khác ngay cạnh là báo cáo riêng; loại không hợp lệ bị bỏ
+    const cam2 = await goi('/api/bao-cao', { method: 'POST', body: { loai: 'camera', phu: 'xyz', lng: 105.8601, lat: 21.0401, thietBi: 'may-b' } });
+    assert.equal(cam2.ma, 201);
+    assert.equal(cam2.json.baoCao.phu, undefined);
+    assert.equal((await goi(`/api/bao-cao/${cam2.json.baoCao.id}?thietBi=may-b`, { method: 'DELETE' })).json.ok, true);
     await mc.luuNgay();
     const file = JSON.parse(await fs.readFile(path.join(thuMuc, 'bao-cao.json'), 'utf8'));
     assert.equal(file.length, 1);

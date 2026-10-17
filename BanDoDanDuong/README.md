@@ -2,7 +2,9 @@
 
 Ứng dụng bản đồ dẫn đường chạy trên trình duyệt, cài được lên điện thoại như ứng dụng (PWA). Bố cục và chức năng theo kiểu
 các ứng dụng dẫn đường Việt Nam như VietMap Live: tìm địa điểm, chỉ đường, dẫn đường bằng giọng nói tiếng Việt, cảnh báo
-tốc độ / camera giám sát, báo cáo giao thông của cộng đồng, camera hành trình.
+tốc độ / camera giám sát, báo cáo giao thông của cộng đồng, camera hành trình. Các chức năng cảnh báo giao thông bổ sung
+(biển báo, khúc cua, HUD kính lái, OBD-II, bong bóng nổi…) xây dựng sau khi phân tích ứng dụng DATMAP — xem
+[`docs/PHAN_TICH_DATMAP.md`](docs/PHAN_TICH_DATMAP.md).
 
 > Ứng dụng độc lập, không liên kết với VietMap. Dữ liệu nền là OpenStreetMap; có thể dùng thêm VietMap Maps API nếu có khoá.
 
@@ -10,18 +12,27 @@ tốc độ / camera giám sát, báo cáo giao thông của cộng đồng, cam
 
 | Nhóm | Chức năng |
 |---|---|
-| **Bản đồ** | Bản đồ vector xoay / nghiêng 3D, nhà 3D; 4 kiểu: Tiêu chuẩn, Giao thông, Vệ tinh, Ban đêm (tự chuyển 18h–6h); tên địa danh tiếng Việt; hiện Quần đảo Hoàng Sa, Trường Sa (Việt Nam); lưu ô bản đồ đã xem để dùng khi mất mạng |
-| **Tìm kiếm** | Gợi ý khi đang gõ, tìm bằng giọng nói, nhập toạ độ; tìm nhanh quanh đây: cây xăng, bãi đỗ xe, ATM, cà phê, nhà hàng, bệnh viện, nhà thuốc, khách sạn, sửa xe, rửa xe, trạm sạc, nhà vệ sinh; nhấn giữ bản đồ để chọn vị trí bất kỳ; lịch sử tìm kiếm |
+| **Bản đồ** | Bản đồ vector xoay / nghiêng 3D, nhà 3D; 4 kiểu: Tiêu chuẩn, Giao thông, Vệ tinh, Ban đêm (tự chuyển theo giờ mặt trời lặn / mọc); tên địa danh tiếng Việt; hiện Quần đảo Hoàng Sa, Trường Sa (Việt Nam); lưu ô bản đồ đã xem để dùng khi mất mạng |
+| **Bản đồ offline** | Tải vùng đang xem (3 mức chi tiết, báo trước số ô / dung lượng, tối đa 8.000 ô) gồm cả style, phông chữ tiếng Việt, biểu tượng; danh sách vùng đã tải, tải lại, xoá; tự cập nhật khi có Wi-Fi (vùng quá 30 ngày hoặc máy chủ đổi phiên bản ô) |
+| **Tìm kiếm** | Gợi ý khi đang gõ, tìm bằng giọng nói, nhập toạ độ; dán / chia sẻ liên kết Google Maps, Apple Maps, `geo:` (kể cả liên kết rút gọn `maps.app.goo.gl`) để mở địa điểm hoặc chỉ đường; tìm nhanh quanh đây: cây xăng, bãi đỗ xe, ATM, cà phê, nhà hàng, bệnh viện, nhà thuốc, khách sạn, sửa xe, rửa xe, trạm sạc, nhà vệ sinh; nhấn giữ bản đồ để chọn vị trí bất kỳ; lịch sử tìm kiếm |
 | **Địa điểm** | Thông tin, khoảng cách, giờ mở cửa, điện thoại; lưu yêu thích; đặt Nhà riêng / Cơ quan; chia sẻ liên kết vị trí |
 | **Chỉ đường** | Ô tô, xe máy (tự tránh cao tốc), đi bộ, xe đạp; tuyến thay thế (bấm tuyến xám hoặc nhãn thời gian để chọn); nhãn "Nhanh nhất", "Có trạm thu phí", "Có đoạn cao tốc"; tránh cao tốc / trạm thu phí; thêm tới 3 điểm dừng; đảo chiều; danh sách các bước |
 | **Dẫn đường** | Bảng chỉ hướng (mũi tên, khoảng cách, tên đường, làn nên đi, "sau đó…"); giọng nói tiếng Việt ("Sau 300 mét, rẽ phải vào Trần Phú"); bản đồ xoay theo hướng đi, nghiêng 3D, tự zoom theo tốc độ; giờ đến / thời gian / quãng đường còn lại; tự tính lại khi đi sai đường; tìm cây xăng dọc đường và thêm làm điểm dừng; giữ màn hình sáng; **Chạy thử** lộ trình (tua ×1 ×2 ×4, tăng giảm tốc độ) |
-| **Cảnh báo** | Đồng hồ tốc độ + biển giới hạn tốc độ của con đường đang đi; vượt tốc độ: đồng hồ đỏ, âm báo, giọng nói; báo trước camera giám sát tốc độ, đường sắt giao cắt, trạm thu phí; báo trước kẹt xe / tai nạn / CSGT… do người dùng báo cáo; hoạt động cả khi không dẫn đường (**Chế độ lái xe**) |
-| **Báo cáo giao thông** | Kẹt xe, tai nạn, CSGT, camera, ngập nước, công trình, vật cản, cấm đường; người khác xác nhận "Vẫn còn" / "Không còn"; tự hết hạn; dùng chung qua máy chủ |
-| **Camera hành trình** | Quay bằng camera sau, in giờ / tốc độ / toạ độ / tên đường lên hình; ghi vòng theo đoạn; khoá đoạn quan trọng; xem, tải về |
-| **Khác** | Lịch sử hành trình (quãng đường, thời gian, tốc độ TB / cao nhất, xuất GPX); cài đặt giọng đọc, âm lượng, ngưỡng cảnh báo…; giao diện điện thoại và máy tính |
+| **Cảnh báo** | Đồng hồ tốc độ + biển giới hạn tốc độ của con đường đang đi; vượt tốc độ: đồng hồ đỏ, âm báo, giọng nói; đọc giới hạn mới khi đổi đường, **báo trước giới hạn tốc độ phía trước** trên tuyến; camera phạt tốc độ / đèn đỏ / đo tốc độ trung bình / giám sát, điểm kiểm tra tốc độ; **khúc cua nguy hiểm** (tính từ hình dạng tuyến, trừ chỗ rẽ đã có hướng dẫn); **biển cấm rẽ / chỉ được rẽ** tại giao lộ phía trước (chỉ khi đang đi trên đường bị cấm, theo loại xe); đoạn nguy hiểm, đường sắt giao cắt, trường học, gờ giảm tốc, hầm, trạm thu phí, trạm dừng nghỉ, đèn tín hiệu, vạch qua đường; vào / ra khu đông dân cư; báo cáo kẹt xe / tai nạn / CSGT…; mỗi loại chọn được **Tắt / Chỉ hiển thị / Hiển thị + giọng nói**; hiệu chỉnh tốc độ GPS (%) cho khớp đồng hồ xe; báo mất tín hiệu GPS; nhắc bật đèn khi trời tối / tắt đèn khi trời sáng; hoạt động cả khi không dẫn đường (**Chế độ lái xe**) |
+| **HUD kính lái** | Màn hình nền đen chữ lớn (tốc độ, biển giới hạn, mũi tên rẽ + khoảng cách, cảnh báo, giờ đến), **lật gương** dọc / ngang để phản chiếu lên kính chắn gió, giữ màn hình sáng |
+| **Thông số xe (OBD-II)** | Bộ chuyển ELM327 Bluetooth: vòng tua, tốc độ, nhiệt độ nước / dầu / khí nạp, áp suất khí nạp, bướm ga, tải động cơ, mức nhiên liệu, điện áp; số khung (VIN); đọc / xoá mã lỗi động cơ; cảnh báo nước làm mát quá nóng. Chrome / Edge: bộ chuyển Bluetooth LE; ứng dụng Android: bộ chuyển Bluetooth thường (đã ghép đôi) |
+| **Báo cáo giao thông** | Kẹt xe, tai nạn, CSGT, camera (chọn loại: phạt tốc độ / đèn đỏ / giám sát), ngập nước, công trình, vật cản, cấm đường; người khác xác nhận "Vẫn còn" / "Không còn"; tự hết hạn; dùng chung qua máy chủ |
+| **Camera hành trình** | Quay bằng camera sau hoặc camera khác / **webcam USB** (nút đổi camera), in giờ / tốc độ / toạ độ / tên đường lên hình; **tự ghi khi xe chạy trên 5 km/h, tự dừng sau 20 giây đứng yên**; tự mở camera (thu nhỏ) khi dẫn đường; 3 mức chất lượng; ghi vòng theo số đoạn và **dung lượng tối đa**; khoá đoạn quan trọng; **chụp ảnh**; xem, tải về |
+| **Khác** | Lịch sử hành trình (quãng đường, thời gian, tốc độ TB / cao nhất, thời gian dừng, số lần vượt tốc độ, **biểu đồ tốc độ**, xuất GPX); ứng dụng Android: **bong bóng nổi** tốc độ / giới hạn / cảnh báo trên ứng dụng khác khi HawaMap chạy nền; cài đặt giọng đọc, âm lượng, ngưỡng cảnh báo…; giao diện điện thoại và máy tính |
 
 Biển giới hạn tốc độ lấy từ dữ liệu OpenStreetMap (có phân biệt riêng cho xe máy). Đường chưa có biển trong dữ liệu thì ứng dụng
 **ước tính** theo Thông tư 38/2024/TT-BGTVT và vẽ biển viền nét đứt — luôn tuân theo biển báo thực tế.
+Camera, biển báo, đèn tín hiệu… cũng lấy từ OpenStreetMap (Overpass API, chỉ tải những loại đang bật) cùng báo cáo cộng đồng;
+độ đầy đủ tuỳ khu vực. "Khu đông dân cư" là ước tính theo mật độ đường nhỏ quanh vị trí.
+
+Giới hạn hiện có: bản đồ offline dùng trên bản web / PWA (cần service worker; ứng dụng gốc chỉ giữ ô đã xem gần đây);
+OBD-II trên iPhone / Safari chưa hỗ trợ (web không có Bluetooth); bong bóng nổi chỉ có trên Android; chưa có TPMS áp suất lốp,
+màn hình HUD Bluetooth riêng của các hãng và camera WiFi (RTSP).
 
 ## Chạy thử trên máy tính
 
@@ -59,6 +70,9 @@ dẫn đường, cảnh báo vẫn do mã JavaScript đã kiểm thử đảm nh
 | Giọng nói | TextToSpeech tiếng Việt, loại âm "hướng dẫn dẫn đường" (ra loa xe, tự giảm nhạc) | AVSpeechSynthesizer `vi-VN`, chế độ `voicePrompt` |
 | GPS | LocationManager, dịch vụ chạy nền khi dẫn đường | CLLocationManager, chế độ nền `location` |
 | Khác | "Ok Google, chỉ đường tới …" (intent `geo:`), nút Back, lưu GPX vào Tải xuống | giữ sáng màn hình, chia sẻ tệp GPX |
+| Mở từ ứng dụng khác | `geo:`, `google.navigation:`, liên kết Google Maps ("Mở bằng HawaMap"), "Chia sẻ" văn bản; tự mở liên kết rút gọn `maps.app.goo.gl` (chỉ đi qua tên miền Google) | dán liên kết vào ô tìm kiếm |
+| OBD-II | ELM327 Bluetooth thường (SPP) đã ghép đôi, quyền "Thiết bị lân cận" | — |
+| Bong bóng nổi | lớp phủ `TYPE_APPLICATION_OVERLAY` khi ứng dụng xuống nền (quyền "Hiển thị trên ứng dụng khác"), kéo để dời, chạm để mở lại | — |
 
 Bắt đầu dẫn đường trên điện thoại khi đang cắm xe thì màn hình xe tự dẫn theo cùng tuyến (và ngược lại); giọng nói chỉ đọc
 từ một nơi. Biểu tượng mũi tên rẽ của hai ứng dụng được sinh từ cùng nguồn với trang web: `npm run bieu-tuong`.
@@ -119,8 +133,13 @@ BanDoDanDuong/
 │     ├─ tim-kiem.js         tìm địa điểm, địa chỉ theo toạ độ (Photon, Nominatim, VietMap)
 │     ├─ chi-duong.js        tìm đường (OSRM, VietMap), câu chỉ dẫn tiếng Việt
 │     ├─ dan-duong.js        bộ máy dẫn đường: bám tuyến, câu nhắc, đi sai đường, đến nơi
-│     ├─ duong-xa.js         thông tin đường đang đi: giới hạn tốc độ, camera, đường sắt, trạm thu phí
-│     ├─ canh-bao.js         cảnh báo vượt tốc độ và điểm nguy hiểm phía trước
+│     ├─ duong-xa.js         thông tin đường đang đi: giới hạn tốc độ; tải điểm cảnh báo (camera, biển cấm rẽ, hầm…) từ OSM
+│     ├─ canh-bao.js         cảnh báo vượt tốc độ, giới hạn phía trước, khúc cua, khu dân cư, điểm phía trước
+│     ├─ loai-canh-bao.js    các loại cảnh báo, mức Tắt / Hiển thị / Giọng nói, biển cấm rẽ, loại nguy hiểm
+│     ├─ nhac-nho.js         mất / có lại GPS, nhắc bật / tắt đèn, giờ mặt trời mọc / lặn
+│     ├─ ban-do-offline.js   tải vùng bản đồ offline, danh sách vùng, tự cập nhật qua Wi-Fi
+│     ├─ lien-ket.js         đọc liên kết Google Maps / Apple Maps / geo: (dùng chung với server.js)
+│     ├─ obd.js              OBD-II: phản hồi ELM327, mã lỗi, VIN, Bluetooth LE / cầu nối Android
 │     ├─ bao-cao.js          báo cáo giao thông (máy chủ hoặc lưu trên máy)
 │     ├─ loai-bao-cao.js     các loại báo cáo (dùng chung với server.js)
 │     ├─ dia-diem.js         tìm quanh đây / dọc đường theo danh mục
@@ -128,7 +147,7 @@ BanDoDanDuong/
 │     ├─ mo-phong.js         chạy thử lộ trình
 │     ├─ giong-noi.js        giọng đọc tiếng Việt, âm báo
 │     ├─ hanh-trinh.js       ghi lịch sử hành trình, xuất GPX
-│     ├─ camera-hanh-trinh.js camera hành trình
+│     ├─ camera-hanh-trinh.js camera hành trình: tự ghi, chất lượng, giới hạn dung lượng, chụp ảnh, đổi camera
 │     ├─ giao-dien.js        thông báo, hộp thoại, tấm trượt, trang
 │     ├─ bieu-tuong.js       biểu tượng SVG, mũi tên rẽ, mũi tên làn đường
 │     ├─ kho.js              lưu cài đặt, địa điểm, lịch sử (localStorage, IndexedDB)
@@ -139,11 +158,13 @@ BanDoDanDuong/
 │  └─ app/src/main/java/vn/hawasuco/hawamap/
 │     ├─ MainActivity.kt     màn hình điện thoại (WebView chạy trang HawaMap)
 │     ├─ DanDuongService.kt  dịch vụ chạy nền khi dẫn đường
-│     ├─ cau/                cầu nối JS ↔ Kotlin (TrangWeb, TrungTam), GPS, giọng nói, lưu tệp
+│     ├─ cau/                cầu nối JS ↔ Kotlin (TrangWeb, TrungTam), GPS, giọng nói, lưu tệp,
+│     │                      OBD-II Bluetooth (Obd.kt), bong bóng nổi (BongBong.kt), mở liên kết rút gọn (LienKet.kt)
 │     └─ xe/                 Android Auto: CarAppService, bản đồ trên Surface, các màn hình mẫu
 ├─ ios/                      ứng dụng iPhone + CarPlay (Swift, tạo dự án bằng XcodeGen: project.yml)
 │  ├─ HawaMap/               AppDelegate, TrangWeb (WKWebView + cầu nối), TrungTam, GPS, giọng nói, CarPlay.swift
 │  └─ HoTro/                 Info.plist, quyền CarPlay (entitlements)
+├─ docs/PHAN_TICH_DATMAP.md  phân tích chức năng ứng dụng DATMAP và đối chiếu với HawaMap
 ├─ tools/tao-bieu-tuong-goc.mjs  sinh biểu tượng Android / iOS từ public/js/bieu-tuong.js
 └─ test/                     kiểm thử (node --test), kiểm thử giao diện và cầu nối ứng dụng gốc (Playwright)
 ```
@@ -154,9 +175,10 @@ BanDoDanDuong/
 |---|---|---|
 | GET | `/api/trang-thai` | Kiểm tra máy chủ |
 | GET | `/api/bao-cao?bbox=tây,nam,đông,bắc&thietBi=…` | Báo cáo còn hiệu lực trong khung |
-| POST | `/api/bao-cao` | Gửi báo cáo `{ loai, lng, lat, huong?, ghiChu?, thietBi }` |
+| POST | `/api/bao-cao` | Gửi báo cáo `{ loai, phu?, lng, lat, huong?, ghiChu?, thietBi }` (`phu`: loại camera `tocdo` / `dendo` / `giamsat`) |
 | POST | `/api/bao-cao/:id/xac-nhan` | `{ conTon: true/false, thietBi }` — đủ phiếu "không còn" thì gỡ |
 | DELETE | `/api/bao-cao/:id?thietBi=…` | Người gửi xoá báo cáo của mình |
+| GET | `/api/mo-lien-ket?url=https://maps.app.goo.gl/…` | Mở liên kết rút gọn Google Maps → `{ url, diaDiem: { viTri, ten?, truyVan?, chiDuong? } }`; chỉ nhận `maps.app.goo.gl`, `goo.gl`, `g.co` qua HTTPS và chỉ đi theo chuyển hướng trong tên miền Google; tối đa 60 lần / 10 phút mỗi IP |
 
 `thietBi` là mã ngẫu nhiên tạo trên từng máy (máy chủ chỉ lưu dạng băm), không chứa thông tin cá nhân. Mỗi IP gửi tối đa
 30 báo cáo / 10 phút; báo cáo cùng loại trong bán kính ~60 m được gộp lại.
@@ -164,7 +186,8 @@ BanDoDanDuong/
 ## Kiểm thử
 
 ```
-npm test            # hình học, câu chỉ dẫn, bộ máy dẫn đường, cảnh báo, API máy chủ
+npm test            # hình học, câu chỉ dẫn, bộ máy dẫn đường, cảnh báo (khúc cua, biển cấm rẽ, giới hạn phía trước…),
+                    # nhắc nhở / giờ mặt trời, camera hành trình, bản đồ offline, liên kết chia sẻ, OBD-II, hành trình, API máy chủ
 npm run test:e2e    # giao diện trên Chromium với dịch vụ bản đồ giả lập + "hợp đồng" lệnh / tin giữa trang và
                     # ứng dụng Android / iOS (giả lập cầu nối)   — cần: npm i -D playwright
 ```

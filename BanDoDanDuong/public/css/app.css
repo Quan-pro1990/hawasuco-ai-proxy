@@ -505,7 +505,7 @@ body.chon-ban-do #lop-chinh, body.chon-ban-do #khung-lt, body.chon-ban-do .tam-d
 #video-camera { position: absolute; width: 2px; height: 2px; opacity: 0; pointer-events: none; }
 .camera-dau { position: absolute; top: calc(var(--tren) + 8px); left: 8px; right: 8px; display: flex; align-items: center; gap: 8px; }
 .camera-dau .nut-icon { color: #fff; background: rgba(0,0,0,.35); }
-.camera-dau span { background: rgba(0,0,0,.35); padding: 6px 12px; border-radius: 14px; font-size: 13px; font-weight: 600; }
+.camera-dau span { margin-right: auto; background: rgba(0,0,0,.35); padding: 6px 12px; border-radius: 14px; font-size: 13px; font-weight: 600; }
 .camera-nut { position: absolute; left: 0; right: 0; bottom: calc(var(--duoi) + 24px); display: flex; justify-content: center; align-items: center; gap: 22px; }
 .nut-tron { width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,.18); color: #fff; display: flex; align-items: center; justify-content: center; }
 .nut-ghi { width: 74px; height: 74px; border-radius: 50%; border: 4px solid #fff; display: flex; align-items: center; justify-content: center; }
@@ -589,3 +589,93 @@ body.xe.hud-phai .hud, body.xe.hud-phai .hud.dd { left: auto; right: calc(var(--
 body.xe .the-canh-bao, body.xe .the-canh-bao.dd { top: calc(var(--xe-tren) + 12px); left: calc(var(--xe-trai) + 12px); right: auto; }
 body.xe.hud-phai .the-canh-bao, body.xe.hud-phai .the-canh-bao.dd { left: auto; right: calc(var(--xe-phai) + 12px); }
 body.xe .maplibregl-ctrl-bottom-right { bottom: var(--xe-duoi); right: var(--xe-phai); }
+
+/* ---------- cảnh báo mở rộng: nhãn khu dân cư, mức từng loại cảnh báo, chọn loại camera */
+.nhan-kdc { position: absolute; left: 0; bottom: 74px; display: flex; align-items: center; gap: 4px; padding: 3px 8px 3px 5px;
+  border-radius: 999px; background: #0369a1; color: #fff; font-size: 11px; font-weight: 700; white-space: nowrap; box-shadow: var(--bong); }
+.nhan-kdc .ic { width: 15px; height: 15px; }
+.hud .bien-toc-do ~ .nhan-kdc { bottom: 138px; }
+.cd-dong.cd-muc { justify-content: flex-start; }
+.cd-dong.cd-muc > span:nth-child(2) { flex: 1; min-width: 0; }
+.cd-ic { width: 30px; height: 30px; border-radius: 50%; color: #fff; display: flex; align-items: center; justify-content: center; flex: none; }
+.cd-ic .ic { width: 17px; height: 17px; }
+.cd-dong.cd-muc select { max-width: 46%; }
+.ds-lua-chon { display: flex; flex-direction: column; gap: 2px; padding: 4px 0 8px; }
+
+/* mất tín hiệu GPS: đồng hồ mờ, chữ "Mất GPS" thay cho km/h */
+body.mat-gps .hud .dong-ho { opacity: .7; }
+body.mat-gps .hud .dong-ho span { font-size: 0; }
+body.mat-gps .hud .dong-ho span::after { content: "Mất GPS"; font-size: 9.5px; font-weight: 700; color: var(--do); }
+
+/* ---------------------------------------------------------------- HUD kính lái (nền đen, chữ sáng, có thể lật gương) */
+.man-hud { position: fixed; inset: 0; z-index: 80; background: #000; color: #fff; overflow: hidden; user-select: none; }
+.hud-noi {
+  position: absolute; inset: 0; padding: max(16px, env(safe-area-inset-top)) 20px 16px;
+  display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto 1fr auto; gap: 12px 20px; align-items: center;
+  grid-template-areas: "toc bien" "re cb" "duoi duoi";
+}
+.man-hud[data-lat="doc"] .hud-noi { transform: scaleY(-1); }
+.man-hud[data-lat="ngang"] .hud-noi { transform: scaleX(-1); }
+.hn-toc { grid-area: toc; display: flex; align-items: baseline; gap: 8px; line-height: .9; }
+.hn-toc b { font-size: min(30vw, 34vh); font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -2px; }
+.hn-toc span { font-size: min(5vw, 5vh); color: #9ca3af; font-weight: 700; white-space: nowrap; }
+.hn-toc.vuot b { color: #ff3b30; }
+.hn-bien {
+  grid-area: bien; justify-self: end; width: min(26vw, 28vh); aspect-ratio: 1; border-radius: 50%; border: min(3vw, 3vh) solid #ff3b30;
+  display: flex; align-items: center; justify-content: center; background: #000;
+}
+.hn-bien b { font-size: min(11vw, 12vh); font-weight: 800; }
+.hn-bien.uoc { border-style: dashed; }
+.hn-re { grid-area: re; display: flex; align-items: center; gap: 12px; color: #22d3ee; min-width: 0; }
+.hn-re .ic { width: min(22vw, 24vh); height: min(22vw, 24vh); flex: none; }
+.hn-re div { display: flex; flex-direction: column; min-width: 0; }
+.hn-re b { font-size: min(9vw, 10vh); font-weight: 800; }
+.hn-re span { font-size: min(4.2vw, 4.6vh); color: #e5e7eb; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hn-cb { grid-area: cb; justify-self: end; display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; align-items: center; color: #ffd60a; text-align: left; }
+.hn-cb .ic { grid-row: span 2; width: min(14vw, 15vh); height: min(14vw, 15vh); }
+.hn-cb b { font-size: min(8vw, 9vh); font-weight: 800; }
+.hn-cb span { font-size: min(3.8vw, 4.2vh); color: #fde68a; }
+.hn-duoi { grid-area: duoi; display: flex; justify-content: space-between; font-size: min(5vw, 5.5vh); font-weight: 700; color: #d1d5db; gap: 16px; }
+.hn-duoi span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hud-nut { position: absolute; left: 50%; bottom: max(20px, env(safe-area-inset-bottom)); transform: translateX(-50%); display: flex; gap: 10px; z-index: 1; }
+.hud-nut .nut.vien { background: #111; color: #fff; border-color: #444; }
+@media (orientation: portrait) {
+  .hud-noi { grid-template-columns: 1fr auto; grid-template-rows: auto auto auto 1fr auto; grid-template-areas: "toc bien" "re re" "cb cb" "." "duoi duoi"; }
+  .hn-cb { justify-self: start; }
+}
+
+/* ---------------------------------------------------------------- bản đồ offline */
+.chip-tai {
+  position: absolute; top: calc(var(--tren) + 122px); right: 70px; background: var(--chinh); color: #fff; font-weight: 700;
+  border-radius: 14px; padding: 5px 10px; font-size: 12px; box-shadow: var(--bong);
+}
+.tien-do-tai { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 6px 16px 12px; }
+.tien-do-tai .thanh { flex: 1 1 100%; height: 8px; border-radius: 4px; background: var(--mat-2); overflow: hidden; }
+.tien-do-tai .thanh i { display: block; height: 100%; background: var(--chinh); transition: width .3s; }
+.tien-do-tai span { flex: 1; font-size: 13px; color: var(--mo); }
+.chu-do { color: var(--do); }
+.nhom .hang-nut { padding: 0 16px; }
+.nhom .ghi-chu { margin: 6px 16px; }
+
+/* ---------------------------------------------------------------- thông số xe (OBD-II) */
+.obd-dau { display: flex; align-items: center; gap: 10px; padding: 14px 16px; flex-wrap: wrap; }
+.obd-dau b { flex: 1; min-width: 140px; }
+.obd-dau .cham { width: 10px; height: 10px; border-radius: 50%; background: #9aa3ad; }
+.obd-dau .cham.ketnoi { background: #16a34a; }
+.obd-dau .cham.dangnoi, .obd-dau .cham.khoitao { background: #f59e0b; animation: nhay 1s infinite; }
+.obd-vin { margin: 0 16px 8px; }
+.luoi-obd { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; padding: 4px 16px 16px; }
+.o-obd { background: var(--mat-2); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
+.o-obd small { color: var(--mo); font-size: 12px; }
+.o-obd b { font-size: 26px; font-variant-numeric: tabular-nums; }
+.o-obd span { color: var(--mo); font-size: 12px; }
+.obd-loi { padding: 4px 16px; display: flex; gap: 8px; flex-wrap: wrap; color: var(--mo); font-size: 14px; }
+.obd-loi span { background: #fee2e2; color: #b91c1c; font-weight: 700; padding: 4px 10px; border-radius: 8px; }
+
+/* ---------------------------------------------------------------- thống kê chuyến đi */
+.tong-ket.phu b { font-size: 16px; }
+.bieu-do { display: block; width: 100%; height: auto; margin: 6px 0 10px; font-size: 10px; fill: var(--mo); }
+.bieu-do .bd-luoi { stroke: var(--vien); stroke-width: 1; }
+.bieu-do .bd-nen { fill: var(--chinh); opacity: .15; stroke: none; }
+.bieu-do .bd-duong { fill: none; stroke: var(--chinh); stroke-width: 2; stroke-linejoin: round; }
+.bieu-do .bd-don-vi { font-weight: 700; }

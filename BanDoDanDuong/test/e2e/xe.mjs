@@ -97,15 +97,16 @@ try {
   await page.waitForFunction(() => window.__tin.some(t => t.loai === 'danDuong' && t.du.canhBao && t.du.canhBao.loai === 'camera') &&
     window.__tin.some(t => t.loai === 'danDuong' && t.du.gioiHan === 30), null, { timeout: 40000 });
   const ds = await xe.tin('danDuong');
-  const coCb = ds.find(d => d.canhBao);
+  const coCb = ds.find(d => d.canhBao && d.canhBao.loai === 'camera');
   kiem(ds.length > 3 && ds.every(d => d.dangDanDuong), 'gửi trạng thái dẫn đường mỗi lần cập nhật');
   kiem(ds.some(d => d.ke && d.ke.loai === 'turn' && d.ke.huong === 'right' && d.ke.kc > 0 && d.ke.ten === 'Tràng Tiền'), 'trạng thái có loại thao tác, hướng, khoảng cách, tên đường');
   kiem(ds.some(d => d.lanes && d.lanes.length === 3 && d.lanes[2].dung), 'trạng thái có làn đường nên đi');
-  kiem(coCb.canhBao.ten === 'Camera tốc độ' && coCb.canhBao.kc > 0, 'trạng thái có cảnh báo camera phía trước');
+  kiem(coCb.canhBao.ten === 'Camera phạt tốc độ' && coCb.canhBao.icon === 'cameratocdo' && coCb.canhBao.kc > 0, 'trạng thái có cảnh báo camera phía trước (kèm biểu tượng)');
+  kiem(ds.some(d => d.canhBao && d.canhBao.loai === 'gioihan' && d.canhBao.gioiHan === 30), 'trạng thái có cảnh báo giới hạn tốc độ phía trước');
   kiem(ds.some(d => d.gioiHan === 30), 'trạng thái có giới hạn tốc độ');
   kiem(ds.every(d => d.conLaiChu && d.thoiGianChu && d.gioDen > Date.now() - 60000), 'trạng thái có quãng đường / thời gian / giờ đến');
   const noi = await xe.tin('noi');
-  kiem(noi.some(n => /Bắt đầu dẫn đường/.test(n.chu)) && noi.some(n => /camera giám sát tốc độ/.test(n.chu)), 'câu đọc gửi cho giọng nói của hệ điều hành');
+  kiem(noi.some(n => /Bắt đầu dẫn đường/.test(n.chu)) && noi.some(n => /camera phạt tốc độ/.test(n.chu)), 'câu đọc gửi cho giọng nói của hệ điều hành');
   await page.screenshot({ path: path.join(ANH, 'xe-02-dan-duong.png') });
 
   const bd = await xe.lenh('banDo', { loai: 'keo', dx: 150, dy: 0, donVi: 'px' });
@@ -139,18 +140,60 @@ try {
   console.log('WebView điện thoại trong ứng dụng gốc');
   const dt = await moTrangGoc('dienthoai', { rong: 412, cao: 860, tiLe: 2 });
   kiem(await dt.page.evaluate(() => !document.body.classList.contains('xe') && getComputedStyle(document.querySelector('.thanh-tim')).display !== 'none'), 'giao diện điện thoại đầy đủ');
+  await dt.viTri(A, 10, 0);
+  await dt.page.waitForFunction(() => window.__tin.some(t => t.loai === 'hud'), null, { timeout: 5000 }).catch(() => {});
+  const hud = (await dt.tin('hud')).pop();
+  kiem(hud && hud.bat === true && hud.tocDo === 36 && hud.dangDi === true, 'gửi tốc độ cho bong bóng nổi của Android (tin hud)');
   await dt.page.click('.o-tim');
   kiem((await dt.lenh('quayLai')).daXuLy === true && await dt.page.evaluate(() => document.querySelector('#man-tim').hidden), 'nút Back của Android đóng màn hình tìm kiếm');
   kiem((await dt.lenh('quayLai')).daXuLy === false, 'không còn gì để đóng thì để Android xử lý');
   await dt.page.evaluate(() => document.querySelector('[data-hd="nghe-thu"]') || null);
   await dt.page.click('[data-hd="menu"]');
   await dt.page.click('[data-hd="trang-cai-dat"]');
+  kiem(await dt.page.locator('input[data-cd="bongBongNoi"]').count() === 1, 'cài đặt bong bóng nổi chỉ có trong ứng dụng Android');
+  await dt.page.locator('input[data-cd="bongBongNoi"]').evaluate(el => { el.checked = false; el.dispatchEvent(new Event('change', { bubbles: true })); el.checked = true; el.dispatchEvent(new Event('change', { bubbles: true })); });
+  kiem((await dt.tin('xinQuyenNoi')).length === 1, 'bật bong bóng nổi thì xin quyền hiển thị trên ứng dụng khác');
   await dt.page.click('[data-hd="nghe-thu"]');
   kiem((await dt.tin('noi')).some(n => n.chu.includes('Trần Phú')), 'nghe thử giọng đọc qua giọng của hệ điều hành');
   await dt.page.evaluate(async () => (await import('./js/giao-dien.js')).taiXuong('thu.gpx', '<gpx/>', 'application/gpx+xml'));
   await dt.page.waitForFunction(() => window.__tin.some(t => t.loai === 'luuTep'), null, { timeout: 5000 });
   const tep = (await dt.tin('luuTep'))[0];
   kiem(tep.ten === 'thu.gpx' && Buffer.from(tep.base64, 'base64').toString() === '<gpx/>', 'lưu tệp GPX qua ứng dụng gốc');
+  // liên kết chia sẻ từ ứng dụng khác (Intent VIEW geo: / SEND văn bản) do MainActivity chuyển tới
+  await dt.page.click('[data-hd="dong-trang"]');
+  const moLk = await dt.lenh('moLienKet', { chuoi: 'geo:21.0287,105.8522?q=21.0287,105.8522(Hồ Gươm)' });
+  await dt.page.waitForTimeout(300);
+  kiem(moLk === true && (await dt.page.innerText('#tam-duoi')).includes('Hồ Gươm'), 'mở địa điểm từ liên kết geo: do Android chuyển tới');
+  kiem(await dt.lenh('moLienKet', { chuoi: 'không có địa điểm nào' }) === false, 'báo lại khi nội dung chia sẻ không có địa điểm');
+  await dt.page.click('#tam-duoi [data-hd="dong-tam"]');
+
+  // OBD-II qua bộ chuyển Bluetooth thường (cau/Obd.kt): trang gửi lệnh ELM327 qua obdGui, "Android" trả lời qua goc.obd
+  await dt.page.click('[data-hd="menu"]');
+  await dt.page.click('#menu [data-hd="trang-obd"]');
+  await dt.page.click('[data-hd="obd-ket-noi"]');
+  await dt.page.waitForFunction(() => window.__tin.some(t => t.loai === 'obdKetNoi'), null, { timeout: 5000 });
+  await dt.page.evaluate(() => {
+    const TL = { ATZ: 'ELM327 v1.5', ATE0: 'OK', ATL0: 'OK', ATS0: 'OK', ATH0: 'OK', ATSP0: 'OK', '0100': 'SEARCHING...\r41 00 98 18 80 10',
+      '010C': '41 0C 0C 80', '010D': '41 0D 00', '0105': '41 05 82', '0104': '41 04 40', '0111': '41 11 33', ATRV: '12.6V', '0902': 'NO DATA', '03': '43 01 01 71' };
+    const cu = window.HawaMapAndroid.guiTin;
+    window.HawaMapAndroid.guiTin = (loai, du) => {
+      cu(loai, du);
+      if (loai !== 'obdGui') return;
+      const lenh = JSON.parse(du).chuoi.trim();
+      setTimeout(() => window.hawamap.goc.obd('nhan', (TL[lenh] || '?') + '\r\r>'), 5);
+    };
+    window.hawamap.goc.obd('ketNoi', 'OBDII');
+  });
+  await dt.page.waitForFunction(() => { const el = document.getElementById('obd-010C'); return el && el.textContent === '800'; }, null, { timeout: 15000 }).catch(() => {});
+  kiem(await dt.page.innerText('#obd-010C') === '800' && await dt.page.innerText('#obd-0105') === '90' && await dt.page.innerText('#obd-ATRV') === '12.6',
+    'đọc vòng tua, nhiệt độ nước, điện áp ắc quy qua Bluetooth của Android');
+  kiem((await dt.page.innerText('.obd-dau')).includes('Đã kết nối · OBDII'), 'hiện trạng thái đã kết nối bộ chuyển');
+  await dt.page.click('[data-hd="obd-doc-loi"]');
+  await dt.page.waitForSelector('#obd-loi span', { timeout: 5000 }).catch(() => {});
+  kiem((await dt.page.innerText('#obd-loi')).includes('P0171'), 'đọc mã lỗi động cơ');
+  await dt.page.screenshot({ path: path.join(ANH, 'xe-obd.png') });
+  await dt.page.click('[data-hd="obd-ngat"]');
+  kiem((await dt.tin('obdNgat')).length === 1 && (await dt.page.innerText('.obd-dau')).includes('Chưa kết nối'), 'ngắt kết nối OBD');
   kiem(dt.loi.length === 0, 'không có lỗi JavaScript (điện thoại)' + (dt.loi.length ? ': ' + dt.loi.join(' | ') : ''));
   await dt.ctx.close();
 } catch (e) {

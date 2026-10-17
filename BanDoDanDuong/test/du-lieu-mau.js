@@ -80,6 +80,31 @@ export function overpassDiem() {
   };
 }
 
+/** Phản hồi Overpass đầy đủ các loại điểm cảnh báo (truy vấn cauTruyVanDiem). */
+export function overpassDiemDayDu() {
+  return {
+    elements: [
+      { type: 'node', id: 9101, lat: 21.0290, lon: 105.8500, tags: { highway: 'speed_camera' } },
+      { type: 'node', id: 9102, lat: 21.0335, lon: 105.8548, tags: {} },
+      { type: 'node', id: 9103, lat: 21.0270, lon: 105.8500, tags: { traffic_calming: 'hump' } },
+      { type: 'node', id: 9104, lat: 21.0304, lon: 105.8500, tags: { highway: 'traffic_signals' } },
+      { type: 'node', id: 9105, lat: 21.0330, lon: 105.8560, tags: { hazard: 'dangerous_junction' } },
+      { type: 'way', id: 9201, center: { lat: 21.0312, lon: 105.8512 }, tags: { amenity: 'school', name: 'Trường Tiểu học Tràng An' } },
+      { type: 'way', id: 9301, tags: { highway: 'primary', tunnel: 'yes', name: 'Hầm Kim Liên' },
+        geometry: [{ lat: 21.0100, lon: 105.8400 }, { lat: 21.0110, lon: 105.8420 }, { lat: 21.0120, lon: 105.8440 }] },
+      { type: 'relation', id: 9501, tags: { type: 'enforcement', enforcement: 'traffic_signals' },
+        members: [{ type: 'node', ref: 9101, role: 'device' }, { type: 'way', ref: 1, role: 'from' }] },
+      { type: 'relation', id: 9502, tags: { type: 'enforcement', enforcement: 'average_speed', maxspeed: '50' },
+        members: [{ type: 'node', ref: 9102, role: 'device' }] },
+      { type: 'relation', id: 9401, tags: { type: 'restriction', restriction: 'no_left_turn' },
+        members: [{ type: 'way', ref: 2, role: 'from' }, { type: 'node', ref: 9601, role: 'via' }, { type: 'way', ref: 3, role: 'to' }] },
+      { type: 'relation', id: 9402, tags: { type: 'restriction', restriction: 'no_u_turn' },
+        members: [{ type: 'way', ref: 2, role: 'from' }, { type: 'way', ref: 1, role: 'via' }, { type: 'way', ref: 2, role: 'to' }] },
+      { type: 'node', id: 9601, lat: C[1], lon: C[0] }
+    ]
+  };
+}
+
 export function photon() {
   return {
     type: 'FeatureCollection',
