@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sinh tự động bởi tools/tao-bieu-tuong-goc.mjs — không sửa tay -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+  <path
+      android:pathData="M2.5 16v-3l1.5-3.4a1 1 0 0 1 .9-.6h6.2a1 1 0 0 1 .9.6l1.5 3.4v3zM2.5 13h11"
+      android:fillColor="#00000000"
+      android:strokeColor="#FFFFFFFF"
+      android:strokeWidth="2"
+      android:strokeLineCap="round"
+      android:strokeLineJoin="round" />
+  <path
+      android:pathData="M4.1,16.5a1.4,1.4 0 1,0 2.8,0a1.4,1.4 0 1,0 -2.8,0z"
+      android:fillColor="#00000000"
+      android:strokeColor="#FFFFFFFF"
+      android:strokeWidth="2"
+      android:strokeLineCap="round"
+      android:strokeLineJoin="round" />
+  <path
+      android:pathData="M9.1,16.5a1.4,1.4 0 1,0 2.8,0a1.4,1.4 0 1,0 -2.8,0z"
+      android:fillColor="#00000000"
+      android:strokeColor="#FFFFFFFF"
+      android:strokeWidth="2"
+      android:strokeLineCap="round"
+      android:strokeLineJoin="round" />
+  <path
+      android:pathData="M12.5 9l1-2.4a1 1 0 0 1 .9-.6h4.2a1 1 0 0 1 .9.6l2 3.9V14h-5.5"
+      android:fillColor="#00000000"
+      android:strokeColor="#FFFFFFFF"
+      android:strokeWidth="2"
+      android:strokeLineCap="round"
+      android:strokeLineJoin="round" />
+</vector>

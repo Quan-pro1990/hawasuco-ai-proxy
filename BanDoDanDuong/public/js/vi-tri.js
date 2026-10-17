@@ -1,5 +1,6 @@
 /* Nguồn vị trí: GPS của thiết bị, hoặc vị trí giả khi đang chạy mô phỏng. */
 import { khoangCach, phuongVi } from './hinh-hoc.js';
+import { laAppGoc } from './cau-noi.js';
 
 const LOI_GPS = {
   1: 'Bạn chưa cho phép ứng dụng truy cập vị trí. Hãy bật quyền vị trí trong cài đặt trình duyệt.',
@@ -19,6 +20,7 @@ export class NguonViTri {
   }
 
   batDau() {
+    if (laAppGoc) return true;          // ứng dụng gốc tự gửi vị trí qua tuGoc()
     if (!('geolocation' in navigator)) { this.baoLoi && this.baoLoi('Thiết bị không hỗ trợ định vị'); return false; }
     if (this.idTheoDoi != null) return true;
     this.idTheoDoi = navigator.geolocation.watchPosition(
@@ -32,6 +34,14 @@ export class NguonViTri {
   dung() {
     if (this.idTheoDoi != null) navigator.geolocation.clearWatch(this.idTheoDoi);
     this.idTheoDoi = null;
+  }
+
+  /** Vị trí do ứng dụng gốc gửi (GPS của điện thoại). tocDo, huong: null nếu thiết bị không có. */
+  tuGoc(lng, lat, tocDo, huong, doChinhXac, thoiGian) {
+    this.xuLyGps({
+      coords: { longitude: lng, latitude: lat, speed: tocDo, heading: huong, accuracy: doChinhXac },
+      timestamp: thoiGian || Date.now()
+    });
   }
 
   xuLyGps(p) {

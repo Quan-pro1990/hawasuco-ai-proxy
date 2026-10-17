@@ -1,5 +1,6 @@
 /* Giọng nói tiếng Việt (Web Speech API) và âm báo (Web Audio). */
 import { caiDat } from './kho.js';
+import { laAppGoc, guiGoc } from './cau-noi.js';
 
 const coTTS = typeof window !== 'undefined' && 'speechSynthesis' in window;
 let giong = null;
@@ -21,11 +22,14 @@ export function danhSachGiong() {
 
 export function doiGiong() { chonGiong(); }
 
-export function coGiongNoi() { return coTTS; }
+export function coGiongNoi() { return coTTS || laAppGoc; }
 
 /** Đọc một câu. `chen`: ngắt câu đang đọc (cảnh báo khẩn). */
 export function noi(vanBan, { chen = false, batBuoc = false } = {}) {
-  if (!coTTS || !vanBan || (!caiDat.giongNoi && !batBuoc)) return;
+  if (!vanBan || (!caiDat.giongNoi && !batBuoc)) return;
+  // trong ứng dụng gốc: đọc bằng giọng của hệ điều hành (ra loa xe qua Android Auto / CarPlay)
+  if (laAppGoc) { guiGoc('noi', { chu: vanBan, chen, amLuong: caiDat.amLuong, toc: caiDat.tocDoNoi }); return; }
+  if (!coTTS) return;
   if (chen) speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(vanBan);
   u.lang = 'vi-VN';
@@ -35,7 +39,10 @@ export function noi(vanBan, { chen = false, batBuoc = false } = {}) {
   speechSynthesis.speak(u);
 }
 
-export function imLang() { if (coTTS) speechSynthesis.cancel(); }
+export function imLang() {
+  if (laAppGoc) guiGoc('imLang');
+  else if (coTTS) speechSynthesis.cancel();
+}
 
 /** Trình duyệt điện thoại chỉ cho phát tiếng sau một lần chạm: gọi trong sự kiện bấm nút. */
 export function moKhoaAmThanh() {

@@ -45,6 +45,7 @@ const P = {
   tuychon: '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>',
   chon: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
   loabao: '<path d="M3 10v4h3l7 4V6l-7 4z"/><path d="M17 9a4 4 0 0 1 0 6M6 14l1.5 5H10l-1.3-4.5"/>',
+  keo: '<path d="M12 3v18M3 12h18M12 3L9 6M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3"/>',
   laixe: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2"/><path d="M3.5 10.5c3-1.5 14-1.5 17 0M10.2 13.5L7 20M13.8 13.5L17 20"/>',
   // danh mục địa điểm
   xang: '<path d="M5 20V5a1.5 1.5 0 0 1 1.5-1.5h6A1.5 1.5 0 0 1 14 5v15M3.5 20h12M5 10h9"/><path d="M14 8h2l2.5 2.5V17a1.5 1.5 0 0 1-3 0v-3H14"/>',
@@ -74,6 +75,9 @@ const P = {
 };
 
 export function coBieuTuong(ten) { return ten in P; }
+
+/** Tên và nội dung SVG của mọi biểu tượng (dùng để sinh biểu tượng cho ứng dụng Android / iOS). */
+export function tatCaBieuTuong() { return { ...P }; }
 
 /** SVG nét để chèn vào HTML. */
 export function icon(ten, lop = '') {

@@ -45,6 +45,45 @@ Trên máy tính không có GPS: tìm một địa điểm → **Chỉ đường
 
 Mở trang trên điện thoại → menu trình duyệt → **Thêm vào màn hình chính**.
 
+## Android Auto và Apple CarPlay
+
+Android Auto và CarPlay không chạy trang web, nên có thêm hai ứng dụng gốc (thư mục `android/` và `ios/`).
+Hai ứng dụng này **dùng lại nguyên trang web** trong `public/`: trang chạy trong WebView, toàn bộ tìm kiếm, tìm đường,
+dẫn đường, cảnh báo vẫn do mã JavaScript đã kiểm thử đảm nhận. Phần gốc chỉ làm những việc trang web không làm được:
+
+| Việc | Android (Kotlin) | iPhone (Swift) |
+|---|---|---|
+| Màn hình xe | Car App Library, mẫu `NavigationTemplate`; bản đồ vẽ lên Surface của xe (WebView trên màn hình ảo) | `CPMapTemplate`; bản đồ là WKWebView trong cửa sổ CarPlay |
+| Thẻ chỉ hướng trên xe | mũi tên rẽ, khoảng cách, tên đường, bước kế tiếp, giờ đến, quãng đường còn lại; báo cho màn hình phụ / HUD của xe (`NavigationManager`) | `CPNavigationSession` (thao tác rẽ, ước tính thời gian), cảnh báo camera bằng `CPNavigationAlert` |
+| Tìm kiếm / danh sách trên xe | `SearchTemplate`, danh sách Đã lưu · Quanh đây · Báo cáo, xem trước tuyến `RoutePreviewNavigationTemplate` (Bắt đầu / Chạy thử) | `CPSearchTemplate`, `CPListTemplate`, xem trước tuyến (Bắt đầu / Tuyến khác / Chạy thử) |
+| Giọng nói | TextToSpeech tiếng Việt, loại âm "hướng dẫn dẫn đường" (ra loa xe, tự giảm nhạc) | AVSpeechSynthesizer `vi-VN`, chế độ `voicePrompt` |
+| GPS | LocationManager, dịch vụ chạy nền khi dẫn đường | CLLocationManager, chế độ nền `location` |
+| Khác | "Ok Google, chỉ đường tới …" (intent `geo:`), nút Back, lưu GPX vào Tải xuống | giữ sáng màn hình, chia sẻ tệp GPX |
+
+Bắt đầu dẫn đường trên điện thoại khi đang cắm xe thì màn hình xe tự dẫn theo cùng tuyến (và ngược lại); giọng nói chỉ đọc
+từ một nơi. Biểu tượng mũi tên rẽ của hai ứng dụng được sinh từ cùng nguồn với trang web: `npm run bieu-tuong`.
+
+### Build Android (Android Auto)
+
+1. Cài [Android Studio](https://developer.android.com/studio), mở thư mục `android/` (hoặc dòng lệnh: `cd android && ./gradlew assembleDebug`).
+   Mỗi lần build, trang web trong `public/` được chép tự động vào ứng dụng.
+2. Thử trên máy tính bằng **Desktop Head Unit**: cài "Android Auto Desktop Head Unit Emulator" trong SDK Manager; trên điện thoại
+   bật chế độ nhà phát triển của Android Auto (bấm 10 lần vào phiên bản trong cài đặt Android Auto) → *Start head unit server*;
+   chạy `adb forward tcp:5277 tcp:5277` rồi mở `desktop-head-unit`. Bấm nút "Chạy thử" ở màn hình xem trước tuyến để thử dẫn đường.
+3. Máy chủ báo cáo dùng chung: điền vào `android/app/src/main/res/values/cau_hinh.xml`.
+4. Phát hành: Google Play duyệt riêng ứng dụng cho Android Auto (Play Console → Advanced settings → Form factors → Android Auto),
+   ứng dụng phải đạt [hướng dẫn chất lượng cho ứng dụng trên xe](https://developer.android.com/docs/quality-guidelines/car-app-quality).
+   Trước khi gửi duyệt, thay `HostValidator` trong `HawaCarAppService.kt` bằng danh sách máy chủ Android Auto chính thức.
+
+### Build iPhone (CarPlay)
+
+1. Cần máy Mac có Xcode 15 trở lên và [XcodeGen](https://github.com/yonaskolb/XcodeGen): `brew install xcodegen`,
+   rồi `cd ios && xcodegen generate && open HawaMap.xcodeproj`. Điền Team ID vào `DEVELOPMENT_TEAM` trong `ios/project.yml`.
+2. Thử CarPlay trên máy ảo: chạy ứng dụng trên iPhone Simulator → menu *I/O → External Displays → CarPlay*.
+3. Chạy trên iPhone thật và xe thật cần quyền **CarPlay Navigation** (`com.apple.developer.carplay-maps`): xin Apple tại
+   [developer.apple.com/carplay](https://developer.apple.com/carplay/), sau khi được cấp thì bật quyền đó cho App ID và tạo lại provisioning profile.
+4. Máy chủ báo cáo dùng chung: khoá `HawaMapMayChuBaoCao` trong `ios/HoTro/Info.plist`.
+
 ## Dịch vụ bản đồ
 
 | Việc | Mặc định (miễn phí, không cần khoá) | Đổi ở |
@@ -94,8 +133,19 @@ BanDoDanDuong/
 │     ├─ bieu-tuong.js       biểu tượng SVG, mũi tên rẽ, mũi tên làn đường
 │     ├─ kho.js              lưu cài đặt, địa điểm, lịch sử (localStorage, IndexedDB)
 │     ├─ hinh-hoc.js         tính khoảng cách, phương vị, bắt điểm lên tuyến…
-│     └─ dinh-dang.js        định dạng quãng đường, thời gian kiểu Việt Nam
-└─ test/                     kiểm thử (node --test) và kiểm thử giao diện (Playwright)
+│     ├─ dinh-dang.js        định dạng quãng đường, thời gian kiểu Việt Nam
+│     └─ cau-noi.js          cầu nối với ứng dụng gốc Android / iOS (chế độ màn hình xe)
+├─ android/                  ứng dụng Android + Android Auto (Kotlin, Gradle)
+│  └─ app/src/main/java/vn/hawasuco/hawamap/
+│     ├─ MainActivity.kt     màn hình điện thoại (WebView chạy trang HawaMap)
+│     ├─ DanDuongService.kt  dịch vụ chạy nền khi dẫn đường
+│     ├─ cau/                cầu nối JS ↔ Kotlin (TrangWeb, TrungTam), GPS, giọng nói, lưu tệp
+│     └─ xe/                 Android Auto: CarAppService, bản đồ trên Surface, các màn hình mẫu
+├─ ios/                      ứng dụng iPhone + CarPlay (Swift, tạo dự án bằng XcodeGen: project.yml)
+│  ├─ HawaMap/               AppDelegate, TrangWeb (WKWebView + cầu nối), TrungTam, GPS, giọng nói, CarPlay.swift
+│  └─ HoTro/                 Info.plist, quyền CarPlay (entitlements)
+├─ tools/tao-bieu-tuong-goc.mjs  sinh biểu tượng Android / iOS từ public/js/bieu-tuong.js
+└─ test/                     kiểm thử (node --test), kiểm thử giao diện và cầu nối ứng dụng gốc (Playwright)
 ```
 
 ## API máy chủ báo cáo
@@ -115,5 +165,9 @@ BanDoDanDuong/
 
 ```
 npm test            # hình học, câu chỉ dẫn, bộ máy dẫn đường, cảnh báo, API máy chủ
-npm run test:e2e    # chạy giao diện trên Chromium với dịch vụ bản đồ giả lập (cần: npm i -D playwright)
+npm run test:e2e    # giao diện trên Chromium với dịch vụ bản đồ giả lập + "hợp đồng" lệnh / tin giữa trang và
+                    # ứng dụng Android / iOS (giả lập cầu nối)   — cần: npm i -D playwright
 ```
+
+Mã Kotlin đã được biên dịch thử với thư viện khung Android 14; mã Android Auto (AndroidX) và mã Swift / CarPlay
+chưa được build trong môi trường này — build lần đầu bằng Android Studio / Xcode như hướng dẫn ở trên.

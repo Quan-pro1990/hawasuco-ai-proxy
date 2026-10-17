@@ -575,3 +575,17 @@ body.chon-ban-do #lop-chinh, body.chon-ban-do #khung-lt, body.chon-ban-do .tam-d
   .thanh-chon { left: 50%; right: auto; width: 440px; transform: translateX(-50%); bottom: 16px; border-radius: 16px; padding-bottom: 16px; }
   .ten-duong { max-width: 360px; }
 }
+
+/* ---------------------------------------------------------------- màn hình xe (Android Auto / CarPlay)
+   Ứng dụng gốc vẽ thanh tìm kiếm, thẻ chỉ hướng, nút bấm bằng giao diện của xe; trang chỉ vẽ bản đồ,
+   đồng hồ tốc độ, biển giới hạn và thẻ cảnh báo, tránh vùng bị giao diện xe che (--xe-*). */
+:root { --xe-tren: 0px; --xe-duoi: 0px; --xe-trai: 0px; --xe-phai: 0px; }
+body.xe .thanh-tim, body.xe .hang-chip, body.xe .cot-phai, body.xe .cot-duoi-phai, body.xe .nut-thoat-lai-xe,
+body.xe .chip-rec, body.xe #khung-lt, body.xe .tam-duoi, body.xe .bang-re, body.xe .thanh-dd, body.xe .dk-mo-phong,
+body.xe .nut-ve-giua, body.xe .maplibregl-popup, body.xe .ten-duong, body.xe .thong-bao, body.xe .hop-thoai-nen,
+body.xe #man-tim, body.xe #trang, body.xe #menu, body.xe #man-che, body.xe #man-camera, body.xe .chon-ban-do { display: none !important; }
+body.xe .hud, body.xe .hud.dd { bottom: calc(var(--xe-duoi) + 12px); left: calc(var(--xe-trai) + 12px); right: auto; }
+body.xe.hud-phai .hud, body.xe.hud-phai .hud.dd { left: auto; right: calc(var(--xe-phai) + 12px); }
+body.xe .the-canh-bao, body.xe .the-canh-bao.dd { top: calc(var(--xe-tren) + 12px); left: calc(var(--xe-trai) + 12px); right: auto; }
+body.xe.hud-phai .the-canh-bao, body.xe.hud-phai .the-canh-bao.dd { left: auto; right: calc(var(--xe-phai) + 12px); }
+body.xe .maplibregl-ctrl-bottom-right { bottom: var(--xe-duoi); right: var(--xe-phai); }

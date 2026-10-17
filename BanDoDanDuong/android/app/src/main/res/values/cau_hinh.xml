@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Địa chỉ máy chủ báo cáo giao thông dùng chung (server.js), ví dụ https://bando.congty.vn/api
+      Để trống: báo cáo chỉ lưu trên máy (người dùng vẫn đổi được trong Cài đặt → Nâng cao).
+    -->
+    <string name="may_chu_bao_cao" translatable="false"></string>
+</resources>

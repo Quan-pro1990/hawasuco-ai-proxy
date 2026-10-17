@@ -1,0 +1,33 @@
+# Dự án Xcode của HawaMap (iPhone + CarPlay), tạo bằng XcodeGen:
+#   brew install xcodegen && cd ios && xcodegen generate && open HawaMap.xcodeproj
+name: HawaMap
+options:
+  bundleIdPrefix: vn.hawasuco
+  deploymentTarget:
+    iOS: "15.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "5.0"
+    # Điền Team ID tài khoản Apple Developer của bạn (Xcode → Signing & Capabilities)
+    DEVELOPMENT_TEAM: ""
+targets:
+  HawaMap:
+    type: application
+    platform: iOS
+    sources:
+      - path: HawaMap
+      # trang web HawaMap dùng chung với bản web / Android, đóng gói vào ứng dụng thành thư mục "public"
+      - path: ../public
+        type: folder
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: vn.hawasuco.hawamap
+        INFOPLIST_FILE: HoTro/Info.plist
+        CODE_SIGN_ENTITLEMENTS: HoTro/HawaMap.entitlements
+        GENERATE_INFOPLIST_FILE: NO
+        TARGETED_DEVICE_FAMILY: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon

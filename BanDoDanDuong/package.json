@@ -9,6 +9,7 @@
   "scripts": {
     "start": "node server.js",
     "test": "node --test \"test/*.test.js\"",
-    "test:e2e": "node test/e2e/giao-dien.mjs"
+    "test:e2e": "node test/e2e/giao-dien.mjs && node test/e2e/xe.mjs",
+    "bieu-tuong": "node tools/tao-bieu-tuong-goc.mjs"
   }
 }

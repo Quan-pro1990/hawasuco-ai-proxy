@@ -3,65 +3,16 @@
  * Chạy:  npm run test:e2e      (cần: npm i -D playwright  và  npx playwright install chromium)
  * Ảnh chụp màn hình lưu ở thư mục ANH_KIEM_THU (mặc định: <thư mục tạm>/hawamap-e2e).
  */
-import { createRequire } from 'node:module';
 import path from 'node:path';
 import os from 'node:os';
 import fs from 'node:fs/promises';
 import { taoMayChu } from '../../server.js';
 import * as mau from '../du-lieu-mau.js';
-
-const require = createRequire(import.meta.url);
-let chromium;
-try { ({ chromium } = require('playwright')); } catch (e) {
-  console.error('Chưa có Playwright. Cài bằng: npm i -D playwright && npx playwright install chromium');
-  process.exit(1);
-}
+import { chromium, giaLapMang, THAM_SO_TRINH_DUYET } from './chung.mjs';
 
 const ANH = process.env.ANH_KIEM_THU || path.join(os.tmpdir(), 'hawamap-e2e');
 await fs.mkdir(ANH, { recursive: true });
 const { A, B, C, D } = mau.DIEM;
-
-// ---------------------------------------------------------------- dữ liệu giả cho các dịch vụ ngoài
-const duongNen = {
-  type: 'FeatureCollection',
-  features: [[A, B], [B, C], [C, D], [A, [105.8548, 21.025]], [[105.8548, 21.025], D], [[105.846, 21.0304], [105.858, 21.0304]], [[105.846, 21.0325], [105.858, 21.0325]]]
-    .map(c => ({ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: c } }))
-};
-const style = (toi) => ({
-  version: 8,
-  sources: { duong: { type: 'geojson', data: duongNen } },
-  layers: [
-    { id: 'nen', type: 'background', paint: { 'background-color': toi ? '#1d2330' : '#eef0e6' } },
-    { id: 'duong-vien', type: 'line', source: 'duong', paint: { 'line-color': toi ? '#39414f' : '#cfd5dc', 'line-width': 16 } },
-    { id: 'duong', type: 'line', source: 'duong', paint: { 'line-color': toi ? '#4a5262' : '#ffffff', 'line-width': 12 } }
-  ]
-});
-const xang = { elements: [
-  { type: 'node', id: 7001, lat: 21.0262, lon: 105.8503, tags: { amenity: 'fuel', name: 'Petrolimex Cửa hàng 15', brand: 'Petrolimex', opening_hours: '24/7' } },
-  { type: 'node', id: 7002, lat: 21.0281, lon: 105.8531, tags: { amenity: 'fuel', name: 'PVOil Hàng Bài' } }
-] };
-
-const json = (route, du) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(du), headers: { 'Access-Control-Allow-Origin': '*' } });
-
-async function giaLapMang(ctx) {
-  await ctx.route(/^https?:\/\/(?!127\.0\.0\.1)/, async (route) => {
-    const url = route.request().url();
-    if (/openfreemap\.org\/styles|voyager-gl-style/.test(url)) return json(route, style(false));
-    if (/dark-matter-gl-style/.test(url)) return json(route, style(true));
-    if (/router\.project-osrm\.org|routing\.openstreetmap\.de/.test(url)) return json(route, mau.tuyenOsrm());
-    if (/photon\.komoot\.io/.test(url)) return json(route, mau.photon());
-    if (/nominatim.*\/reverse/.test(url)) return json(route, mau.nominatimNguoc());
-    if (/nominatim.*\/search/.test(url)) return json(route, []);
-    if (/api\/interpreter/.test(url)) {
-      const q = decodeURIComponent((route.request().postData() || '').slice(5));
-      if (q.includes('speed_camera')) return json(route, mau.overpassDiem());
-      if (q.includes('fuel')) return json(route, xang);
-      if (q.includes('highway~')) return json(route, mau.overpassDuong());
-      return json(route, { elements: [] });
-    }
-    return route.abort();
-  });
-}
 
 // ---------------------------------------------------------------- tiện ích kiểm tra
 let soLoi = 0;
@@ -75,9 +26,7 @@ const mayChu = taoMayChu({ thuMucDuLieu: await fs.mkdtemp(path.join(os.tmpdir(),
 await new Promise(ok => mayChu.listen(0, '127.0.0.1', ok));
 const GOC = `http://127.0.0.1:${mayChu.address().port}/`;
 
-const trinhDuyet = await chromium.launch({
-  args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', '--autoplay-policy=no-user-gesture-required']
-});
+const trinhDuyet = await chromium.launch({ args: THAM_SO_TRINH_DUYET });
 
 async function moTrang({ rong = 412, cao = 860 } = {}) {
   const ctx = await trinhDuyet.newContext({

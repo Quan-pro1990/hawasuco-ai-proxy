@@ -1,6 +1,7 @@
 /* Tiện ích giao diện: thông báo nhanh, hộp thoại, tấm trượt phía dưới, trang toàn màn hình. */
 import { icon } from './bieu-tuong.js';
 import { esc } from './dinh-dang.js';
+import { laAppGoc, guiGoc } from './cau-noi.js';
 
 export const $ = (s, goc = document) => goc.querySelector(s);
 export const $$ = (s, goc = document) => [...goc.querySelectorAll(s)];
@@ -123,6 +124,14 @@ export function dongTrang() { $('#trang').hidden = true; }
 /** Tải một tệp xuống máy. */
 export function taiXuong(tenTep, noiDung, kieu = 'application/octet-stream') {
   const blob = noiDung instanceof Blob ? noiDung : new Blob([noiDung], { type: kieu });
+  if (laAppGoc) {
+    // WebView không tải được blob: gửi nội dung cho ứng dụng gốc lưu (chỉ tệp nhỏ như GPX)
+    if (blob.size > 8 * 1024 * 1024) { thongBao('Tệp quá lớn để lưu từ ứng dụng. Hãy mở HawaMap bằng trình duyệt để tải về.', { loai: 'loi', thoiGian: 5000 }); return; }
+    const doc = new FileReader();
+    doc.onload = () => guiGoc('luuTep', { ten: tenTep, kieu: blob.type || kieu, base64: String(doc.result).split(',')[1] || '' });
+    doc.readAsDataURL(blob);
+    return;
+  }
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

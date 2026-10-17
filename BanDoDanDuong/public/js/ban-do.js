@@ -35,7 +35,7 @@ export class BanDo {
     this.cb = cb;
     this.duLieu = Object.fromEntries(NGUON.map(n => [n, RONG]));
     this.theoDoi = 'khong';         // khong | bac (giữ hướng Bắc) | huong (xoay theo hướng đi, nghiêng 3D)
-    this.le = { tren: 90, duoi: 30, trai: 0 };
+    this.le = { tren: 90, duoi: 30, trai: 0, phai: 0 };
     this.hienThi = null;
     this.lucZoomTay = 0;
     this.anh = this.taiCacAnh();
@@ -310,7 +310,7 @@ export class BanDo {
   datLe(le) { Object.assign(this.le, le); }
 
   dem() {
-    return { top: this.le.tren + 30, bottom: this.le.duoi + 30, left: this.le.trai + 40, right: 40 };
+    return { top: this.le.tren + 30, bottom: this.le.duoi + 30, left: this.le.trai + 40, right: this.le.phai + 40 };
   }
 
   vuaKhung(toaDo, { tucThi = false } = {}) {
@@ -404,8 +404,8 @@ export class BanDo {
       zoom: zMucTieu,
       pitch: dd ? 55 : 0,
       bearing: dd ? this.hienThi.huong : 0,
-      pad: dd ? { top: Math.round(h * 0.42), bottom: this.le.duoi, left: this.le.trai, right: 0 }
-        : { top: this.le.tren, bottom: this.le.duoi, left: this.le.trai, right: 0 }
+      pad: dd ? { top: Math.max(this.le.tren, Math.round(h * 0.42)), bottom: this.le.duoi, left: this.le.trai, right: this.le.phai }
+        : { top: this.le.tren, bottom: this.le.duoi, left: this.le.trai, right: this.le.phai }
     };
     const z = m.getZoom(), pi = m.getPitch(), be = m.getBearing(), pa = m.getPadding();
     const tien = (a, b, he) => Math.abs(b - a) < 0.01 ? b : a + (b - a) * he;
@@ -414,11 +414,12 @@ export class BanDo {
       zoom: tien(z, mt.zoom, 0.08),
       pitch: tien(pi, mt.pitch, 0.1),
       bearing: Math.abs(db) < 0.1 ? mt.bearing : be + db * 0.2,
-      padding: { top: tien(pa.top, mt.pad.top, 0.12), bottom: tien(pa.bottom, mt.pad.bottom, 0.12), left: tien(pa.left, mt.pad.left, 0.12), right: 0 }
+      padding: { top: tien(pa.top, mt.pad.top, 0.12), bottom: tien(pa.bottom, mt.pad.bottom, 0.12), left: tien(pa.left, mt.pad.left, 0.12), right: tien(pa.right, mt.pad.right, 0.12) }
     };
     m.jumpTo({ center: this.hienThi.viTri, ...moi });
     return Math.abs(moi.zoom - mt.zoom) < 0.02 && Math.abs(moi.pitch - mt.pitch) < 0.3 && Math.abs(lechGoc(moi.bearing, mt.bearing)) < 0.3 &&
-      Math.abs(moi.padding.top - mt.pad.top) < 1 && Math.abs(moi.padding.bottom - mt.pad.bottom) < 1;
+      Math.abs(moi.padding.top - mt.pad.top) < 1 && Math.abs(moi.padding.bottom - mt.pad.bottom) < 1 &&
+      Math.abs(moi.padding.left - mt.pad.left) < 1 && Math.abs(moi.padding.right - mt.pad.right) < 1;
   }
 
   /** Chế độ bám vị trí: 'khong' | 'bac' | 'huong'. */

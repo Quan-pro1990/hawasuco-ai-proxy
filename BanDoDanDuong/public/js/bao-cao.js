@@ -4,6 +4,7 @@
  */
 import { caiDat, doc, ghi, maThietBi } from './kho.js';
 import { LOAI_BAO_CAO, soPhieuGo } from './loai-bao-cao.js';
+import { cauHinhGoc } from './cau-noi.js';
 
 export { LOAI_BAO_CAO };
 
@@ -11,7 +12,7 @@ let coMayChu = null;
 let duLieu = [];
 
 function goc() {
-  return (caiDat.mayChuBaoCao || '').trim().replace(/\/+$/, '') || 'api';
+  return (caiDat.mayChuBaoCao || cauHinhGoc.mayChuBaoCao || '').trim().replace(/\/+$/, '') || 'api';
 }
 
 export function dungMayChu() { return coMayChu === true; }

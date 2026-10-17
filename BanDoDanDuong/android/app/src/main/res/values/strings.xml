@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">HawaMap</string>
+    <string name="kenh_dan_duong">Dẫn đường</string>
+    <string name="dang_dan_duong">HawaMap đang dẫn đường</string>
+</resources>

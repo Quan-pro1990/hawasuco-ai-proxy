@@ -4,7 +4,7 @@ import {
   caiDat, doiCaiDat, ngheDoiCaiDat, khoiPhucCaiDat, diaDiemDaLuu, luuNhaCoQuan, laYeuThich, doiYeuThich, boYeuThich,
   lichSuTim, themLichSu, xoaLichSu
 } from './kho.js';
-import { khoangCach, catTuyen, diemTaiS } from './hinh-hoc.js';
+import { khoangCach, catTuyen, diemTaiS, tichLuy } from './hinh-hoc.js';
 import { quangDuong, thoiGian, gioDen, ngayGio, thoiGianTruoc, tocDoKmh, kichThuoc, esc } from './dinh-dang.js';
 import { icon, muiTenRe, muiTenLan } from './bieu-tuong.js';
 import { BanDo, layKieuBanDo } from './ban-do.js';
@@ -21,6 +21,7 @@ import { LOAI_BAO_CAO, kiemTraMayChu, dungMayChu, taiBaoCao, guiBaoCao, xacNhan,
 import { DANH_MUC, layDanhMuc, timQuanh, timDocTuyen } from './dia-diem.js';
 import { GhiHanhTrinh, danhSachHanhTrinh, xoaHanhTrinh, tongKet, xuatGpx } from './hanh-trinh.js';
 import { CameraHanhTrinh, hoTroCamera, danhSachDoan, doiKhoaDoan, xoaDoan, layDoan } from './camera-hanh-trinh.js';
+import { laAppGoc, cheDoXe, cauHinhGoc, guiGoc } from './cau-noi.js';
 
 const st = {
   cheDo: 'chinh',          // chinh | diadiem | danhmuc | lotrinh | danduong
@@ -50,6 +51,8 @@ if (!window.maplibregl || !coWebGL()) {
   throw new Error('Trình duyệt không hỗ trợ WebGL');
 }
 chenBieuTuong();
+if (cheDoXe) document.body.classList.add('xe', cauHinhGoc.hud === 'phai' ? 'hud-phai' : 'hud-trai');
+if (laAppGoc) document.documentElement.classList.add('app-goc', 'app-' + (cauHinhGoc.nenTang || 'goc'));
 const banDo = new BanDo('ban-do', {
   nhanGiu: p => chonViTriBanDo(p),
   chamBaoCao: (id, p) => moPopupBaoCao(id, p),
@@ -87,8 +90,9 @@ window.addEventListener('resize', capNhatLe);
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && (st.dd || st.laiXe)) giuManHinh(true);
 });
-moLienKet();
-if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+if (!cheDoXe) moLienKet();
+// trong ứng dụng gốc trang được nạp từ gói cài đặt: không cần service worker
+if (!laAppGoc && 'serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 
@@ -104,6 +108,7 @@ function datCheDo(cd) {
 function laMayTinh() { return window.matchMedia('(min-width: 768px)').matches; }
 
 function capNhatLe() {
+  if (cheDoXe) { banDo.datLe(st.leXe || { tren: 0, duoi: 0, trai: 0, phai: 0 }); return; }
   const goc = document.documentElement.style;
   const tamEl = $('#tam-duoi');
   const mayTinh = laMayTinh();
@@ -178,7 +183,7 @@ function xuLyViTri(vt) {
 
   if (dauTien && !st.daBayDenViTri && st.cheDo === 'chinh' && !st.lienKet) {
     st.daBayDenViTri = true;
-    banDo.bayDen(vt.viTri, 16);
+    if (cheDoXe) { banDo.datTheoDoi('bac'); capNhatNutViTri(); } else banDo.bayDen(vt.viTri, 16);
   }
   if (st.choBayDenViTri) { st.choBayDenViTri = false; banDo.datTheoDoi('bac'); capNhatNutViTri(); }
   if (st.lt && st.lt.choGps && st.cheDo === 'lotrinh') { st.lt.choGps = false; tinhLoTrinh(); }
@@ -187,9 +192,10 @@ function xuLyViTri(vt) {
   if (st.dd) tt = capNhatDanDuong(vt);
   const cb = canhBao.capNhat(vt, st.dd && tt ? { tuyen: st.dd.tuyen, tt } : null, st.dd ? st.dd.phuongTien : caiDat.phuongTien);
   st.cbCuoi = cb;
+  if (tt) baoGoc(tt);              // sau khi có tốc độ / giới hạn / cảnh báo của lần cập nhật này
   if (cb.kmh >= 5) st.lucDiChuyen = Date.now();
   renderHud(cb);
-  renderCanhBao(st.dd ? $('#canh-bao-dd') : $('#canh-bao-chinh'), (st.dd || st.laiXe || cb.kmh >= 5) ? cb.canhBao : null);
+  renderCanhBao(st.dd ? $('#canh-bao-dd') : $('#canh-bao-chinh'), (st.dd || st.laiXe || cheDoXe || cb.kmh >= 5) ? cb.canhBao : null);
   if (st.dd) $('#canh-bao-chinh').hidden = true;
 
   const soDiem = thongTinDuong.diem.size;
@@ -224,6 +230,7 @@ function capNhatLaBan() {
 
 let khoaManHinh = null;
 async function giuManHinh(bat) {
+  if (laAppGoc) { guiGoc('giuManHinh', { bat: !!(bat && caiDat.giuManHinh) }); return; }
   try {
     if (bat && caiDat.giuManHinh && 'wakeLock' in navigator) {
       if (!khoaManHinh) { khoaManHinh = await navigator.wakeLock.request('screen'); khoaManHinh.addEventListener('release', () => { khoaManHinh = null; }); }
@@ -241,7 +248,7 @@ function renderHud(cb) {
     ${cb.duong && (cb.duong.ten || cb.duong.ref) ? `<div class="ten-duong">${esc(cb.duong.ten || cb.duong.ref)}</div>` : ''}`;
   if (st.dd) { $('#hud-dd').innerHTML = html; return; }
   const el = $('#hud-chinh');
-  el.hidden = !(st.laiXe || Date.now() - st.lucDiChuyen < 60000);
+  el.hidden = !(st.laiXe || cheDoXe || Date.now() - st.lucDiChuyen < 60000);
   el.innerHTML = html;
 }
 
@@ -591,7 +598,7 @@ function moLoTrinh(den, { batDauNgay = false } = {}) {
   banDo.datKetQua([]);
   datCheDo('lotrinh');
   renderKhungLt();
-  tinhLoTrinh();
+  return tinhLoTrinh();
 }
 
 function dongLoTrinh() {
@@ -739,7 +746,7 @@ function renderBuoc(tuyen, hienTai = -1) {
 }
 
 // ================================================================== dẫn đường
-function batDauDanDuong({ moPhong = false } = {}) {
+function batDauDanDuong({ moPhong = false, tuGoc = false } = {}) {
   const lt = st.lt;
   const t = lt && lt.tuyen[lt.chon];
   if (!t) return;
@@ -748,6 +755,7 @@ function batDauDanDuong({ moPhong = false } = {}) {
     moPhong = true;
     thongBao('Điểm xuất phát không phải vị trí hiện tại — chạy thử lộ trình');
   }
+  if (st.dd) ketThucDanDuong({ tuGoc: true, imLang: false });
   const den = lt.diem[lt.diem.length - 1];
   st.dd = {
     tuyen: t, may: new DanDuong(t), tt: null,
@@ -770,6 +778,11 @@ function batDauDanDuong({ moPhong = false } = {}) {
   renderBangRe(null);
   renderThanhDd(null);
   $('#nut-loa').innerHTML = icon(caiDat.giongNoi ? 'loa' : 'tatloa');
+  // báo ứng dụng gốc để đồng bộ sang màn hình còn lại (điện thoại ↔ Android Auto / CarPlay)
+  if (laAppGoc && !tuGoc) {
+    guiGoc('batDau', { tuyen: { ...t, tichLuy: undefined }, diemDen: st.dd.diemDen, tenDen: st.dd.tenDen, phuongTien: st.dd.phuongTien, moPhong });
+  }
+  baoGoc(null);
   if (moPhong) batMoPhong(t);
   else if (st.viTri) xuLyViTri(st.viTri);
 }
@@ -811,6 +824,7 @@ async function tinhLaiDuong() {
   if (!dd || dd.dangTinhLai || Date.now() - dd.lanTinhLai < 8000 || !st.viTri) return;
   dd.dangTinhLai = true;
   renderBangRe(dd.tt);
+  baoGoc(dd.tt);
   try {
     const ds = await timDuong({
       diem: [st.viTri.viTri, ...dd.diemDen.map(d => d.viTri)], phuongTien: dd.phuongTien, huongDau: st.viTri.huong, phuongAn: false,
@@ -903,14 +917,18 @@ function renderThanhDd(tt) {
   capNhatLe();
 }
 
-async function ketThucDanDuong({ daDen = false } = {}) {
+async function ketThucDanDuong({ daDen = false, tuGoc = false, imLang: imDi = true } = {}) {
   const dd = st.dd;
   if (!dd) return;
   st.dd = null;
   clearTimeout(dd.henKetThuc);
   if (st.moPhong) tatMoPhong();
   const ht = ghiHT.ketThuc(dd.tenDen);
-  if (!daDen) imLang();
+  if (!daDen && imDi) imLang();
+  if (laAppGoc) {
+    guiGoc('danDuong', { dangDanDuong: false, daDen, tenDen: dd.tenDen });
+    if (!tuGoc) guiGoc('ketThuc', { daDen });
+  }
   if (!st.laiXe) giuManHinh(false);
   banDo.xoaTuyen();
   banDo.datDiemLoTrinh([]);
@@ -924,7 +942,7 @@ async function ketThucDanDuong({ daDen = false } = {}) {
   datCheDo('chinh');
   banDo.datTheoDoi(st.viTri ? 'bac' : 'khong');
   capNhatNutViTri();
-  if (daDen) {
+  if (daDen && !cheDoXe) {
     hopThoai({
       tieuDe: 'Bạn đã đến nơi',
       noiDung: `<p class="den-noi">${icon('ghim')}<b>${esc(dd.tenDen)}</b></p>` + (ht ? `<p class="mo">Quãng đường ${quangDuong(ht.quangDuong)} · ${thoiGian(ht.thoiGian)} · tốc độ TB ${ht.tocDoTB} km/h</p>` : ''),
@@ -1446,15 +1464,184 @@ $('#o-tim').addEventListener('keydown', e => {
   if (e.key === 'Enter') { e.preventDefault(); clearTimeout(henGoiY); timDayDuNgay(); }
 });
 
+/** Đóng lớp giao diện trên cùng (phím Esc, nút Back của Android). Trả về false nếu không còn gì để đóng. */
+function quayLai() {
+  const hop = $('.hop-thoai-nen');
+  if (hop) { hop.click(); return true; }
+  if (!$('#man-camera').hidden) { HD['thu-camera'](); return true; }
+  if (!$('#trang').hidden) { dongTrang(); return true; }
+  if (!$('#man-tim').hidden) { dongTimKiem(); return true; }
+  if (!$('#menu').hidden) { moMenu(false); return true; }
+  if (st.chonBd) { tatChonTrenBanDo(); return true; }
+  if (!tam.el.hidden && st.cheDo !== 'danduong') { dongTam(); return true; }
+  if (st.cheDo === 'lotrinh') { dongLoTrinh(); return true; }
+  if (st.laiXe) { batLaiXe(false); return true; }
+  return false;
+}
+
 document.addEventListener('keydown', e => {
-  if (e.key !== 'Escape') return;
-  if ($('.hop-thoai-nen')) return;
-  if (!$('#trang').hidden) return dongTrang();
-  if (!$('#man-tim').hidden) return dongTimKiem();
-  if (!$('#menu').hidden) return moMenu(false);
-  if (st.chonBd) return tatChonTrenBanDo();
-  if (!tam.el.hidden && st.cheDo !== 'danduong') dongTam();
+  if (e.key !== 'Escape' || $('.hop-thoai-nen')) return;
+  quayLai();
 });
 
-// cho phép kiểm thử / gỡ lỗi từ bảng điều khiển trình duyệt
-window.hawamap = { st, banDo, caiDat };
+// ================================================================== ứng dụng gốc: Android Auto / CarPlay / WebView điện thoại
+function rutGonDiaDiem(x) {
+  const kc = x.viTri ? Math.round(khoangCach(viTriGan(), x.viTri)) : null;
+  return { ten: x.ten, diaChi: x.diaChi || '', viTri: x.viTri || null, refId: x.refId || null, nguon: x.nguon || '', kc, kcChu: kc != null ? quangDuong(kc) : '' };
+}
+
+function tomTatTuyen(t, i) {
+  const nhanh = Math.min(...st.lt.tuyen.map(x => x.thoiGian));
+  return {
+    i, thoiGian: Math.round(t.thoiGian), quangDuong: Math.round(t.quangDuong), thoiGianChu: thoiGian(t.thoiGian), quangDuongChu: quangDuong(t.quangDuong),
+    duongChinh: t.duongChinh || '', coThuPhi: !!t.coThuPhi, coCaoToc: !!t.coCaoToc, nhanhNhat: t.thoiGian === nhanh, gioDen: Date.now() + t.thoiGian * 1000,
+    diemCuoi: t.toaDo[t.toaDo.length - 1]
+  };
+}
+
+function rutGonBuoc(b, kc) {
+  if (!b) return null;
+  return { loai: b.loai, huong: b.huong || '', loiRa: b.loiRa || 0, chiDan: b.chiDan, ten: tenDuong(b), diemDung: !!b.diemDung, kc: kc == null ? null : Math.round(kc) };
+}
+
+/** Trạng thái dẫn đường gửi cho ứng dụng gốc để vẽ thẻ chỉ hướng của Android Auto / CarPlay. */
+function trangThaiGoc(tt) {
+  const dd = st.dd;
+  if (!dd) return { dangDanDuong: false };
+  const ke = tt ? tt.ke : dd.tuyen.buoc[1];
+  const kc = tt ? tt.kcDenRe : (ke ? ke.batDau : 0);
+  const keNua = tt ? tt.keNua : dd.tuyen.buoc[2];
+  const tg = tt ? tt.thoiGianConLai : dd.tuyen.thoiGian;
+  const cb = st.cbCuoi;
+  return {
+    dangDanDuong: true, dangTinhLai: !!dd.dangTinhLai, moPhong: !!dd.moPhong, tenDen: dd.tenDen,
+    diemDen: dd.diemDen.length ? dd.diemDen[dd.diemDen.length - 1].viTri : null,
+    ke: rutGonBuoc(ke, kc), sau: rutGonBuoc(keNua, ke && keNua ? keNua.batDau - ke.batDau : null),
+    lanes: ke && ke.lanes && kc < 600 ? ke.lanes.map(l => ({ huong: l.indications, dung: !!l.valid })) : null,
+    conLai: Math.round(tt ? tt.conLai : dd.tuyen.quangDuong), conLaiChu: quangDuong(tt ? tt.conLai : dd.tuyen.quangDuong),
+    thoiGianConLai: Math.round(tg), thoiGianChu: thoiGian(tg), gioDen: Date.now() + tg * 1000, gioDenChu: gioDen(tg),
+    tocDo: cb ? cb.kmh : null, gioiHan: cb ? cb.gioiHan : null, vuotToc: !!(cb && cb.vuotToc),
+    canhBao: cb && cb.canhBao ? { id: cb.canhBao.id, loai: cb.canhBao.loai, ten: cb.canhBao.ten, kc: Math.round(cb.canhBao.kc), gioiHan: cb.canhBao.gioiHan || null } : null
+  };
+}
+
+function baoGoc(tt) {
+  if (laAppGoc && st.dd) guiGoc('danDuong', trangThaiGoc(tt));
+}
+
+function dieuKhienBanDo({ loai, dx = 0, dy = 0, tiLe = 1, x, y, donVi = 'css' }) {
+  const m = banDo.map, dpr = donVi === 'px' ? (window.devicePixelRatio || 1) : 1;
+  if (loai === 'keo') {
+    banDo.datTheoDoi('khong');
+    m.panBy([dx / dpr, dy / dpr], { animate: false });
+  } else if (loai === 'thuPhong') {
+    banDo.lucZoomTay = Date.now();
+    const quanh = x != null ? m.unproject([x / dpr, y / dpr]) : undefined;
+    m.zoomTo(m.getZoom() + Math.log2(Math.max(0.1, tiLe)), { around: quanh, animate: false });
+  } else if (loai === 'phongTo' || loai === 'thuNho') {
+    banDo.lucZoomTay = Date.now();
+    if (banDo.theoDoi === 'khong') m.easeTo({ zoom: m.getZoom() + (loai === 'phongTo' ? 1 : -1), duration: 300 });
+    else m.jumpTo({ zoom: m.getZoom() + (loai === 'phongTo' ? 1 : -1) });
+  } else if (loai === 'veGiua') {
+    if (st.viTri) banDo.datTheoDoi(st.dd ? 'huong' : 'bac');
+  } else if (loai === 'tongQuan') {
+    if (st.dd) HD['tong-quan']();
+    else if (st.lt && st.lt.tuyen.length) banDo.vuaKhung(st.lt.tuyen.flatMap(t => t.toaDo));
+  }
+  capNhatNutViTri();
+  return { theoDoi: banDo.theoDoi };
+}
+
+/** Lệnh từ ứng dụng gốc. Mỗi lệnh trả về dữ liệu (JSON) hoặc báo lỗi bằng exception. */
+const LENH_GOC = {
+  timKiem: async ({ chuoi }) => (await goiY(String(chuoi || ''), viTriGan())).slice(0, 10).map(rutGonDiaDiem),
+  quanhDay: async ({ danhMuc }) => {
+    const dm = layDanhMuc(danhMuc);
+    if (!dm) throw new Error('Danh mục không hợp lệ');
+    return (await timQuanh(dm, viTriGan())).slice(0, 12).map(rutGonDiaDiem);
+  },
+  danhMuc: () => DANH_MUC.map(d => ({ id: d.id, ten: d.ten, icon: d.icon })),
+  daLuu: () => {
+    const ds = diaDiemDaLuu();
+    return {
+      nha: ds.nha && rutGonDiaDiem(ds.nha), coQuan: ds.coQuan && rutGonDiaDiem(ds.coQuan),
+      yeuThich: ds.yeuThich.slice(0, 10).map(rutGonDiaDiem), ganDay: lichSuTim().slice(0, 8).map(rutGonDiaDiem)
+    };
+  },
+  xemTruoc: async ({ diem }) => {
+    let dd = diem;
+    if (!dd || (!dd.viTri && !dd.refId)) throw new Error('Thiếu địa điểm');
+    if (!dd.viTri) dd = await layToaDo(dd);
+    if (dd.nguon !== 'toado') themLichSu(dd);
+    if (st.dd) throw new Error('Đang dẫn đường');
+    await moLoTrinh({ ten: dd.ten, diaChi: dd.diaChi, viTri: dd.viTri });
+    if (st.lt.loi) throw new Error(st.lt.loi);
+    if (!st.lt.tuyen.length) throw new Error(st.viTri ? 'Không tìm được đường đi' : 'Đang chờ tín hiệu GPS');
+    return st.lt.tuyen.map(tomTatTuyen);
+  },
+  chonTuyen: ({ i }) => { chonTuyen(+i); return true; },
+  batDau: ({ moPhong }) => { batDauDanDuong({ moPhong: !!moPhong }); return trangThaiGoc(null); },
+  ketThuc: () => { ketThucDanDuong(); return true; },
+  huyXemTruoc: () => { if (st.cheDo === 'lotrinh') dongLoTrinh(); return true; },
+  banDo: o => dieuKhienBanDo(o || {}),
+  loaiBaoCao: () => Object.entries(LOAI_BAO_CAO).map(([id, v]) => ({ id, ten: v.ten, mau: v.mau })),
+  baoCao: async ({ loai }) => {
+    if (!LOAI_BAO_CAO[loai]) throw new Error('Loại báo cáo không hợp lệ');
+    await guiBaoCao({ loai, viTri: st.viTri ? st.viTri.viTri : banDo.tam(), huong: st.viTri && st.viTri.huong });
+    banDo.datBaoCao(baoCaoHienTai());
+    return LOAI_BAO_CAO[loai].ten;
+  },
+  loa: ({ bat }) => { doiCaiDat({ giongNoi: bat == null ? !caiDat.giongNoi : !!bat }); return caiDat.giongNoi; },
+  /** Vùng bản đồ bị giao diện xe che (px của màn hình xe nếu donVi = 'px'). */
+  le: ({ tren = 0, duoi = 0, trai = 0, phai = 0, donVi = 'css' }) => {
+    const dpr = donVi === 'px' ? (window.devicePixelRatio || 1) : 1;
+    st.leXe = { tren: tren / dpr, duoi: duoi / dpr, trai: trai / dpr, phai: phai / dpr };
+    const g = document.documentElement.style;
+    g.setProperty('--xe-tren', st.leXe.tren + 'px');
+    g.setProperty('--xe-duoi', st.leXe.duoi + 'px');
+    g.setProperty('--xe-trai', st.leXe.trai + 'px');
+    g.setProperty('--xe-phai', st.leXe.phai + 'px');
+    capNhatLe();
+    return true;
+  },
+  quayLai: () => ({ daXuLy: quayLai() }),
+  trangThai: () => trangThaiGoc(st.dd && st.dd.tt)
+};
+
+async function chayLenh(id, ten, thamSo) {
+  try {
+    const f = LENH_GOC[ten];
+    if (!f) throw new Error('Không có lệnh ' + ten);
+    const ketQua = await f(thamSo || {});
+    guiGoc('traLoi', { id, ketQua: ketQua === undefined ? null : ketQua });
+  } catch (e) {
+    guiGoc('traLoi', { id, loi: (e && e.message) || String(e) });
+  }
+}
+
+/** Ứng dụng gốc bắt đầu dẫn đường trên màn hình này theo tuyến đã tính ở màn hình kia. */
+function dongBoBatDau(du) {
+  const t = du && du.tuyen;
+  if (!t || !t.toaDo || !t.buoc) return;
+  t.tichLuy = tichLuy(t.toaDo);
+  t.buoc.forEach(b => { b.batDau = t.tichLuy[Math.min(b.chiSo, t.toaDo.length - 1)]; });
+  st.lt = {
+    diem: [{ toi: true }, ...(du.diemDen || []).map(d => ({ ten: d.ten, diaChi: '', viTri: d.viTri }))],
+    phuongTien: du.phuongTien || caiDat.phuongTien, tuyen: [t], chon: 0
+  };
+  dongTimKiem();
+  dongTrang();
+  batDauDanDuong({ moPhong: !!du.moPhong, tuGoc: true });
+}
+
+window.hawamap = {
+  st, banDo, caiDat,
+  goc: {
+    viTri: (lng, lat, tocDo, huong, doChinhXac, thoiGian) => nguonViTri.tuGoc(lng, lat, tocDo, huong, doChinhXac, thoiGian),
+    lenh: (id, ten, thamSo) => { chayLenh(id, ten, thamSo); },
+    dongBoBatDau: du => dongBoBatDau(typeof du === 'string' ? JSON.parse(du) : du),
+    dongBoKetThuc: () => ketThucDanDuong({ tuGoc: true }),
+    quayLai: () => quayLai()
+  }
+};
+guiGoc('sanSang', { xe: cheDoXe, phienBan: CAU_HINH.phienBan });

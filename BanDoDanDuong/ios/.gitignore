@@ -1,0 +1,5 @@
+HawaMap.xcodeproj/
+build/
+DerivedData/
+xcuserdata/
+*.xcworkspace/

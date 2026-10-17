@@ -14,7 +14,7 @@ const VO_UNG_DUNG = [
   'vendor/maplibre-gl/maplibre-gl.js', 'vendor/maplibre-gl/maplibre-gl.css', 'icons/icon.svg', 'icons/icon-192.png',
   'js/main.js', 'js/cau-hinh.js', 'js/kho.js', 'js/hinh-hoc.js', 'js/dinh-dang.js', 'js/bieu-tuong.js', 'js/ban-do.js',
   'js/giao-dien.js', 'js/tim-kiem.js', 'js/chi-duong.js', 'js/dan-duong.js', 'js/vi-tri.js', 'js/mo-phong.js',
-  'js/giong-noi.js', 'js/duong-xa.js', 'js/canh-bao.js', 'js/bao-cao.js', 'js/loai-bao-cao.js', 'js/dia-diem.js',
+  'js/giong-noi.js', 'js/cau-noi.js', 'js/duong-xa.js', 'js/canh-bao.js', 'js/bao-cao.js', 'js/loai-bao-cao.js', 'js/dia-diem.js',
   'js/hanh-trinh.js', 'js/camera-hanh-trinh.js'
 ];
 
