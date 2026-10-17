@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1565d8">
+<meta name="description" content="Bản đồ dẫn đường: tìm địa điểm, chỉ đường, dẫn đường bằng giọng nói tiếng Việt, cảnh báo tốc độ, camera giám sát, báo cáo giao thông.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>HawaMap – Bản đồ dẫn đường</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="vendor/maplibre-gl/maplibre-gl.css">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body data-che-do="chinh">
+<div id="ban-do" aria-label="Bản đồ"></div>
+
+<!-- ================= MÀN HÌNH CHÍNH ================= -->
+<div id="lop-chinh" class="lop">
+  <header class="thanh-tim">
+    <button class="nut-icon" data-hd="menu" data-icon="menu" aria-label="Menu"></button>
+    <button class="o-tim" data-hd="mo-tim">Tìm kiếm địa điểm, địa chỉ</button>
+    <button class="nut-icon nut-mic" data-hd="noi-tim" data-icon="mic" aria-label="Tìm bằng giọng nói"></button>
+  </header>
+  <nav class="hang-chip" id="hang-chip" aria-label="Tìm nhanh quanh đây"></nav>
+
+  <div class="cot-phai">
+    <button class="nut-noi" data-hd="lop-ban-do" data-icon="lop" aria-label="Kiểu bản đồ"></button>
+    <button class="nut-noi" id="nut-la-ban" data-hd="la-ban" data-icon="laban" aria-label="Về hướng Bắc"></button>
+    <button class="nut-noi" data-hd="mo-camera" data-icon="camera" aria-label="Camera hành trình"></button>
+    <button class="nut-noi do" data-hd="bao-cao" data-icon="loabao" aria-label="Báo cáo giao thông"></button>
+  </div>
+  <div class="cot-duoi-phai">
+    <button class="nut-noi lon" id="nut-vi-tri" data-hd="vi-tri" data-icon="vitri" aria-label="Vị trí của tôi"></button>
+    <button class="nut-noi lon chinh" data-hd="chi-duong-nhanh" data-icon="chiduong" aria-label="Chỉ đường"></button>
+  </div>
+
+  <div class="the-canh-bao" id="canh-bao-chinh" hidden></div>
+  <div class="hud" id="hud-chinh" hidden></div>
+  <button class="nut-thoat-lai-xe" data-hd="thoat-lai-xe">Thoát chế độ lái xe</button>
+  <button class="chip-rec" id="chip-rec" data-hd="mo-camera" hidden>REC</button>
+</div>
+
+<!-- ================= LẬP LỘ TRÌNH ================= -->
+<section id="khung-lt" class="khung-lt" hidden>
+  <div class="lt-hang">
+    <button class="nut-icon" data-hd="dong-lt" data-icon="quaylai" aria-label="Quay lại"></button>
+    <div class="lt-diem" id="lt-diem"></div>
+    <div class="lt-nut">
+      <button class="nut-icon" data-hd="dao-diem" data-icon="dao" aria-label="Đảo chiều"></button>
+      <button class="nut-icon" data-hd="them-diem-dung" data-icon="cong" aria-label="Thêm điểm dừng"></button>
+    </div>
+  </div>
+  <div class="tab-xe" id="tab-xe"></div>
+</section>
+
+<!-- ================= TẤM THÔNG TIN PHÍA DƯỚI ================= -->
+<section id="tam-duoi" class="tam-duoi" hidden>
+  <div class="tay-cam" role="button" aria-label="Kéo để mở rộng hoặc thu gọn"><span></span></div>
+  <div class="noi-dung-tam"></div>
+</section>
+
+<!-- ================= DẪN ĐƯỜNG ================= -->
+<div id="lop-dd" class="lop" hidden>
+  <div class="bang-re" id="bang-re"></div>
+  <div class="the-canh-bao dd" id="canh-bao-dd" hidden></div>
+  <div class="cot-phai dd">
+    <button class="nut-noi do" data-hd="bao-cao" data-icon="loabao" aria-label="Báo cáo giao thông"></button>
+    <button class="nut-noi" id="nut-loa" data-hd="doi-loa" aria-label="Bật / tắt giọng nói"></button>
+    <button class="nut-noi" data-hd="tong-quan" data-icon="tongquan" aria-label="Xem toàn tuyến"></button>
+  </div>
+  <div class="hud dd" id="hud-dd"></div>
+  <button class="nut-ve-giua" id="nut-ve-giua" data-hd="ve-giua" data-icon="muiten" hidden>Tiếp tục dẫn đường</button>
+  <div class="dk-mo-phong" id="dk-mo-phong" hidden></div>
+  <footer class="thanh-dd" id="thanh-dd"></footer>
+</div>
+
+<!-- ================= CHỌN TRÊN BẢN ĐỒ ================= -->
+<div id="chon-ban-do" class="chon-ban-do" hidden>
+  <div class="tam-ngam" data-icon="ghim"></div>
+  <div class="thanh-chon">
+    <span>Kéo bản đồ để đặt ghim vào vị trí cần chọn</span>
+    <div><button class="nut vien" data-hd="huy-chon-bd">Huỷ</button><button class="nut chinh" data-hd="xac-nhan-chon-bd">Chọn vị trí này</button></div>
+  </div>
+</div>
+
+<!-- ================= TÌM KIẾM ================= -->
+<section id="man-tim" class="man-day" hidden>
+  <header class="dau-tim">
+    <button class="nut-icon" data-hd="dong-tim" data-icon="quaylai" aria-label="Quay lại"></button>
+    <input id="o-tim" type="search" placeholder="Tìm kiếm địa điểm, địa chỉ" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+    <button class="nut-icon" id="nut-xoa-tim" data-hd="xoa-o-tim" data-icon="dong" aria-label="Xoá" hidden></button>
+    <button class="nut-icon nut-mic" data-hd="noi-tim" data-icon="mic" aria-label="Tìm bằng giọng nói"></button>
+  </header>
+  <div class="than-tim" id="than-tim"></div>
+</section>
+
+<!-- ================= MENU ================= -->
+<div id="man-che" class="man-che" data-hd="dong-menu" hidden></div>
+<aside id="menu" class="menu" hidden>
+  <div class="menu-dau">
+    <img src="icons/icon.svg" alt="">
+    <div><b>HawaMap</b><small>Bản đồ dẫn đường</small></div>
+  </div>
+  <button data-hd="trang-da-luu" data-icon="sao">Địa điểm đã lưu</button>
+  <button data-hd="trang-hanh-trinh" data-icon="dongho">Lịch sử hành trình</button>
+  <button data-hd="che-do-lai-xe" data-icon="laixe">Chế độ lái xe</button>
+  <button data-hd="mo-camera" data-icon="camera">Camera hành trình</button>
+  <button data-hd="trang-bao-cao" data-icon="loabao">Báo cáo của tôi</button>
+  <hr>
+  <button data-hd="trang-cai-dat" data-icon="caidat">Cài đặt</button>
+  <button data-hd="trang-huong-dan" data-icon="sach">Hướng dẫn sử dụng</button>
+  <button data-hd="trang-gioi-thieu" data-icon="thongtin">Giới thiệu</button>
+</aside>
+
+<!-- ================= CAMERA HÀNH TRÌNH ================= -->
+<section id="man-camera" class="man-camera" hidden>
+  <canvas id="canvas-camera"></canvas>
+  <video id="video-camera" playsinline muted></video>
+  <div class="camera-dau">
+    <button class="nut-icon" data-hd="thu-camera" data-icon="quaylai" aria-label="Về bản đồ (vẫn ghi)"></button>
+    <span id="trang-thai-camera">Sẵn sàng</span>
+  </div>
+  <div class="camera-nut">
+    <button class="nut-tron" data-hd="ds-doan" data-icon="danhsach" aria-label="Danh sách video"></button>
+    <button class="nut-ghi" id="nut-ghi" data-hd="doi-ghi" aria-label="Bắt đầu ghi"><span></span></button>
+    <button class="nut-tron" data-hd="khoa-doan" data-icon="khoa" aria-label="Khoá đoạn đang ghi"></button>
+    <button class="nut-tron" data-hd="tat-camera" data-icon="dong" aria-label="Tắt camera"></button>
+  </div>
+</section>
+
+<!-- ================= TRANG (cài đặt, đã lưu, lịch sử…) ================= -->
+<section id="trang" class="man-day" hidden>
+  <header class="dau-trang">
+    <button class="nut-icon" data-hd="dong-trang" data-icon="quaylai" aria-label="Quay lại"></button>
+    <h2 id="tieu-de-trang"></h2>
+  </header>
+  <div class="than-trang" id="than-trang"></div>
+</section>
+
+<div id="hop-thoai-goc"></div>
+<div id="thong-bao" class="thong-bao" role="status" aria-live="polite"></div>
+
+<script src="vendor/maplibre-gl/maplibre-gl.js"></script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
