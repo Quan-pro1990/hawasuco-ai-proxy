@@ -13,12 +13,13 @@ tốc độ / camera giám sát, báo cáo giao thông của cộng đồng, cam
 | Nhóm | Chức năng |
 |---|---|
 | **Bản đồ** | Bản đồ vector xoay / nghiêng 3D, nhà 3D; 4 kiểu: Tiêu chuẩn, Giao thông, Vệ tinh, Ban đêm (tự chuyển theo giờ mặt trời lặn / mọc); tên địa danh tiếng Việt; hiện Quần đảo Hoàng Sa, Trường Sa (Việt Nam); lưu ô bản đồ đã xem để dùng khi mất mạng |
-| **Bản đồ offline** | Tải vùng đang xem (3 mức chi tiết, báo trước số ô / dung lượng, tối đa 8.000 ô) gồm cả style, phông chữ tiếng Việt, biểu tượng; danh sách vùng đã tải, tải lại, xoá; tự cập nhật khi có Wi-Fi (vùng quá 30 ngày hoặc máy chủ đổi phiên bản ô) |
+| **Dữ liệu & cập nhật** | Bản đồ nền luôn theo phiên bản dữ liệu mới nhất của máy chủ bản đồ (OpenFreeMap cập nhật hằng tuần), ô đã lưu quá 7 ngày tự tải lại; dữ liệu camera, biển báo, trạm thu phí lưu trong máy theo khu vực ~11 km và **tự cập nhật mỗi tuần** (máy chủ HawaMap cũng tự cập nhật mỗi tuần cho mọi máy); bảng phí trạm thu phí tải lại mỗi tuần; tuỳ chọn chỉ cập nhật qua Wi-Fi; trang **Cập nhật dữ liệu** xem ngày cập nhật, cập nhật ngay |
+| **Bản đồ offline** | Tải vùng đang xem (3 mức chi tiết, báo trước số ô / dung lượng, tối đa 8.000 ô) gồm cả style, phông chữ tiếng Việt, biểu tượng; danh sách vùng đã tải, tải lại, xoá; tự cập nhật mỗi tuần (vùng quá 7 ngày hoặc máy chủ đổi phiên bản ô) |
 | **Tìm kiếm** | Gợi ý khi đang gõ, tìm bằng giọng nói, nhập toạ độ; dán / chia sẻ liên kết Google Maps, Apple Maps, `geo:` (kể cả liên kết rút gọn `maps.app.goo.gl`) để mở địa điểm hoặc chỉ đường; tìm nhanh quanh đây: cây xăng, bãi đỗ xe, ATM, cà phê, nhà hàng, bệnh viện, nhà thuốc, khách sạn, sửa xe, rửa xe, trạm sạc, nhà vệ sinh; nhấn giữ bản đồ để chọn vị trí bất kỳ; lịch sử tìm kiếm |
 | **Địa điểm** | Thông tin, khoảng cách, giờ mở cửa, điện thoại; lưu yêu thích; đặt Nhà riêng / Cơ quan; chia sẻ liên kết vị trí |
-| **Chỉ đường** | Ô tô, xe máy (tự tránh cao tốc), đi bộ, xe đạp; tuyến thay thế (bấm tuyến xám hoặc nhãn thời gian để chọn); nhãn "Nhanh nhất", "Có trạm thu phí", "Có đoạn cao tốc"; tránh cao tốc / trạm thu phí; thêm tới 3 điểm dừng; đảo chiều; danh sách các bước |
-| **Dẫn đường** | Bảng chỉ hướng (mũi tên, khoảng cách, tên đường, làn nên đi, "sau đó…"); giọng nói tiếng Việt ("Sau 300 mét, rẽ phải vào Trần Phú"); bản đồ xoay theo hướng đi, nghiêng 3D, tự zoom theo tốc độ; giờ đến / thời gian / quãng đường còn lại; tự tính lại khi đi sai đường; tìm cây xăng dọc đường và thêm làm điểm dừng; giữ màn hình sáng; **Chạy thử** lộ trình (tua ×1 ×2 ×4, tăng giảm tốc độ) |
-| **Cảnh báo** | Đồng hồ tốc độ + biển giới hạn tốc độ của con đường đang đi; vượt tốc độ: đồng hồ đỏ, âm báo, giọng nói; đọc giới hạn mới khi đổi đường, **báo trước giới hạn tốc độ phía trước** trên tuyến; camera phạt tốc độ / đèn đỏ / đo tốc độ trung bình / giám sát, điểm kiểm tra tốc độ; **khúc cua nguy hiểm** (tính từ hình dạng tuyến, trừ chỗ rẽ đã có hướng dẫn); **biển cấm rẽ / chỉ được rẽ** tại giao lộ phía trước (chỉ khi đang đi trên đường bị cấm, theo loại xe); đoạn nguy hiểm, đường sắt giao cắt, trường học, gờ giảm tốc, hầm, trạm thu phí, trạm dừng nghỉ, đèn tín hiệu, vạch qua đường; vào / ra khu đông dân cư; báo cáo kẹt xe / tai nạn / CSGT…; mỗi loại chọn được **Tắt / Chỉ hiển thị / Hiển thị + giọng nói**; hiệu chỉnh tốc độ GPS (%) cho khớp đồng hồ xe; báo mất tín hiệu GPS; nhắc bật đèn khi trời tối / tắt đèn khi trời sáng; hoạt động cả khi không dẫn đường (**Chế độ lái xe**) |
+| **Chỉ đường** | Ô tô, xe máy (tự tránh cao tốc), đi bộ, xe đạp; tuyến thay thế (bấm tuyến xám hoặc nhãn thời gian để chọn); nhãn "Nhanh nhất", "Có đoạn cao tốc"; **phí dự kiến** các trạm thu phí trên tuyến theo loại xe (1–5); **dẫn đường thông minh**: tuyến có kẹt xe / tai nạn / ngập / cấm đường do cộng đồng báo cáo được cộng thời gian chậm trễ, tuyến tránh được lên đầu ("Tránh kẹt xe"); tránh cao tốc / trạm thu phí; thêm tới 3 điểm dừng; đảo chiều; danh sách các bước |
+| **Dẫn đường** | Bảng chỉ hướng (mũi tên, khoảng cách, tên đường, làn nên đi, "sau đó…"); giọng nói tiếng Việt ("Sau 300 mét, rẽ phải vào Trần Phú"); bản đồ xoay theo hướng đi, nghiêng 3D, tự zoom theo tốc độ; giờ đến / thời gian / quãng đường còn lại; tự tính lại khi đi sai đường; **có báo cáo mới phía trước thì tìm đường khác và gợi ý "Đổi đường"** (màn hình xe: tự đổi khi nhanh hơn từ 5 phút); tìm cây xăng dọc đường và thêm làm điểm dừng; giữ màn hình sáng; **Chạy thử** lộ trình (tua ×1 ×2 ×4, tăng giảm tốc độ) |
+| **Cảnh báo** | Đồng hồ tốc độ + biển giới hạn tốc độ của con đường đang đi; vượt tốc độ: đồng hồ đỏ, âm báo, giọng nói; đọc giới hạn mới khi đổi đường, **báo trước giới hạn tốc độ phía trước** trên tuyến; **camera phạt nguội** (phạt tốc độ / đèn đỏ / đo tốc độ trung bình / giám sát), điểm kiểm tra tốc độ, đọc kèm giới hạn của đường, đang vượt tốc độ gần camera thì nhắc giảm tốc ngay; **đường cấm** theo loại xe (kể cả cấm theo giờ) và **đi ngược chiều** đường một chiều; **đoạn cấm vượt** (biển trên màn hình, đọc "bắt đầu / hết"); **cấm dừng, cấm đỗ** (nhắc khi xe chậm lại để dừng, biển cấm đỗ ngày chẵn / lẻ theo ngày); biển báo Việt Nam P.101, P.102, P.103a, P.104, P.125, DP.133, P.130, P.131a/b/c; **khúc cua nguy hiểm** (tính từ hình dạng tuyến, trừ chỗ rẽ đã có hướng dẫn); **biển cấm rẽ / chỉ được rẽ** tại giao lộ phía trước (chỉ khi đang đi trên đường bị cấm, theo loại xe); đoạn nguy hiểm, đường sắt giao cắt, trường học, gờ giảm tốc, hầm, **trạm thu phí (đọc kèm mức phí)**, trạm dừng nghỉ, đèn tín hiệu, vạch qua đường; vào / ra khu đông dân cư; báo cáo kẹt xe / tai nạn / CSGT…; mỗi loại chọn được **Tắt / Chỉ hiển thị / Hiển thị + giọng nói**; hiệu chỉnh tốc độ GPS (%) cho khớp đồng hồ xe; báo mất tín hiệu GPS; nhắc bật đèn khi trời tối / tắt đèn khi trời sáng; hoạt động cả khi không dẫn đường (**Chế độ lái xe**) |
 | **HUD kính lái** | Màn hình nền đen chữ lớn (tốc độ, biển giới hạn, mũi tên rẽ + khoảng cách, cảnh báo, giờ đến), **lật gương** dọc / ngang để phản chiếu lên kính chắn gió, giữ màn hình sáng |
 | **Thông số xe (OBD-II)** | Bộ chuyển ELM327 Bluetooth: vòng tua, tốc độ, nhiệt độ nước / dầu / khí nạp, áp suất khí nạp, bướm ga, tải động cơ, mức nhiên liệu, điện áp; số khung (VIN); đọc / xoá mã lỗi động cơ; cảnh báo nước làm mát quá nóng. Chrome / Edge: bộ chuyển Bluetooth LE; ứng dụng Android: bộ chuyển Bluetooth thường (đã ghép đôi) |
 | **Báo cáo giao thông** | Kẹt xe, tai nạn, CSGT, camera (chọn loại: phạt tốc độ / đèn đỏ / giám sát), ngập nước, công trình, vật cản, cấm đường; người khác xác nhận "Vẫn còn" / "Không còn"; tự hết hạn; dùng chung qua máy chủ |
@@ -27,8 +28,21 @@ tốc độ / camera giám sát, báo cáo giao thông của cộng đồng, cam
 
 Biển giới hạn tốc độ lấy từ dữ liệu OpenStreetMap (có phân biệt riêng cho xe máy). Đường chưa có biển trong dữ liệu thì ứng dụng
 **ước tính** theo Thông tư 38/2024/TT-BGTVT và vẽ biển viền nét đứt — luôn tuân theo biển báo thực tế.
-Camera, biển báo, đèn tín hiệu… cũng lấy từ OpenStreetMap (Overpass API, chỉ tải những loại đang bật) cùng báo cáo cộng đồng;
-độ đầy đủ tuỳ khu vực. "Khu đông dân cư" là ước tính theo mật độ đường nhỏ quanh vị trí.
+Camera, biển báo, đường cấm, một chiều, cấm vượt, cấm dừng / đỗ, trạm thu phí… cũng lấy từ OpenStreetMap (thẻ `access`, `oneway`,
+`overtaking`, `parking:*`, `*:conditional`, `traffic_sign=VN:…`) cùng báo cáo cộng đồng; độ đầy đủ tuỳ khu vực và tuỳ cộng đồng
+đã vẽ. HawaMap không có cơ sở dữ liệu biển báo / camera riêng. "Khu đông dân cư" là ước tính theo mật độ đường nhỏ quanh vị trí.
+
+**Mức phí trạm thu phí** không được đoán: lấy từ bảng phí do đơn vị vận hành cập nhật (`du-lieu/phi-cao-toc.json` trong thư mục dữ liệu
+của máy chủ, hoặc `public/du-lieu/phi-cao-toc.json` đi kèm trang — bản phát hành để trống), sau đó tới thẻ `charge` của trạm trên
+OpenStreetMap (coi là phí xe loại 1). Trạm không có dữ liệu thì chỉ báo "có trạm thu phí". Mẫu một trạm trong bảng phí
+(số liệu minh hoạ, không phải mức phí thật):
+
+```json
+{ "capNhat": "2026-10-01", "nguon": "Biểu phí công bố của các trạm",
+  "tram": [ { "ten": "Trạm X", "viTri": [105.85, 20.95], "banKinh": 300, "osm": [123456789], "phi": [35000, 50000, 75000, 120000, 180000] } ] }
+```
+
+Cao tốc thu phí kín (tính theo quãng đường giữa điểm vào và ra) chưa được tính; bảng phí hiện tính theo từng trạm.
 
 Giới hạn hiện có: bản đồ offline dùng trên bản web / PWA (cần service worker; ứng dụng gốc chỉ giữ ô đã xem gần đây);
 OBD-II trên iPhone / Safari chưa hỗ trợ (web không có Bluetooth); bong bóng nổi chỉ có trên Android; chưa có TPMS áp suất lốp,
@@ -105,7 +119,7 @@ từ một nơi. Biểu tượng mũi tên rẽ của hai ứng dụng được 
 | Nền bản đồ | OpenFreeMap, CARTO, Esri (vệ tinh) | `public/js/cau-hinh.js` |
 | Chỉ đường | OSRM (router.project-osrm.org, routing.openstreetmap.de) | `cau-hinh.js` |
 | Tìm kiếm | Photon (gợi ý), Nominatim (tìm đầy đủ, địa chỉ theo toạ độ) | `cau-hinh.js` |
-| Giới hạn tốc độ, camera, đường sắt, trạm thu phí, địa điểm quanh đây | Overpass API | `cau-hinh.js` |
+| Giới hạn tốc độ, camera, biển báo, trạm thu phí, địa điểm quanh đây | Overpass API (máy chủ HawaMap lưu đệm theo khu vực, tự cập nhật mỗi tuần) | `cau-hinh.js` |
 | Tìm kiếm / chỉ đường / nền VietMap | Tắt — nhập khoá VietMap API và đường dẫn style trong **Cài đặt → Nâng cao** (lỗi thì tự quay về dịch vụ mặc định) | trong ứng dụng |
 
 Các máy chủ miễn phí trên có giới hạn lượt dùng, hợp với thử nghiệm và số người dùng nhỏ. Dùng chính thức cho nhiều người
@@ -117,6 +131,7 @@ giao thông thời gian thực như các hãng bản đồ thương mại; thay 
 ```
 BanDoDanDuong/
 ├─ server.js                 máy chủ Node: phục vụ trang web + API báo cáo giao thông (không cần thư viện)
+├─ kho-giao-thong.js         máy chủ: kho dữ liệu cảnh báo theo khu vực, tự cập nhật từ OpenStreetMap mỗi tuần
 ├─ ChayBanDo.bat             chạy nhanh trên Windows
 ├─ package.json              lệnh: npm start / npm test / npm run test:e2e
 ├─ public/                   toàn bộ ứng dụng web (có thể chép riêng lên host tĩnh)
@@ -124,6 +139,7 @@ BanDoDanDuong/
 │  ├─ css/app.css            giao diện (sáng / tối, điện thoại / máy tính)
 │  ├─ sw.js                  service worker: cài ứng dụng, dùng khi mất mạng
 │  ├─ manifest.webmanifest   thông tin ứng dụng để cài lên màn hình chính
+│  ├─ du-lieu/phi-cao-toc.json bảng phí trạm thu phí mặc định (để trống, đơn vị vận hành điền)
 │  ├─ web.config             cấu hình khi đặt lên IIS
 │  ├─ vendor/maplibre-gl/    thư viện bản đồ MapLibre GL JS 5.24 (BSD-3-Clause)
 │  └─ js/
@@ -136,6 +152,10 @@ BanDoDanDuong/
 │     ├─ duong-xa.js         thông tin đường đang đi: giới hạn tốc độ; tải điểm cảnh báo (camera, biển cấm rẽ, hầm…) từ OSM
 │     ├─ canh-bao.js         cảnh báo vượt tốc độ, giới hạn phía trước, khúc cua, khu dân cư, điểm phía trước
 │     ├─ loai-canh-bao.js    các loại cảnh báo, mức Tắt / Hiển thị / Giọng nói, biển cấm rẽ, loại nguy hiểm
+│     ├─ luat-duong.js       đường cấm (cả theo giờ), một chiều, cấm dừng / đỗ, cấm vượt, biển báo Việt Nam
+│     ├─ du-lieu-giao-thong.js dữ liệu cảnh báo theo khu vực trong máy (IndexedDB), tự cập nhật mỗi tuần
+│     ├─ phi-cao-toc.js      phí trạm thu phí theo loại xe, bảng phí tự tải lại mỗi tuần
+│     ├─ dan-duong-thong-minh.js xếp hạng tuyến và gợi ý đổi tuyến theo báo cáo kẹt xe, tai nạn, cấm đường
 │     ├─ nhac-nho.js         mất / có lại GPS, nhắc bật / tắt đèn, giờ mặt trời mọc / lặn
 │     ├─ ban-do-offline.js   tải vùng bản đồ offline, danh sách vùng, tự cập nhật qua Wi-Fi
 │     ├─ lien-ket.js         đọc liên kết Google Maps / Apple Maps / geo: (dùng chung với server.js)
@@ -178,6 +198,9 @@ BanDoDanDuong/
 | POST | `/api/bao-cao` | Gửi báo cáo `{ loai, phu?, lng, lat, huong?, ghiChu?, thietBi }` (`phu`: loại camera `tocdo` / `dendo` / `giamsat`) |
 | POST | `/api/bao-cao/:id/xac-nhan` | `{ conTon: true/false, thietBi }` — đủ phiếu "không còn" thì gỡ |
 | DELETE | `/api/bao-cao/:id?thietBi=…` | Người gửi xoá báo cáo của mình |
+| GET | `/api/giao-thong?o=2858_1110,2858_1109&lop=chinh` | Điểm cảnh báo theo khu vực 0,1° (`lop=nho`: đèn tín hiệu, vạch qua đường); tối đa 9 khu vực mỗi lần; máy chủ lưu tệp trong `du-lieu/giao-thong/`, khu vực quá 7 ngày tự tải lại, khu vực không ai dùng 30 ngày thì xoá |
+| GET | `/api/giao-thong/trang-thai` | Số khu vực đang lưu, lần cập nhật cũ / mới nhất |
+| GET | `/api/phi-cao-toc` | Bảng phí trạm thu phí (`du-lieu/phi-cao-toc.json` nếu có, không thì bản mặc định) |
 | GET | `/api/mo-lien-ket?url=https://maps.app.goo.gl/…` | Mở liên kết rút gọn Google Maps → `{ url, diaDiem: { viTri, ten?, truyVan?, chiDuong? } }`; chỉ nhận `maps.app.goo.gl`, `goo.gl`, `g.co` qua HTTPS và chỉ đi theo chuyển hướng trong tên miền Google; tối đa 60 lần / 10 phút mỗi IP |
 
 `thietBi` là mã ngẫu nhiên tạo trên từng máy (máy chủ chỉ lưu dạng băm), không chứa thông tin cá nhân. Mỗi IP gửi tối đa
@@ -187,7 +210,9 @@ BanDoDanDuong/
 
 ```
 npm test            # hình học, câu chỉ dẫn, bộ máy dẫn đường, cảnh báo (khúc cua, biển cấm rẽ, giới hạn phía trước…),
-                    # nhắc nhở / giờ mặt trời, camera hành trình, bản đồ offline, liên kết chia sẻ, OBD-II, hành trình, API máy chủ
+                    # luật đường (đường cấm, một chiều, cấm vượt, cấm dừng / đỗ, biển báo), dữ liệu theo khu vực và tự cập nhật,
+                    # phí trạm thu phí, dẫn đường thông minh, nhắc nhở / giờ mặt trời, camera hành trình, bản đồ offline,
+                    # liên kết chia sẻ, OBD-II, hành trình, API máy chủ
 npm run test:e2e    # giao diện trên Chromium với dịch vụ bản đồ giả lập + "hợp đồng" lệnh / tin giữa trang và
                     # ứng dụng Android / iOS (giả lập cầu nối)   — cần: npm i -D playwright
 ```

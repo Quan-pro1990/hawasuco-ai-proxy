@@ -166,11 +166,14 @@ export function canCapNhat(v, nguonHienTai = [], ngay = 30, bayGio = Date.now())
   return !nguonHienTai.every(n => cu.has(n.tiles[0]));
 }
 
-/** Đang dùng Wi-Fi (hoặc trình duyệt không cho biết loại mạng nhưng không bật tiết kiệm dữ liệu). */
+/**
+ * Đang dùng Wi-Fi? true / false; null nếu trình duyệt không cho biết loại mạng (máy tính, iPhone).
+ * Bật "tiết kiệm dữ liệu" thì coi như không dùng Wi-Fi.
+ */
 export function dangDungWifi() {
   const c = typeof navigator !== 'undefined' && navigator.connection;
-  if (!c) return false;
+  if (!c) return null;
   if (c.saveData) return false;
   if (c.type) return c.type === 'wifi' || c.type === 'ethernet';
-  return false;
+  return null;
 }

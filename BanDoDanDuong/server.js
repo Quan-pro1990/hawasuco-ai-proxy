@@ -11,6 +11,9 @@
  *   POST   /api/bao-cao/:id/xac-nhan          { conTon: true|false, thietBi }
  *   DELETE /api/bao-cao/:id?thietBi=…          (chỉ người gửi)
  *   GET    /api/mo-lien-ket?url=https://maps.app.goo.gl/…   (mở liên kết rút gọn Google Maps → địa điểm)
+ *   GET    /api/giao-thong?o=2858_1110,2858_1109&lop=chinh|nho   (điểm cảnh báo theo ô 0,1°, tự cập nhật mỗi tuần)
+ *   GET    /api/giao-thong/trang-thai
+ *   GET    /api/phi-cao-toc                   (bảng phí trạm thu phí: du-lieu/phi-cao-toc.json hoặc bản mặc định)
  */
 import http from 'node:http';
 import fs from 'node:fs';
@@ -20,6 +23,8 @@ import crypto from 'node:crypto';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { LOAI_BAO_CAO, soPhieuGo } from './public/js/loai-bao-cao.js';
 import { docLienKet, laMienGoogle, boQuaTrangDongY, MIEN_RUT_GON } from './public/js/lien-ket.js';
+import { laMaO } from './public/js/duong-xa.js';
+import { taoKhoGiaoThong } from './kho-giao-thong.js';
 
 const THU_MUC = path.dirname(fileURLToPath(import.meta.url));
 const THU_MUC_WEB = path.join(THU_MUC, 'public');
@@ -37,8 +42,10 @@ const bam = s => crypto.createHash('sha256').update(String(s)).digest('hex').sli
 /**
  * @param layMang  hàm fetch dùng để mở liên kết rút gọn (thay được khi kiểm thử)
  */
-export function taoMayChu({ thuMucDuLieu = process.env.BANDO_DULIEU || path.join(THU_MUC, 'du-lieu'), ghiLog = true, layMang = globalThis.fetch } = {}) {
+export function taoMayChu({ thuMucDuLieu = process.env.BANDO_DULIEU || path.join(THU_MUC, 'du-lieu'), ghiLog = true, layMang = globalThis.fetch, henGio = true } = {}) {
   const fileBaoCao = path.join(thuMucDuLieu, 'bao-cao.json');
+  const khoGT = taoKhoGiaoThong({ thuMuc: path.join(thuMucDuLieu, 'giao-thong'), layMang, ghiLog });
+  if (henGio) khoGT.batDauHenGio();
   let baoCao = [];
   try { baoCao = JSON.parse(fs.readFileSync(fileBaoCao, 'utf8')); } catch (e) { baoCao = []; }
   if (!Array.isArray(baoCao)) baoCao = [];
@@ -157,6 +164,29 @@ export function taoMayChu({ thuMucDuLieu = process.env.BANDO_DULIEU || path.join
       if (quaGioiHan('lk:' + ip, 60)) return guiJson(res, 429, { loi: 'Bạn mở quá nhiều liên kết, vui lòng thử lại sau ít phút' });
       const kq = await moLienKetRutGon(url.searchParams.get('url') || '');
       return guiJson(res, kq.loi ? kq.ma || 400 : 200, kq);
+    }
+
+    if (p === '/api/giao-thong' && req.method === 'GET') {
+      if (quaGioiHan('gt:' + ip, 300)) return guiJson(res, 429, { loi: 'Quá nhiều yêu cầu, vui lòng thử lại sau ít phút' });
+      const ds = (url.searchParams.get('o') || '').split(',').filter(Boolean);
+      const lop = url.searchParams.get('lop') || 'chinh';
+      if (!ds.length || ds.length > 9 || !ds.every(laMaO) || (lop !== 'chinh' && lop !== 'nho')) return guiJson(res, 400, { loi: 'Danh sách ô không hợp lệ' });
+      const o = {}, loi = {};
+      await Promise.all(ds.map(async ma => {
+        try { const x = await khoGT.lay(ma, lop); o[ma] = { capNhat: x.capNhat, diem: x.diem }; } catch (e) { loi[ma] = e.message; }
+      }));
+      if (!Object.keys(o).length) return guiJson(res, 502, { loi: 'Không lấy được dữ liệu giao thông', chiTiet: loi });
+      return guiJson(res, 200, { o, loi });
+    }
+
+    if (p === '/api/giao-thong/trang-thai' && req.method === 'GET') return guiJson(res, 200, await khoGT.trangThai());
+
+    if (p === '/api/phi-cao-toc' && req.method === 'GET') {
+      // bảng phí người vận hành tự cập nhật trong thư mục dữ liệu; chưa có thì dùng bản mặc định trong public/du-lieu
+      for (const tep of [path.join(thuMucDuLieu, 'phi-cao-toc.json'), path.join(THU_MUC_WEB, 'du-lieu', 'phi-cao-toc.json')]) {
+        try { return guiJson(res, 200, JSON.parse(await fsp.readFile(tep, 'utf8'))); } catch (e) { /* thử tệp sau */ }
+      }
+      return guiJson(res, 404, { loi: 'Chưa có bảng phí' });
     }
 
     if (p === '/api/bao-cao' && req.method === 'GET') {

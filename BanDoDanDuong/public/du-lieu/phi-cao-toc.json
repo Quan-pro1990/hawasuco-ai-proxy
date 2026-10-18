@@ -1,0 +1,7 @@
+{
+  "phienBan": 1,
+  "capNhat": null,
+  "nguon": "",
+  "ghiChu": "Bảng phí trạm thu phí do đơn vị vận hành HawaMap điền theo biểu phí công bố của từng trạm (đồng/lượt). Mỗi trạm: ten, viTri [kinh độ, vĩ độ] hoặc osm [mã nút OpenStreetMap], banKinh (m, mặc định 300), phi [loại 1, 2, 3, 4, 5]. Đặt bản cập nhật tại du-lieu/phi-cao-toc.json trên máy chủ để mọi máy tự tải lại mỗi tuần.",
+  "tram": []
+}

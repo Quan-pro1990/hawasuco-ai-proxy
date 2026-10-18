@@ -1,6 +1,7 @@
 /*
- * Cảnh báo khi lái xe: vượt tốc độ, giới hạn tốc độ thay đổi / phía trước, camera các loại, đường sắt, trạm thu phí,
- * đèn tín hiệu, gờ giảm tốc, trường học, hầm, khúc cua, biển cấm rẽ, vào / ra khu đông dân cư và báo cáo giao thông.
+ * Cảnh báo khi lái xe: vượt tốc độ, giới hạn tốc độ thay đổi / phía trước, camera phạt nguội các loại, đường cấm / đi ngược chiều,
+ * cấm dừng / đỗ, đoạn cấm vượt, đường sắt, trạm thu phí (kèm mức phí), đèn tín hiệu, gờ giảm tốc, trường học, hầm, khúc cua,
+ * biển cấm rẽ, vào / ra khu đông dân cư và báo cáo giao thông.
  * Có tuyến dẫn đường thì xét điểm nằm trên tuyến; không có thì xét điểm nằm trong hướng đang đi.
  */
 import { caiDat } from './kho.js';
@@ -8,6 +9,9 @@ import { khoangCach, phuongVi, lechGoc, chieuLenDoan, timChiSo, diemTaiS, tichLu
 import { quangDuongNoi, thoiGianTruoc, tocDoKmh } from './dinh-dang.js';
 import { LOAI_BAO_CAO } from './loai-bao-cao.js';
 import { LOAI_CANH_BAO, BIEN_RE, NGUY_HIEM, mucCanhBao, kcBaoTruoc } from './loai-canh-bao.js';
+import { camPhuongTien, diNguocChieu, chieuMotChieu, camDungDo, camVuot, BIEN_VN, apDungTheoNgay } from './luat-duong.js';
+
+const LOAI_CAMERA = new Set(['camera', 'cameraden', 'cameratb', 'cameragiamsat', 'kiemtra']);
 
 const XE_OSM = { oto: 'motorcar', xemay: 'motorcycle', xedap: 'bicycle', dibo: 'foot' };
 
@@ -65,6 +69,7 @@ export class CanhBao {
    * @param o.layBaoCao     () => danh sách báo cáo đang có
    * @param o.noi           (câu, tuỳ chọn) => void
    * @param o.bip           (loại) => void
+   * @param o.layPhi        (điểm trạm thu phí) => { phi, loaiXe } | null   (mức phí, phi-cao-toc.js) — không bắt buộc
    */
   constructor(o) {
     Object.assign(this, o);
@@ -81,6 +86,15 @@ export class CanhBao {
     this.kdc = null;               // đang trong khu đông dân cư?
     this.kdcGanDay = [];
     this.donLuc = Date.now();
+    this.luat = { duongCam: null, nguocChieu: false, camDungDo: null, camVuot: null };
+    this.demCam = 0;               // số lần liên tiếp thấy đang đi đường cấm / ngược chiều
+    this.demNguoc = 0;
+    this.cvCho = null;
+    this.luatKhoa = '';
+    this.luatNoiLuc = 0;
+    this.kmhTruoc = 0;
+    this.dungDoDaBao = new Map();  // id đường → lúc đã nhắc cấm dừng / đỗ
+    this.cameraNhac = new Set();   // camera đã nhắc giảm tốc vì đang vượt tốc độ
     if (this.thongTinDuong) this.thongTinDuong.layLoaiCan = () => this.loaiCanTai();
   }
 
@@ -120,11 +134,76 @@ export class CanhBao {
 
     this.theoDoiGioiHan(duong, kmh, vuotToc);
     this.theoDoiKhuDanCu(kmh, phuongTien);
+    const luat = this.theoDoiLuatDuong(duong, kmh, phuongTien, vt);
     if (bayGio - this.donLuc > 600000) this.donDep(bayGio);
 
     // ---- điểm phía trước
-    const canhBao = this.diemPhiaTruoc(vt, dd, { duong, phuongTien, kmh, gioiHan });
-    return { duong, gioiHan, uocTinh, kmh, vuotToc, canhBao, khuDanCu: !!this.kdc && mucCanhBao('khudancu') > 0 };
+    let canhBao = this.diemPhiaTruoc(vt, dd, { duong, phuongTien, kmh, gioiHan, luat });
+    // đang vượt tốc độ mà sắp tới camera: nhắc giảm tốc ngay (mỗi camera một lần)
+    if (vuotToc && canhBao && LOAI_CAMERA.has(canhBao.loai) && canhBao.kc < 400 && !this.cameraNhac.has(canhBao.id)) {
+      this.cameraNhac.add(canhBao.id);
+      this.noi(`Giảm tốc độ ngay, phía trước có ${canhBao.loai === 'cameragiamsat' ? 'camera phạt nguội' : canhBao.ten.toLowerCase()}.`, { chen: true });
+    }
+    // đang ở trên đường cấm / đi ngược chiều: hiện thay cho cảnh báo phía trước
+    if (luat.duongCam || luat.nguocChieu) {
+      const k = LOAI_CANH_BAO.duongcam;
+      canhBao = {
+        id: 'dangcam', loai: 'duongcam', hienTai: true, kc: 0, kcBao: 1, mau: k.mau, gioiHan: null,
+        ten: luat.nguocChieu ? 'Bạn đang đi ngược chiều' : luat.duongCam.ten, icon: luat.nguocChieu ? 'camduong' : 'duongcam'
+      };
+    }
+    return { duong, gioiHan, uocTinh, kmh, vuotToc, canhBao, luat, khuDanCu: !!this.kdc && mucCanhBao('khudancu') > 0 };
+  }
+
+  /**
+   * Luật trên con đường đang đi: đường cấm phương tiện / đi ngược chiều (cần thấy 3 lần liên tiếp khi xe đang chạy),
+   * đoạn cấm vượt (đọc "bắt đầu" / "hết" khi đổi trạng thái), cấm dừng / đỗ (nhắc khi xe chậm lại để dừng).
+   */
+  theoDoiLuatDuong(duong, kmh, phuongTien, vt, luc = new Date()) {
+    const L = this.luat, bayGio = luc.getTime();
+    const tags = duong && duong.tags;
+    const coHuong = vt.huong != null && isFinite(vt.huong) && vt.tocDo > 2;
+    const cam = tags && kmh >= 8 ? camPhuongTien(tags, phuongTien, luc) : null;
+    const nguoc = !!(tags && coHuong && kmh >= 8 && diNguocChieu(tags, duong.xuoi, phuongTien));
+    this.demCam = cam ? this.demCam + 1 : 0;
+    this.demNguoc = nguoc ? this.demNguoc + 1 : 0;
+    L.duongCam = this.demCam >= 3 ? cam : null;
+    L.nguocChieu = this.demNguoc >= 3;
+    if ((L.duongCam || L.nguocChieu) && mucCanhBao('duongcam') >= 2) {
+      const khoa = (L.nguocChieu ? 'nguoc' : 'cam') + duong.id;
+      if (khoa !== this.luatKhoa || bayGio - this.luatNoiLuc > 60000) {
+        this.luatKhoa = khoa;
+        this.luatNoiLuc = bayGio;
+        this.bip('vuottoc');
+        this.noi(L.nguocChieu ? 'Cảnh báo, bạn đang đi ngược chiều đường một chiều.' : `Cảnh báo, bạn đang đi vào ${L.duongCam.nghe}.`, { chen: true });
+      }
+    }
+
+    const cv = tags ? camVuot(tags, duong.xuoi) : null;
+    if (cv != null) {
+      if (cv === L.camVuot) this.cvCho = null;
+      else if (this.cvCho !== cv) this.cvCho = cv;
+      else {
+        const cu = L.camVuot;
+        L.camVuot = cv;
+        this.cvCho = null;
+        // vừa báo trước "phía trước bắt đầu đoạn cấm vượt" trên tuyến thì không đọc lại
+        const vuaBao = bayGio - (this.daBao.get('cv' + duong.id) || 0) < 90000;
+        if (cu != null && kmh >= 15 && !vuaBao && mucCanhBao('camvuot') >= 2) this.noi(cv ? 'Bắt đầu đoạn cấm vượt.' : 'Hết đoạn cấm vượt.');
+      }
+    }
+
+    L.camDungDo = tags ? camDungDo(tags, duong.xuoi, luc) : null;
+    if (L.camDungDo && kmh < 10 && this.kmhTruoc >= 10 && mucCanhBao('camdungdo') >= 2 && bayGio - (this.dungDoDaBao.get(duong.id) || 0) > 600000) {
+      this.dungDoDaBao.set(duong.id, bayGio);
+      this.noi(L.camDungDo === 'camdung' ? 'Đoạn đường này cấm dừng và đỗ xe.' : 'Đoạn đường này cấm đỗ xe.');
+    }
+    this.kmhTruoc = kmh;
+    const bat = l => mucCanhBao(l) > 0;
+    return {
+      duongCam: bat('duongcam') ? L.duongCam : null, nguocChieu: bat('duongcam') && L.nguocChieu,
+      camDungDo: bat('camdungdo') ? L.camDungDo : null, camVuot: bat('camvuot') && !!L.camVuot
+    };
   }
 
   /** Đọc giới hạn mới khi giới hạn có biển của con đường thay đổi. */
@@ -178,6 +257,16 @@ export class CanhBao {
         // chỉ báo khi đang đi trên đường "from" của biển (đi tới giao lộ từ hướng bị cấm)
         x.apDung = !!(duong && d.tuDuong.includes(duong.id));
       }
+      if (d.bien) {
+        // biển báo Việt Nam: biển riêng cho ô tô / xe máy, biển cấm đỗ ngày chẵn / lẻ chỉ áp dụng đúng ngày
+        const b = BIEN_VN[d.bien];
+        if ((b.xe && b.xe !== phuongTien) || !apDungTheoNgay(b.ngay)) continue;
+        Object.assign(x, { ten: b.ten, icon: b.icon, het: !!b.het });
+      }
+      if (d.loai === 'thuphi' && this.layPhi) {
+        const phi = this.layPhi(d);
+        if (phi) Object.assign(x, { phi: phi.phi, phu: `Phí xe loại ${phi.loaiXe}: ${phi.phi.toLocaleString('vi-VN')} đ` });
+      }
       if (d.loai === 'nguyhiem' && NGUY_HIEM[d.nguyHiem]) x.ten = NGUY_HIEM[d.nguyHiem][0].toUpperCase() + NGUY_HIEM[d.nguyHiem].slice(1);
       if (d.ten && (d.loai === 'tramdung' || d.loai === 'ham')) x.ten += ' ' + d.ten;
       ds.push(x);
@@ -206,7 +295,7 @@ export class CanhBao {
       .map(d => ({ id: d.id, viTri: d.viTri, icon: d.icon, nho: !!LOAI_CANH_BAO[d.loai].nho }));
   }
 
-  diemPhiaTruoc(vt, dd, { duong = null, phuongTien = caiDat.phuongTien, kmh = tocDoKmh(vt.tocDo), gioiHan = null } = {}) {
+  diemPhiaTruoc(vt, dd, { duong = null, phuongTien = caiDat.phuongTien, kmh = tocDoKmh(vt.tocDo), gioiHan = null, luat = {} } = {}) {
     const p = vt.viTri;
     const coHuong = vt.huong != null && isFinite(vt.huong) && vt.tocDo > 2;
     const ds = [];
@@ -215,6 +304,10 @@ export class CanhBao {
       const thang = khoangCach(p, d.viTri);
       if (thang > 2500) { if (!d.cung) this.daBao.delete(d.id); continue; }
       if (d.loai === 'camre' && !d.apDung) continue;
+      // biển cấm dừng / đỗ chỉ cần khi xe đi chậm (sắp dừng)
+      if (d.loai === 'camdungdo' && kmh >= 30) continue;
+      // biển "cấm đi ngược chiều" ở đầu kia đường một chiều mình đang đi đúng chiều: không phải cho mình
+      if (d.bien === 'P102' && duong && chieuMotChieu(duong.tags, phuongTien) !== 0 && !diNguocChieu(duong.tags, duong.xuoi, phuongTien)) continue;
       const lech = LOAI_CANH_BAO[d.loai].lech || 35;
       let kc = null;
       if (dd) kc = this.kcTrenTuyen(d.viTri, dd, lech, d.kcBao + 50);
@@ -228,7 +321,7 @@ export class CanhBao {
       ds.push({ ...d, kc });
     }
     if (kmh >= 25) ds.push(...this.khucCuaPhiaTruoc(vt, dd, duong));
-    if (dd) { const g = this.gioiHanPhiaTruoc(dd, phuongTien, gioiHan); if (g) ds.push(g); }
+    if (dd) ds.push(...this.phiaTruocTrenTuyen(dd, phuongTien, gioiHan, luat));
     ds.sort((a, b) => a.kc - b.kc);
 
     // đọc những điểm vừa vào tầm báo trước (gần trước; tối đa 2 câu mỗi lần để không dồn dập)
@@ -239,7 +332,7 @@ export class CanhBao {
       if (d.loai === 'gioihan') this.ghBaoTruocLuc = Date.now();
       if (d.muc < 2 || soCau >= 2) continue;
       if (!soCau) this.bip('canhbao');
-      this.noi(this.cauCanhBao(d));
+      this.noi(this.cauCanhBao(d, gioiHan));
       soCau++;
     }
     // hiển thị: loại quan trọng hơn trước, cùng mức thì gần hơn trước
@@ -289,22 +382,41 @@ export class CanhBao {
     return kq;
   }
 
-  /** Giới hạn tốc độ có biển khác giới hạn hiện tại trên đoạn tuyến phía trước (trong vùng dữ liệu đường đã tải). */
-  gioiHanPhiaTruoc(dd, phuongTien, gioiHan) {
-    const muc = mucCanhBao('gioihan');
-    if (!muc || !gioiHan) return null;
+  /**
+   * Đoạn tuyến phía trước (trong vùng dữ liệu đường đã tải): giới hạn tốc độ có biển khác giới hạn hiện tại,
+   * bắt đầu đoạn cấm vượt, đường cấm phương tiện (vd. cấm theo giờ mà máy chủ tìm đường không xét).
+   */
+  phiaTruocTrenTuyen(dd, phuongTien, gioiHan, luat = {}) {
     const t = dd.tuyen, s = dd.tt.s, tong = t.tichLuy[t.tichLuy.length - 1];
-    const xa = kcBaoTruoc('gioihan');
-    for (let k = 60; k <= xa && s + k < tong; k += 40) {
+    const xa = 300, kq = [];
+    let ghXong = !gioiHan || !mucCanhBao('gioihan');
+    let cvXong = !!luat.camVuot || !mucCanhBao('camvuot');
+    let dcXong = !!luat.duongCam || !mucCanhBao('duongcam');
+    for (let k = 60; k <= xa && s + k < tong && !(ghXong && cvXong && dcXong); k += 40) {
       const q = diemTaiS(t.toaDo, t.tichLuy, s + k);
-      const g = this.thongTinDuong.gioiHanTai(q.diem, q.huong, phuongTien);
-      if (!g || !g.gioiHan || g.gioiHan === gioiHan) continue;
-      return {
-        id: 'gh' + g.id + '-' + g.gioiHan, loai: 'gioihan', viTri: q.diem, kc: k, kcBao: xa, muc, gioiHan: g.gioiHan,
-        ten: g.gioiHan < gioiHan ? 'Giảm giới hạn tốc độ' : 'Tăng giới hạn tốc độ', icon: 'tocke', mau: LOAI_CANH_BAO.gioihan.mau
-      };
+      const w = this.thongTinDuong.duongTai(q.diem, q.huong, phuongTien);
+      if (!w) continue;
+      const chung = { viTri: q.diem, kc: k, kcBao: xa, gioiHan: null };
+      if (!ghXong && w.gioiHan && w.gioiHan !== gioiHan) {
+        ghXong = true;
+        kq.push({
+          ...chung, id: 'gh' + w.id + '-' + w.gioiHan, loai: 'gioihan', muc: mucCanhBao('gioihan'), gioiHan: w.gioiHan,
+          ten: w.gioiHan < gioiHan ? 'Giảm giới hạn tốc độ' : 'Tăng giới hạn tốc độ', icon: 'tocke', mau: LOAI_CANH_BAO.gioihan.mau
+        });
+      }
+      if (!cvXong && camVuot(w.tags, w.xuoi)) {
+        cvXong = true;
+        kq.push({ ...chung, id: 'cv' + w.id, loai: 'camvuot', muc: mucCanhBao('camvuot'), ten: 'Bắt đầu đoạn cấm vượt', icon: 'camvuot', mau: LOAI_CANH_BAO.camvuot.mau });
+      }
+      if (!dcXong) {
+        const c = camPhuongTien(w.tags, phuongTien);
+        if (c) {
+          dcXong = true;
+          kq.push({ ...chung, id: 'dc' + w.id, loai: 'duongcam', muc: mucCanhBao('duongcam'), ten: c.ten, nghe: c.nghe, icon: 'duongcam', mau: LOAI_CANH_BAO.duongcam.mau });
+        }
+      }
     }
-    return null;
+    return kq;
   }
 
   /** Khoảng cách dọc tuyến tới điểm, null nếu điểm không nằm trên đoạn tuyến phía trước. */
@@ -320,15 +432,22 @@ export class CanhBao {
     return Math.max(0, tot.s - s);
   }
 
-  cauCanhBao(d) {
+  /** Câu đọc cảnh báo. `gioiHanDuong`: giới hạn của con đường đang đi (đọc kèm khi camera không có giới hạn riêng). */
+  cauCanhBao(d, gioiHanDuong = null) {
     const kc = quangDuongNoi(Math.max(50, Math.round(d.kc / 50) * 50));
-    const toiDa = d.gioiHan ? `, tốc độ tối đa ${d.gioiHan} ki lô mét trên giờ.` : '.';
+    const gh = d.gioiHan || (LOAI_CAMERA.has(d.loai) ? gioiHanDuong : null);
+    const toiDa = gh ? `, tốc độ tối đa ${gh} ki lô mét trên giờ.` : '.';
     switch (d.loai) {
       case 'camera': return `Phía trước ${kc} có camera phạt tốc độ` + toiDa;
       case 'cameraden': return `Phía trước ${kc} có camera phạt đèn đỏ.`;
       case 'cameratb': return `Phía trước ${kc} bắt đầu đoạn đo tốc độ trung bình` + toiDa;
-      case 'cameragiamsat': return `Phía trước ${kc} có camera giám sát giao thông.`;
+      case 'cameragiamsat': return `Phía trước ${kc} có camera phạt nguội` + toiDa;
       case 'kiemtra': return `Phía trước ${kc} có điểm kiểm tra tốc độ` + toiDa;
+      case 'duongcam': return d.bien ? `Phía trước ${kc} có ${BIEN_VN[d.bien].nghe}.` : `Phía trước ${kc} là ${d.nghe}.`;
+      case 'camvuot':
+        if (d.het) return 'Hết đoạn cấm vượt.';
+        return d.bien ? `Phía trước ${kc} có biển cấm vượt.` : `Phía trước ${kc} bắt đầu đoạn cấm vượt.`;
+      case 'camdungdo': return `Phía trước có ${BIEN_VN[d.bien].nghe}.`;
       case 'gioihan': return `Phía trước ${kc}, tốc độ tối đa ${d.gioiHan} ki lô mét trên giờ.`;
       case 'khuccua': return `Chú ý, phía trước ${kc} có khúc cua ${d.gap ? 'gấp ' : ''}${d.cuaPhai ? 'bên phải' : 'bên trái'}. Giảm tốc độ.`;
       case 'nguyhiem': return `Chú ý, phía trước ${kc} có ${NGUY_HIEM[d.nguyHiem] || 'đoạn đường nguy hiểm'}.`;
@@ -337,7 +456,8 @@ export class CanhBao {
       case 'truonghoc': return `Phía trước ${kc} có trường học, chú ý giảm tốc độ.`;
       case 'gogiam': return 'Phía trước có gờ giảm tốc.';
       case 'ham': return `Phía trước ${kc} có hầm${d.tenRieng ? ' ' + d.tenRieng : ''}. Bật đèn, giữ khoảng cách.`;
-      case 'thuphi': return `Phía trước ${kc} có trạm thu phí.`;
+      case 'thuphi': return `Phía trước ${kc} có trạm thu phí${d.tenRieng ? ' ' + d.tenRieng : ''}` +
+        (d.phi ? `, phí khoảng ${d.phi.toLocaleString('vi-VN')} đồng.` : '.');
       case 'tramdung': return `Phía trước ${kc} có trạm dừng nghỉ.`;
       case 'dentinhieu': return 'Phía trước có đèn tín hiệu giao thông.';
       case 'vachqua': return 'Phía trước có vạch người đi bộ qua đường.';

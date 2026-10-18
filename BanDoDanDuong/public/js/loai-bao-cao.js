@@ -11,7 +11,7 @@ export const LOAI_BAO_CAO = {
     phu: {
       tocdo: { ten: 'Camera phạt tốc độ', canhBao: 'camera' },
       dendo: { ten: 'Camera phạt đèn đỏ', canhBao: 'cameraden' },
-      giamsat: { ten: 'Camera giám sát, phạt nguội', canhBao: 'cameragiamsat' }
+      giamsat: { ten: 'Camera phạt nguội (giám sát)', canhBao: 'cameragiamsat' }
     }
   },
   ngap: { ten: 'Ngập nước', mau: '#0284c7', icon: 'ngap', hetHan: 360, nghe: 'đường ngập nước' },

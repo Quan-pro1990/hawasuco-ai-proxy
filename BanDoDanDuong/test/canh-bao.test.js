@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { docTocDo, gioiHanTuTag, uocTinhGioiHan, ThongTinDuong, cauTruyVanDiem, docDiemOverpass } from '../public/js/duong-xa.js';
+import { docTocDo, gioiHanTuTag, uocTinhGioiHan, ThongTinDuong, cauTruyVanO, docDiemOverpass, maO, khungO, oQuanh } from '../public/js/duong-xa.js';
 import { CanhBao, timKhucCua, bienReChoXe } from '../public/js/canh-bao.js';
 import { caiDat } from '../public/js/kho.js';
 import { chuanHoaOsrm } from '../public/js/chi-duong.js';
@@ -113,17 +113,23 @@ const VI_DO = 21.03, M_LAT = 110574, M_LNG = 111320 * Math.cos(VI_DO * Math.PI /
 /** Đổi toạ độ phẳng (mét, x = Đông, y = Bắc) quanh Hà Nội sang [lng, lat]. */
 const ll = (x, y) => [105.85 + x / M_LNG, VI_DO + y / M_LAT];
 
-test('truy vấn Overpass chỉ gồm các loại đang bật', () => {
-  const p = [105.85, 21.03];
-  const q = cauTruyVanDiem(p, new Set(['camera', 'ham', 'truonghoc', 'camre']));
+test('ô lưới dữ liệu giao thông và câu truy vấn từng lớp', () => {
+  assert.equal(maO(105.8522, 21.0287), '2858_1110');
+  assert.deepEqual(khungO('2858_1110'), [105.8, 21, 105.9, 21.1]);
+  assert.deepEqual(oQuanh([105.85, 21.05], 4000), ['2858_1110']);                  // giữa ô: một ô
+  assert.deepEqual(oQuanh([105.85, 21.03], 4000), ['2858_1109', '2858_1110']);    // gần mép dưới: thêm ô bên dưới
+  const q = cauTruyVanO([105.8, 21, 105.9, 21.1], 'chinh');
+  assert.match(q, /\(21,105\.8,21\.1,105\.9\)/);                                   // (nam,tây,bắc,đông)
   assert.match(q, /highway=speed_camera/);
+  assert.match(q, /traffic_sign~"\^VN:"/);
   assert.match(q, /type=enforcement/);
-  assert.match(q, /out tags geom/);          // hầm: lấy hình dạng để biết hai cửa hầm
-  assert.match(q, /out body center/);        // trường học: điểm giữa khuôn viên
   assert.match(q, /type=restriction/);
-  assert.doesNotMatch(q, /traffic_signals|level_crossing|toll_booth/);
-  assert.equal(cauTruyVanDiem(p, new Set()), null);
-  assert.match(cauTruyVanDiem(p, new Set(['dentinhieu'])), /highway=traffic_signals/);
+  assert.match(q, /out tags geom/);
+  assert.doesNotMatch(q, /traffic_signals|highway=crossing/);
+  const nho = cauTruyVanO([105.8, 21, 105.9, 21.1], 'nho');
+  assert.match(nho, /highway=traffic_signals/);
+  assert.match(nho, /highway=crossing/);
+  assert.doesNotMatch(nho, /speed_camera|restriction/);
 });
 
 test('đọc điểm cảnh báo từ Overpass: loại camera, hầm, trường học, biển cấm rẽ', () => {
@@ -191,7 +197,7 @@ function canhBaoDayDu(muc = {}) {
   const fetchCu = globalThis.fetch;
   globalThis.fetch = async (url, o) => {
     const q = decodeURIComponent(String(o.body).slice(5));
-    return { ok: true, json: async () => (q.includes('around:4000') ? overpassDiemDayDu() : overpassDuong()) };
+    return { ok: true, json: async () => (q.includes('around:500') ? overpassDuong() : overpassDiemDayDu()) };
   };
   const mucCu = caiDat.mucCanhBao;
   caiDat.mucCanhBao = muc;
@@ -296,3 +302,132 @@ function tichLuyTest(g) {
   }
   return c;
 }
+
+// ------------------------------------------------------------------ đường cấm, ngược chiều, cấm vượt, cấm dừng / đỗ
+function duongLuat() {
+  const ttd = new ThongTinDuong({ nguon: { layNhieu: async () => ({ ds: [], loi: [] }) } });
+  const way = (id, ten, tags, a, b) => ({ id, tags: { highway: 'tertiary', name: ten, ...tags }, toaDo: [a, b] });
+  ttd.duong = [
+    way(501, 'Lê Thái Tổ', { oneway: 'yes', overtaking: 'no', 'parking:both': 'no', 'parking:both:restriction': 'no_stopping' }, [105.860, 21.040], [105.866, 21.040]),
+    way(502, 'Hàng Khay', { motorcar: 'no' }, [105.866, 21.040], [105.872, 21.040]),
+    way(503, 'Bà Triệu', {}, [105.872, 21.040], [105.878, 21.040])
+  ];
+  const noi = [];
+  const cb = new CanhBao({ thongTinDuong: ttd, layBaoCao: () => [], noi: s => noi.push(s), bip: () => {} });
+  return { ttd, cb, noi };
+}
+
+test('đi ngược chiều đường một chiều và vào đường cấm: báo sau 3 lần liên tiếp', () => {
+  const { cb, noi } = duongLuat();
+  const tay = { viTri: [105.863, 21.04], huong: 270, tocDo: 10 };       // đi về phía Tây trên đường một chiều hướng Đông
+  assert.equal(cb.capNhat(tay, null, 'oto').luat.nguocChieu, false);
+  cb.capNhat(tay, null, 'oto');
+  const kq = cb.capNhat(tay, null, 'oto');
+  assert.equal(kq.luat.nguocChieu, true);
+  assert.equal(kq.canhBao.loai, 'duongcam');
+  assert.equal(kq.canhBao.hienTai, true);
+  assert.ok(noi.some(s => /ngược chiều đường một chiều/.test(s)), noi.join('|'));
+  // đi đúng chiều: không báo
+  const { cb: cb2 } = duongLuat();
+  for (let i = 0; i < 3; i++) assert.equal(cb2.capNhat({ viTri: [105.863, 21.04], huong: 90, tocDo: 10 }, null, 'oto').luat.nguocChieu, false);
+  // đường cấm ô tô: ô tô bị báo, xe máy thì không
+  const { cb: cb3, noi: noi3 } = duongLuat();
+  let r;
+  for (let i = 0; i < 3; i++) r = cb3.capNhat({ viTri: [105.869, 21.04], huong: 90, tocDo: 10 }, null, 'oto');
+  assert.match(r.luat.duongCam.ten, /cấm ô tô/);
+  assert.ok(noi3.some(s => /đường cấm ô tô/.test(s)));
+  const { cb: cb4 } = duongLuat();
+  for (let i = 0; i < 3; i++) r = cb4.capNhat({ viTri: [105.869, 21.04], huong: 90, tocDo: 10 }, null, 'xemay');
+  assert.equal(r.luat.duongCam, null);
+});
+
+test('đoạn cấm vượt: báo bắt đầu / hết khi đổi đường; nhắc cấm dừng đỗ khi xe chậm lại', () => {
+  const { cb, noi } = duongLuat();
+  const tren501 = { viTri: [105.863, 21.04], huong: 90, tocDo: 10 };
+  cb.capNhat(tren501, null, 'xemay');
+  const kq = cb.capNhat(tren501, null, 'xemay');
+  assert.equal(kq.luat.camVuot, true);                        // trạng thái đầu tiên: chỉ hiển thị, không đọc
+  assert.ok(!noi.some(s => /cấm vượt/.test(s)));
+  assert.equal(kq.luat.camDungDo, 'camdung');
+  const tren503 = { viTri: [105.875, 21.04], huong: 90, tocDo: 10 };
+  cb.capNhat(tren503, null, 'xemay');
+  assert.equal(cb.capNhat(tren503, null, 'xemay').luat.camVuot, false);
+  assert.ok(noi.some(s => /^Hết đoạn cấm vượt/.test(s)), noi.join('|'));
+  cb.capNhat(tren501, null, 'xemay');
+  cb.capNhat(tren501, null, 'xemay');
+  assert.ok(noi.some(s => /^Bắt đầu đoạn cấm vượt/.test(s)), noi.join('|'));
+  // xe chậm lại để dừng trên đoạn cấm dừng, đỗ
+  cb.capNhat({ ...tren501, tocDo: 1 }, null, 'xemay');
+  assert.ok(noi.some(s => /cấm dừng và đỗ xe/.test(s)), noi.join('|'));
+  const dem = noi.length;
+  cb.capNhat({ ...tren501, tocDo: 8 }, null, 'xemay');
+  cb.capNhat({ ...tren501, tocDo: 1 }, null, 'xemay');
+  assert.equal(noi.filter(s => /cấm dừng/.test(s)).length, 1, 'không nhắc lại trong 10 phút');
+  assert.ok(noi.length >= dem);
+});
+
+test('trên tuyến dẫn đường: báo trước đường cấm phía trước', () => {
+  const { cb } = duongLuat();
+  const toaDo = [[105.860, 21.040], [105.866, 21.040], [105.872, 21.040]];
+  const tuyen = { toaDo, tichLuy: tichLuyTest(toaDo), buoc: [] };
+  const ds = cb.phiaTruocTrenTuyen({ tuyen, tt: { s: 420 } }, 'oto', 50, {});
+  const dc = ds.find(d => d.loai === 'duongcam');
+  assert.ok(dc && dc.id === 'dc502' && dc.kc > 150 && dc.kc < 300, JSON.stringify(ds));
+  assert.match(cb.cauCanhBao(dc), /đường cấm ô tô/);
+  assert.equal(cb.phiaTruocTrenTuyen({ tuyen, tt: { s: 420 } }, 'xemay', 50, {}).filter(d => d.loai === 'duongcam').length, 0);
+});
+
+test('biển báo Việt Nam trên bản đồ: theo loại xe, ngày chẵn / lẻ; biển cấm ngược chiều ở đầu kia đường một chiều', () => {
+  const { ttd, cb } = duongLuat();
+  ttd.diem = docDiemOverpass([
+    { type: 'node', id: 1, lat: 21.0401, lon: 105.8655, tags: { traffic_sign: 'VN:P.102' } },
+    { type: 'node', id: 2, lat: 21.0401, lon: 105.8640, tags: { traffic_sign: 'VN:P.103a' } },
+    { type: 'node', id: 3, lat: 21.0401, lon: 105.8645, tags: { traffic_sign: 'VN:P.131b' } },
+    { type: 'node', id: 4, lat: 21.0401, lon: 105.8646, tags: { traffic_sign: 'VN:P.131c' } },
+    { type: 'node', id: 5, lat: 21.0401, lon: 105.8700, tags: { traffic_sign: 'VN:P.125;VN:P.130' } }
+  ]);
+  assert.equal(ttd.diem.size, 6);
+  const oto = cb.danhSachDiem('oto').map(d => d.bien);
+  assert.ok(oto.includes('P103A') && oto.includes('P125') && oto.includes('P130'));
+  assert.equal(oto.filter(b => b === 'P131B' || b === 'P131C').length, 1, 'chỉ biển cấm đỗ của ngày hôm nay');
+  assert.ok(!cb.danhSachDiem('xemay').some(d => d.bien === 'P103A'));
+  // đi đúng chiều trên đường một chiều tới biển P.102 ở cuối đường: không báo
+  for (let i = 0; i < 2; i++) {
+    const kq = cb.capNhat({ viTri: [105.8648, 21.04], huong: 90, tocDo: 6 }, null, 'xemay');
+    assert.ok(!kq.canhBao || kq.canhBao.bien !== 'P102', JSON.stringify(kq.canhBao));
+  }
+});
+
+test('camera phạt nguội: đọc kèm giới hạn của đường, nhắc giảm tốc khi đang vượt tốc độ; trạm thu phí đọc kèm mức phí', async () => {
+  const fetchCu = globalThis.fetch;
+  globalThis.fetch = moPhongOverpass();
+  try {
+    const ttd = new ThongTinDuong();
+    await ttd.taiDuong(DIEM.B);
+    ttd.diem = docDiemOverpass([
+      { type: 'node', id: 8001, lat: 21.0304, lon: 105.8530, tags: { man_made: 'surveillance', surveillance: 'traffic' } },
+      { type: 'node', id: 8002, lat: 21.0330, lon: 105.8548, tags: { barrier: 'toll_booth', name: 'Trạm Lý Thái Tổ', charge: '35000 VND' } }
+    ]);
+    const noi = [];
+    const cb = new CanhBao({
+      thongTinDuong: ttd, layBaoCao: () => [], noi: s => noi.push(s), bip: () => {},
+      layPhi: d => (d.phiOsm ? { phi: d.phiOsm, loaiXe: 1 } : null)
+    });
+    // Tràng Tiền (30 km/h), đi 45 km/h về phía Đông, camera phạt nguội cách ~180 m
+    const kq = cb.capNhat({ viTri: [105.8513, 21.0304], huong: 90, tocDo: 12.5 }, null, 'oto');
+    assert.equal(kq.canhBao.loai, 'cameragiamsat');
+    assert.ok(noi.some(s => /camera phạt nguội, tốc độ tối đa 30/.test(s)), noi.join('|'));
+    assert.ok(noi.some(s => /^Giảm tốc độ ngay, phía trước có camera phạt nguội/.test(s)), noi.join('|'));
+    const truoc = noi.length;
+    cb.capNhat({ viTri: [105.8516, 21.0304], huong: 90, tocDo: 12.5 }, null, 'oto');
+    assert.equal(noi.filter(s => /Giảm tốc độ ngay/.test(s)).length, 1, 'mỗi camera chỉ nhắc một lần');
+    assert.ok(noi.length >= truoc);
+    // trên Lý Thái Tổ đi lên phía Bắc, tới trạm thu phí
+    const tram = cb.capNhat({ viTri: [105.8548, 21.0318], huong: 0, tocDo: 10 }, null, 'oto');
+    assert.equal(tram.canhBao.loai, 'thuphi');
+    assert.equal(tram.canhBao.phu, 'Phí xe loại 1: 35.000 đ');
+    assert.ok(noi.some(s => /trạm thu phí Trạm Lý Thái Tổ, phí khoảng 35\.000 đồng/.test(s)), noi.join('|'));
+  } finally {
+    globalThis.fetch = fetchCu;
+  }
+});

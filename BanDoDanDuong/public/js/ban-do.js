@@ -6,7 +6,8 @@
 import { CAU_HINH } from './cau-hinh.js';
 import { caiDat, doc, ghi } from './kho.js';
 import { lechGoc, khungBao } from './hinh-hoc.js';
-import { svgBieuTuongBanDo, svgBienBao, SVG_MUI_TEN_TUYEN, taiAnh, icon } from './bieu-tuong.js';
+import { svgBieuTuongBanDo, svgBienBao, svgBienCam, laBienCam, SVG_MUI_TEN_TUYEN, taiAnh, icon } from './bieu-tuong.js';
+import { BIEN_VN } from './luat-duong.js';
 import { LOAI_BAO_CAO } from './loai-bao-cao.js';
 import { LOAI_CANH_BAO, BIEN_RE } from './loai-canh-bao.js';
 import { DANH_MUC } from './dia-diem.js';
@@ -90,6 +91,10 @@ export class BanDo {
     for (const [k, v] of Object.entries(LOAI_BAO_CAO)) ds['bc-' + k] = svgBieuTuongBanDo(v.icon, v.mau);
     for (const v of Object.values(LOAI_CANH_BAO)) if (!v.khongBanDo) ds['cb-' + v.icon] = svgBieuTuongBanDo(v.icon, v.mau);
     for (const v of Object.values(BIEN_RE)) ds['cb-' + v.icon] = svgBienBao(v.icon);
+    // biển báo Việt Nam (đường cấm, cấm vượt, cấm dừng / đỗ…) vẽ như biển thật
+    for (const ten of new Set([...Object.values(BIEN_VN).map(b => b.icon), 'duongcam', 'camvuot', 'camdungdo'])) {
+      if (laBienCam(ten)) ds['cb-' + ten] = svgBienCam(ten);
+    }
     for (const d of DANH_MUC) ds['dm-' + d.id] = svgBieuTuongBanDo(d.icon, d.mau);
     ds['dm-ghim'] = svgBieuTuongBanDo('ghim', '#e53935');
     const kq = {};

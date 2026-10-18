@@ -97,3 +97,15 @@ thành bong bóng trên bản đồ.
 | OBD-II ELM327 | `public/js/obd.js`, Android `cau/Obd.kt` | `test/obd.test.js`, `test/e2e/xe.mjs` |
 | Bong bóng nổi (Android) | Android `cau/BongBong.kt`, tin `hud` trong `main.js` | `test/e2e/xe.mjs` (dữ liệu gửi sang Android) |
 | Thống kê chuyến đi, biểu đồ tốc độ | `public/js/hanh-trinh.js` | `test/hanh-trinh.test.js` |
+
+## 5. Đợt bổ sung: dữ liệu mới nhất, đường cấm, cấm vượt, phí, dẫn đường thông minh
+
+| Yêu cầu | Đã làm | Mã nguồn | Kiểm thử |
+|---|---|---|---|
+| Dữ liệu bản đồ, tuyến đường, biển báo mới nhất; tự cập nhật mỗi tuần | Style / TileJSON lấy mạng trước (theo phiên bản ô mới nhất), ô lưu quá 7 ngày tự tải lại; dữ liệu cảnh báo theo khu vực ~11 km trong máy và trên máy chủ, tự tải lại khi quá 7 ngày; bảng phí, vùng offline mỗi tuần | `public/sw.js`, `du-lieu-giao-thong.js`, `kho-giao-thong.js`, `phi-cao-toc.js` | `test/du-lieu-giao-thong.test.js`, `test/phi-cao-toc.test.js`, e2e |
+| Cảnh báo vượt tốc độ | Có sẵn; thêm nhắc giảm tốc khi vượt tốc độ gần camera | `canh-bao.js` | `test/canh-bao.test.js` |
+| Camera phạt nguội | Loại "Camera phạt nguội (giám sát giao thông)" + camera tốc độ / đèn đỏ / tốc độ trung bình; đọc kèm giới hạn của đường | `loai-canh-bao.js`, `canh-bao.js` | `test/canh-bao.test.js` |
+| Đường cấm, cấm dừng / đỗ | Thẻ access theo loại xe (kể cả `:conditional` theo giờ), một chiều / ngược chiều, `parking:*`; biển P.101–P.104, P.130, P.131a/b/c | `luat-duong.js`, `canh-bao.js` | `test/luat-duong.test.js`, `test/canh-bao.test.js` |
+| Đoạn cấm vượt | Thẻ `overtaking`, biển P.125 / DP.133; báo trước trên tuyến | `luat-duong.js`, `canh-bao.js` | `test/canh-bao.test.js` |
+| Phí trạm cao tốc | Loại xe 1–5, bảng phí (máy chủ / tệp) + thẻ `charge` OSM; đọc khi tới trạm, tổng phí trên thẻ tuyến | `phi-cao-toc.js` | `test/phi-cao-toc.test.js`, e2e |
+| Dẫn đường thông minh | Xếp hạng tuyến theo báo cáo kẹt xe / tai nạn / cấm đường; gợi ý đổi đường khi có báo cáo mới phía trước | `dan-duong-thong-minh.js`, `main.js` | `test/dan-duong-thong-minh.test.js`, e2e |

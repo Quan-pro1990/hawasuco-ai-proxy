@@ -46,6 +46,7 @@ const P = {
   chon: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
   loabao: '<path d="M3 10v4h3l7 4V6l-7 4z"/><path d="M17 9a4 4 0 0 1 0 6M6 14l1.5 5H10l-1.3-4.5"/>',
   keo: '<path d="M12 3v18M3 12h18M12 3L9 6M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3"/>',
+  capnhat: '<path d="M20 12a8 8 0 1 1-2.4-5.7L20 8.5M20 3.5v5h-5"/>',
   mayanh: '<path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h2.5l1.5-2.5h7L17 7h2.5A1.5 1.5 0 0 1 21 8.5v10a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z"/><circle cx="12" cy="13" r="3.5"/>',
   doicamera: '<path d="M4 9a8 8 0 0 1 14-3l2 2M20 4v4h-4M20 15a8 8 0 0 1-14 3l-2-2M4 20v-4h4"/><circle cx="12" cy="12" r="2.5"/>',
   obd: '<path d="M3 9h3l2-2.5h7L17 9h4v8h-3l-2 2.5H8L6 17H3z"/><path d="M9.5 11.5v3M14.5 11.5v3M12 11.5v3"/>',
@@ -89,6 +90,15 @@ const P = {
   tramdung: '<path d="M4.5 10h11v3.5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M15.5 11.5h1.5a2.5 2.5 0 0 1 0 5h-2M3 21h14M8 3.5V7M12 3.5V7"/>',
   dentinhieu: '<rect x="7.5" y="2.5" width="9" height="19" rx="3"/><circle cx="12" cy="7" r="1.7" fill="currentColor"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="17" r="1.7"/>',
   vachqua: '<circle cx="12" cy="4.3" r="1.8"/><path d="M12 7v5l-2.5 4M12 12l2.5 4M8.8 9.5h6.4M3 20.5h3M8.5 20.5h3M14 20.5h3M19.5 20.5h1.5"/>',
+  duongcam: '<circle cx="12" cy="12" r="8" stroke-width="3.4"/>',
+  camoto: '<circle cx="12" cy="12" r="9"/><path d="M7.5 14.5v-2.2l1.1-2.8h6.8l1.1 2.8v2.2zM5.6 5.6l12.8 12.8"/>',
+  cammoto: '<circle cx="12" cy="12" r="9"/><circle cx="8.5" cy="14" r="1.8"/><circle cx="15.5" cy="14" r="1.8"/><path d="M8.5 14l2-3.5h3l2 3.5M5.6 5.6l12.8 12.8"/>',
+  camdungdo: '<circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4"/>',
+  camdo: '<circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/>',
+  camdole: '<circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8M12 7.5v9"/>',
+  camdochan: '<circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8M10 7.5v9M14 7.5v9"/>',
+  camvuot: '<circle cx="12" cy="12" r="9"/><path d="M6.3 15.5v-2.8l.9-2.2h3l.9 2.2v2.8zM12.9 15.5v-2.8l.9-2.2h3l.9 2.2v2.8z"/>',
+  hetcamvuot: '<circle cx="12" cy="12" r="9"/><path d="M6.3 15.5v-2.8l.9-2.2h3l.9 2.2v2.8zM12.9 15.5v-2.8l.9-2.2h3l.9 2.2v2.8zM6 18L18 6"/>',
   khudancu: '<path d="M2.5 20.5h19M4 20.5V12l4.5-4 4.5 4v8.5M13 20.5v-6l3.75-3.5 3.75 3.5v6M7 20.5v-4h3v4"/>'
 };
 
@@ -182,6 +192,30 @@ export function svgBienBao(ten) {
 }
 
 export function laBienBao(ten) { return ten in BIEN; }
+
+/** Biển cấm / biển báo Việt Nam vẽ như biển thật cho bản đồ: [nền, viền, nội dung]. */
+const XE_HOI = (x, mau) => `<path d="M${x} 20.2v-3.4l1.1-2.7h4.2l1.1 2.7v3.4z" fill="${mau}"/><circle cx="${x + 1.6}" cy="20.4" r=".9" fill="#fff"/><circle cx="${x + 4.8}" cy="20.4" r=".9" fill="#fff"/>`;
+const GACH = '<path d="M7.2 7.2l17.6 17.6" stroke="#d32f2f" stroke-width="3" stroke-linecap="round"/>';
+const BIEN_CAM = {
+  duongcam: ['#fff', '#d32f2f', ''],
+  camduong: ['#d32f2f', '#d32f2f', '<rect x="7.5" y="13.8" width="17" height="4.4" rx="1" fill="#fff"/>'],
+  camoto: ['#fff', '#d32f2f', '<path d="M9.5 19.5v-3l1.4-3.5h10.2l1.4 3.5v3z" fill="#1f2937"/>' + GACH],
+  cammoto: ['#fff', '#d32f2f', '<circle cx="11" cy="19" r="2.4" fill="none" stroke="#1f2937" stroke-width="1.6"/><circle cx="21" cy="19" r="2.4" fill="none" stroke="#1f2937" stroke-width="1.6"/><path d="M11 19l3-5h4l3 5" fill="none" stroke="#1f2937" stroke-width="1.6"/>' + GACH],
+  camdungdo: ['#1565c0', '#d32f2f', GACH + '<path d="M24.8 7.2L7.2 24.8" stroke="#d32f2f" stroke-width="3" stroke-linecap="round"/>'],
+  camdo: ['#1565c0', '#d32f2f', GACH],
+  camdole: ['#1565c0', '#d32f2f', GACH + '<path d="M16 10v12" stroke="#fff" stroke-width="2.2"/>'],
+  camdochan: ['#1565c0', '#d32f2f', GACH + '<path d="M13.5 10v12M18.5 10v12" stroke="#fff" stroke-width="2.2"/>'],
+  camvuot: ['#fff', '#d32f2f', XE_HOI(8.6, '#d32f2f') + XE_HOI(16.8, '#1f2937')],
+  hetcamvuot: ['#fff', '#6b7280', XE_HOI(8.6, '#9ca3af') + XE_HOI(16.8, '#9ca3af') + '<path d="M8.5 23.5l15-15M10.5 25l15-15" stroke="#1f2937" stroke-width="1"/>']
+};
+
+export function laBienCam(ten) { return ten in BIEN_CAM; }
+
+export function svgBienCam(ten) {
+  const [nen, vien, noiDung] = BIEN_CAM[ten] || BIEN_CAM.duongcam;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 32 32">` +
+    `<circle cx="16" cy="16" r="13.5" fill="${nen}" stroke="${vien}" stroke-width="3.6"/>${noiDung}</svg>`;
+}
 
 export const SVG_MUI_TEN_TUYEN = '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 20 20">' +
   '<path d="M7 5l5 5-5 5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';

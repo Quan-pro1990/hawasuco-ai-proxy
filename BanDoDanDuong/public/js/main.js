@@ -6,7 +6,8 @@ import {
 } from './kho.js';
 import { khoangCach, catTuyen, diemTaiS, tichLuy } from './hinh-hoc.js';
 import { quangDuong, thoiGian, gioDen, ngayGio, thoiGianTruoc, tocDoKmh, kichThuoc, esc } from './dinh-dang.js';
-import { icon, muiTenRe, muiTenLan } from './bieu-tuong.js';
+import { doc, ghi } from './kho.js';
+import { icon, muiTenRe, muiTenLan, svgBienCam } from './bieu-tuong.js';
 import { BanDo, layKieuBanDo } from './ban-do.js';
 import { $, $$, chenBieuTuong, thongBao, hopThoai, hoiXacNhan, TamDuoi, moTrang, dongTrang, taiXuong } from './giao-dien.js';
 import { goiY, timDayDu, layToaDo, diaChiTuToaDo } from './tim-kiem.js';
@@ -19,6 +20,9 @@ import { ThongTinDuong } from './duong-xa.js';
 import { CanhBao } from './canh-bao.js';
 import { LOAI_CANH_BAO, MUC_CANH_BAO, mucCanhBao } from './loai-canh-bao.js';
 import { NhacNho, laBanDem } from './nhac-nho.js';
+import { NguonDuLieuGiaoThong } from './du-lieu-giao-thong.js';
+import { capNhatBangPhi, phiCuaTram, phiTuyen, thongTinBangPhi, LOAI_XE_THU_PHI, dinhDangTien } from './phi-cao-toc.js';
+import { xepHangTuyen, baoCaoTrenTuyen, goiYDoiTuyen } from './dan-duong-thong-minh.js';
 import { docLienKet } from './lien-ket.js';
 import { THONG_SO, PhienElm, DocXe, CongBle, CongGoc } from './obd.js';
 import { LOAI_BAO_CAO, kiemTraMayChu, dungMayChu, diaChiApi, taiBaoCao, guiBaoCao, xacNhan, xoaBaoCao, baoCaoHienTai, baoCaoCuaToi } from './bao-cao.js';
@@ -78,8 +82,11 @@ tam.onAn = () => {
 const nguonViTri = new NguonViTri(xuLyViTri, (loi, ma) => {
   if (ma === 1 || !st.viTri) thongBao(loi, { loai: 'loi', thoiGian: 5000 });
 });
-const thongTinDuong = new ThongTinDuong();
-const canhBao = new CanhBao({ thongTinDuong, layBaoCao: baoCaoHienTai, noi, bip });
+// dữ liệu giao thông theo ô: lưu trong máy, lấy từ máy chủ HawaMap (nếu có) hoặc OpenStreetMap, tự làm mới mỗi tuần
+const layMayChu = () => (dungMayChu() ? diaChiApi() : null);
+const duLieuGT = new NguonDuLieuGiaoThong({ layMayChu });
+const thongTinDuong = new ThongTinDuong({ nguon: duLieuGT });
+const canhBao = new CanhBao({ thongTinDuong, layBaoCao: baoCaoHienTai, noi, bip, layPhi: phiChoXe });
 const laAppAndroid = laAppGoc && cauHinhGoc.nenTang === 'android';
 const nhacNho = new NhacNho({ noi, bip, bao: (chu, loai) => thongBao(chu, { loai }) });
 const ghiHT = new GhiHanhTrinh();
@@ -91,12 +98,15 @@ if (!(window.SpeechRecognition || window.webkitSpeechRecognition)) document.docu
 renderChip();
 datCheDo('chinh');
 nguonViTri.batDau();
-kiemTraMayChu().then(taiBaoCaoKhuVuc);
+kiemTraMayChu().then(() => { taiBaoCaoKhuVuc(); capNhatBangPhi({ layMayChu }); });
 banDo.map.on('moveend', () => { clearTimeout(st.henBaoCao); st.henBaoCao = setTimeout(taiBaoCaoKhuVuc, 1200); });
 banDo.map.on('rotate', capNhatLaBan);
 banDo.map.on('pitch', capNhatLaBan);
 setInterval(() => banDo.doiKieu(kieuMongMuon()), 5 * 60000);
 setInterval(taiBaoCaoKhuVuc, 90000);
+setInterval(xetDoiTuyen, 60000);
+setTimeout(() => tuCapNhatDuLieu(), 30000);
+setInterval(() => tuCapNhatDuLieu(), 6 * 3600000);
 window.addEventListener('resize', capNhatLe);
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState !== 'visible') return;
@@ -227,6 +237,12 @@ function xuLyViTri(vt) {
   if (thongTinDuong.phienDiem !== st.phienDiemVe) veDiemCanhBao();
 }
 
+/** Mức phí của trạm thu phí cho xe đang dùng (chỉ ô tô; xe máy không đi đường thu phí BOT). */
+function phiChoXe(diem) {
+  const pt = st.dd ? st.dd.phuongTien : caiDat.phuongTien;
+  return pt === 'oto' ? phiCuaTram(diem, caiDat.loaiXeThuPhi) : null;
+}
+
 /** Dữ liệu cho bong bóng nổi của ứng dụng Android (cau/BongBong.kt), hiện khi HawaMap chạy nền. */
 function baoBongBong(cb) {
   guiGoc('hud', {
@@ -285,11 +301,22 @@ function renderHud(cb) {
   const html = `${cb.gioiHan ? `<div class="bien-toc-do${cb.uocTinh ? ' uoc' : ''}" title="${cb.uocTinh ? 'Giới hạn tốc độ ước tính theo loại đường' : 'Giới hạn tốc độ'}"><b>${cb.gioiHan}</b></div>` : ''}
     <div class="dong-ho${cb.vuotToc ? ' vuot' : ''}"><b>${cb.kmh}</b><span>km/h</span></div>
     ${cb.khuDanCu ? `<div class="nhan-kdc" title="Đang trong khu đông dân cư (ước tính)">${icon('khudancu')}<span>Khu dân cư</span></div>` : ''}
+    ${bienLuat(cb)}
     ${cb.duong && (cb.duong.ten || cb.duong.ref) ? `<div class="ten-duong">${esc(cb.duong.ten || cb.duong.ref)}</div>` : ''}`;
   if (st.dd) { $('#hud-dd').innerHTML = html; return; }
   const el = $('#hud-chinh');
   el.hidden = !(st.laiXe || cheDoXe || Date.now() - st.lucDiChuyen < 60000);
   el.innerHTML = html;
+}
+
+/** Biển luật của con đường đang đi: cấm vượt; cấm dừng / đỗ (chỉ khi xe đi chậm, sắp dừng). */
+function bienLuat(cb, lop = 'hud-luat') {
+  const l = cb.luat;
+  if (!l) return '';
+  const ds = [];
+  if (l.camVuot) ds.push(['camvuot', 'Đang trong đoạn cấm vượt']);
+  if (l.camDungDo && cb.kmh < 30) ds.push(l.camDungDo === 'camdung' ? ['camdungdo', 'Cấm dừng và đỗ xe'] : ['camdo', 'Cấm đỗ xe']);
+  return ds.length ? `<div class="${lop}">${ds.map(([b, t]) => `<span title="${t}" aria-label="${t}">${svgBienCam(b)}</span>`).join('')}</div>` : '';
 }
 
 function renderCanhBao(el, d) {
@@ -298,7 +325,7 @@ function renderCanhBao(el, d) {
   const pt = Math.max(0, Math.min(100, 100 - d.kc / d.kcBao * 100));
   el.dataset.loai = d.loai;
   el.innerHTML = `<div class="cb-icon" style="background:${d.mau || '#e53935'}">${icon(d.icon)}</div>
-    <div class="cb-chu"><b>${quangDuong(d.kc)}</b><span>${esc(d.ten)}</span></div>
+    <div class="cb-chu"><b>${d.hienTai ? 'Ngay đây' : quangDuong(d.kc)}</b><span>${esc(d.ten)}</span>${d.phu ? `<small>${esc(d.phu)}</small>` : ''}</div>
     ${d.gioiHan ? `<div class="bien-toc-do nho"><b>${d.gioiHan}</b></div>` : ''}
     <div class="cb-thanh"><i style="width:${pt}%"></i></div>`;
 }
@@ -742,7 +769,9 @@ async function tinhLoTrinh() {
       diem: ds, phuongTien: lt.phuongTien, tranhCaoToc: caiDat.tranhCaoToc, tranhThuPhi: caiDat.tranhThuPhi, tinHieu: huy.signal
     });
     if (huy.signal.aborted || st.lt !== lt) return;
-    lt.tuyen = kq;
+    // dẫn đường thông minh: tải báo cáo dọc các tuyến rồi ưu tiên tuyến tránh kẹt xe / tai nạn / cấm đường
+    lt.tuyen = caiDat.tranhKetXe ? xepHangTuyen(kq, await baoCaoDocTuyen(kq)) : kq;
+    if (huy.signal.aborted || st.lt !== lt) return;
     lt.chon = 0;
     lt.loi = null;
     veLoTrinh(true);
@@ -770,7 +799,7 @@ function veLoTrinh(vuaKhung) {
   }).filter(Boolean));
   banDo.datNhanTuyen(lt.tuyen.map((t, i) => {
     const vt = diemTaiS(t.toaDo, t.tichLuy, t.tichLuy[t.tichLuy.length - 1] * (i === lt.chon ? 0.5 : 0.35 + 0.15 * i)).diem;
-    return { viTri: vt, chu: thoiGian(t.thoiGian), chon: i === lt.chon, i };
+    return { viTri: vt, chu: thoiGian(t.thoiGian + (t.phatBaoCao || 0)), chon: i === lt.chon, i };
   }));
   renderTheTuyen();
   renderKhungLt();
@@ -792,17 +821,25 @@ function renderTheTuyen() {
     return;
   }
   if (!lt.tuyen.length) return;
-  const nhanh = Math.min(...lt.tuyen.map(t => t.thoiGian));
+  const tgDuKien = t => t.thoiGian + (t.phatBaoCao || 0);
+  const nhanh = Math.min(...lt.tuyen.map(tgDuKien));
   const the = lt.tuyen.map((t, i) => {
     const nhan = [];
-    if (t.thoiGian === nhanh && lt.tuyen.length > 1) nhan.push('<i class="xanh">Nhanh nhất</i>');
-    if (t.coThuPhi) nhan.push('<i class="cam">Có trạm thu phí</i>');
+    if (tgDuKien(t) === nhanh && lt.tuyen.length > 1) nhan.push('<i class="xanh">Nhanh nhất</i>');
+    if (t.tranhBaoCao) nhan.push('<i class="xanh">Tránh kẹt xe</i>');
+    if (t.baoCaoTren && t.baoCaoTren.length) {
+      const loai = [...new Set(t.baoCaoTren.map(x => LOAI_BAO_CAO[x.baoCao.loai].ten))].join(', ');
+      nhan.push(`<i class="do">${esc(loai)} trên tuyến</i>`);
+    }
+    const phi = lt.phuongTien === 'oto' ? phiTuyen(t, caiDat.loaiXeThuPhi) : null;
+    if (phi && phi.soTram) nhan.push(`<i class="cam" title="${esc(phi.ds.map(x => `${x.ten}: ${dinhDangTien(x.phi)}`).join('\n'))}">Phí ~ ${dinhDangTien(phi.tong)}</i>`);
+    else if (t.coThuPhi) nhan.push('<i class="cam">Có trạm thu phí</i>');
     if (t.coCaoToc) nhan.push(`<i class="${lt.phuongTien === 'xemay' ? 'do' : 'xam'}">Có đoạn cao tốc</i>`);
     if (t.coPha) nhan.push('<i class="xam">Đi phà</i>');
     return `<button class="the-tuyen${i === lt.chon ? ' chon' : ''}" data-hd="chon-tuyen" data-i="${i}">
-      <span class="tt-dong"><b class="tt-tg">${thoiGian(t.thoiGian)}</b><span class="tt-kc">${quangDuong(t.quangDuong)}</span></span>
+      <span class="tt-dong"><b class="tt-tg">${thoiGian(tgDuKien(t))}</b><span class="tt-kc">${quangDuong(t.quangDuong)}</span></span>
       <span class="tt-qua">${t.duongChinh ? 'Qua ' + esc(t.duongChinh) : esc(PHUONG_TIEN[lt.phuongTien].ten)}</span>
-      <span class="tt-dong"><span class="tt-nhan">${nhan.join('')}</span><span class="tt-den">Đến lúc ${gioDen(t.thoiGian)}</span></span>
+      <span class="tt-dong"><span class="tt-nhan">${nhan.join('')}</span><span class="tt-den">Đến lúc ${gioDen(tgDuKien(t))}</span></span>
     </button>`;
   }).join('');
   tam.hien(`<div class="ds-tuyen">${the}</div>
@@ -1004,6 +1041,7 @@ async function ketThucDanDuong({ daDen = false, tuGoc = false, imLang: imDi = tr
   if (!dd) return;
   st.dd = null;
   clearTimeout(dd.henKetThuc);
+  boGoiYTuyen();
   if (st.moPhong) tatMoPhong();
   const ht = ghiHT.ketThuc(dd.tenDen);
   if (!daDen && imDi) imLang();
@@ -1128,8 +1166,9 @@ function renderManHud() {
   $('#hud-noi').innerHTML = `
     <div class="hn-toc${cb.vuotToc ? ' vuot' : ''}"><b>${matGps ? '--' : cb.kmh}</b><span>${matGps ? 'Mất GPS' : 'km/h'}</span></div>
     ${cb.gioiHan ? `<div class="hn-bien${cb.uocTinh ? ' uoc' : ''}"><b>${cb.gioiHan}</b></div>` : ''}
+    ${bienLuat(cb, 'hn-luat')}
     ${ke ? `<div class="hn-re">${muiTenRe(ke)}<div><b>${quangDuong(ke.kc || 0)}</b><span>${esc(ke.ten || ke.chiDan || '')}</span></div></div>` : ''}
-    ${d ? `<div class="hn-cb">${icon(d.icon)}<b>${quangDuong(d.kc)}</b><span>${esc(d.ten)}</span></div>` : ''}
+    ${d ? `<div class="hn-cb">${icon(d.icon)}<b>${d.hienTai ? 'Ngay đây' : quangDuong(d.kc)}</b><span>${esc(d.ten)}</span></div>` : ''}
     <div class="hn-duoi">${g ? `<span>${esc(g.conLaiChu)}</span><span>Đến ${esc(g.gioDenChu)}</span>`
     : `<span>${esc(cb.duong ? cb.duong.ten || cb.duong.ref || '' : '')}</span><span>${new Date().toTimeString().slice(0, 5)}</span>`}</div>`;
 }
@@ -1138,8 +1177,79 @@ function renderManHud() {
 async function taiBaoCaoKhuVuc() {
   const k = banDo.khungHienTai();
   const rong = Math.max(0.02, (k[2] - k[0]) * 0.25), cao = Math.max(0.02, (k[3] - k[1]) * 0.25);
-  await taiBaoCao([k[0] - rong, k[1] - cao, k[2] + rong, k[3] + cao]);
+  let khung = [k[0] - rong, k[1] - cao, k[2] + rong, k[3] + cao];
+  // đang dẫn đường: lấy cả báo cáo trên đoạn tuyến còn lại (tối đa ~50 km quanh xe) để kịp tránh kẹt xe
+  const dd = st.dd;
+  if (dd && dd.tt && st.viTri) {
+    const t = dd.tuyen, conLai = t.toaDo.slice(Math.max(0, dd.may.chiSo || 0));
+    const p = st.viTri.viTri;
+    for (const q of conLai) {
+      if (Math.abs(q[0] - p[0]) > 0.45 || Math.abs(q[1] - p[1]) > 0.45) continue;
+      khung = [Math.min(khung[0], q[0]), Math.min(khung[1], q[1]), Math.max(khung[2], q[0]), Math.max(khung[3], q[1])];
+    }
+  }
+  await taiBaoCao(khung);
   banDo.datBaoCao(baoCaoHienTai());
+}
+
+/** Báo cáo trong khung bao các tuyến (để xếp hạng tuyến khi tìm đường). */
+async function baoCaoDocTuyen(dsTuyen) {
+  let k = [180, 90, -180, -90];
+  for (const t of dsTuyen) for (const q of t.toaDo) k = [Math.min(k[0], q[0]), Math.min(k[1], q[1]), Math.max(k[2], q[0]), Math.max(k[3], q[1])];
+  if (k[2] - k[0] < 3 && k[3] - k[1] < 3) {
+    try { await taiBaoCao([k[0] - 0.01, k[1] - 0.01, k[2] + 0.01, k[3] + 0.01]); } catch (e) { /* dùng báo cáo đang có */ }
+  }
+  return baoCaoHienTai();
+}
+
+/**
+ * Đang dẫn đường mà có báo cáo kẹt xe / tai nạn / cấm đường mới trên 30 km phía trước: tính lại từ vị trí hiện tại,
+ * tuyến khác nhanh hơn từ 3 phút thì gợi ý đổi (màn hình xe: tự đổi khi nhanh hơn từ 5 phút).
+ */
+async function xetDoiTuyen() {
+  const dd = st.dd;
+  if (!dd || !dd.tt || dd.dangTinhLai || dd.dangXetDoi || !caiDat.tranhKetXe || !st.viTri || st.goiYTuyen) return;
+  dd.daXetBc = dd.daXetBc || new Set();
+  const moi = baoCaoTrenTuyen(dd.tuyen, baoCaoHienTai(), { sTu: dd.tt.s, xa: 30000 }).filter(x => !dd.daXetBc.has(x.baoCao.id));
+  if (!moi.length) return;
+  moi.forEach(x => dd.daXetBc.add(x.baoCao.id));
+  dd.dangXetDoi = true;
+  try {
+    const ds = await timDuong({
+      diem: [st.viTri.viTri, ...dd.diemDen.map(d => d.viTri)], phuongTien: dd.phuongTien, huongDau: st.viTri.huong,
+      phuongAn: dd.diemDen.length === 1, tranhCaoToc: caiDat.tranhCaoToc, tranhThuPhi: caiDat.tranhThuPhi
+    });
+    if (st.dd !== dd) return;
+    const goiY = goiYDoiTuyen({ tuyen: dd.tuyen, s: dd.tt.s, thoiGianConLai: dd.tt.thoiGianConLai }, xepHangTuyen(ds, baoCaoHienTai()), baoCaoHienTai());
+    const nangNhat = moi.reduce((a, b) => (b.phut > a.phut ? b : a));
+    const tenBc = LOAI_BAO_CAO[nangNhat.baoCao.loai].nghe;
+    if (!goiY) { noi(`Phía trước có ${tenBc}, chưa có đường khác nhanh hơn.`); return; }
+    const phut = Math.round(goiY.tietKiem / 60);
+    if (cheDoXe) {
+      if (goiY.tietKiem < 300) return;
+      datTuyenDanDuong(goiY.tuyen);
+      noi(`Phía trước có ${tenBc}. Đã chuyển sang đường khác nhanh hơn khoảng ${phut} phút.`, { chen: true });
+      return;
+    }
+    st.goiYTuyen = goiY;
+    const el = $('#goi-y-tuyen');
+    el.hidden = false;
+    el.innerHTML = `<div><b>Phía trước có ${esc(tenBc)}</b><span>Đường khác nhanh hơn khoảng ${phut} phút</span></div>
+      <button class="nut xanh" data-hd="doi-tuyen-goi-y">Đổi đường</button><button class="nut vien" data-hd="bo-goi-y">Giữ</button>`;
+    noi(`Phía trước có ${tenBc}. Có đường khác nhanh hơn khoảng ${phut} phút. Bấm Đổi đường để đi đường khác.`, { chen: true });
+    clearTimeout(st.henGoiY);
+    st.henGoiY = setTimeout(boGoiYTuyen, 30000);
+  } catch (e) {
+    /* không tính được tuyến khác: lần sau thử lại với báo cáo mới */
+  } finally {
+    dd.dangXetDoi = false;
+  }
+}
+
+function boGoiYTuyen() {
+  st.goiYTuyen = null;
+  clearTimeout(st.henGoiY);
+  $('#goi-y-tuyen').hidden = true;
 }
 
 function moBaoCao(viTriRieng) {
@@ -1233,7 +1343,10 @@ const NHOM_CAI_DAT = [
     { k: 'tranhCaoToc', loai: 'bat', ten: 'Tránh đường cao tốc' },
     { k: 'tranhThuPhi', loai: 'bat', ten: 'Tránh trạm thu phí' },
     { k: 'giuManHinh', loai: 'bat', ten: 'Giữ màn hình luôn sáng khi dẫn đường' },
-    { k: 'tuGhiHanhTrinh', loai: 'bat', ten: 'Tự động ghi lịch sử hành trình' }
+    { k: 'tuGhiHanhTrinh', loai: 'bat', ten: 'Tự động ghi lịch sử hành trình' },
+    { k: 'tranhKetXe', loai: 'bat', ten: 'Dẫn đường thông minh: tránh kẹt xe, tai nạn, cấm đường theo báo cáo' },
+    { k: 'loaiXeThuPhi', loai: 'chon', ten: 'Loại xe tính phí trạm thu phí', so: true, ds: () => LOAI_XE_THU_PHI },
+    { hd: 'trang-du-lieu', ten: 'Dữ liệu giao thông và tự động cập nhật', icon: 'capnhat' }
   ] },
   { ten: 'Bản đồ', muc: [
     { k: 'kieuBanDo', loai: 'chon', ten: 'Kiểu bản đồ', ds: () => [...Object.entries(CAU_HINH.kieuBanDo).map(([k, v]) => [k, v.ten]), ...(caiDat.styleVietmap ? [['vietmap', 'VietMap']] : [])] },
@@ -1401,13 +1514,56 @@ async function taiVungOffline(cu = null, { imLang = false } = {}) {
   }
 }
 
-/** Mỗi lần mở ứng dụng, khi đang dùng Wi-Fi: tải lại một vùng đã cũ (quá 30 ngày hoặc máy chủ đổi phiên bản ô). */
+/** Được tự cập nhật lúc này không: đang có mạng, và nếu chọn "chỉ Wi-Fi" thì không đang dùng dữ liệu di động. */
+function duocTuCapNhat() {
+  return navigator.onLine && !(caiDat.capNhatChiWifi && dangDungWifi() === false);
+}
+
+/** Mỗi lần mở ứng dụng: tải lại một vùng offline đã cũ (quá 7 ngày hoặc máy chủ bản đồ đổi phiên bản ô). */
 function tuCapNhatOffline() {
-  if (st.daXetOffline || !caiDat.capNhatOffline || !hoTroOffline() || !navigator.onLine || !dangDungWifi()) return;
+  if (st.daXetOffline || !caiDat.capNhatOffline || !hoTroOffline() || !duocTuCapNhat()) return;
   st.daXetOffline = true;
   const nguonNay = tepKieuHienTai().nguon;
-  const v = vungDaTai().find(x => canCapNhat(x, x.kieu === banDo.kieu ? nguonNay : []));
+  const v = vungDaTai().find(x => canCapNhat(x, x.kieu === banDo.kieu ? nguonNay : [], 7));
   if (v) taiVungOffline(v, { imLang: true });
+}
+
+/**
+ * Tự cập nhật dữ liệu giao thông: ô cảnh báo quá 7 ngày được tải lại, bảng phí trạm thu phí tải lại mỗi tuần.
+ * Gọi lúc mở ứng dụng và mỗi 6 giờ; `ep` (bấm "Cập nhật ngay"): tải lại tất cả.
+ */
+async function tuCapNhatDuLieu({ ep = false } = {}) {
+  if (st.dangCapNhatDl || (!ep && (!caiDat.tuCapNhatDuLieu || !duocTuCapNhat()))) return null;
+  st.dangCapNhatDl = true;
+  try {
+    const kq = await duLieuGT.capNhatDinhKy({ tatCa: ep });
+    await capNhatBangPhi({ layMayChu, ep });
+    ghi('capnhatdl', Date.now());
+    if (kq.soLamMoi || ep) { thongTinDuong.khoaDiem = ''; st.phienDiemVe = -1; }
+    return kq;
+  } finally {
+    st.dangCapNhatDl = false;
+  }
+}
+
+async function trangDuLieu() {
+  const [tt, kieuNen] = [await duLieuGT.trangThai().catch(() => ({ soO: 0, soDiem: 0 })), layKieuBanDo(banDo.kieu).ten];
+  const phi = thongTinBangPhi();
+  const lan = doc('capnhatdl', 0);
+  const bat = (k, ten) => `<label class="cd-dong"><span>${esc(ten)}</span><span class="cong-tac"><input type="checkbox" data-cd="${k}" data-kieu="bat"${caiDat[k] ? ' checked' : ''}><span></span></span></label>`;
+  moTrang('Dữ liệu giao thông', `<div class="nhom"><h4>Dữ liệu trong máy</h4>
+      <div class="cd-dong"><span>Camera, biển báo, trạm thu phí… (khu vực ~11 km)</span><b>${tt.soO} khu vực · ${(tt.soDiem || 0).toLocaleString('vi-VN')} điểm</b></div>
+      <div class="cd-dong"><span>Cập nhật mới nhất</span><b>${tt.moiNhat ? ngayGio(tt.moiNhat) : 'chưa có'}</b></div>
+      <div class="cd-dong"><span>Cũ nhất</span><b>${tt.cuNhat ? ngayGio(tt.cuNhat) : '—'}</b></div>
+      <div class="cd-dong"><span>Bảng phí trạm thu phí</span><b>${phi.soTram ? `${phi.soTram} trạm${phi.capNhat ? ' · ' + esc(phi.capNhat) : ''}` : 'chưa có'}</b></div>
+      <div class="cd-dong"><span>Lần tự kiểm tra gần nhất</span><b>${lan ? ngayGio(lan) : 'chưa có'}</b></div>
+      <div class="hang-nut"><button class="nut" data-hd="cap-nhat-du-lieu"${st.dangCapNhatDl ? ' disabled' : ''}>${icon('capnhat')}${st.dangCapNhatDl ? 'Đang cập nhật…' : 'Cập nhật ngay'}</button></div></div>
+    <div class="nhom"><h4>Tự động cập nhật</h4>${bat('tuCapNhatDuLieu', 'Tự cập nhật dữ liệu giao thông mỗi tuần')}
+      ${bat('capNhatChiWifi', 'Chỉ tự cập nhật khi dùng Wi-Fi')}${bat('capNhatOffline', 'Tự cập nhật vùng bản đồ offline mỗi tuần')}</div>
+    <p class="ghi-chu">Nguồn: đường, biển báo, camera, trạm thu phí lấy từ OpenStreetMap (cộng đồng cập nhật hằng ngày); bản đồ nền "${esc(kieuNen)}"
+    tự theo phiên bản mới nhất của máy chủ bản đồ, ô đã lưu quá 7 ngày được tải lại; tìm đường dùng dữ liệu mới nhất của máy chủ OSRM;
+    báo cáo kẹt xe, tai nạn là thời gian thực. ${dungMayChu() ? 'Máy chủ HawaMap lưu sẵn dữ liệu và tự cập nhật mỗi tuần cho mọi máy.' : 'Chưa kết nối máy chủ HawaMap: dữ liệu được tải thẳng từ OpenStreetMap.'}
+    Mức phí lấy từ bảng phí do đơn vị vận hành cập nhật hoặc từ OpenStreetMap; chỉ để tham khảo.</p>`);
 }
 
 // ================================================================== trang: thông số xe (OBD-II)
@@ -1555,10 +1711,18 @@ function trangHuongDan() {
     <h4>Dẫn đường</h4><p>Bấm <b>Bắt đầu</b>. Ứng dụng đọc hướng dẫn rẽ bằng tiếng Việt, hiện làn đường nên đi, tự tính lại khi đi sai đường.
     Bấm thanh phía dưới để xem tổng quan, các bước, tìm cây xăng dọc đường. <b>Chạy thử</b> để xem trước lộ trình mà không cần di chuyển.</p>
     <h4>Cảnh báo</h4><p>Khi đang đi (kể cả không dẫn đường), góc trái hiện tốc độ của bạn và biển giới hạn tốc độ của con đường.
-    Vượt tốc độ: đồng hồ chuyển đỏ và có âm báo. Ứng dụng báo trước camera (phạt tốc độ, đèn đỏ, đo tốc độ trung bình, giám sát), giới hạn tốc độ thay đổi,
+    Vượt tốc độ: đồng hồ chuyển đỏ và có âm báo; đang vượt tốc độ mà sắp tới camera thì có lời nhắc giảm tốc ngay.
+    Đi vào đường cấm xe của bạn (kể cả cấm theo giờ) hoặc đi ngược chiều đường một chiều: cảnh báo đỏ và giọng nói.
+    Trong đoạn cấm vượt có biển cấm vượt ở góc màn hình (đọc "Bắt đầu / Hết đoạn cấm vượt"); đường cấm dừng, đỗ được nhắc khi bạn chậm lại để dừng.
+    Ứng dụng báo trước camera phạt nguội (phạt tốc độ, đèn đỏ, đo tốc độ trung bình, giám sát), giới hạn tốc độ thay đổi,
     khúc cua, biển cấm rẽ, đường sắt giao cắt, trường học, gờ giảm tốc, hầm, trạm thu phí, trạm dừng nghỉ và các báo cáo kẹt xe, tai nạn, CSGT…
     Trong <b>Cài đặt → Từng loại cảnh báo</b> chọn cho mỗi loại: tắt, chỉ hiển thị, hoặc hiển thị kèm giọng nói (đèn tín hiệu và vạch qua đường mặc định tắt).
     Biển giới hạn có viền nét đứt là giới hạn <i>ước tính</i> theo loại đường (Thông tư 38/2024/TT-BGTVT) khi dữ liệu chưa có biển báo — luôn tuân theo biển báo thực tế.</p>
+    <h4>Dẫn đường thông minh</h4><p>Khi tìm đường, tuyến có kẹt xe, tai nạn, ngập, cấm đường do người dùng báo cáo được tính thêm thời gian chậm trễ;
+    tuyến tránh được sẽ lên đầu (nhãn <b>Tránh kẹt xe</b>). Đang dẫn đường mà có báo cáo mới phía trước, ứng dụng tìm đường khác và hỏi bạn có <b>Đổi đường</b> không.
+    Thẻ tuyến ô tô hiện <b>phí dự kiến</b> các trạm thu phí (chọn loại xe trong Cài đặt → Dẫn đường).</p>
+    <h4>Cập nhật dữ liệu</h4><p>Dữ liệu camera, biển báo, trạm thu phí, bảng phí và vùng bản đồ offline tự cập nhật mỗi tuần (mặc định chỉ khi dùng Wi-Fi).
+    Menu → <b>Cập nhật dữ liệu</b> để xem ngày cập nhật hoặc cập nhật ngay.</p>
     <h4>Chế độ lái xe</h4><p>Menu → <b>Chế độ lái xe</b>: bản đồ xoay theo hướng đi, chỉ hiện tốc độ, giới hạn và cảnh báo, không cần lộ trình.</p>
     <h4>HUD kính lái</h4><p>Menu → <b>HUD kính lái</b>, đặt điện thoại nằm ngửa dưới kính chắn gió: chữ được lật gương để đọc được trên kính.
     Chạm màn hình để đổi kiểu lật hoặc thoát. Nên dùng ban đêm, độ sáng màn hình cao nhất.</p>
@@ -1741,6 +1905,25 @@ const HD = {
   'che-do-lai-xe': () => { moMenu(false); batLaiXe(!st.laiXe); },
   'mo-hud': () => { moMenu(false); batHud(true); },
   'trang-offline': () => { moMenu(false); trangOffline(); },
+  'trang-du-lieu': () => { moMenu(false); trangDuLieu(); },
+  'cap-nhat-du-lieu': async () => {
+    if (!navigator.onLine) return thongBao('Đang mất mạng, chưa cập nhật được', { loai: 'loi' });
+    const cho = tuCapNhatDuLieu({ ep: true });
+    trangDuLieu();
+    try {
+      const kq = await cho;
+      if (kq) thongBao(kq.soLoi ? `Đã cập nhật ${kq.soLamMoi} khu vực, ${kq.soLoi} khu vực lỗi (thử lại sau)` : `Đã cập nhật dữ liệu giao thông (${kq.soLamMoi} khu vực)`, { loai: kq.soLoi ? '' : 'tot' });
+    } catch (e) {
+      thongBao('Cập nhật lỗi: ' + e.message, { loai: 'loi' });
+    }
+    if (!$('#trang').hidden && $('#tieu-de-trang').textContent === 'Dữ liệu giao thông') trangDuLieu();
+  },
+  'doi-tuyen-goi-y': () => {
+    const g = st.goiYTuyen;
+    boGoiYTuyen();
+    if (g && st.dd) { datTuyenDanDuong(g.tuyen); noi('Đã đổi sang đường khác.', { chen: true }); }
+  },
+  'bo-goi-y': () => boGoiYTuyen(),
   'trang-obd': () => { moMenu(false); trangObd(); },
   'obd-ket-noi': () => ketNoiObd(),
   'obd-ngat': () => ngatObd(null),
@@ -2067,6 +2250,8 @@ function dongBoBatDau(du) {
 }
 
 window.hawamap = {
+  // chạy ngay các việc định kỳ (gỡ lỗi, kiểm thử): tải báo cáo, xét đổi tuyến tránh kẹt xe, cập nhật dữ liệu
+  chayNgay: { baoCao: () => taiBaoCaoKhuVuc(), doiTuyen: () => xetDoiTuyen(), duLieu: () => tuCapNhatDuLieu({ ep: true }) },
   st, banDo, caiDat,
   goc: {
     viTri: (lng, lat, tocDo, huong, doChinhXac, thoiGian) => nguonViTri.tuGoc(lng, lat, tocDo, huong, doChinhXac, thoiGian),

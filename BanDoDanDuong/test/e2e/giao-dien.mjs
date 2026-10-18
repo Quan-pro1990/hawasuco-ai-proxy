@@ -8,7 +8,7 @@ import os from 'node:os';
 import fs from 'node:fs/promises';
 import { taoMayChu } from '../../server.js';
 import * as mau from '../du-lieu-mau.js';
-import { chromium, giaLapMang, THAM_SO_TRINH_DUYET } from './chung.mjs';
+import { chromium, giaLapMang, THAM_SO_TRINH_DUYET, layMangGia } from './chung.mjs';
 
 const ANH = process.env.ANH_KIEM_THU || path.join(os.tmpdir(), 'hawamap-e2e');
 await fs.mkdir(ANH, { recursive: true });
@@ -22,7 +22,10 @@ function kiem(dk, thongDiep) {
 }
 const chup = async (page, ten) => { await page.waitForTimeout(350); await page.screenshot({ path: path.join(ANH, ten + '.png') }); };
 
-const mayChu = taoMayChu({ thuMucDuLieu: await fs.mkdtemp(path.join(os.tmpdir(), 'hawamap-e2e-dl-')), ghiLog: false });
+const THU_MUC_DL = await fs.mkdtemp(path.join(os.tmpdir(), 'hawamap-e2e-dl-'));
+// bảng phí giả lập (không phải mức phí thật): một trạm trên đường Đinh Lễ của tuyến thứ hai
+await fs.writeFile(path.join(THU_MUC_DL, 'phi-cao-toc.json'), JSON.stringify({ capNhat: '2026-10-01', nguon: 'kiểm thử', tram: [{ ten: 'Trạm thử', viTri: [105.8548, 21.0290], phi: [25000, 35000, 45000, 60000, 80000] }] }));
+const mayChu = taoMayChu({ thuMucDuLieu: THU_MUC_DL, ghiLog: false, layMang: layMangGia, henGio: false });
 await new Promise(ok => mayChu.listen(0, '127.0.0.1', ok));
 const GOC = `http://127.0.0.1:${mayChu.address().port}/`;
 
@@ -75,7 +78,7 @@ try {
   await page.waitForTimeout(1200);
   kiem(await page.locator('.the-tuyen').count() === 2, 'có 2 tuyến (chính + thay thế)');
   kiem((await page.innerText('.the-tuyen.chon')).includes('Nhanh nhất'), 'tuyến chính gắn nhãn "Nhanh nhất"');
-  kiem((await page.locator('.the-tuyen').nth(1).innerText()).includes('Có trạm thu phí'), 'tuyến thay thế báo có trạm thu phí');
+  kiem(/Phí ~ 25\.000 đ/.test(await page.locator('.the-tuyen').nth(1).innerText()), 'tuyến thay thế báo phí trạm thu phí dự kiến (bảng phí)');
   kiem((await page.innerText('#lt-diem')).includes('Vị trí của bạn'), 'điểm xuất phát là vị trí của tôi');
   kiem(await page.locator('.nhan-tuyen').count() === 2, 'nhãn thời gian trên bản đồ cho từng tuyến');
   await chup(page, '04-lo-trinh');
@@ -266,17 +269,43 @@ try {
   await ctx.close();
 
   // ============================================================ máy tính: khung bên trái
-  console.log('Máy tính');
+  console.log('Máy tính, dẫn đường thông minh, phí trạm thu phí');
+  // có người báo kẹt xe trên Tràng Tiền (chỉ tuyến thứ nhất đi qua)
+  await fetch(GOC + 'api/bao-cao', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ loai: 'ketxe', lng: 105.8524, lat: 21.0304, thietBi: 'may-khac' }) });
   const may = await moTrang({ rong: 1366, cao: 820 });
+  await may.page.waitForTimeout(800);
   await may.page.click('.o-tim');
   await may.page.fill('#o-tim', 'Nhà hát');
   await may.page.locator('.dong-tim[data-hd="chon-kq"]').first().click();
   await may.page.click('[data-hd="chi-duong-den"]');
   await may.page.waitForSelector('.the-tuyen');
   await may.page.waitForTimeout(1500);
+  const theTuyen = await may.page.locator('.the-tuyen').allInnerTexts();
+  kiem(/Tránh kẹt xe/.test(theTuyen[0]) && /Đinh Lễ/.test(theTuyen[0]), 'ưu tiên tuyến tránh kẹt xe theo báo cáo (' + theTuyen[0].replace(/\s+/g, ' ') + ')');
+  kiem(theTuyen.some(t => /Kẹt xe trên tuyến/.test(t)), 'thẻ tuyến có kẹt xe ghi rõ báo cáo trên tuyến');
+  kiem(/Phí ~ 25\.000 đ/.test(theTuyen[0]), 'thẻ tuyến hiện phí dự kiến của trạm thu phí trên tuyến');
   const khung = await may.page.locator('#tam-duoi').boundingBox();
   kiem(khung.x < 20 && khung.width <= 410, 'tấm thông tin nằm bên trái trên màn hình rộng');
   await chup(may.page, '17-may-tinh-lo-trinh');
+  // đang dẫn đường (chạy thử) theo Đinh Lễ thì có người báo cấm đường phía trước: gợi ý đổi sang đường khác
+  await may.page.click('[data-hd="mo-phong"]');
+  await may.page.waitForSelector('#lop-dd:not([hidden]) .br-kc');
+  await fetch(GOC + 'api/bao-cao', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ loai: 'camduong', lng: 105.8548, lat: 21.0300, thietBi: 'may-khac-2' }) });
+  await may.page.evaluate(async () => { await window.hawamap.chayNgay.baoCao(); await window.hawamap.chayNgay.doiTuyen(); });
+  await may.page.waitForSelector('#goi-y-tuyen:not([hidden])', { timeout: 10000 }).catch(() => {});
+  const goiY = await may.page.innerText('#goi-y-tuyen').catch(() => '');
+  kiem(/Phía trước có đường bị cấm/.test(goiY) && /nhanh hơn khoảng \d+ phút/.test(goiY), 'gợi ý đổi đường khi có báo cáo cấm đường phía trước (' + goiY.replace(/\s+/g, ' ') + ')');
+  await chup(may.page, '17b-goi-y-doi-duong');
+  await may.page.click('[data-hd="doi-tuyen-goi-y"]').catch(() => {});
+  kiem(await may.page.evaluate(() => window.hawamap.st.dd && /Tràng Tiền/.test(window.hawamap.st.dd.tuyen.duongChinh)), 'bấm "Đổi đường" thì dẫn theo tuyến mới');
+  await may.page.evaluate(() => document.querySelector('#menu [data-hd="trang-du-lieu"]').click());
+  await may.page.waitForSelector('[data-hd="cap-nhat-du-lieu"]');
+  const trangDl = await may.page.innerText('#than-trang');
+  kiem(/[1-9]\d* khu vực/.test(trangDl) && /1 trạm/.test(trangDl), 'trang dữ liệu giao thông: dữ liệu khu vực và bảng phí trong máy');
+  await may.page.click('[data-hd="cap-nhat-du-lieu"]');
+  await may.page.waitForFunction(() => /Đã cập nhật dữ liệu giao thông/.test(document.querySelector('#thong-bao').textContent), null, { timeout: 15000 }).catch(() => {});
+  kiem(/Đã cập nhật dữ liệu giao thông/.test(await may.page.innerText('#thong-bao')), 'bấm "Cập nhật ngay" tải lại dữ liệu giao thông');
+  await chup(may.page, '18-du-lieu-giao-thong');
   kiem(may.loi.length === 0, 'không có lỗi JavaScript (máy tính)' + (may.loi.length ? ':\n    ' + may.loi.join('\n    ') : ''));
   await may.ctx.close();
 } catch (e) {

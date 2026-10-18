@@ -32,6 +32,19 @@ const xang = { elements: [
 
 // ô ảnh 1×1 điểm (cho bản đồ vệ tinh)
 const ANH_O = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+/** Overpass giả: điểm cảnh báo, cây xăng, đường quanh vị trí. */
+function traLoiOverpass(q) {
+  if (q.includes('speed_camera')) return mau.overpassDiem();
+  if (q.includes('fuel')) return xang;
+  if (q.includes('highway~')) return mau.overpassDuong();
+  return { elements: [] };
+}
+
+/** fetch giả cho máy chủ HawaMap (kho dữ liệu giao thông gọi Overpass): không ra mạng ngoài khi kiểm thử. */
+export async function layMangGia(url, o = {}) {
+  return { ok: true, status: 200, json: async () => traLoiOverpass(decodeURIComponent(String(o.body || '').slice(5))) };
+}
+
 const json = (route, du) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(du), headers: { 'Access-Control-Allow-Origin': '*' } });
 
 export async function giaLapMang(ctx) {
@@ -44,13 +57,7 @@ export async function giaLapMang(ctx) {
     if (/photon\.komoot\.io/.test(url)) return json(route, mau.photon());
     if (/nominatim.*\/reverse/.test(url)) return json(route, mau.nominatimNguoc());
     if (/nominatim.*\/search/.test(url)) return json(route, []);
-    if (/api\/interpreter/.test(url)) {
-      const q = decodeURIComponent((route.request().postData() || '').slice(5));
-      if (q.includes('speed_camera')) return json(route, mau.overpassDiem());
-      if (q.includes('fuel')) return json(route, xang);
-      if (q.includes('highway~')) return json(route, mau.overpassDuong());
-      return json(route, { elements: [] });
-    }
+    if (/api\/interpreter/.test(url)) return json(route, traLoiOverpass(decodeURIComponent((route.request().postData() || '').slice(5))));
     return route.abort();
   });
 }

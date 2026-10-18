@@ -7,6 +7,8 @@
  */
 import { CAU_HINH } from './cau-hinh.js';
 import { khoangCach, chieuLenDoan, phuongVi, lechGoc } from './hinh-hoc.js';
+import { docBienBao, BIEN_VN, chieuMotChieu } from './luat-duong.js';
+import { docPhiOsm } from './phi-cao-toc.js';
 
 const LOAI_DUONG = 'motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street|service|road|' +
   'motorway_link|trunk_link|primary_link|secondary_link|tertiary_link';
@@ -78,37 +80,69 @@ export function uocTinhGioiHan(tags, dongDanCu, phuongTien) {
 // ------------------------------------------------------------------ điểm cảnh báo
 const LOAI_CAMERA = ['camera', 'cameraden', 'cameratb', 'cameragiamsat', 'kiemtra'];
 
+// Dữ liệu điểm cảnh báo được tải theo ô lưới CO_O độ (≈ 11 km) để lưu đệm, dùng chung giữa máy chủ và trình duyệt
+// và làm mới định kỳ (du-lieu-giao-thong.js, kho-giao-thong.js). Mỗi ô có hai lớp:
+//  - chinh: mọi loại điểm trừ đèn tín hiệu / vạch qua đường;  - nho: đèn tín hiệu, vạch qua đường (rất nhiều, chỉ tải khi bật).
+export const CO_O = 0.1;
+export const LOP_NHO = ['dentinhieu', 'vachqua'];
+
+/** Mã ô chứa điểm [lng, lat]. */
+export function maO(lng, lat) {
+  return `${Math.floor((lng + 180) / CO_O)}_${Math.floor((lat + 90) / CO_O)}`;
+}
+
+export function laMaO(ma) { return /^\d{1,4}_\d{1,4}$/.test(String(ma)); }
+
+/** Khung [tây, nam, đông, bắc] của ô. */
+export function khungO(ma) {
+  const [x, y] = String(ma).split('_').map(Number);
+  const r = v => +v.toFixed(6);
+  return [r(x * CO_O - 180), r(y * CO_O - 90), r((x + 1) * CO_O - 180), r((y + 1) * CO_O - 90)];
+}
+
+/** Các ô phủ vùng bán kính `banKinh` mét quanh p. */
+export function oQuanh(p, banKinh) {
+  const dLat = banKinh / 110574, dLng = banKinh / (111320 * Math.cos(p[1] * Math.PI / 180));
+  const [x0, y0] = maO(p[0] - dLng, p[1] - dLat).split('_').map(Number);
+  const [x1, y1] = maO(p[0] + dLng, p[1] + dLat).split('_').map(Number);
+  const ds = [];
+  for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) ds.push(`${x}_${y}`);
+  return ds;
+}
+
 /**
- * Phần truy vấn Overpass cho từng loại điểm; `q` là bộ lọc vùng "(around:…)".
+ * Phần truy vấn Overpass cho từng nhóm điểm; `q` là bộ lọc vùng "(nam,tây,bắc,đông)".
  * nut: nút (out body), vung: nút / vùng lấy điểm giữa (out center), duong: đường lấy hình dạng (out geom).
  */
 const TRUY_VAN_DIEM = {
   camera: ['nut', q => `node${q}[highway=speed_camera];node${q}[man_made=surveillance][surveillance=traffic];`],
   duongsat: ['nut', q => `node${q}[railway=level_crossing];`],
   thuphi: ['nut', q => `node${q}[barrier=toll_booth];`],
-  dentinhieu: ['nut', q => `node${q}[highway=traffic_signals];`],
   gogiam: ['nut', q => `node${q}[traffic_calming~"^(yes|bump|hump|table|cushion|rumble_strip|dip)$"];`],
-  vachqua: ['nut', q => `node${q}[highway=crossing][crossing!=no];`],
   nguyhiem: ['nut', q => `node${q}[hazard];`],
+  bienbao: ['nut', q => `node${q}[traffic_sign~"^VN:"];`],
   truonghoc: ['vung', q => `nwr${q}[amenity~"^(school|kindergarten)$"];`],
   tramdung: ['vung', q => `nwr${q}[highway~"^(rest_area|services)$"];`],
-  ham: ['duong', q => `way${q}[tunnel~"^(yes|building_passage)$"][highway~"^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|motorway_link|trunk_link|primary_link)$"];`]
+  ham: ['duong', q => `way${q}[tunnel~"^(yes|building_passage)$"][highway~"^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|motorway_link|trunk_link|primary_link)$"];`],
+  dentinhieu: ['nut', q => `node${q}[highway=traffic_signals];`],
+  vachqua: ['nut', q => `node${q}[highway=crossing][crossing!=no];`]
 };
 const LENH_IN = { nut: 'out body;', vung: 'out body center;', duong: 'out tags geom;' };
 
-/** Câu truy vấn Overpass cho các loại điểm cần tải quanh p, null nếu không cần loại nào. */
-export function cauTruyVanDiem(p, loai) {
-  const q = `(around:4000,${p[1].toFixed(6)},${p[0].toFixed(6)})`;
-  const coCamera = LOAI_CAMERA.some(l => loai.has(l));
+/** Câu truy vấn Overpass cho một lớp ('chinh' | 'nho') của khung [tây, nam, đông, bắc]. */
+export function cauTruyVanO(khung, lop = 'chinh') {
+  const q = `(${khung[1]},${khung[0]},${khung[3]},${khung[2]})`;
   const phan = { nut: '', vung: '', duong: '' };
-  for (const [k, [kieu, f]] of Object.entries(TRUY_VAN_DIEM)) if (k === 'camera' ? coCamera : loai.has(k)) phan[kieu] += f(q);
+  for (const [k, [kieu, f]] of Object.entries(TRUY_VAN_DIEM)) if (LOP_NHO.includes(k) === (lop === 'nho')) phan[kieu] += f(q);
   let cau = '';
   for (const [kieu, noiDung] of Object.entries(phan)) if (noiDung) cau += `(${noiDung});${LENH_IN[kieu]}`;
-  // camera gắn với quan hệ enforcement (đèn đỏ, đo tốc độ trung bình…): lấy quan hệ và nút thiết bị
-  if (coCamera) cau += `rel${q}[type=enforcement]->.e;.e out body;node(r.e:"device");out body;`;
-  // biển cấm rẽ: quan hệ restriction và nút giao lộ (via)
-  if (loai.has('camre')) cau += `rel${q}[type=restriction]->.r;.r out body;node(r.r:"via");out skel;`;
-  return cau ? '[out:json][timeout:25];' + cau : null;
+  if (lop !== 'nho') {
+    // camera gắn với quan hệ enforcement (đèn đỏ, đo tốc độ trung bình…): lấy quan hệ và nút thiết bị
+    cau += `rel${q}[type=enforcement]->.e;.e out body;node(r.e:"device");out body;`;
+    // biển cấm rẽ: quan hệ restriction và nút giao lộ (via)
+    cau += `rel${q}[type=restriction]->.r;.r out body;node(r.r:"via");out skel;`;
+  }
+  return '[out:json][timeout:90];' + cau;
 }
 
 const LOAI_ENFORCEMENT = { maxspeed: 'camera', traffic_signals: 'cameraden', average_speed: 'cameratb', check: 'kiemtra' };
@@ -155,6 +189,10 @@ export function docDiemOverpass(ds) {
       }
       continue;
     }
+    if (e.type === 'node' && t.traffic_sign) {
+      // biển báo Việt Nam (đường cấm, cấm vượt, cấm dừng / đỗ…): mỗi biển trên nút là một điểm
+      for (const ma of docBienBao(t.traffic_sign)) them(`osm${e.id}-${ma}`, BIEN_VN[ma].loai, [e.lon, e.lat], t, { bien: ma });
+    }
     if (e.type === 'node' && kq.has('osm' + e.id)) continue;      // đã có loại chi tiết hơn từ quan hệ enforcement
     const loai = phanLoaiDiem(t);
     if (!loai) continue;
@@ -168,7 +206,8 @@ export function docDiemOverpass(ds) {
     }
     const viTri = e.type === 'node' ? [e.lon, e.lat] : e.center ? [e.center.lon, e.center.lat] : null;
     if (!viTri) continue;
-    them('osm' + (e.type === 'node' ? '' : e.type[0]) + e.id, loai, viTri, t, loai === 'nguyhiem' ? { nguyHiem: t.hazard } : {});
+    const khac = loai === 'nguyhiem' ? { nguyHiem: t.hazard } : loai === 'thuphi' ? { phiOsm: docPhiOsm(t['charge:motorcar'] || t.charge) } : {};
+    them('osm' + (e.type === 'node' ? '' : e.type[0]) + e.id, loai, viTri, t, khac);
   }
   return kq;
 }
@@ -179,8 +218,34 @@ function chonThe(t, mau) {
   return kq;
 }
 
+/** Nguồn điểm cảnh báo đơn giản (gọi thẳng Overpass, nhớ trong bộ nhớ) khi không truyền nguồn có lưu đệm. */
+export class NguonTrucTiep {
+  constructor() { this.bo = new Map(); }
+
+  async layNhieu(dsMa, lops) {
+    const kq = [], loi = [];
+    for (const ma of dsMa) {
+      for (const lop of lops) {
+        const khoa = ma + ':' + lop;
+        try {
+          if (!this.bo.has(khoa)) {
+            const d = await truyVanOverpass(cauTruyVanO(khungO(ma), lop));
+            this.bo.set(khoa, { khoa, ma, lop, capNhat: Date.now(), diem: [...docDiemOverpass(d.elements).values()] });
+          }
+          kq.push(this.bo.get(khoa));
+        } catch (e) { loi.push(e); }
+      }
+    }
+    return { ds: kq, loi };
+  }
+}
+
 export class ThongTinDuong {
-  constructor() {
+  /** @param o.nguon  nguồn điểm cảnh báo theo ô (du-lieu-giao-thong.js); mặc định gọi thẳng Overpass */
+  constructor({ nguon = null } = {}) {
+    this.nguon = nguon || new NguonTrucTiep();
+    // ô vừa được làm mới ở nền: lần cập nhật vị trí sau sẽ đọc lại điểm
+    this.nguon.khiCoMoi = () => { if (!this.dangTaiDiem) this.khoaDiem = ''; };
     this.duong = [];          // [{ id, tags, toaDo }]
     this.tamDuong = null;
     this.dangTaiDuong = false;
@@ -196,12 +261,25 @@ export class ThongTinDuong {
     this.layLoaiCan = null;
   }
 
-  /** Gọi mỗi khi có vị trí mới: tải lại dữ liệu khi đã đi xa khỏi vùng đã tải. */
+  /** Gọi mỗi khi có vị trí mới: tải lại đường khi đã đi xa, tải điểm khi cần ô mới hoặc đổi loại cảnh báo. */
   capNhat(p) {
     if (Date.now() - this.loiLuc < 30000) return;
     if (!this.dangTaiDuong && (!this.tamDuong || khoangCach(p, this.tamDuong) > 300)) this.taiDuong(p);
-    const doiLoai = this.tamDiem && this.khoaDiem !== [...this.loaiCanTai()].sort().join();
-    if (!this.dangTaiDiem && (!this.tamDiem || doiLoai || khoangCach(p, this.tamDiem) > 2000)) this.taiDiem(p);
+    if (!this.dangTaiDiem && this.khoaVung(p) !== this.khoaDiem) this.taiDiem(p);
+  }
+
+  /** Loại điểm cần dùng (gán từ ngoài: () => Set các loại đang bật); null = mọi loại. */
+  loaiCanTai() {
+    return this.layLoaiCan ? this.layLoaiCan() : null;
+  }
+
+  lopCan(loai) {
+    return !loai || LOP_NHO.some(l => loai.has(l)) ? ['chinh', 'nho'] : ['chinh'];
+  }
+
+  khoaVung(p) {
+    const loai = this.loaiCanTai();
+    return oQuanh(p, 4000).join() + '|' + this.lopCan(loai).join() + '|' + (loai ? [...loai].sort().join() : '*');
   }
 
   async taiDuong(p) {
@@ -221,26 +299,20 @@ export class ThongTinDuong {
     }
   }
 
-  /** Chỉ tải những loại điểm đang bật cảnh báo (gán từ ngoài: () => Set các loại). */
-  loaiCanTai() {
-    return this.layLoaiCan ? this.layLoaiCan() : new Set(Object.keys(TRUY_VAN_DIEM));
-  }
-
+  /** Tải (từ bộ đệm hoặc mạng) các ô quanh p rồi giữ lại điểm thuộc loại đang bật. */
   async taiDiem(p) {
     this.dangTaiDiem = true;
+    const khoa = this.khoaVung(p);
     const loai = this.loaiCanTai();
-    const khoa = [...loai].sort().join();
-    const q = cauTruyVanDiem(p, loai);
     try {
-      if (q) {
-        const d = await truyVanOverpass(q);
-        const moi = docDiemOverpass(d.elements);
-        for (const [id, x] of this.diem) if (!moi.has(id) && khoangCach(x.viTri, p) < 3500) this.diem.delete(id);
-        for (const [id, x] of moi) this.diem.set(id, x);
-      }
-      for (const [id, x] of this.diem) if (khoangCach(x.viTri, p) > 15000 || !loai.has(x.loai)) this.diem.delete(id);
+      const { ds, loi } = await this.nguon.layNhieu(oQuanh(p, 4000), this.lopCan(loai));
+      if (!ds.length && loi.length) throw loi[0];
+      const moi = new Map();
+      for (const o of ds) for (const d of o.diem) if (!loai || loai.has(d.loai)) moi.set(d.id, d);
+      this.diem = moi;
       this.tamDiem = p;
-      this.khoaDiem = khoa;
+      this.khoaDiem = loi.length ? '' : khoa;        // có ô lỗi: thử lại sau
+      if (loi.length) this.loiLuc = Date.now();
       this.phienDiem++;
     } catch (e) {
       this.loiLuc = Date.now();
@@ -265,7 +337,8 @@ export class ThongTinDuong {
           const lg = Math.abs(lechGoc(phuongVi(w.toaDo[i], w.toaDo[i + 1]), huong));
           diem += Math.min(lg, 180 - lg) * 0.5;      // đường đi được cả hai chiều
           xuoi = lg <= 90;
-          if (w.tags.oneway === 'yes' && !xuoi) diem += 30;
+          const chieu = chieuMotChieu(w.tags);
+          if ((chieu === 1 && !xuoi) || (chieu === -1 && xuoi)) diem += 30;
         }
         if (giu === w.id) diem -= 8;                 // giữ đường cũ, tránh nhảy qua lại ở ngã tư
         if (!tot || diem < tot.diem) tot = { w, diem, xuoi };
@@ -284,13 +357,13 @@ export class ThongTinDuong {
     return {
       id: tot.w.id, ten: tags.name || '', ref: tags.ref || '', loai: tags.highway,
       gioiHan: coBien, gioiHanUocTinh: coBien ? null : uocTinhGioiHan(tags, this.dongDanCu, phuongTien),
-      toaDo: tot.w.toaDo, xuoi: tot.xuoi
+      toaDo: tot.w.toaDo, xuoi: tot.xuoi, tags
     };
   }
 
-  /** Giới hạn tốc độ có biển (trong dữ liệu) tại một điểm trên đường, đi theo hướng `huong`. */
-  gioiHanTai(p, huong, phuongTien) {
+  /** Con đường tại một điểm trên tuyến, đi theo hướng `huong`: { id, tags, xuoi, gioiHan (có biển) }. */
+  duongTai(p, huong, phuongTien) {
     const tot = this.khop(p, huong, 99);
-    return tot ? { id: tot.w.id, gioiHan: gioiHanTuTag(tot.w.tags, tot.xuoi, phuongTien) } : null;
+    return tot ? { id: tot.w.id, tags: tot.w.tags, xuoi: tot.xuoi, gioiHan: gioiHanTuTag(tot.w.tags, tot.xuoi, phuongTien) } : null;
   }
 }

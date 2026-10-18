@@ -8,7 +8,7 @@ import os from 'node:os';
 import fs from 'node:fs/promises';
 import { taoMayChu } from '../../server.js';
 import * as mau from '../du-lieu-mau.js';
-import { chromium, giaLapMang, THAM_SO_TRINH_DUYET } from './chung.mjs';
+import { chromium, giaLapMang, THAM_SO_TRINH_DUYET, layMangGia } from './chung.mjs';
 
 const ANH = process.env.ANH_KIEM_THU || path.join(os.tmpdir(), 'hawamap-e2e');
 await fs.mkdir(ANH, { recursive: true });
@@ -20,7 +20,7 @@ function kiem(dk, thongDiep) {
   else { soLoi++; console.log('  ✗ ' + thongDiep); }
 }
 
-const mayChu = taoMayChu({ thuMucDuLieu: await fs.mkdtemp(path.join(os.tmpdir(), 'hawamap-xe-dl-')), ghiLog: false });
+const mayChu = taoMayChu({ thuMucDuLieu: await fs.mkdtemp(path.join(os.tmpdir(), 'hawamap-xe-dl-')), ghiLog: false, layMang: layMangGia, henGio: false });
 await new Promise(ok => mayChu.listen(0, '127.0.0.1', ok));
 const GOC = `http://127.0.0.1:${mayChu.address().port}/`;
 const trinhDuyet = await chromium.launch({ args: THAM_SO_TRINH_DUYET });

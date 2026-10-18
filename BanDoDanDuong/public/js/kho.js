@@ -1,4 +1,4 @@
-/* Lưu trữ trên máy: cài đặt, địa điểm đã lưu, lịch sử tìm kiếm (localStorage) và đoạn video camera (IndexedDB). */
+/* Lưu trữ trên máy: cài đặt, địa điểm đã lưu, lịch sử tìm kiếm (localStorage), đoạn video camera và dữ liệu giao thông (IndexedDB). */
 
 const TIEN_TO = 'hawamap.';
 
@@ -30,6 +30,9 @@ export const CAI_DAT_MAC_DINH = {
   mucCanhBao: {},            // loại → 0 tắt / 1 chỉ hiển thị / 2 hiển thị + giọng nói (xem loai-canh-bao.js)
   // dẫn đường
   phuongTien: 'oto', tranhCaoToc: false, tranhThuPhi: false, giuManHinh: true, tuGhiHanhTrinh: true,
+  tranhKetXe: true,          // dẫn đường thông minh: ưu tiên / gợi ý tuyến tránh báo cáo kẹt xe, tai nạn, cấm đường
+  loaiXeThuPhi: 1,           // loại xe tính phí trạm thu phí (1–5)
+  tuCapNhatDuLieu: true, capNhatChiWifi: true,
   // bản đồ
   kieuBanDo: 'tieuchuan', tuDongBanDem: true, nha3D: true, hienBaoCao: true, hienDiemCanhBao: true, capNhatOffline: true,
   // camera hành trình
@@ -129,9 +132,11 @@ let moDb = null;
 function db() {
   if (!moDb) {
     moDb = new Promise((ok, loi) => {
-      const r = indexedDB.open('hawamap', 1);
+      const r = indexedDB.open('hawamap', 2);
       r.onupgradeneeded = () => {
         if (!r.result.objectStoreNames.contains('doancamera')) r.result.createObjectStore('doancamera', { keyPath: 'id' });
+        // dữ liệu giao thông theo ô (du-lieu-giao-thong.js), bản 2
+        if (!r.result.objectStoreNames.contains('giaothong')) r.result.createObjectStore('giaothong', { keyPath: 'khoa' });
       };
       r.onsuccess = () => ok(r.result);
       r.onerror = () => loi(r.error);
