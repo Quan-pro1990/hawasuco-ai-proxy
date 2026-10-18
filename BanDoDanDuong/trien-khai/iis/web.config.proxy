@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  HawaMap trên IIS — cách 2: Node (server.js) chạy riêng như dịch vụ nền trên máy (cổng 127.0.0.1:8080),
+  IIS làm reverse proxy bằng URL Rewrite + Application Request Routing (ARR).
+  Dùng khi không cài được HttpPlatformHandler, hoặc muốn khởi động lại IIS mà Node vẫn chạy.
+  Cần cài: Node.js 18+, URL Rewrite 2.1, ARR 3.0 (bật "Enable proxy" ở mức máy chủ — script cai-dat-iis.ps1 tự bật).
+  Script đổi tên tệp này thành web.config trong thư mục site và thay __CONG_NODE__ bằng cổng của Node.
+-->
+<configuration>
+  <system.webServer>
+    <rewrite>
+      <rules>
+        <!-- bật (enabled="true") khi site đã gắn chứng chỉ HTTPS -->
+        <rule name="HawaMap-HTTPS" enabled="false" stopProcessing="true">
+          <match url="(.*)" />
+          <conditions>
+            <add input="{HTTPS}" pattern="off" />
+            <add input="{HTTP_HOST}" pattern="^(localhost|127\.0\.0\.1)(:\d+)?$" negate="true" />
+          </conditions>
+          <action type="Redirect" url="https://{HTTP_HOST}/{R:1}" redirectType="Permanent" />
+        </rule>
+        <rule name="HawaMap-Node" stopProcessing="true">
+          <match url="(.*)" />
+          <serverVariables>
+            <!-- IP thật của người dùng; server.js chỉ tin header này khi yêu cầu đến từ 127.0.0.1 -->
+            <set name="HTTP_X_FORWARDED_FOR" value="{REMOTE_ADDR}" />
+          </serverVariables>
+          <action type="Rewrite" url="http://127.0.0.1:__CONG_NODE__/{R:1}" />
+        </rule>
+      </rules>
+    </rewrite>
+    <!-- Node đã nén gzip -->
+    <urlCompression doStaticCompression="false" doDynamicCompression="false" />
+    <httpProtocol>
+      <customHeaders>
+        <remove name="X-Powered-By" />
+      </customHeaders>
+    </httpProtocol>
+    <security>
+      <requestFiltering>
+        <requestLimits maxAllowedContentLength="1048576" />
+      </requestFiltering>
+    </security>
+  </system.webServer>
+</configuration>

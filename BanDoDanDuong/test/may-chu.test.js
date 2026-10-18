@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import os from 'node:os';
 import path from 'node:path';
 import fs from 'node:fs/promises';
-import { taoMayChu } from '../server.js';
+import http from 'node:http';
+import zlib from 'node:zlib';
+import { taoMayChu, ipKhach } from '../server.js';
 
 async function khoiDong() {
   const thuMuc = await fs.mkdtemp(path.join(os.tmpdir(), 'hawamap-'));
@@ -91,6 +93,40 @@ test('máy chủ: gửi, lọc, xác nhận, gỡ và xoá báo cáo', async () 
     const file = JSON.parse(await fs.readFile(path.join(thuMuc, 'bao-cao.json'), 'utf8'));
     assert.equal(file.length, 1);
     assert.equal((await goi(`/api/bao-cao/${cam.json.baoCao.id}?thietBi=may-a`, { method: 'DELETE' })).json.ok, true);
+  } finally {
+    await dong();
+  }
+});
+
+test('IP người dùng sau IIS: chỉ tin X-Forwarded-For từ proxy trên chính máy, lấy địa chỉ cuối', () => {
+  const yc = (goc, xff) => ({ socket: { remoteAddress: goc }, headers: xff ? { 'x-forwarded-for': xff } : {} });
+  assert.equal(ipKhach(yc('127.0.0.1', '113.161.1.2')), '113.161.1.2');
+  assert.equal(ipKhach(yc('::1', '1.2.3.4, 113.161.1.2')), '113.161.1.2');            // địa chỉ đầu do người dùng tự gửi: bỏ
+  assert.equal(ipKhach(yc('::ffff:127.0.0.1', '113.161.1.2')), '113.161.1.2');
+  assert.equal(ipKhach(yc('203.0.113.9', '1.2.3.4')), '203.0.113.9');                // gọi thẳng: không tin header
+  assert.equal(ipKhach(yc('127.0.0.1')), '127.0.0.1');
+});
+
+test('máy chủ nén gzip trang, mã nguồn và JSON lớn', async () => {
+  const { goi, dong, mc } = await khoiDong();
+  try {
+    const lay = duong => new Promise((ok, loi) => {
+      http.get({ host: '127.0.0.1', port: mc.address().port, path: duong, headers: { 'Accept-Encoding': 'gzip' } }, r => {
+        const manh = [];
+        r.on('data', c => manh.push(c));
+        r.on('end', () => ok({ r, than: Buffer.concat(manh) }));
+      }).on('error', loi);
+    });
+    const js = await lay('/vendor/maplibre-gl/maplibre-gl.js');
+    assert.equal(js.r.headers['content-encoding'], 'gzip');
+    assert.match(js.r.headers.vary, /Accept-Encoding/);
+    const goc = zlib.gunzipSync(js.than);
+    assert.ok(goc.length > js.than.length * 2, 'nén còn dưới một nửa');
+    const anh = await lay('/icons/icon-192.png');
+    assert.equal(anh.r.headers['content-encoding'], undefined);                      // ảnh PNG không nén lại
+    const nho = await lay('/api/trang-thai');
+    assert.equal(nho.r.headers['content-encoding'], undefined);                      // JSON nhỏ không cần nén
+    assert.equal((await goi('/api/trang-thai')).json.ok, true);
   } finally {
     await dong();
   }

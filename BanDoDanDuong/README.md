@@ -61,14 +61,70 @@ Trên máy tính không có GPS: tìm một địa điểm → **Chỉ đường
 
 Điện thoại chỉ cho dùng GPS, micro, camera khi trang chạy **HTTPS**.
 
-1. **Có máy chủ báo cáo dùng chung (khuyên dùng):** chạy `node server.js` trên máy chủ (đặt biến `PORT`, `BANDO_DULIEU`
-   nếu cần) và đưa ra ngoài qua HTTPS — ví dụ IIS + URL Rewrite / ARR làm reverse proxy, hoặc nginx. Dữ liệu báo cáo lưu ở
-   `du-lieu/bao-cao.json`.
+1. **Có máy chủ báo cáo dùng chung (khuyên dùng):** chạy `node server.js` trên máy chủ (đặt biến `PORT`, `HOST`, `BANDO_DULIEU`
+   nếu cần) và đưa ra ngoài qua HTTPS — trên Windows dùng IIS theo mục **Đặt lên IIS** dưới đây, trên Linux dùng nginx làm
+   reverse proxy. Dữ liệu (báo cáo, dữ liệu giao thông, bảng phí) lưu trong thư mục `BANDO_DULIEU` (mặc định `du-lieu/`).
 2. **Chỉ trang tĩnh:** chép thư mục `public/` lên IIS (đã có sẵn `web.config`) hoặc bất kỳ host tĩnh nào có HTTPS.
    Mọi chức năng đều chạy, riêng báo cáo giao thông chỉ lưu trên từng máy. Có thể trỏ tới máy chủ báo cáo ở nơi khác trong
    **Cài đặt → Nâng cao → Máy chủ báo cáo** (ví dụ `https://bando.congty.vn/api`).
 
 Mở trang trên điện thoại → menu trình duyệt → **Thêm vào màn hình chính**.
+
+## Đặt lên IIS (Windows Server)
+
+Thư mục `trien-khai/iis/` có sẵn cấu hình và script cài đặt cho Windows Server 2016 trở lên (hoặc Windows 10 / 11).
+Có hai cách chạy, cả hai đều đủ chức năng (báo cáo dùng chung, dữ liệu giao thông tự cập nhật mỗi tuần, bảng phí):
+
+| | Cách 1 — HttpPlatformHandler (khuyên dùng) | Cách 2 — Reverse proxy (URL Rewrite + ARR) |
+|---|---|---|
+| Node chạy thế nào | IIS tự bật, tự khởi động lại `node server.js` khi lỗi / khi app pool tái khởi động | Node chạy nền riêng (Task Scheduler, tài khoản NETWORK SERVICE) tại `127.0.0.1:8080`, IIS chuyển tiếp yêu cầu |
+| Module IIS cần cài | [URL Rewrite 2.1](https://www.iis.net/downloads/microsoft/url-rewrite), [HttpPlatformHandler 1.2](https://www.iis.net/downloads/microsoft/httpplatformhandler) | [URL Rewrite 2.1](https://www.iis.net/downloads/microsoft/url-rewrite), [ARR 3.0](https://www.iis.net/downloads/microsoft/application-request-routing) |
+| Tệp cấu hình | `trien-khai/iis/web.config` | `trien-khai/iis/web.config.proxy` |
+
+**Các bước**
+
+1. Trên máy dựng: `npm run dong-goi-iis` → thư mục `dist/hawamap-iis/` (chỉ gồm tệp máy chủ cần: `server.js`,
+   `kho-giao-thong.js`, `public/`, `trien-khai/iis/`…). Chép thư mục này lên máy chủ (hoặc chép cả mã nguồn).
+2. Trên máy chủ: cài [Node.js](https://nodejs.org) 18 trở lên (bản LTS Windows x64, cài cho mọi người dùng) và các module IIS
+   ở bảng trên (bản x64).
+3. Mở PowerShell **Run as administrator** trong thư mục vừa chép và chạy:
+
+   ```powershell
+   # cách 1, có tên miền, chưa có chứng chỉ
+   powershell -ExecutionPolicy Bypass -File .\trien-khai\iis\cai-dat-iis.ps1 -TenMien bando.congty.vn
+   # đã nhập chứng chỉ vào kho "Local Computer > Personal": thêm vân tay chứng chỉ để gắn HTTPS và tự chuyển http → https
+   .\trien-khai\iis\cai-dat-iis.ps1 -TenMien bando.congty.vn -VanTayChungChi <vân tay>
+   # cách 2
+   .\trien-khai\iis\cai-dat-iis.ps1 -TenMien bando.congty.vn -CheDo Proxy -CongNode 8080
+   ```
+
+   Script bật IIS nếu chưa có, kiểm tra Node.js và các module, chép ứng dụng vào `C:\inetpub\hawamap` (`-ThuMuc`), tạo
+   `web.config`, app pool **No Managed Code** (không tự tắt khi vắng khách), cấp quyền cho tài khoản `IIS AppPool\HawaMap`
+   (đọc thư mục ứng dụng, ghi thư mục dữ liệu `C:\HawaMapData` — `-ThuMucDuLieu` — và `logs`), tạo site và binding
+   HTTP / HTTPS, mở cổng tường lửa, rồi gọi thử `/api/trang-thai`.
+4. **Cập nhật phiên bản mới:** đóng gói lại, chép lên và chạy lại đúng lệnh ở bước 3 — dữ liệu trong thư mục dữ liệu được giữ nguyên.
+   Gỡ: `.\trien-khai\iis\go-cai-dat-iis.ps1` (không xoá thư mục ứng dụng và dữ liệu).
+
+**HTTPS:** điện thoại chỉ cho dùng GPS, micro, camera khi trang chạy HTTPS. Chứng chỉ có thể mua, lấy từ CA nội bộ, hoặc
+chứng chỉ miễn phí Let's Encrypt (dùng công cụ ACME cho IIS như win-acme). Khi đã gắn chứng chỉ, luật `HawaMap-HTTPS` trong
+`web.config` chuyển http sang https.
+
+**Ghi chú**
+
+- Toàn bộ yêu cầu đi qua Node (`server.js`), IIS không tự phục vụ tệp nào trong thư mục site, nên `server.js` hay thư mục dữ liệu
+  không thể bị tải về. Node nén gzip trang và mã nguồn (đã tắt nén của IIS để không nén hai lần).
+- IIS ghi IP thật của người dùng vào `X-Forwarded-For` (luật `HawaMap-IP`; script khai báo biến này trong
+  `allowedServerVariables`). `server.js` chỉ tin header này khi yêu cầu đến từ chính máy (127.0.0.1), để giới hạn số báo cáo
+  theo từng người dùng.
+- Nhật ký Node: `C:\inetpub\hawamap\logs` (cách 1: `node_*.log`; cách 2: `node.log`). Lỗi khởi động: Event Viewer → Windows Logs →
+  Application (nguồn HttpPlatformHandler).
+- Bảng phí trạm thu phí cho mọi máy: đặt tệp `phi-cao-toc.json` vào thư mục dữ liệu (không cần khởi động lại; các máy tự tải lại
+  mỗi tuần).
+- Ứng dụng Android / iPhone: đặt địa chỉ máy chủ `https://<tên-miền>/api` vào `android/app/src/main/res/values/cau_hinh.xml`
+  (`may_chu_bao_cao`) hoặc `ios/HoTro/Info.plist` (`HawaMapMayChuBaoCao`) trước khi build.
+- iisnode không được hỗ trợ (đã ngừng phát triển và không chạy được mã ES module của `server.js`).
+- Chỉ cần trang tĩnh (không báo cáo dùng chung, không lưu đệm dữ liệu giao thông trên máy chủ): trỏ site IIS vào thư mục
+  `public/` — đã có `public/web.config` — không cần Node.
 
 ## Android Auto và Apple CarPlay
 
@@ -133,7 +189,7 @@ BanDoDanDuong/
 ├─ server.js                 máy chủ Node: phục vụ trang web + API báo cáo giao thông (không cần thư viện)
 ├─ kho-giao-thong.js         máy chủ: kho dữ liệu cảnh báo theo khu vực, tự cập nhật từ OpenStreetMap mỗi tuần
 ├─ ChayBanDo.bat             chạy nhanh trên Windows
-├─ package.json              lệnh: npm start / npm test / npm run test:e2e
+├─ package.json              lệnh: npm start / npm test / npm run test:e2e / npm run dong-goi-iis
 ├─ public/                   toàn bộ ứng dụng web (có thể chép riêng lên host tĩnh)
 │  ├─ index.html             khung giao diện: bản đồ, thanh tìm kiếm, lộ trình, dẫn đường, menu, camera
 │  ├─ css/app.css            giao diện (sáng / tối, điện thoại / máy tính)
@@ -185,7 +241,9 @@ BanDoDanDuong/
 │  ├─ HawaMap/               AppDelegate, TrangWeb (WKWebView + cầu nối), TrungTam, GPS, giọng nói, CarPlay.swift
 │  └─ HoTro/                 Info.plist, quyền CarPlay (entitlements)
 ├─ docs/PHAN_TICH_DATMAP.md  phân tích chức năng ứng dụng DATMAP và đối chiếu với HawaMap
+├─ trien-khai/iis/           triển khai trên IIS: web.config (HttpPlatformHandler / reverse proxy), script cài đặt, gỡ cài đặt
 ├─ tools/tao-bieu-tuong-goc.mjs  sinh biểu tượng Android / iOS từ public/js/bieu-tuong.js
+├─ tools/dong-goi-iis.mjs    đóng gói bản đưa lên máy chủ IIS (npm run dong-goi-iis → dist/hawamap-iis)
 └─ test/                     kiểm thử (node --test), kiểm thử giao diện và cầu nối ứng dụng gốc (Playwright)
 ```
 

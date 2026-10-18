@@ -2,7 +2,9 @@
  * Máy chủ HawaMap: phục vụ trang web (thư mục public) và API báo cáo giao thông dùng chung cho mọi người dùng.
  * Không cần cài thư viện: chỉ cần Node.js 18 trở lên.  Chạy:  node server.js   (mặc định cổng 8080)
  *
- * Biến môi trường: PORT (cổng), BANDO_DULIEU (thư mục lưu dữ liệu, mặc định ./du-lieu)
+ * Biến môi trường: PORT (cổng), HOST (địa chỉ lắng nghe, vd. 127.0.0.1 khi chạy sau IIS / reverse proxy),
+ *                  BANDO_DULIEU (thư mục lưu dữ liệu, mặc định ./du-lieu)
+ * Chạy trên IIS (Windows Server): xem trien-khai/iis và mục "Đặt lên IIS" trong README.
  *
  * API
  *   GET    /api/trang-thai
@@ -20,7 +22,8 @@ import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import zlib from 'node:zlib';
+import { fileURLToPath } from 'node:url';
 import { LOAI_BAO_CAO, soPhieuGo } from './public/js/loai-bao-cao.js';
 import { docLienKet, laMienGoogle, boQuaTrangDongY, MIEN_RUT_GON } from './public/js/lien-ket.js';
 import { laMaO } from './public/js/duong-xa.js';
@@ -38,6 +41,24 @@ const MIME = {
 };
 
 const bam = s => crypto.createHash('sha256').update(String(s)).digest('hex').slice(0, 16);
+
+/**
+ * Địa chỉ IP của người dùng. Chỉ tin X-Forwarded-For khi yêu cầu đến từ proxy trên chính máy này
+ * (IIS: HttpPlatformHandler / URL Rewrite + ARR, nginx…), và lấy địa chỉ cuối cùng — do proxy đó ghi, không giả được.
+ */
+export function ipKhach(req) {
+  const goc = (req.socket && req.socket.remoteAddress) || '';
+  if (!/^(127\.|::1$|::ffff:127\.)/.test(goc)) return goc;
+  const ds = String(req.headers['x-forwarded-for'] || '').split(',').map(s => s.trim()).filter(Boolean);
+  return ds.length ? ds[ds.length - 1] : goc;
+}
+
+const NEN_DUOC = /^(text\/|application\/(json|javascript|manifest\+json|xml)|image\/svg)/;
+
+/** Trình duyệt nhận gzip và nội dung đáng nén (chữ, trên 1 KB). */
+function nenGzip(req, kieu, kichThuoc) {
+  return !!req && /\bgzip\b/.test(req.headers['accept-encoding'] || '') && NEN_DUOC.test(kieu) && kichThuoc > 1024;
+}
 
 /**
  * @param layMang  hàm fetch dùng để mở liên kết rút gọn (thay được khi kiểm thử)
@@ -121,11 +142,11 @@ export function taoMayChu({ thuMucDuLieu = process.env.BANDO_DULIEU || path.join
   }
 
   function guiJson(res, ma, du) {
-    const than = JSON.stringify(du);
-    res.writeHead(ma, {
-      'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store',
-      'Access-Control-Allow-Origin': '*', 'Content-Length': Buffer.byteLength(than)
-    });
+    let than = Buffer.from(JSON.stringify(du));
+    const head = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*', Vary: 'Accept-Encoding' };
+    if (nenGzip(res.req, head['Content-Type'], than.length)) { than = zlib.gzipSync(than); head['Content-Encoding'] = 'gzip'; }
+    head['Content-Length'] = than.length;
+    res.writeHead(ma, head);
     res.end(than);
   }
 
@@ -145,7 +166,7 @@ export function taoMayChu({ thuMucDuLieu = process.env.BANDO_DULIEU || path.join
   }
 
   async function api(req, res, url) {
-    const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress || '';
+    const ip = ipKhach(req);
     if (req.method === 'OPTIONS') {
       res.writeHead(204, {
         'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
@@ -298,13 +319,18 @@ export function taoMayChu({ thuMucDuLieu = process.env.BANDO_DULIEU || path.join
       'Content-Type': MIME[ext] || 'application/octet-stream', ETag: etag,
       // trang và mã nguồn: luôn hỏi lại để nhận bản mới; thư viện: lưu lâu
       'Cache-Control': duong.startsWith('/vendor/') || duong.startsWith('/icons/') ? 'public, max-age=604800' : 'no-cache',
-      'X-Content-Type-Options': 'nosniff'
+      'X-Content-Type-Options': 'nosniff', Vary: 'Accept-Encoding'
     };
     if (req.headers['if-none-match'] === etag) { res.writeHead(304, head); return res.end(); }
-    head['Content-Length'] = tt.size;
+    // nén gzip mã nguồn, trang, dữ liệu chữ (thư viện bản đồ ~800 KB còn ~220 KB)
+    const nen = nenGzip(req, head['Content-Type'], tt.size);
+    if (nen) head['Content-Encoding'] = 'gzip';
+    else head['Content-Length'] = tt.size;
     res.writeHead(200, head);
     if (req.method === 'HEAD') return res.end();
-    fs.createReadStream(file).pipe(res);
+    const doc = fs.createReadStream(file);
+    if (nen) doc.pipe(zlib.createGzip()).pipe(res);
+    else doc.pipe(res);
   }
 
   const mayChu = http.createServer(async (req, res) => {
@@ -329,15 +355,27 @@ export function taoMayChu({ thuMucDuLieu = process.env.BANDO_DULIEU || path.join
 }
 
 // ---------------------------------------------------------------- chạy trực tiếp
-if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+/** Tệp này là tệp được chạy (node server.js)? Windows không phân biệt hoa thường trong đường dẫn (IIS truyền đường dẫn đầy đủ). */
+function laTepChinh() {
+  if (!process.argv[1]) return false;
+  try {
+    const a = fs.realpathSync(fileURLToPath(import.meta.url)), b = fs.realpathSync(path.resolve(process.argv[1]));
+    return process.platform === 'win32' ? a.toLowerCase() === b.toLowerCase() : a === b;
+  } catch (e) {
+    return false;
+  }
+}
+
+if (laTepChinh()) {
   const iCong = process.argv.indexOf('--port');
   const cong = Number(process.env.PORT || (iCong > 0 ? process.argv[iCong + 1] : 0) || 8080);
   const mc = taoMayChu();
-  mc.listen(cong, () => {
-    console.log(`HawaMap đang chạy:  http://localhost:${cong}`);
+  mc.listen(cong, process.env.HOST || undefined, () => {
+    console.log(`HawaMap đang chạy:  http://${process.env.HOST || 'localhost'}:${cong}`);
     console.log('Điện thoại cùng mạng: http://<địa-chỉ-IP-máy-này>:' + cong + '  (GPS cần HTTPS khi không phải localhost)');
   });
-  for (const tinHieu of ['SIGINT', 'SIGTERM']) {
+  // SIGBREAK: Windows (IIS dừng tiến trình, Ctrl+Break)
+  for (const tinHieu of ['SIGINT', 'SIGTERM', ...(process.platform === 'win32' ? ['SIGBREAK'] : [])]) {
     process.on(tinHieu, async () => { await mc.luuNgay(); process.exit(0); });
   }
 }
