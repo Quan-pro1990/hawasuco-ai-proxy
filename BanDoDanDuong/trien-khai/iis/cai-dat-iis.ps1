@@ -6,10 +6,12 @@
   - Bat IIS (neu chua co), kiem tra Node.js 18+, URL Rewrite, HttpPlatformHandler (hoac ARR).
   - Chep ung dung vao thu muc site, tao web.config, app pool "No Managed Code", cap quyen thu muc.
   - Tao site, gan binding HTTP (va HTTPS neu co van tay chung chi), mo tuong lua.
+  - Site da co binding HTTPS cho ten mien (vd. do win-acme gan chung chi Let's Encrypt): bat chuyen http -> https, mo cong 443.
   - Che do HttpPlatform (mac dinh): IIS tu chay va giam sat node server.js.
     Che do Proxy: node chay nen bang Task Scheduler (tai khoan NETWORK SERVICE) tai 127.0.0.1:<CongNode>,
     IIS chuyen tiep bang URL Rewrite + ARR.
   Chay lai script de cap nhat phien ban moi (du lieu trong -ThuMucDuLieu duoc giu nguyen).
+  Nguoi moi: nhap dup CAI-DAT-MAY-CHU.bat (goi cai-dat-nhanh.ps1: hoi tung buoc roi goi script nay).
 
 .EXAMPLE
   # chay trong PowerShell "Run as administrator", tu thu muc ung dung:
@@ -113,6 +115,14 @@ if (-not $BoQuaChepTep -and -not $cungThuMuc) {
 
 # ------------------------------------------------------------------ 5. web.config
 Buoc "Tao web.config (che do $CheDo)"
+# HTTPS: co van tay chung chi, hoac site da co binding https cua dung ten mien nay
+# (chung chi do win-acme / IIS Manager gan va tu gia han; binding cua ten mien cu khong tinh)
+$coHttps = [bool]$VanTayChungChi
+if (-not $coHttps -and (Test-Path "IIS:\Sites\$TenSite")) {
+  $duoiHttps = ':' + $CongHttps + ':' + [regex]::Escape($TenMien) + '$'
+  $coHttps = @(Get-WebBinding -Name $TenSite -Protocol https -ErrorAction SilentlyContinue |
+    Where-Object { $_.bindingInformation -match $duoiHttps }).Count -gt 0
+}
 $tenMau = if ($CheDo -eq 'HttpPlatform') { 'web.config' } else { 'web.config.proxy' }
 $noiDung = Get-Content -Raw -Encoding UTF8 (Join-Path $PSScriptRoot $tenMau)
 $noiDung = $noiDung.Replace('__NODE__', $duongNode)
@@ -120,7 +130,7 @@ $noiDung = $noiDung.Replace('__THU_MUC__', $ThuMuc.TrimEnd('\'))
 $noiDung = $noiDung.Replace('__DU_LIEU__', $ThuMucDuLieu.TrimEnd('\'))
 $noiDung = $noiDung.Replace('__CONG_NODE__', [string]$CongNode)
 $xml = [xml]$noiDung
-if ($VanTayChungChi) {
+if ($coHttps) {
   foreach ($r in $xml.configuration.'system.webServer'.rewrite.rules.rule) {
     if ($r.name -eq 'HawaMap-HTTPS') { $r.SetAttribute('enabled', 'true') }
   }
@@ -192,6 +202,16 @@ Buoc "Tao site $TenSite"
 if (Test-Path "IIS:\Sites\$TenSite") {
   Set-ItemProperty "IIS:\Sites\$TenSite" -Name physicalPath -Value $ThuMuc
   Set-ItemProperty "IIS:\Sites\$TenSite" -Name applicationPool -Value $pool
+  # chay lai voi ten mien / cong khac: thay binding http cu
+  $canCo = "*:${CongHttp}:$TenMien"
+  $dsHttp = @(Get-WebBinding -Name $TenSite -Protocol http)
+  if (-not ($dsHttp | Where-Object { $_.bindingInformation -eq $canCo })) {
+    foreach ($b in $dsHttp) {
+      $p = $b.bindingInformation.Split(':')
+      Remove-WebBinding -Name $TenSite -Protocol http -Port $p[1] -HostHeader $p[2]
+    }
+    New-WebBinding -Name $TenSite -Protocol http -Port $CongHttp -HostHeader $TenMien
+  }
 } else {
   New-Website -Name $TenSite -PhysicalPath $ThuMuc -ApplicationPool $pool -Port $CongHttp -HostHeader $TenMien | Out-Null
 }
@@ -201,23 +221,32 @@ try { Set-ItemProperty "IIS:\Sites\$TenSite" -Name applicationDefaults.preloadEn
 if ($VanTayChungChi) {
   $chungChi = Get-Item "Cert:\LocalMachine\My\$VanTayChungChi" -ErrorAction SilentlyContinue
   if (-not $chungChi) { Dung "Khong thay chung chi $VanTayChungChi trong kho Local Computer\Personal." }
-  $coHttps = Get-WebBinding -Name $TenSite -Protocol https -Port $CongHttps -ErrorAction SilentlyContinue
-  if (-not $coHttps) {
+  # binding https cua ten mien cu (doi ten mien): go di, gan lai cho ten mien moi
+  foreach ($b in @(Get-WebBinding -Name $TenSite -Protocol https -Port $CongHttps -ErrorAction SilentlyContinue)) {
+    if ($b.bindingInformation -ne "*:${CongHttps}:$TenMien") {
+      try { $b.RemoveSslCertificate() } catch { }
+      $p = $b.bindingInformation.Split(':')
+      Remove-WebBinding -Name $TenSite -Protocol https -Port $p[1] -HostHeader $p[2]
+    }
+  }
+  if (-not (Get-WebBinding -Name $TenSite -Protocol https -Port $CongHttps -HostHeader $TenMien -ErrorAction SilentlyContinue)) {
     $sni = if ($TenMien) { 1 } else { 0 }
     New-WebBinding -Name $TenSite -Protocol https -Port $CongHttps -HostHeader $TenMien -SslFlags $sni
   }
-  $binding = Get-WebBinding -Name $TenSite -Protocol https -Port $CongHttps
+  $binding = Get-WebBinding -Name $TenSite -Protocol https -Port $CongHttps -HostHeader $TenMien
   # chay lai script (gia han / doi chung chi): go chung chi cu roi gan chung chi moi
   try { $binding.RemoveSslCertificate() } catch { }
   $binding.AddSslCertificate($VanTayChungChi, 'My')
+} elseif ($coHttps) {
+  Write-Host '    Site da co binding HTTPS (chung chi do cong cu khac quan ly, vd. win-acme): giu nguyen, bat chuyen http -> https.'
 } else {
-  CanhBao 'Chua gan chung chi HTTPS: tren dien thoai, GPS / micro / camera chi chay qua HTTPS. Chay lai voi -VanTayChungChi khi co chung chi.'
+  CanhBao 'Chua co HTTPS: tren dien thoai, GPS / micro / camera chi chay qua HTTPS. Xin chung chi mien phi bang win-acme (xem trien-khai\HUONG_DAN_MAY_CHU.md) roi chay lai script nay.'
 }
 
 # ------------------------------------------------------------------ 10. tuong lua
 Buoc 'Mo cong tren tuong lua'
 $dsCong = @($CongHttp)
-if ($VanTayChungChi) { $dsCong += $CongHttps }
+if ($coHttps) { $dsCong += $CongHttps }
 foreach ($cong in $dsCong) {
   if (-not (Get-NetFirewallRule -DisplayName "HawaMap TCP $cong" -ErrorAction SilentlyContinue)) {
     New-NetFirewallRule -DisplayName "HawaMap TCP $cong" -Direction Inbound -Protocol TCP -LocalPort $cong -Action Allow | Out-Null
@@ -245,7 +274,7 @@ if (-not $TenMien) {
 
 Write-Host ''
 Write-Host 'Xong.' -ForegroundColor Green
-Write-Host "  Trang web      : $diaChi  (HTTPS: https://$(if ($TenMien) { $TenMien } else { '<ten-mien>' }))"
+Write-Host "  Trang web      : $diaChi  (HTTPS: https://$(if ($TenMien) { $TenMien } else { '<ten-mien>' })$(if (-not $coHttps) { ' - chua bat' }))"
 Write-Host "  Du lieu        : $ThuMucDuLieu  (bao cao, du lieu giao thong, phi-cao-toc.json)"
 Write-Host "  Nhat ky Node   : $thuMucLog"
 Write-Host '  Ung dung Android / iPhone: dat dia chi may chu bao cao la  https://<ten-mien>/api'

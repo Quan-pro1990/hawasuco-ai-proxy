@@ -4,7 +4,7 @@
  *
  * Biến môi trường: PORT (cổng), HOST (địa chỉ lắng nghe, vd. 127.0.0.1 khi chạy sau IIS / reverse proxy),
  *                  BANDO_DULIEU (thư mục lưu dữ liệu, mặc định ./du-lieu)
- * Chạy trên IIS (Windows Server): xem trien-khai/iis và mục "Đặt lên IIS" trong README.
+ * Chạy trên IIS (Windows Server): xem trien-khai/HUONG_DAN_MAY_CHU.md (hướng dẫn từng bước) và trien-khai/iis.
  *
  * API
  *   GET    /api/trang-thai
@@ -16,6 +16,7 @@
  *   GET    /api/giao-thong?o=2858_1110,2858_1109&lop=chinh|nho   (điểm cảnh báo theo ô 0,1°, tự cập nhật mỗi tuần)
  *   GET    /api/giao-thong/trang-thai
  *   GET    /api/phi-cao-toc                   (bảng phí trạm thu phí: du-lieu/phi-cao-toc.json hoặc bản mặc định)
+ *   GET    /.well-known/acme-challenge/<mã>   (tệp xác minh tên miền khi xin chứng chỉ HTTPS Let's Encrypt)
  */
 import http from 'node:http';
 import fs from 'node:fs';
@@ -61,9 +62,13 @@ function nenGzip(req, kieu, kichThuoc) {
 }
 
 /**
- * @param layMang  hàm fetch dùng để mở liên kết rút gọn (thay được khi kiểm thử)
+ * @param layMang     hàm fetch dùng để mở liên kết rút gọn (thay được khi kiểm thử)
+ * @param thuMucAcme  nơi công cụ xin chứng chỉ (win-acme, certbot…) ghi tệp xác minh tên miền
  */
-export function taoMayChu({ thuMucDuLieu = process.env.BANDO_DULIEU || path.join(THU_MUC, 'du-lieu'), ghiLog = true, layMang = globalThis.fetch, henGio = true } = {}) {
+export function taoMayChu({
+  thuMucDuLieu = process.env.BANDO_DULIEU || path.join(THU_MUC, 'du-lieu'), ghiLog = true, layMang = globalThis.fetch, henGio = true,
+  thuMucAcme = path.join(THU_MUC, '.well-known', 'acme-challenge')
+} = {}) {
   const fileBaoCao = path.join(thuMucDuLieu, 'bao-cao.json');
   const khoGT = taoKhoGiaoThong({ thuMuc: path.join(thuMucDuLieu, 'giao-thong'), layMang, ghiLog });
   if (henGio) khoGT.batDauHenGio();
@@ -333,10 +338,23 @@ export function taoMayChu({ thuMucDuLieu = process.env.BANDO_DULIEU || path.join
     else doc.pipe(res);
   }
 
+  /** Xin chứng chỉ HTTPS (Let's Encrypt): công cụ ACME ghi tệp vào <thư mục ứng dụng>\.well-known\acme-challenge rồi gọi thử qua http. */
+  async function xacMinhTenMien(req, res, url) {
+    const ma = url.pathname.slice('/.well-known/acme-challenge/'.length);
+    let noiDung = null;
+    if (/^[A-Za-z0-9_-]{8,256}$/.test(ma)) {
+      try { noiDung = await fsp.readFile(path.join(thuMucAcme, ma)); } catch (e) { /* không có tệp này */ }
+    }
+    if (!noiDung) { res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }); return res.end('Không tìm thấy'); }
+    res.writeHead(200, { 'Content-Type': 'text/plain', 'Cache-Control': 'no-store' });
+    res.end(noiDung);
+  }
+
   const mayChu = http.createServer(async (req, res) => {
     const url = new URL(req.url, 'http://localhost');
     try {
       if (url.pathname.startsWith('/api/')) await api(req, res, url);
+      else if (url.pathname.startsWith('/.well-known/acme-challenge/')) await xacMinhTenMien(req, res, url);
       else await tinh(req, res, url);
     } catch (e) {
       if (!res.headersSent) guiJson(res, e.ma || 500, { loi: e.ma ? e.message : 'Lỗi máy chủ' });

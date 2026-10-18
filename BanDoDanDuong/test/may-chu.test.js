@@ -7,9 +7,9 @@ import http from 'node:http';
 import zlib from 'node:zlib';
 import { taoMayChu, ipKhach } from '../server.js';
 
-async function khoiDong() {
+async function khoiDong(tuyChon = {}) {
   const thuMuc = await fs.mkdtemp(path.join(os.tmpdir(), 'hawamap-'));
-  const mc = taoMayChu({ thuMucDuLieu: thuMuc, ghiLog: false });
+  const mc = taoMayChu({ thuMucDuLieu: thuMuc, ghiLog: false, henGio: false, ...tuyChon });
   await new Promise(ok => mc.listen(0, '127.0.0.1', ok));
   const goc = `http://127.0.0.1:${mc.address().port}`;
   const goi = async (duong, o = {}) => {
@@ -127,6 +127,26 @@ test('máy chủ nén gzip trang, mã nguồn và JSON lớn', async () => {
     const nho = await lay('/api/trang-thai');
     assert.equal(nho.r.headers['content-encoding'], undefined);                      // JSON nhỏ không cần nén
     assert.equal((await goi('/api/trang-thai')).json.ok, true);
+  } finally {
+    await dong();
+  }
+});
+
+test('máy chủ trả tệp xác minh tên miền khi xin chứng chỉ HTTPS (Let\'s Encrypt)', async () => {
+  const acme = await fs.mkdtemp(path.join(os.tmpdir(), 'hawamap-acme-'));
+  await fs.writeFile(path.join(acme, 'Abc_123-xyzTOKEN'), 'Abc_123-xyzTOKEN.khoa-tai-khoan');
+  const { goi, dong } = await khoiDong({ thuMucAcme: acme });
+  try {
+    const r = await goi('/.well-known/acme-challenge/Abc_123-xyzTOKEN');
+    assert.equal(r.ma, 200);
+    assert.equal(r.chu, 'Abc_123-xyzTOKEN.khoa-tai-khoan');
+    assert.match(r.r.headers.get('content-type'), /text\/plain/);
+    assert.equal((await goi('/.well-known/acme-challenge/khong-co-tep')).ma, 404);
+    for (const duong of ['/.well-known/acme-challenge/..%2f..%2fserver.js', '/.well-known/acme-challenge/a.b', '/.well-known/acme-challenge/']) {
+      const x = await goi(duong);
+      assert.equal(x.ma, 404, duong);
+      assert.doesNotMatch(x.chu, /taoMayChu/);
+    }
   } finally {
     await dong();
   }

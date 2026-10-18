@@ -13,6 +13,7 @@
     "test": "node --test \"test/*.test.js\"",
     "test:e2e": "node test/e2e/giao-dien.mjs && node test/e2e/xe.mjs",
     "bieu-tuong": "node tools/tao-bieu-tuong-goc.mjs",
-    "dong-goi-iis": "node tools/dong-goi-iis.mjs"
+    "dong-goi": "node tools/dong-goi.mjs",
+    "dong-goi-iis": "node tools/dong-goi.mjs"
   }
 }

@@ -59,6 +59,10 @@ Trên máy tính không có GPS: tìm một địa điểm → **Chỉ đường
 
 ## Đưa lên mạng để dùng trên điện thoại
 
+> **Mới dựng máy chủ lần đầu?** Làm theo [`trien-khai/HUONG_DAN_MAY_CHU.md`](trien-khai/HUONG_DAN_MAY_CHU.md): hướng dẫn
+> từng bước từ thuê máy chủ, trỏ tên miền, chạy trình cài đặt nhấp đúp `CAI-DAT-MAY-CHU.bat`, tới bật HTTPS miễn phí và xử lý lỗi.
+> Tạo gói cài đặt: `npm run dong-goi` → `dist/hawamap-may-chu-<phiên bản>.zip`.
+
 Điện thoại chỉ cho dùng GPS, micro, camera khi trang chạy **HTTPS**.
 
 1. **Có máy chủ báo cáo dùng chung (khuyên dùng):** chạy `node server.js` trên máy chủ (đặt biến `PORT`, `HOST`, `BANDO_DULIEU`
@@ -81,10 +85,16 @@ Có hai cách chạy, cả hai đều đủ chức năng (báo cáo dùng chung,
 | Module IIS cần cài | [URL Rewrite 2.1](https://www.iis.net/downloads/microsoft/url-rewrite), [HttpPlatformHandler 1.2](https://www.iis.net/downloads/microsoft/httpplatformhandler) | [URL Rewrite 2.1](https://www.iis.net/downloads/microsoft/url-rewrite), [ARR 3.0](https://www.iis.net/downloads/microsoft/application-request-routing) |
 | Tệp cấu hình | `trien-khai/iis/web.config` | `trien-khai/iis/web.config.proxy` |
 
-**Các bước**
+**Cách nhanh (người mới):** chép gói zip lên máy chủ, giải nén, nhấp đúp `CAI-DAT-MAY-CHU.bat`. Trình cài tự xin quyền
+Administrator, bật IIS, đề nghị tự tải và cài Node.js LTS, mở trang tải URL Rewrite / HttpPlatformHandler nếu thiếu và chờ
+cài xong, hỏi tên miền (nhớ câu trả lời cho lần sau) rồi gọi `cai-dat-iis.ps1` bên dưới. Xem
+[`trien-khai/HUONG_DAN_MAY_CHU.md`](trien-khai/HUONG_DAN_MAY_CHU.md).
 
-1. Trên máy dựng: `npm run dong-goi-iis` → thư mục `dist/hawamap-iis/` (chỉ gồm tệp máy chủ cần: `server.js`,
-   `kho-giao-thong.js`, `public/`, `trien-khai/iis/`…). Chép thư mục này lên máy chủ (hoặc chép cả mã nguồn).
+**Các bước (chạy script trực tiếp)**
+
+1. Trên máy dựng: `npm run dong-goi` → thư mục `dist/hawamap-may-chu/` và tệp `dist/hawamap-may-chu-<phiên bản>.zip`
+   (chỉ gồm tệp máy chủ cần: `server.js`, `kho-giao-thong.js`, `public/`, `trien-khai/`, trình cài `CAI-DAT-MAY-CHU.bat`,
+   hướng dẫn `HUONG-DAN-CAI-DAT.html`). Chép lên máy chủ (hoặc chép cả mã nguồn).
 2. Trên máy chủ: cài [Node.js](https://nodejs.org) 18 trở lên (bản LTS Windows x64, cài cho mọi người dùng) và các module IIS
    ở bảng trên (bản x64).
 3. Mở PowerShell **Run as administrator** trong thư mục vừa chép và chạy:
@@ -106,8 +116,10 @@ Có hai cách chạy, cả hai đều đủ chức năng (báo cáo dùng chung,
    Gỡ: `.\trien-khai\iis\go-cai-dat-iis.ps1` (không xoá thư mục ứng dụng và dữ liệu).
 
 **HTTPS:** điện thoại chỉ cho dùng GPS, micro, camera khi trang chạy HTTPS. Chứng chỉ có thể mua, lấy từ CA nội bộ, hoặc
-chứng chỉ miễn phí Let's Encrypt (dùng công cụ ACME cho IIS như win-acme). Khi đã gắn chứng chỉ, luật `HawaMap-HTTPS` trong
-`web.config` chuyển http sang https.
+chứng chỉ miễn phí Let's Encrypt bằng win-acme (`server.js` trả tệp xác minh `/.well-known/acme-challenge/…` mà win-acme ghi
+vào thư mục site; luật chuyển https bỏ qua đường dẫn này). Gắn bằng `-VanTayChungChi`, hoặc để win-acme gắn và tự gia hạn rồi
+chạy lại script: site đã có binding https thì luật `HawaMap-HTTPS` trong `web.config` được bật (chuyển http sang https) và
+cổng 443 được mở. Chạy lại với tên miền khác thì binding được đổi theo.
 
 **Ghi chú**
 
@@ -189,7 +201,8 @@ BanDoDanDuong/
 ├─ server.js                 máy chủ Node: phục vụ trang web + API báo cáo giao thông (không cần thư viện)
 ├─ kho-giao-thong.js         máy chủ: kho dữ liệu cảnh báo theo khu vực, tự cập nhật từ OpenStreetMap mỗi tuần
 ├─ ChayBanDo.bat             chạy nhanh trên Windows
-├─ package.json              lệnh: npm start / npm test / npm run test:e2e / npm run dong-goi-iis
+├─ CAI-DAT-MAY-CHU.bat       trình cài máy chủ IIS nhấp đúp (tự xin quyền Administrator, hỏi từng bước)
+├─ package.json              lệnh: npm start / npm test / npm run test:e2e / npm run dong-goi
 ├─ public/                   toàn bộ ứng dụng web (có thể chép riêng lên host tĩnh)
 │  ├─ index.html             khung giao diện: bản đồ, thanh tìm kiếm, lộ trình, dẫn đường, menu, camera
 │  ├─ css/app.css            giao diện (sáng / tối, điện thoại / máy tính)
@@ -241,9 +254,13 @@ BanDoDanDuong/
 │  ├─ HawaMap/               AppDelegate, TrangWeb (WKWebView + cầu nối), TrungTam, GPS, giọng nói, CarPlay.swift
 │  └─ HoTro/                 Info.plist, quyền CarPlay (entitlements)
 ├─ docs/PHAN_TICH_DATMAP.md  phân tích chức năng ứng dụng DATMAP và đối chiếu với HawaMap
-├─ trien-khai/iis/           triển khai trên IIS: web.config (HttpPlatformHandler / reverse proxy), script cài đặt, gỡ cài đặt
+├─ trien-khai/
+│  ├─ HUONG_DAN_MAY_CHU.md   hướng dẫn dựng máy chủ từng bước cho người mới
+│  └─ iis/                   web.config (HttpPlatformHandler / reverse proxy), cai-dat-nhanh.ps1 (hỏi - đáp),
+│                            cai-dat-iis.ps1 (cài đặt), go-cai-dat-iis.ps1 (gỡ)
 ├─ tools/tao-bieu-tuong-goc.mjs  sinh biểu tượng Android / iOS từ public/js/bieu-tuong.js
-├─ tools/dong-goi-iis.mjs    đóng gói bản đưa lên máy chủ IIS (npm run dong-goi-iis → dist/hawamap-iis)
+├─ tools/dong-goi.mjs        đóng gói bản máy chủ (npm run dong-goi → dist/hawamap-may-chu-<phiên bản>.zip)
+├─ tools/md-html.mjs         chuyển hướng dẫn Markdown sang HTML cho gói cài đặt
 └─ test/                     kiểm thử (node --test), kiểm thử giao diện và cầu nối ứng dụng gốc (Playwright)
 ```
 
@@ -270,7 +287,7 @@ BanDoDanDuong/
 npm test            # hình học, câu chỉ dẫn, bộ máy dẫn đường, cảnh báo (khúc cua, biển cấm rẽ, giới hạn phía trước…),
                     # luật đường (đường cấm, một chiều, cấm vượt, cấm dừng / đỗ, biển báo), dữ liệu theo khu vực và tự cập nhật,
                     # phí trạm thu phí, dẫn đường thông minh, nhắc nhở / giờ mặt trời, camera hành trình, bản đồ offline,
-                    # liên kết chia sẻ, OBD-II, hành trình, API máy chủ
+                    # liên kết chia sẻ, OBD-II, hành trình, API máy chủ, cấu hình IIS, đóng gói zip
 npm run test:e2e    # giao diện trên Chromium với dịch vụ bản đồ giả lập + "hợp đồng" lệnh / tin giữa trang và
                     # ứng dụng Android / iOS (giả lập cầu nối)   — cần: npm i -D playwright
 ```
