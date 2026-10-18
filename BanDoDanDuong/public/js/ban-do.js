@@ -36,6 +36,7 @@ export class BanDo {
     this.cb = cb;
     this.duLieu = Object.fromEntries(NGUON.map(n => [n, RONG]));
     this.theoDoi = 'khong';         // khong | bac (giữ hướng Bắc) | huong (xoay theo hướng đi, nghiêng 3D)
+    this.nghieng = 55;              // độ nghiêng khi xoay theo hướng đi: 55 = 3D, 0 = 2D
     this.le = { tren: 90, duoi: 30, trai: 0, phai: 0 };
     this.hienThi = null;
     this.lucZoomTay = 0;
@@ -413,7 +414,7 @@ export class BanDo {
     const zMucTieu = tayZoom ? m.getZoom() : dd ? Math.min(17.6, Math.max(15, 18 - this.tocDo * 0.09)) : Math.max(this.zoomBac || 16, 3);
     const mt = {
       zoom: zMucTieu,
-      pitch: dd ? 55 : 0,
+      pitch: dd ? this.nghieng : 0,
       bearing: dd ? this.hienThi.huong : 0,
       pad: dd ? { top: Math.max(this.le.tren, Math.round(h * 0.42)), bottom: this.le.duoi, left: this.le.trai, right: this.le.phai }
         : { top: this.le.tren, bottom: this.le.duoi, left: this.le.trai, right: this.le.phai }

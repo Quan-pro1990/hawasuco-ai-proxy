@@ -99,10 +99,32 @@ try {
   await page.click('[data-hd="mo-phong"]');
   await page.waitForSelector('#lop-dd:not([hidden]) .br-kc');
   await page.waitForTimeout(2500);
-  kiem((await page.innerText('#bang-re')).includes('Tràng Tiền'), 'bảng chỉ hướng: rẽ vào Tràng Tiền');
+  const bangRe = await page.innerText('#bang-re');
+  kiem(bangRe.includes('Tràng Tiền') && /Còn\s+\d+\s+mét,\s+rẽ phải/.test(bangRe), 'bảng chỉ hướng: "Tràng Tiền / Còn … mét, rẽ phải" (' + bangRe.replace(/\s+/g, ' ') + ')');
   kiem(await page.locator('#thanh-dd .tdd-gio').count() === 1, 'thanh dưới: giờ đến, thời gian, quãng đường còn lại');
+  kiem(/phút/.test(await page.innerText('#thanh-dd .tdd-con')) && await page.locator('#thanh-dd .tdd-tron[data-hd="tong-quan"]').count() === 1,
+    'thanh dưới: thời gian còn lại ở giữa, nút kết thúc và nút toàn tuyến hai bên');
   kiem(await page.evaluate(() => window.hawamap.banDo.map.getPitch()) > 20, 'bản đồ nghiêng 3D khi dẫn đường');
+  await page.waitForSelector('#hud-dd .gh-tiep', { timeout: 15000 }).catch(() => {});
+  const ghTiep = await page.innerText('#hud-dd .gh-tiep').catch(() => '');
+  kiem(/30/.test(ghTiep) && /\d+ m/.test(ghTiep), 'giới hạn tốc độ kế tiếp (30 km/h của Tràng Tiền) hiện cạnh biển hiện tại (' + ghTiep.replace(/\s+/g, ' ') + ')');
+  await page.click('#nut-3d');
+  await page.waitForFunction(() => window.hawamap.banDo.map.getPitch() < 3, null, { timeout: 8000 }).catch(() => {});
+  kiem(await page.evaluate(() => window.hawamap.banDo.map.getPitch()) < 3 && (await page.innerText('#nut-3d')) === '2D', 'nút 2D / 3D: chuyển sang bản đồ phẳng');
+  await page.click('#nut-3d');
+  await page.waitForFunction(() => window.hawamap.banDo.map.getPitch() > 50, null, { timeout: 8000 }).catch(() => {});
+  kiem(await page.evaluate(() => window.hawamap.banDo.map.getPitch()) > 50, 'nút 2D / 3D: trở lại bản đồ nghiêng 3D');
   await chup(page, '06-dan-duong');
+  // tạm dừng chạy thử để xe không tới nơi trong lúc xem toàn tuyến
+  await page.click('[data-hd="mp-dung"]');
+  await page.click('#thanh-dd .tdd-tron[data-hd="tong-quan"]');
+  await page.waitForSelector('#nut-ve-giua:not([hidden])');
+  kiem((await page.innerText('#nut-ve-giua')).trim() === 'Về giữa', 'xem toàn tuyến: hiện nút "Về giữa"');
+  await page.waitForTimeout(1000);
+  await chup(page, '06c-ve-giua');
+  await page.click('#nut-ve-giua');
+  kiem(await page.locator('#nut-ve-giua').isHidden(), 'bấm "Về giữa": bản đồ bám theo xe trở lại');
+  await page.click('[data-hd="mp-dung"]');
   await page.click('[data-hd="mp-he-so"][data-h="2"]');
   await page.waitForSelector('.br-lan', { timeout: 30000 });
   await chup(page, '06b-lan-duong');

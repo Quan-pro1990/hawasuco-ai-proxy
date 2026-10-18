@@ -39,6 +39,7 @@ const P = {
   ghi: '<circle cx="12" cy="12" r="7" fill="currentColor" stroke="none"/>',
   dung: '<rect x="6.5" y="6.5" width="11" height="11" rx="1.5" fill="currentColor" stroke="none"/>',
   muiten: '<path d="M12 2.5l7.5 18.5-7.5-4.2-7.5 4.2z" fill="currentColor"/>',
+  vegiua: '<path d="M6 12l6-6 6 6M6 18.5l6-6 6 6"/>',
   danhsach: '<path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/>',
   thongtin: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/>',
   sach: '<path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5zM20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/>',

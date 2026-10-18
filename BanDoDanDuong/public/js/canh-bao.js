@@ -138,6 +138,7 @@ export class CanhBao {
     if (bayGio - this.donLuc > 600000) this.donDep(bayGio);
 
     // ---- điểm phía trước
+    this.ghTiep = null;
     let canhBao = this.diemPhiaTruoc(vt, dd, { duong, phuongTien, kmh, gioiHan, luat });
     // đang vượt tốc độ mà sắp tới camera: nhắc giảm tốc ngay (mỗi camera một lần)
     if (vuotToc && canhBao && LOAI_CAMERA.has(canhBao.loai) && canhBao.kc < 400 && !this.cameraNhac.has(canhBao.id)) {
@@ -152,7 +153,10 @@ export class CanhBao {
         ten: luat.nguocChieu ? 'Bạn đang đi ngược chiều' : luat.duongCam.ten, icon: luat.nguocChieu ? 'camduong' : 'duongcam'
       };
     }
-    return { duong, gioiHan, uocTinh, kmh, vuotToc, canhBao, luat, khuDanCu: !!this.kdc && mucCanhBao('khudancu') > 0 };
+    return {
+      duong, gioiHan, uocTinh, kmh, vuotToc, canhBao, luat, khuDanCu: !!this.kdc && mucCanhBao('khudancu') > 0,
+      gioiHanTiep: this.ghTiep          // { gioiHan, kc }: giới hạn tốc độ kế tiếp trên tuyến (hiện cạnh biển hiện tại)
+    };
   }
 
   /**
@@ -385,25 +389,31 @@ export class CanhBao {
   /**
    * Đoạn tuyến phía trước (trong vùng dữ liệu đường đã tải): giới hạn tốc độ có biển khác giới hạn hiện tại,
    * bắt đầu đoạn cấm vượt, đường cấm phương tiện (vd. cấm theo giờ mà máy chủ tìm đường không xét).
+   * Giới hạn kế tiếp được tìm xa hơn (800 m) để hiện cạnh biển hiện tại (this.ghTiep); chỉ báo / đọc khi còn 300 m.
    */
   phiaTruocTrenTuyen(dd, phuongTien, gioiHan, luat = {}) {
     const t = dd.tuyen, s = dd.tt.s, tong = t.tichLuy[t.tichLuy.length - 1];
-    const xa = 300, kq = [];
+    const xa = 300, xaGh = 800, kq = [];
     let ghXong = !gioiHan || !mucCanhBao('gioihan');
     let cvXong = !!luat.camVuot || !mucCanhBao('camvuot');
     let dcXong = !!luat.duongCam || !mucCanhBao('duongcam');
-    for (let k = 60; k <= xa && s + k < tong && !(ghXong && cvXong && dcXong); k += 40) {
+    for (let k = 60; k <= xaGh && s + k < tong; k += 40) {
+      if (ghXong && (k > xa || (cvXong && dcXong))) break;
       const q = diemTaiS(t.toaDo, t.tichLuy, s + k);
       const w = this.thongTinDuong.duongTai(q.diem, q.huong, phuongTien);
       if (!w) continue;
       const chung = { viTri: q.diem, kc: k, kcBao: xa, gioiHan: null };
       if (!ghXong && w.gioiHan && w.gioiHan !== gioiHan) {
         ghXong = true;
-        kq.push({
-          ...chung, id: 'gh' + w.id + '-' + w.gioiHan, loai: 'gioihan', muc: mucCanhBao('gioihan'), gioiHan: w.gioiHan,
-          ten: w.gioiHan < gioiHan ? 'Giảm giới hạn tốc độ' : 'Tăng giới hạn tốc độ', icon: 'tocke', mau: LOAI_CANH_BAO.gioihan.mau
-        });
+        this.ghTiep = { gioiHan: w.gioiHan, kc: k };
+        if (k <= xa) {
+          kq.push({
+            ...chung, id: 'gh' + w.id + '-' + w.gioiHan, loai: 'gioihan', muc: mucCanhBao('gioihan'), gioiHan: w.gioiHan,
+            ten: w.gioiHan < gioiHan ? 'Giảm giới hạn tốc độ' : 'Tăng giới hạn tốc độ', icon: 'tocke', mau: LOAI_CANH_BAO.gioihan.mau
+          });
+        }
       }
+      if (k > xa) continue;
       if (!cvXong && camVuot(w.tags, w.xuoi)) {
         cvXong = true;
         kq.push({ ...chung, id: 'cv' + w.id, loai: 'camvuot', muc: mucCanhBao('camvuot'), ten: 'Bắt đầu đoạn cấm vượt', icon: 'camvuot', mau: LOAI_CANH_BAO.camvuot.mau });

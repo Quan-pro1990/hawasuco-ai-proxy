@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { chuanHoaOsrm, chuanHoaGraphhopper, taoChiDan, timDuong } from '../public/js/chi-duong.js';
+import { chuanHoaOsrm, chuanHoaGraphhopper, taoChiDan, thaoTacNgan, timDuong } from '../public/js/chi-duong.js';
 import { tuyenOsrm, DIEM } from './du-lieu-mau.js';
 
 test('chuẩn hoá tuyến OSRM: ghép toạ độ, vị trí bước, câu chỉ dẫn', () => {
@@ -79,4 +79,19 @@ test('timDuong: báo lỗi tiếng Việt khi không có đường', async () =>
   } finally {
     globalThis.fetch = fetchCu;
   }
+});
+
+test('thao tác ngắn cho bảng chỉ hướng ("Còn 200 mét, rẽ phải")', () => {
+  const b = o => thaoTacNgan({ huong: '', ten: '', ref: '', loai: 'turn', ...o });
+  assert.equal(b({ huong: 'right' }), 'rẽ phải');
+  assert.equal(b({ huong: 'sharp left' }), 'rẽ gắt sang trái');
+  assert.equal(b({ huong: 'uturn' }), 'quay đầu');
+  assert.equal(b({ loai: 'end of road', huong: 'left' }), 'rẽ trái');
+  assert.equal(b({ loai: 'roundabout', loiRa: 2 }), 'vào vòng xuyến, lối ra thứ hai');
+  assert.equal(b({ loai: 'off ramp', huong: 'slight right' }), 'vào lối ra bên phải');
+  assert.equal(b({ loai: 'fork', huong: 'slight left' }), 'đi theo nhánh trái');
+  assert.equal(b({ loai: 'continue', huong: 'straight' }), 'đi thẳng');
+  assert.equal(b({ loai: 'arrive' }), 'đến nơi');
+  assert.equal(b({ loai: 'arrive', diemDung: true }), 'đến điểm dừng');
+  assert.equal(thaoTacNgan(null), '');
 });

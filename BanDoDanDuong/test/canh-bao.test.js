@@ -377,6 +377,28 @@ test('trên tuyến dẫn đường: báo trước đường cấm phía trướ
   assert.equal(cb.phiaTruocTrenTuyen({ tuyen, tt: { s: 420 } }, 'xemay', 50, {}).filter(d => d.loai === 'duongcam').length, 0);
 });
 
+test('giới hạn tốc độ kế tiếp trên tuyến: hiện từ 800 m, chỉ báo / đọc khi còn 300 m', () => {
+  const { ttd, cb } = duongLuat();
+  ttd.duong[2].tags.maxspeed = '40';
+  const toaDo = [[105.860, 21.040], [105.866, 21.040], [105.872, 21.040], [105.878, 21.040]];
+  const tuyen = { toaDo, tichLuy: tichLuyTest(toaDo), buoc: [] };
+  const batDau503 = tuyen.tichLuy[2];
+  cb.ghTiep = null;
+  let ds = cb.phiaTruocTrenTuyen({ tuyen, tt: { s: batDau503 - 560 } }, 'xemay', 50, {});
+  assert.equal(ds.filter(d => d.loai === 'gioihan').length, 0, 'còn xa: chưa báo');
+  assert.equal(cb.ghTiep && cb.ghTiep.gioiHan, 40);
+  assert.ok(cb.ghTiep.kc > 520 && cb.ghTiep.kc <= 620, JSON.stringify(cb.ghTiep));
+  cb.ghTiep = null;
+  ds = cb.phiaTruocTrenTuyen({ tuyen, tt: { s: batDau503 - 220 } }, 'xemay', 50, {});
+  const gh = ds.find(d => d.loai === 'gioihan');
+  assert.ok(gh && gh.gioiHan === 40 && gh.ten === 'Giảm giới hạn tốc độ', JSON.stringify(ds));
+  assert.ok(cb.ghTiep.kc > 180 && cb.ghTiep.kc <= 300);
+  // cùng giới hạn với đường đang đi: không có giới hạn kế tiếp
+  cb.ghTiep = null;
+  cb.phiaTruocTrenTuyen({ tuyen, tt: { s: batDau503 - 220 } }, 'xemay', 40, {});
+  assert.equal(cb.ghTiep, null);
+});
+
 test('biển báo Việt Nam trên bản đồ: theo loại xe, ngày chẵn / lẻ; biển cấm ngược chiều ở đầu kia đường một chiều', () => {
   const { ttd, cb } = duongLuat();
   ttd.diem = docDiemOverpass([

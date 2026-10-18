@@ -11,7 +11,7 @@ import { icon, muiTenRe, muiTenLan, svgBienCam } from './bieu-tuong.js';
 import { BanDo, layKieuBanDo } from './ban-do.js';
 import { $, $$, chenBieuTuong, thongBao, hopThoai, hoiXacNhan, TamDuoi, moTrang, dongTrang, taiXuong } from './giao-dien.js';
 import { goiY, timDayDu, layToaDo, diaChiTuToaDo } from './tim-kiem.js';
-import { timDuong, PHUONG_TIEN, tenDuong } from './chi-duong.js';
+import { timDuong, PHUONG_TIEN, tenDuong, thaoTacNgan } from './chi-duong.js';
 import { DanDuong } from './dan-duong.js';
 import { NguonViTri } from './vi-tri.js';
 import { MoPhong } from './mo-phong.js';
@@ -62,6 +62,9 @@ if (!window.maplibregl || !coWebGL()) {
 chenBieuTuong();
 if (cheDoXe) document.body.classList.add('xe', cauHinhGoc.hud === 'phai' ? 'hud-phai' : 'hud-trai');
 if (laAppGoc) document.documentElement.classList.add('app-goc', 'app-' + (cauHinhGoc.nenTang || 'goc'));
+/** Chữ "3D" / "2D" trên nút đổi góc nhìn bản đồ khi dẫn đường. */
+function chu3D(la3D) { return `<span class="chu-3d">${la3D ? '3D' : '2D'}</span>`; }
+
 const banDo = new BanDo('ban-do', {
   nhanGiu: p => chonViTriBanDo(p),
   chamBaoCao: (id, p) => moPopupBaoCao(id, p),
@@ -74,6 +77,7 @@ const banDo = new BanDo('ban-do', {
     setTimeout(tuCapNhatOffline, 15000);
   }
 }, kieuMongMuon());
+banDo.nghieng = caiDat.dd3D === false ? 0 : 55;
 const tam = new TamDuoi($('#tam-duoi'), { doiChieuCao: () => capNhatLe() });
 tam.onAn = () => {
   if (st.tamPhu) { st.tamPhu = false; setTimeout(tamQuayLai, 0); }
@@ -275,7 +279,9 @@ function capNhatNutViTri() {
   const n = $('#nut-vi-tri');
   n.dataset.td = banDo.theoDoi;
   n.innerHTML = icon(banDo.theoDoi === 'huong' ? 'laban' : 'vitri');
-  $('#nut-ve-giua').hidden = !(st.cheDo === 'danduong' && banDo.theoDoi !== 'huong');
+  const lech = st.cheDo === 'danduong' && banDo.theoDoi !== 'huong';
+  $('#nut-ve-giua').hidden = !lech;
+  document.body.classList.toggle('lech-tam', lech);
 }
 
 function capNhatLaBan() {
@@ -299,6 +305,7 @@ async function giuManHinh(bat) {
 // ================================================================== HUD tốc độ & cảnh báo
 function renderHud(cb) {
   const html = `${cb.gioiHan ? `<div class="bien-toc-do${cb.uocTinh ? ' uoc' : ''}" title="${cb.uocTinh ? 'Giới hạn tốc độ ước tính theo loại đường' : 'Giới hạn tốc độ'}"><b>${cb.gioiHan}</b></div>` : ''}
+    ${cb.gioiHan && cb.gioiHanTiep ? `<div class="gh-tiep" title="Giới hạn tốc độ tiếp theo"><div class="bien-toc-do nho"><b>${cb.gioiHanTiep.gioiHan}</b></div><span>${quangDuong(cb.gioiHanTiep.kc)}</span></div>` : ''}
     <div class="dong-ho${cb.vuotToc ? ' vuot' : ''}"><b>${cb.kmh}</b><span>km/h</span></div>
     ${cb.khuDanCu ? `<div class="nhan-kdc" title="Đang trong khu đông dân cư (ước tính)">${icon('khudancu')}<span>Khu dân cư</span></div>` : ''}
     ${bienLuat(cb)}
@@ -897,6 +904,7 @@ function batDauDanDuong({ moPhong = false, tuGoc = false } = {}) {
   renderBangRe(null);
   renderThanhDd(null);
   $('#nut-loa').innerHTML = icon(caiDat.giongNoi ? 'loa' : 'tatloa');
+  $('#nut-3d').innerHTML = chu3D(caiDat.dd3D);
   // báo ứng dụng gốc để đồng bộ sang màn hình còn lại (điện thoại ↔ Android Auto / CarPlay)
   if (laAppGoc && !tuGoc) {
     guiGoc('batDau', { tuyen: { ...t, tichLuy: undefined }, diemDen: st.dd.diemDen, tenDen: st.dd.tenDen, phuongTien: st.dd.phuongTien, moPhong });
@@ -1011,22 +1019,30 @@ function renderBangRe(tt) {
   const keNua = tt ? tt.keNua : dd.tuyen.buoc[2];
   const sauDo = ke && keNua && ke.loai !== 'arrive' && keNua.batDau - ke.batDau < 150
     ? `<div class="br-sau">Sau đó ${muiTenRe(keNua)}</div>` : '';
+  // dòng trên: tên đường sắp vào (hoặc điểm đến); dòng dưới: "Còn 600 mét, rẽ phải"
+  const thaoTac = thaoTacNgan(ke);
+  const ten = !ke ? '' : ke.loai === 'arrive' ? tenBuoc(ke) : tenDuong(ke);
+  const dongTren = ten || (thaoTac ? thaoTac[0].toLocaleUpperCase('vi') + thaoTac.slice(1) : '');
   el.innerHTML = `<div class="br-chinh">${muiTenRe(ke, 'br-icon')}
-      <div class="br-chu"><b class="br-kc">${quangDuong(kc)}</b><span class="br-ten">${esc(tenBuoc(ke))}</span>
-      ${ke && tenDuong(ke) && ke.loai !== 'arrive' ? `<small class="br-chi-dan">${esc(ke.chiDan)}</small>` : ''}</div></div>${lan}${sauDo}`;
+      <div class="br-chu"><b class="br-ten">${esc(dongTren)}</b>
+      <span class="br-con">Còn <b class="br-kc">${kcBangRe(kc)}</b>${ten && thaoTac ? `, <b>${esc(thaoTac)}</b>` : ''}</span></div></div>${lan}${sauDo}`;
   capNhatLe();
 }
+
+/** Khoảng cách trên bảng chỉ hướng: "600 mét", "1,2 km". */
+function kcBangRe(m) { return quangDuong(m).replace(/ m$/, ' mét'); }
 
 function renderThanhDd(tt) {
   const dd = st.dd;
   if (!dd) return;
   const conLai = tt ? tt.conLai : dd.tuyen.quangDuong;
   const tg = tt ? tt.thoiGianConLai : dd.tuyen.thoiGian;
-  $('#thanh-dd').innerHTML = `<button class="tdd-thong-tin" data-hd="mo-rong-dd">
-      <b class="tdd-gio">${gioDen(tg)}</b><span>${thoiGian(tg)} · ${quangDuong(conLai)}</span></button>
-    <button class="nut-icon tdd-ket-thuc" data-hd="ket-thuc-dd" aria-label="Kết thúc dẫn đường">${icon('dong')}</button>
+  $('#thanh-dd').innerHTML = `<button class="nut-icon tdd-tron tdd-ket-thuc" data-hd="ket-thuc-dd" aria-label="Kết thúc dẫn đường">${icon('dong')}</button>
+    <button class="tdd-thong-tin" data-hd="mo-rong-dd" aria-label="Thêm lựa chọn">
+      <b class="tdd-con">${thoiGian(tg)}</b><span>${quangDuong(conLai)} • <span class="tdd-gio">${gioDen(tg)}</span></span></button>
+    <button class="nut-icon tdd-tron" data-hd="tong-quan" aria-label="Xem toàn tuyến">${icon('tongquan')}</button>
     ${st.ddMoRong ? `<div class="tdd-them">
-      <button data-hd="tong-quan">${icon('tongquan')}Tổng quan</button>
+      <button data-hd="doi-3d">${chu3D(!caiDat.dd3D)}Bản đồ ${caiDat.dd3D ? '2D' : '3D'}</button>
       <button data-hd="xem-buoc-dd">${icon('danhsach')}Các bước</button>
       <button data-hd="xang-doc-duong">${icon('xang')}Cây xăng</button>
       <button data-hd="doi-loa">${icon(caiDat.giongNoi ? 'loa' : 'tatloa')}${caiDat.giongNoi ? 'Tắt tiếng' : 'Bật tiếng'}</button>
@@ -1312,7 +1328,7 @@ function moLopBanDo() {
       <button class="nut-icon" data-hd="dong-tam" aria-label="Đóng">${icon('dong')}</button></div>
     <div class="luoi-kieu">${Object.entries(kieu).map(([k, v]) =>
       `<button class="${caiDat.kieuBanDo === k ? 'chon' : ''}" data-hd="doi-kieu" data-k="${k}"><span style="background:${v.mau}"></span>${esc(v.ten)}</button>`).join('')}</div>
-    <div class="ds-cong-tac">${bat('tuDongBanDem', 'Tự chuyển bản đồ ban đêm (khi mặt trời lặn)')}${bat('nha3D', 'Nhà 3D')}
+    <div class="ds-cong-tac">${bat('tuDongBanDem', 'Tự chuyển bản đồ ban đêm (khi mặt trời lặn)')}${bat('nha3D', 'Nhà 3D')}${bat('dd3D', 'Bản đồ nghiêng 3D khi dẫn đường')}
       ${bat('hienBaoCao', 'Báo cáo giao thông')}${bat('hienDiemCanhBao', 'Điểm cảnh báo (camera, biển báo, đèn tín hiệu…)')}</div>`);
 }
 
@@ -1401,6 +1417,11 @@ ngheDoiCaiDat(thay => {
     banDo.doiKieu(kieuMongMuon());
   }
   if ('nha3D' in thay) banDo.dat3D(caiDat.nha3D);
+  if ('dd3D' in thay) {
+    banDo.nghieng = caiDat.dd3D ? 55 : 0;
+    $('#nut-3d').innerHTML = chu3D(caiDat.dd3D);
+    if (st.dd) renderThanhDd(st.dd.tt);
+  }
   if ('hienBaoCao' in thay) banDo.hienLop(['bao-cao'], caiDat.hienBaoCao);
   if ('hienDiemCanhBao' in thay) banDo.hienLop(['canh-bao', 'canh-bao-nho'], caiDat.hienDiemCanhBao);
   if ('mucCanhBao' in thay || 'phuongTien' in thay) veDiemCanhBao();
@@ -1894,6 +1915,7 @@ const HD = {
     capNhatNutViTri();
   },
   've-giua': () => { banDo.datTheoDoi('huong'); capNhatNutViTri(); },
+  'doi-3d': () => { doiCaiDat({ dd3D: !caiDat.dd3D }); thongBao(caiDat.dd3D ? 'Bản đồ 3D' : 'Bản đồ 2D'); },
   'doi-loa': () => { doiCaiDat({ giongNoi: !caiDat.giongNoi }); thongBao(caiDat.giongNoi ? 'Đã bật giọng nói' : 'Đã tắt giọng nói'); if (st.dd) renderThanhDd(st.dd.tt); },
   'xem-buoc-dd': () => { if (st.dd) renderBuoc(st.dd.tuyen, st.dd.tt ? st.dd.tt.buocHienTai + 1 : 1); },
   'xang-doc-duong': () => timDanhMuc('xang', { docTuyen: true }),

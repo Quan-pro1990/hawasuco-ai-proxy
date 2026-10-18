@@ -193,6 +193,28 @@ export function taoChiDan(b, laCuoi = false) {
   }
 }
 
+/** Thao tác ngắn, chữ thường, cho dòng "Còn 200 mét, rẽ phải" của bảng chỉ hướng. */
+export function thaoTacNgan(b) {
+  if (!b) return '';
+  const ben = benTraiPhai(b.huong);
+  const re = RE[b.huong] ? RE[b.huong].toLocaleLowerCase('vi') : '';
+  switch (b.loai) {
+    case 'depart': return 'xuất phát';
+    case 'arrive': return b.diemDung ? 'đến điểm dừng' : 'đến nơi';
+    case 'roundabout': case 'rotary':
+      return b.loiRa ? `vào vòng xuyến, lối ra ${THU_TU[b.loiRa] || 'số ' + b.loiRa}` : 'đi qua vòng xuyến';
+    case 'exit roundabout': case 'exit rotary': return 'ra khỏi vòng xuyến';
+    case 'roundabout turn': return re ? `tại vòng xuyến, ${re}` : 'đi tiếp qua vòng xuyến';
+    case 'merge': return `nhập làn${ben ? ' bên ' + ben : ''}`;
+    case 'on ramp': return `vào đường dẫn${ben ? ' bên ' + ben : ''}`;
+    case 'off ramp': return `vào lối ra${ben ? ' bên ' + ben : ''}`;
+    case 'fork': return `đi theo nhánh ${ben || 'giữa'}`;
+    case 'new name': return 'đi tiếp';
+    case 'continue': return !b.huong || b.huong === 'straight' ? 'đi thẳng' : re || 'đi tiếp';
+    default: return re || 'đi tiếp';
+  }
+}
+
 /** Bước có cần đọc nhắc trước hay không (bỏ qua "tiếp tục đi thẳng" khi chỉ đổi tên đường). */
 export function canNhac(b) {
   if (b.loai === 'new name' || b.loai === 'notification' || b.loai === 'use lane') return false;
