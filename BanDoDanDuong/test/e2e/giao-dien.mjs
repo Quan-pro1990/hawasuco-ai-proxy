@@ -100,14 +100,19 @@ try {
   await page.waitForSelector('#lop-dd:not([hidden]) .br-kc');
   await page.waitForTimeout(2500);
   const bangRe = await page.innerText('#bang-re');
-  kiem(bangRe.includes('Tràng Tiền') && /Còn\s+\d+\s+mét,\s+rẽ phải/.test(bangRe), 'bảng chỉ hướng: "Tràng Tiền / Còn … mét, rẽ phải" (' + bangRe.replace(/\s+/g, ' ') + ')');
+  kiem(bangRe.includes('Tràng Tiền') && /\b\d+m\b/.test(bangRe), 'bảng chỉ hướng: khoảng cách và tên đường "Tràng Tiền" (' + bangRe.replace(/\s+/g, ' ') + ')');
+  kiem(await page.locator('.nhan-re').count() === 1 && /Tràng Tiền/.test(await page.innerText('.nhan-re')), 'nhãn chỗ rẽ "Tràng Tiền" trên bản đồ');
   kiem(await page.locator('#thanh-dd .tdd-gio').count() === 1, 'thanh dưới: giờ đến, thời gian, quãng đường còn lại');
-  kiem(/phút/.test(await page.innerText('#thanh-dd .tdd-con')) && await page.locator('#thanh-dd .tdd-tron[data-hd="tong-quan"]').count() === 1,
-    'thanh dưới: thời gian còn lại ở giữa, nút kết thúc và nút toàn tuyến hai bên');
+  const tdd = await page.innerText('#thanh-dd');
+  kiem(/km · \d+ phút/.test(tdd) && /đến nơi/.test(tdd) && await page.locator('.day-dd [data-hd="tong-quan"]').count() === 1,
+    'thanh dưới: "… km · … phút / … đến nơi", nút toàn tuyến (' + tdd.replace(/\s+/g, ' ') + ')');
+  await page.waitForFunction(() => /Hàng Bài/.test(document.querySelector('#vien-duong').innerText), null, { timeout: 10000 }).catch(() => {});
+  const vien = await page.innerText('#vien-duong');
+  kiem(/Hàng Bài/.test(vien) && /P\. Tràng Tiền, TP\. Hà Nội/.test(vien), 'viên tên đường đang đi và khu vực (' + vien.replace(/\s+/g, ' ') + ')');
   kiem(await page.evaluate(() => window.hawamap.banDo.map.getPitch()) > 20, 'bản đồ nghiêng 3D khi dẫn đường');
-  await page.waitForSelector('#hud-dd .gh-tiep', { timeout: 15000 }).catch(() => {});
-  const ghTiep = await page.innerText('#hud-dd .gh-tiep').catch(() => '');
-  kiem(/30/.test(ghTiep) && /\d+ m/.test(ghTiep), 'giới hạn tốc độ kế tiếp (30 km/h của Tràng Tiền) hiện cạnh biển hiện tại (' + ghTiep.replace(/\s+/g, ' ') + ')');
+  await page.waitForFunction(() => /tiếp theo 30/.test(document.querySelector('#hud-dd .cot-cb')?.innerText || ''), null, { timeout: 15000 }).catch(() => {});
+  const ghTiep = await page.innerText('#hud-dd .cot-cb').catch(() => '');
+  kiem(/tiếp theo 30/.test(ghTiep) && /\d+ m/.test(ghTiep), 'cột cảnh báo: giới hạn tốc độ kế tiếp 30 km/h kèm khoảng cách (' + ghTiep.replace(/\s+/g, ' ') + ')');
   await page.click('#nut-3d');
   await page.waitForFunction(() => window.hawamap.banDo.map.getPitch() < 3, null, { timeout: 8000 }).catch(() => {});
   kiem(await page.evaluate(() => window.hawamap.banDo.map.getPitch()) < 3 && (await page.innerText('#nut-3d')) === '2D', 'nút 2D / 3D: chuyển sang bản đồ phẳng');
@@ -117,7 +122,7 @@ try {
   await chup(page, '06-dan-duong');
   // tạm dừng chạy thử để xe không tới nơi trong lúc xem toàn tuyến
   await page.click('[data-hd="mp-dung"]');
-  await page.click('#thanh-dd .tdd-tron[data-hd="tong-quan"]');
+  await page.click('.day-dd [data-hd="tong-quan"]');
   await page.waitForSelector('#nut-ve-giua:not([hidden])');
   kiem((await page.innerText('#nut-ve-giua')).trim() === 'Về giữa', 'xem toàn tuyến: hiện nút "Về giữa"');
   await page.waitForTimeout(1000);
@@ -128,21 +133,23 @@ try {
   await page.click('[data-hd="mp-he-so"][data-h="2"]');
   await page.waitForSelector('.br-lan', { timeout: 30000 });
   await chup(page, '06b-lan-duong');
-  await page.waitForSelector('#canh-bao-dd:not([hidden])', { timeout: 40000 });
-  const theDau = await page.innerText('#canh-bao-dd');
-  kiem(/giới hạn tốc độ/.test(theDau) && /30/.test(theDau), 'báo trước giới hạn 30 km/h của đường phía trước');
-  await page.waitForFunction(() => /Camera/.test(document.querySelector('#canh-bao-dd').innerText), null, { timeout: 30000 }).catch(() => {});
-  kiem((await page.innerText('#canh-bao-dd')).includes('Camera phạt tốc độ'), 'cảnh báo camera tốc độ phía trước');
+  await page.waitForSelector('#hud-dd .cot-cb', { timeout: 40000 });
+  const theDau = await page.innerText('#hud-dd .cot-cb');
+  kiem(/giới hạn tốc độ/i.test(theDau) && /30/.test(theDau), 'báo trước giới hạn 30 km/h của đường phía trước');
+  await page.waitForFunction(() => /Camera/.test(document.querySelector('#hud-dd .cot-cb')?.innerText || ''), null, { timeout: 30000 }).catch(() => {});
+  kiem((await page.innerText('#hud-dd .cot-cb').catch(() => '')).includes('Camera phạt tốc độ'), 'cột cảnh báo: camera phạt tốc độ phía trước kèm số mét');
   await page.waitForFunction(() => document.querySelector('#hud-dd .bien-toc-do b')?.textContent === '30', null, { timeout: 20000 });
   kiem(true, 'biển giới hạn 30 km/h của Tràng Tiền');
   await page.click('[data-hd="mp-toc"][data-d="10"]');
   await page.waitForSelector('#hud-dd .dong-ho.vuot', { timeout: 15000 });
   kiem(true, 'đồng hồ chuyển đỏ khi vượt tốc độ');
   await chup(page, '07-canh-bao-vuot-toc');
+  await page.click('[data-hd="mp-dung"]');               // tạm dừng chạy thử khi thao tác trên thanh dưới
   await page.click('#thanh-dd [data-hd="mo-rong-dd"]');
   await page.waitForSelector('.tdd-them');
   await chup(page, '07b-mo-rong');
   await page.click('.tdd-them [data-hd="mo-rong-dd"]').catch(() => page.click('#thanh-dd [data-hd="mo-rong-dd"]'));
+  await page.click('[data-hd="mp-dung"]');
   await page.click('[data-hd="mp-he-so"][data-h="4"]');
   await page.waitForSelector('.hop-thoai h3', { timeout: 60000 });
   kiem((await page.innerText('.hop-thoai h3')) === 'Bạn đã đến nơi', 'báo đã đến nơi');

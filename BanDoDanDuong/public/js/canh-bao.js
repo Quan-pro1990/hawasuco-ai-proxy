@@ -139,6 +139,7 @@ export class CanhBao {
 
     // ---- điểm phía trước
     this.ghTiep = null;
+    this.dsTruoc = [];
     let canhBao = this.diemPhiaTruoc(vt, dd, { duong, phuongTien, kmh, gioiHan, luat });
     // đang vượt tốc độ mà sắp tới camera: nhắc giảm tốc ngay (mỗi camera một lần)
     if (vuotToc && canhBao && LOAI_CAMERA.has(canhBao.loai) && canhBao.kc < 400 && !this.cameraNhac.has(canhBao.id)) {
@@ -155,7 +156,8 @@ export class CanhBao {
     }
     return {
       duong, gioiHan, uocTinh, kmh, vuotToc, canhBao, luat, khuDanCu: !!this.kdc && mucCanhBao('khudancu') > 0,
-      gioiHanTiep: this.ghTiep          // { gioiHan, kc }: giới hạn tốc độ kế tiếp trên tuyến (hiện cạnh biển hiện tại)
+      gioiHanTiep: this.ghTiep,         // { gioiHan, kc }: giới hạn tốc độ kế tiếp trên tuyến
+      phiaTruoc: this.dsTruoc           // các điểm cảnh báo phía trước, gần trước (cột cảnh báo bên trái khi dẫn đường)
     };
   }
 
@@ -339,7 +341,10 @@ export class CanhBao {
       this.noi(this.cauCanhBao(d, gioiHan));
       soCau++;
     }
-    // hiển thị: loại quan trọng hơn trước, cùng mức thì gần hơn trước
+    // danh sách phía trước (đã xếp gần trước), mỗi điểm một lần
+    const daCo = new Set();
+    this.dsTruoc = ds.filter(d => d.muc > 0 && !daCo.has(d.id) && daCo.add(d.id)).slice(0, 4);
+    // thẻ cảnh báo chính: loại quan trọng hơn trước, cùng mức thì gần hơn trước
     ds.sort((a, b) => (LOAI_CANH_BAO[b.loai].uuTien - LOAI_CANH_BAO[a.loai].uuTien) || (a.kc - b.kc));
     return ds[0] || null;
   }

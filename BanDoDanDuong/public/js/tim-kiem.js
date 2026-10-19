@@ -121,3 +121,25 @@ export async function diaChiTuToaDo(p) {
   const ten = d.name || soNha || a.road || a.suburb || (d.display_name || '').split(',')[0];
   return { ten, diaChi: gonDiaChi(d.display_name, ten) };
 }
+
+const VIET_TAT = [[/^Phường /, 'P. '], [/^Quận /, 'Q. '], [/^Huyện /, 'H. '], [/^Thị xã /, 'TX. '], [/^Thị trấn /, 'TT. '],
+  [/^Thành phố /, 'TP. '], [/^Tỉnh /, '']];
+
+/** "P. Láng Thượng, Q. Đống Đa, TP. Hà Nội" từ phần address của Nominatim (dòng khu vực dưới tên đường khi dẫn đường). */
+export function rutGonKhuVuc(a = {}) {
+  const tp = a.city || a.state || a.province || '';
+  const ds = [a.suburb || a.quarter || a.village || a.town || a.hamlet, a.city_district || a.district || a.county, tp]
+    .filter(Boolean).map(s => VIET_TAT.reduce((x, [m, t]) => x.replace(m, t), s.trim()));
+  // thành phố trực thuộc trung ương ghi thiếu chữ "Thành phố" (vd. "Hà Nội"): thêm "TP."
+  if (a.city && ds.length && ds[ds.length - 1] === a.city.trim() && !/^(TP\.|Tỉnh)/.test(a.city)) ds[ds.length - 1] = 'TP. ' + a.city.trim();
+  return [...new Set(ds)].join(', ');
+}
+
+/** Khu vực (phường, quận, thành phố) của một điểm; '' nếu không tra được. */
+export async function khuVucTuToaDo(p, tinHieu) {
+  const q = new URLSearchParams({ lat: p[1].toFixed(5), lon: p[0].toFixed(5), format: 'jsonv2', 'accept-language': 'vi', zoom: '16', addressdetails: '1' });
+  const r = await fetch(CAU_HINH.dichVu.nominatim + '/reverse?' + q, { signal: tinHieu });
+  if (!r.ok) throw new Error('Nominatim ' + r.status);
+  const d = await r.json();
+  return d.error ? '' : rutGonKhuVuc(d.address);
+}

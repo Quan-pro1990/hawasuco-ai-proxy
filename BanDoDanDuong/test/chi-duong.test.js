@@ -95,3 +95,12 @@ test('thao tác ngắn cho bảng chỉ hướng ("Còn 200 mét, rẽ phải")'
   assert.equal(b({ loai: 'arrive', diemDung: true }), 'đến điểm dừng');
   assert.equal(thaoTacNgan(null), '');
 });
+
+test('dòng khu vực dưới tên đường: "P. Láng Thượng, Q. Đống Đa, TP. Hà Nội"', async () => {
+  const { rutGonKhuVuc } = await import('../public/js/tim-kiem.js');
+  assert.equal(rutGonKhuVuc({ suburb: 'Phường Láng Thượng', city_district: 'Quận Đống Đa', city: 'Hà Nội' }), 'P. Láng Thượng, Q. Đống Đa, TP. Hà Nội');
+  assert.equal(rutGonKhuVuc({ suburb: 'Phường Tràng Tiền', city: 'Hà Nội' }), 'P. Tràng Tiền, TP. Hà Nội');
+  assert.equal(rutGonKhuVuc({ village: 'Xã Tân Hội', county: 'Huyện Đan Phượng', state: 'Thành phố Hà Nội' }), 'Xã Tân Hội, H. Đan Phượng, TP. Hà Nội');
+  assert.equal(rutGonKhuVuc({ town: 'Thị trấn Đông Anh', state: 'Tỉnh Bắc Ninh' }), 'TT. Đông Anh, Bắc Ninh');
+  assert.equal(rutGonKhuVuc({}), '');
+});

@@ -92,6 +92,11 @@ test('khi dẫn đường: cảnh báo điểm nằm trên tuyến phía trướ
     // camera trên Tràng Tiền: cách ~150 m (tới chỗ rẽ) + ~311 m, trong tầm báo trước 500 m
     assert.equal(kq.canhBao.loai, 'camera');
     assert.ok(Math.abs(kq.canhBao.kc - (t.buoc[1].batDau - 450 + 311)) < 15, String(kq.canhBao.kc));
+    // cột cảnh báo phía trước: mọi điểm trong tầm, gần trước, mỗi điểm một lần
+    assert.ok(kq.phiaTruoc.some(d => d.loai === 'camera' && d.kc === kq.canhBao.kc), JSON.stringify(kq.phiaTruoc.map(d => [d.loai, d.kc])));
+    assert.ok(kq.phiaTruoc.every((d, i, a) => !i || a[i - 1].kc <= d.kc));
+    assert.equal(new Set(kq.phiaTruoc.map(d => d.id)).size, kq.phiaTruoc.length);
+    assert.ok(kq.phiaTruoc.length <= 4);
     // xa hơn tầm báo trước thì chưa cảnh báo
     const xa = diemTaiS(t.toaDo, t.tichLuy, 300);
     const cb2 = new CanhBao({ thongTinDuong: ttd, layBaoCao: () => [], noi: () => {}, bip: () => {} });

@@ -40,6 +40,9 @@ const P = {
   dung: '<rect x="6.5" y="6.5" width="11" height="11" rx="1.5" fill="currentColor" stroke="none"/>',
   muiten: '<path d="M12 2.5l7.5 18.5-7.5-4.2-7.5 4.2z" fill="currentColor"/>',
   vegiua: '<path d="M6 12l6-6 6 6M6 18.5l6-6 6 6"/>',
+  len: '<path d="M6 15l6-6 6 6"/>',
+  xuong: '<path d="M6 9l6 6 6-6"/>',
+  tinnhan: '<path d="M5 4.5h14A1.5 1.5 0 0 1 20.5 6v9a1.5 1.5 0 0 1-1.5 1.5h-8L6.5 20v-3.5H5A1.5 1.5 0 0 1 3.5 15V6A1.5 1.5 0 0 1 5 4.5z"/><path d="M8 9.5h8M8 12.5h5"/>',
   danhsach: '<path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/>',
   thongtin: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/>',
   sach: '<path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5zM20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/>',
@@ -217,6 +220,13 @@ export function svgBienCam(ten) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 32 32">` +
     `<circle cx="16" cy="16" r="13.5" fill="${nen}" stroke="${vien}" stroke-width="3.6"/>${noiDung}</svg>`;
 }
+
+/** Cờ ca-rô trong vòng tròn trắng: điểm đến khi dẫn đường. */
+export const SVG_CO_DICH = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" width="36" height="36">' +
+  '<circle cx="18" cy="18" r="16" fill="#fff" stroke="#1f2937" stroke-width="2.2"/>' +
+  '<path d="M11.5 27.5V9" stroke="#1f2937" stroke-width="2" stroke-linecap="round"/>' +
+  '<path d="M12 9.5h14v10H12z" fill="#fff" stroke="#1f2937" stroke-width="1.2"/>' +
+  '<path d="M12 9.5h3.5v2.5H12zM19 9.5h3.5v2.5H19zM15.5 12H19v2.5h-3.5zM22.5 12H26v2.5h-3.5zM12 14.5h3.5V17H12zM19 14.5h3.5V17H19zM15.5 17H19v2.5h-3.5zM22.5 17H26v2.5h-3.5z" fill="#1f2937"/></svg>';
 
 export const SVG_MUI_TEN_TUYEN = '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 20 20">' +
   '<path d="M7 5l5 5-5 5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';

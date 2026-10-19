@@ -6,13 +6,15 @@
 import { CAU_HINH } from './cau-hinh.js';
 import { caiDat, doc, ghi } from './kho.js';
 import { lechGoc, khungBao } from './hinh-hoc.js';
-import { svgBieuTuongBanDo, svgBienBao, svgBienCam, laBienCam, SVG_MUI_TEN_TUYEN, taiAnh, icon } from './bieu-tuong.js';
+import { svgBieuTuongBanDo, svgBienBao, svgBienCam, laBienCam, SVG_MUI_TEN_TUYEN, SVG_CO_DICH, taiAnh, icon } from './bieu-tuong.js';
 import { BIEN_VN } from './luat-duong.js';
 import { LOAI_BAO_CAO } from './loai-bao-cao.js';
 import { LOAI_CANH_BAO, BIEN_RE } from './loai-canh-bao.js';
 import { DANH_MUC } from './dia-diem.js';
 
 const RONG = { type: 'FeatureCollection', features: [] };
+/** [viền, lõi] của đường tuyến: xanh dương khi xem lộ trình, xanh lá khi dẫn đường. */
+const MAU_TUYEN = { thuong: ['#0b4a9e', '#1a73e8'], danduong: ['#13843a', '#2fbf55'] };
 const NGUON = ['hanh-trinh', 'tuyen-phu', 'tuyen', 'da-di', 'canh-bao', 'bao-cao', 'ket-qua'];
 
 function duong(toaDo, props = {}) {
@@ -118,8 +120,9 @@ export class BanDo {
     them({ id: 'hanh-trinh', type: 'line', source: 'hanh-trinh', layout: tron, paint: { 'line-color': '#8e24aa', 'line-width': rong(3, 6, 12), 'line-opacity': 0.85 } }, nhanDau);
     them({ id: 'tuyen-phu-vien', type: 'line', source: 'tuyen-phu', layout: tron, paint: { 'line-color': '#6b7a8c', 'line-width': rong(6, 10, 20) } }, nhanDau);
     them({ id: 'tuyen-phu', type: 'line', source: 'tuyen-phu', layout: tron, paint: { 'line-color': '#b3c1d1', 'line-width': rong(4, 7, 15) } }, nhanDau);
-    them({ id: 'tuyen-vien', type: 'line', source: 'tuyen', layout: tron, paint: { 'line-color': '#0b4a9e', 'line-width': rong(7, 12, 24) } }, nhanDau);
-    them({ id: 'tuyen', type: 'line', source: 'tuyen', layout: tron, paint: { 'line-color': '#1a73e8', 'line-width': rong(4.5, 8, 18) } }, nhanDau);
+    const mau = MAU_TUYEN[this.mauTuyen] || MAU_TUYEN.thuong;
+    them({ id: 'tuyen-vien', type: 'line', source: 'tuyen', layout: tron, paint: { 'line-color': mau[0], 'line-width': rong(7, 12, 24) } }, nhanDau);
+    them({ id: 'tuyen', type: 'line', source: 'tuyen', layout: tron, paint: { 'line-color': mau[1], 'line-width': rong(4.5, 8, 18) } }, nhanDau);
     them({ id: 'da-di', type: 'line', source: 'da-di', layout: tron, paint: { 'line-color': '#9aa3ad', 'line-width': rong(7, 12, 24) } }, nhanDau);
     // mũi tên chiều đi nằm dưới lớp "đã đi" để phần đường đã qua chỉ còn màu xám
     them({
@@ -187,6 +190,28 @@ export class BanDo {
     this.datNguon('da-di', RONG);
   }
 
+  /** Màu tuyến: 'thuong' (xanh dương khi xem lộ trình) | 'danduong' (xanh lá khi dẫn đường). */
+  datMauTuyen(kieu = 'thuong') {
+    this.mauTuyen = kieu;
+    const mau = MAU_TUYEN[kieu] || MAU_TUYEN.thuong;
+    if (this.map.getLayer('tuyen')) {
+      this.map.setPaintProperty('tuyen-vien', 'line-color', mau[0]);
+      this.map.setPaintProperty('tuyen', 'line-color', mau[1]);
+    }
+  }
+
+  /** Nhãn chỗ rẽ kế tiếp trên bản đồ (mũi tên + tên đường); null để bỏ. */
+  datNhanRe(p, html) {
+    if (!p) { if (this.nhanRe) this.nhanRe.remove(); this.nhanRe = null; return; }
+    if (!this.nhanRe) {
+      const el = document.createElement('div');
+      el.className = 'nhan-re';
+      this.nhanRe = new maplibregl.Marker({ element: el, anchor: 'bottom-right', offset: [-6, -6] }).setLngLat(p).addTo(this.map);
+    }
+    if (this.nhanRe.getElement().innerHTML !== html) this.nhanRe.getElement().innerHTML = html;
+    this.nhanRe.setLngLat(p);
+  }
+
   datDaDi(toaDo) {
     this.datNguon('da-di', toaDo && toaDo.length > 1 ? { type: 'FeatureCollection', features: [duong(toaDo)] } : RONG);
   }
@@ -215,12 +240,14 @@ export class BanDo {
 
   // ---------------------------------------------------------------- điểm đánh dấu (ghim)
   datGhim(p, kieu = 'den') {
-    if (!p) { if (this.ghim) this.ghim.remove(); this.ghim = null; return; }
+    // kiểu 'co' (cờ ca-rô, điểm đến khi dẫn đường) neo ở giữa, các kiểu ghim neo ở chân
+    if (this.ghim && (!p || (this.ghim.getElement().dataset.kieu === 'co') !== (kieu === 'co'))) { this.ghim.remove(); this.ghim = null; }
+    if (!p) return;
     if (!this.ghim) {
       const el = document.createElement('div');
       el.className = 'ghim-dich';
-      el.innerHTML = icon('ghim');
-      this.ghim = new maplibregl.Marker({ element: el, anchor: 'bottom' }).setLngLat(p).addTo(this.map);
+      el.innerHTML = kieu === 'co' ? SVG_CO_DICH : icon('ghim');
+      this.ghim = new maplibregl.Marker({ element: el, anchor: kieu === 'co' ? 'center' : 'bottom' }).setLngLat(p).addTo(this.map);
     }
     this.ghim.getElement().dataset.kieu = kieu;
     this.ghim.setLngLat(p);
