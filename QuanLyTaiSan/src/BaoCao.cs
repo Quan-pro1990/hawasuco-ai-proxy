@@ -197,7 +197,7 @@ namespace QuanLyTaiSan
                 }
                 if (ngoaiSo.Count > 0)
                 {
-                    t.GopO(r, 1, r, n, (char)('A' + soKhoi++) + ". Tài sản kiểm kê thấy nhưng không có trong sổ sách của đợt (khai báo sau khi mở đợt hoặc thuộc đơn vị khác)", NhomKhoi);
+                    t.GopO(r, 1, r, n, (char)('A' + soKhoi++) + ". Tài sản kiểm kê thấy nhưng không có trong sổ sách đầu kỳ (vd lúc bắt đầu kiểm kê đang ghi đã thanh lý / mất)", NhomKhoi);
                     r++;
                     foreach (TaiSan x in ngoaiSo.OrderBy(x => x.Ma, StringComparer.OrdinalIgnoreCase)) dong(x, false);
                 }
@@ -806,6 +806,7 @@ namespace QuanLyTaiSan
                                 t.Sua = bayGio;
                                 t.NguoiSua = tk.Ten;
                                 Dl.Them(t);
+                                ThemVaoDotMo(t);
                                 ma = t.Ma;
                                 SuKien s = MoiSuKien(tk, t, LoaiSuKien.Tao);
                                 s.TinhTrang = t.TinhTrang;

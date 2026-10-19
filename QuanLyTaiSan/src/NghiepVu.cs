@@ -199,6 +199,7 @@ namespace QuanLyTaiSan
                     t.Sua = bayGio;
                     t.NguoiSua = tk.Ten;
                     Dl.Them(t);
+                    ThemVaoDotMo(t);
                     LuuDuLieu();
                     SuKien s = MoiSuKien(tk, t, LoaiSuKien.Tao);
                     s.TinhTrang = t.TinhTrang;
@@ -370,6 +371,8 @@ namespace QuanLyTaiSan
                         if (t.TinhTrang == TinhTrang.ThanhLy) throw new LoiApi(400, "Tài sản đã thanh lý.");
                         if (y.NoiDung.Length == 0) throw new LoiApi(400, "Ghi số quyết định / biên bản thanh lý.");
                         s.TinhTrang = TinhTrang.ThanhLy;
+                        // thanh lý trong năm, chưa kiểm kê: không còn tính là "chưa tìm thấy" trong đợt kiểm kê đang mở
+                        foreach (DotKiemKe k in Dl.KiemKe) if (!k.Dong && !k.KetQua.ContainsKey(t.Id)) k.DanhSach.Remove(t.Id);
                         break;
                     default:
                         throw new LoiApi(400, "Loại ghi nhận không hợp lệ.");
@@ -472,7 +475,52 @@ namespace QuanLyTaiSan
 
         // ------------------------------------------------------------------ kiểm kê
 
-        public DotKiemKe LuuDot(TaiKhoan tk, int id, string ten, DateTime tuNgay, DateTime? denNgay, List<int> donVi, string ghiChu)
+        /// <summary>Đợt kiểm kê của năm (mỗi năm 1 đợt toàn công ty); null nếu năm đó chưa mở.</summary>
+        public DotKiemKe DotCuaNam(int nam)
+        {
+            return Dl.KiemKe.Where(k => k.Nam == nam).OrderBy(k => k.Dong ? 1 : 0).ThenByDescending(k => k.Id).FirstOrDefault();
+        }
+
+        /// <summary>Mở đợt kiểm kê năm (gọi trong khoá, chưa lưu): sổ sách = mọi tài sản đang quản lý; đợt các năm trước còn mở thì kết thúc.</summary>
+        DotKiemKe TaoDotNam(int nam, TaiKhoan tk)
+        {
+            foreach (DotKiemKe cu in Dl.KiemKe.Where(x => !x.Dong && x.Nam < nam))
+            {
+                cu.Dong = true;
+                if (!cu.DenNgay.HasValue) cu.DenNgay = new DateTime(cu.Nam, 12, 31);
+            }
+            var k = new DotKiemKe
+            {
+                Id = ++Dl.IdKiemKe, Nam = nam, Ten = "Kiểm kê tài sản năm " + nam, TuNgay = DateTime.Today, Tao = DateTime.Now, NguoiTao = tk.Ten
+            };
+            foreach (TaiSan t in Dl.TaiSan) if (TinhTrang.ConDung(t.TinhTrang)) k.DanhSach.Add(t.Id);
+            Dl.KiemKe.Add(k);
+            Ghi("Mở kiểm kê năm " + nam + " (" + k.DanhSach.Count + " tài sản) bởi '" + tk.Ten + "'");
+            return k;
+        }
+
+        /// <summary>Tài sản mới khai báo khi đợt kiểm kê đang mở: đưa luôn vào sổ sách của đợt (gọi trong khoá).</summary>
+        void ThemVaoDotMo(TaiSan t)
+        {
+            foreach (DotKiemKe k in Dl.KiemKe)
+                if (!k.Dong && (k.DonVi.Count == 0 || k.DonVi.Contains(t.DonViId))) k.DanhSach.Add(t.Id);
+        }
+
+        public DotKiemKe MoKiemKeNam(TaiKhoan tk, int nam)
+        {
+            CanQuyen(tk, VaiTro.CapNhat);
+            if (nam < 2000 || nam > DateTime.Today.Year) throw new LoiApi(400, "Năm kiểm kê không hợp lệ.");
+            lock (Khoa)
+            {
+                if (DotCuaNam(nam) != null) throw new LoiApi(400, "Năm " + nam + " đã có đợt kiểm kê (mỗi năm kiểm kê 1 lần).");
+                DotKiemKe k = TaoDotNam(nam, tk);
+                LuuDuLieu();
+                return k;
+            }
+        }
+
+        /// <summary>Sửa tên, thời gian, ghi chú của đợt kiểm kê.</summary>
+        public DotKiemKe LuuDot(TaiKhoan tk, int id, string ten, DateTime tuNgay, DateTime? denNgay, string ghiChu)
         {
             CanQuyen(tk, VaiTro.CapNhat);
             ten = VanBan.Cat(ten, 160);
@@ -480,28 +528,48 @@ namespace QuanLyTaiSan
             if (denNgay.HasValue && denNgay < tuNgay) throw new LoiApi(400, "Ngày kết thúc trước ngày bắt đầu.");
             lock (Khoa)
             {
-                foreach (int d in donVi) if (Dl.TimDonVi(d) == null) throw new LoiApi(400, "Không có đơn vị " + d + ".");
-                DotKiemKe k;
-                if (id > 0)
-                {
-                    k = Dl.TimDot(id);
-                    if (k == null) throw new LoiApi(404, "Không có đợt kiểm kê này.");
-                }
-                else
-                {
-                    k = new DotKiemKe { Id = ++Dl.IdKiemKe, Tao = DateTime.Now, NguoiTao = tk.Ten, DonVi = donVi.Distinct().ToList() };
-                    // sổ sách lúc mở đợt: tài sản còn quản lý của các đơn vị được chọn
-                    foreach (TaiSan t in Dl.TaiSan)
-                        if (TinhTrang.ConDung(t.TinhTrang) && (k.DonVi.Count == 0 || k.DonVi.Contains(t.DonViId))) k.DanhSach.Add(t.Id);
-                    Dl.KiemKe.Add(k);
-                }
+                DotKiemKe k = Dl.TimDot(id);
+                if (k == null) throw new LoiApi(404, "Không có đợt kiểm kê này.");
                 k.Ten = ten;
                 k.TuNgay = tuNgay.Date;
                 k.DenNgay = denNgay;
                 k.GhiChu = VanBan.Cat(ghiChu, 1000);
                 LuuDuLieu();
-                if (id == 0) Ghi("Mở đợt kiểm kê '" + ten + "' (" + k.DanhSach.Count + " tài sản) bởi '" + tk.Ten + "'");
                 return k;
+            }
+        }
+
+        public class KetQuaQuet
+        {
+            public DotKiemKe Dot;
+            public SuKien KetQua;
+            public bool Moi, NgoaiSo;
+        }
+
+        /// <summary>
+        /// Quét tem tài sản = ghi nhận đã kiểm kê năm nay (chưa mở đợt năm nay thì tự mở). Đã kiểm kê trong năm rồi thì giữ nguyên
+        /// lần trước (Moi = false), trừ khi lai = true (cập nhật tình trạng / ghi chú, ghi thêm 1 lần kiểm kê).
+        /// </summary>
+        public KetQuaQuet KiemKeKhiQuet(TaiKhoan tk, int taiSan, string tinhTrang, string ghiChu, bool lai, double? viDo, double? kinhDo, List<string> anh)
+        {
+            CanQuyen(tk, VaiTro.KiemTra);
+            int nam = DateTime.Today.Year;
+            lock (Khoa)
+            {
+                TaiSan t = LayTaiSan(taiSan);
+                DotKiemKe k = DotCuaNam(nam);
+                if (k == null)
+                {
+                    k = TaoDotNam(nam, tk);
+                    LuuDuLieu();
+                }
+                if (k.Dong) throw new LoiApi(409, "Kiểm kê năm " + nam + " đã kết thúc. Muốn ghi thêm: vào trang Kiểm kê → Mở lại.");
+                SuKien cu;
+                if (!lai && k.KetQua.TryGetValue(t.Id, out cu))
+                    return new KetQuaQuet { Dot = k, KetQua = cu, Moi = false, NgoaiSo = !k.DanhSach.Contains(t.Id) };
+                bool ngoai;
+                SuKien s = QuetKiemKe(tk, k.Id, t.Id, tinhTrang, ghiChu, viDo, kinhDo, anh, out ngoai, !lai);
+                return new KetQuaQuet { Dot = k, KetQua = s, Moi = true, NgoaiSo = ngoai };
             }
         }
 
@@ -530,6 +598,7 @@ namespace QuanLyTaiSan
                 if (k == null) throw new LoiApi(404, "Không có đợt kiểm kê này.");
                 k.Dong = dong;
                 if (dong && !k.DenNgay.HasValue) k.DenNgay = DateTime.Today;
+                if (!dong) k.DenNgay = null;   // mở lại: chưa có ngày kết thúc
                 LuuDuLieu();
                 Ghi((dong ? "Kết thúc" : "Mở lại") + " đợt kiểm kê '" + k.Ten + "' bởi '" + tk.Ten + "'");
             }
@@ -548,7 +617,8 @@ namespace QuanLyTaiSan
             }
         }
 
-        public SuKien QuetKiemKe(TaiKhoan tk, int dot, int taiSan, string tinhTrang, string ghiChu, double? viDo, double? kinhDo, List<string> anh, out bool ngoaiDanhSach)
+        public SuKien QuetKiemKe(TaiKhoan tk, int dot, int taiSan, string tinhTrang, string ghiChu, double? viDo, double? kinhDo, List<string> anh,
+                                 out bool ngoaiDanhSach, bool quaQuet = false)
         {
             CanQuyen(tk, VaiTro.KiemTra);
             if (tinhTrang != null && !TinhTrang.HopLe(tinhTrang)) throw new LoiApi(400, "Tình trạng không hợp lệ.");
@@ -572,7 +642,8 @@ namespace QuanLyTaiSan
                     s.Anh.Add(a);
                 }
                 var doi = new List<string> { "Đợt: " + k.Ten };
-                if (ngoaiDanhSach) doi.Add("Ngoài sổ sách của đợt (đơn vị " + Dl.TenDonVi(t.DonViId) + ")");
+                if (quaQuet) doi.Add("Ghi nhận khi quét mã QR");
+                if (ngoaiDanhSach) doi.Add("Ngoài sổ sách kiểm kê đầu kỳ (đơn vị " + Dl.TenDonVi(t.DonViId) + ")");
                 if (s.TinhTrang != t.TinhTrang)
                 {
                     doi.Add("Tình trạng: " + TinhTrang.Ten(t.TinhTrang) + " → " + TinhTrang.Ten(s.TinhTrang));

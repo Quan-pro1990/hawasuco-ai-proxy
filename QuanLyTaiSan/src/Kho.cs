@@ -11,7 +11,7 @@ namespace QuanLyTaiSan
 {
     /// <summary>
     /// Thư mục dữ liệu:
-    ///   taisan.xml            danh mục, tài sản, đợt kiểm kê, cài đặt (ghi file tạm rồi thay; bản trước giữ ở .bak)
+    ///   taisan.xml            danh mục, tài sản, kiểm kê các năm, cài đặt (ghi file tạm rồi thay; bản trước giữ ở .bak)
     ///   LichSu\yyyy-MM.jsonl  lịch sử (kiểm tra, bảo dưỡng, điều chuyển…) — chỉ ghi thêm, mỗi dòng 1 sự kiện
     ///   Anh\&lt;id tài sản&gt;\    ảnh JPEG: &lt;mã ảnh&gt;.jpg (tối đa 1600 px) và &lt;mã ảnh&gt;_n.jpg (ảnh nhỏ)
     ///   SaoLuu\               mỗi ngày 1 bản taisan.xml (giữ 90 ngày)
@@ -289,7 +289,7 @@ namespace QuanLyTaiSan
             }
             foreach (DotKiemKe k in d.KiemKe)
             {
-                var e = new XElement("KiemKe", new XAttribute("id", k.Id), new XAttribute("ten", k.Ten), new XAttribute("dong", k.Dong ? 1 : 0));
+                var e = new XElement("KiemKe", new XAttribute("id", k.Id), new XAttribute("nam", k.Nam), new XAttribute("ten", k.Ten), new XAttribute("dong", k.Dong ? 1 : 0));
                 ANgay(e, "tuNgay", k.TuNgay); ANgay(e, "denNgay", k.DenNgay); A(e, "ghiChu", k.GhiChu); A(e, "nguoiTao", k.NguoiTao); ALuc(e, "tao", k.Tao);
                 if (k.DonVi.Count > 0) e.SetAttributeValue("donVi", string.Join(" ", k.DonVi.Select(x => x.ToString(Inv))));
                 e.Add(new XElement("DanhSach", string.Join(" ", k.DanhSach.OrderBy(x => x).Select(x => x.ToString(Inv)))));
@@ -357,6 +357,8 @@ namespace QuanLyTaiSan
                     Id = I(e, "id"), Ten = S(e, "ten"), Dong = S(e, "dong") == "1", TuNgay = NgayN(e, "tuNgay") ?? DateTime.Today, DenNgay = NgayN(e, "denNgay"),
                     GhiChu = S(e, "ghiChu"), NguoiTao = S(e, "nguoiTao"), Tao = NgayN(e, "tao") ?? DateTime.Now
                 };
+                k.Nam = I(e, "nam", 0);
+                if (k.Nam <= 0) k.Nam = k.TuNgay.Year;   // dữ liệu trước khi kiểm kê theo năm
                 foreach (string s in S(e, "donVi").Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries))
                 {
                     int v;

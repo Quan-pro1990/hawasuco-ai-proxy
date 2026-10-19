@@ -1,14 +1,14 @@
 # Phần mềm Quản lý tài sản — quét tem QR xem thông tin, ảnh tài sản
 
 Mỗi tài sản dán 1 tem QR. Quét tem bằng điện thoại → thấy ngay thông tin, ảnh, thông số kỹ thuật, lịch sử kiểm tra / sửa chữa;
-ghi kiểm tra, báo hỏng, bảo dưỡng, chụp ảnh tại chỗ; kiểm kê cuối năm bằng quét tem; in tem, nhập / xuất Excel.
+ghi kiểm tra, báo hỏng, bảo dưỡng, chụp ảnh tại chỗ; **mỗi năm kiểm kê 1 lần — quét tem là ghi nhận đã kiểm kê**; in tem, nhập / xuất Excel.
 Thiết kế chi tiết: [THIET_KE.md](THIET_KE.md).
 
-| Điện thoại: quét tem → trang tài sản | Quét kiểm kê | Máy tính: trang tài sản |
+| Điện thoại: quét tem → đã ghi nhận kiểm kê | Quét liên tục (kiểm kê) | Máy tính: trang tài sản |
 |---|---|---|
-| ![](anh-man-hinh/dien-thoai-tai-san.png) | ![](anh-man-hinh/dien-thoai-xac-nhan-kiem-ke.png) | ![](anh-man-hinh/trang-tai-san.png) |
+| ![](anh-man-hinh/dien-thoai-da-kiem-ke.png) | ![](anh-man-hinh/dien-thoai-quet-kiem-ke.png) | ![](anh-man-hinh/trang-tai-san.png) |
 
-Thêm: [đăng nhập](anh-man-hinh/dien-thoai-dang-nhap.png) · [theo đơn vị](anh-man-hinh/theo-don-vi.png) · [tổng quan](anh-man-hinh/tong-quan.png) · [in tem QR](anh-man-hinh/in-tem.png) · [tiến độ kiểm kê khi quét](anh-man-hinh/dien-thoai-quet-kiem-ke.png)
+Thêm: [đăng nhập](anh-man-hinh/dien-thoai-dang-nhap.png) · [theo đơn vị](anh-man-hinh/theo-don-vi.png) · [tổng quan](anh-man-hinh/tong-quan.png) · [in tem QR](anh-man-hinh/in-tem.png) · [trang tài sản trên điện thoại](anh-man-hinh/dien-thoai-tai-san.png) · [kiểm kê năm](anh-man-hinh/kiem-ke-nam.png)
 
 ## Thư mục
 
@@ -74,8 +74,10 @@ theo đúng mã in ra.
 Mở địa chỉ máy chủ bằng Chrome (iPhone: Safari), đăng nhập, menu ⋮ → **Thêm vào màn hình chính** để mở như app.
 
 - Nút tròn **Quét QR** ở giữa thanh dưới → đưa tem vào khung; đọc được thì máy rung và mở trang tài sản.
+  Tài khoản từ *Nhân viên kiểm tra* trở lên: mỗi lần quét tem là **ghi nhận tài sản đã kiểm kê năm nay** (xem mục Kiểm kê).
   Chỗ tối bấm **Đèn** (nếu máy hỗ trợ). Không mở được camera: bấm **Chụp ảnh mã QR**, hoặc gõ mã vào ô bên dưới.
-- Hoặc dùng **ứng dụng Camera** có sẵn của điện thoại quét tem: tem chứa địa chỉ trang tài sản nên mở thẳng trong trình duyệt.
+- Hoặc dùng **ứng dụng Camera** có sẵn của điện thoại quét tem: tem chứa địa chỉ trang tài sản nên mở thẳng trong trình duyệt
+  (cũng ghi nhận kiểm kê như khi quét trong phần mềm).
 - Lần đầu trình duyệt hỏi quyền **Camera** (và **Vị trí** khi ghi GPS): chọn *Cho phép*.
 
 ## Trang tài sản
@@ -89,17 +91,30 @@ Mở địa chỉ máy chủ bằng Chrome (iPhone: Safari), đăng nhập, menu
 - **Lịch sử**: mọi lần khai báo, sửa (ghi rõ trường nào đổi từ gì sang gì), kiểm tra, bảo dưỡng, điều chuyển, kiểm kê, thêm ảnh — có ảnh, vị trí.
 - Giá trị còn lại, khấu hao luỹ kế là **tạm tính** theo đường thẳng để tham khảo; số chính thức theo sổ kế toán.
 
-## Kiểm kê
+## Kiểm kê hằng năm
 
-1. **Kiểm kê** → **Mở đợt kiểm kê**: tên đợt, thời gian, phạm vi (không chọn đơn vị = toàn công ty). Phần mềm chốt **sổ sách** = các tài sản
-   đang quản lý của phạm vi tại lúc mở đợt.
-2. Tổ kiểm kê bấm **Quét kiểm kê**: quét tem → tờ xác nhận hiện ra (ảnh, mã, tên, đơn vị) → chọn tình trạng thực tế, ghi chú, ảnh nếu cần →
-   **Lưu & quét tiếp**. Thanh tiến độ cập nhật ngay. Trên trang tài sản cũng có nút *Xác nhận kiểm kê*.
-3. Theo dõi trong trang đợt: tiến độ từng đơn vị (bấm để lọc), tab **Chưa kiểm** (chưa tìm thấy), **Đã kiểm**, **Ngoài sổ**
-   (quét được nhưng không có trong sổ sách của đợt). Tài sản khai báo thêm trong lúc kiểm kê: *Bổ sung tài sản mới khai báo vào sổ*.
-4. **Biên bản Excel**: danh sách theo đơn vị — theo sổ sách / thực tế / chênh lệch, tình trạng, người kiểm, thời gian, ghi chú; tổng hợp;
+Mỗi năm kiểm kê **1 lần** cho toàn công ty, và **quét tem là ghi nhận đã kiểm kê** — không phải mở đợt, không phải bấm thêm gì.
+
+1. **Bắt đầu**: kiểm kê năm nay tự bắt đầu khi có người quét tem đầu tiên trong năm (hoặc cán bộ quản lý bấm
+   **Kiểm kê → Bắt đầu kiểm kê năm …** để mở trước). Phần mềm chốt **sổ sách** = mọi tài sản đang quản lý lúc bắt đầu;
+   tài sản khai báo thêm trong năm tự vào sổ. Kiểm kê năm trước nếu còn mở thì tự kết thúc.
+2. **Quét tem**: nhân viên quét tem (nút **Quét QR** hoặc ứng dụng Camera của điện thoại) → trang tài sản mở ra với ô xanh
+   **"Vừa ghi nhận kiểm kê năm …"**, giữ nguyên tình trạng hiện có. Quét lại trong năm không ghi trùng
+   (hiện "Đã kiểm kê năm nay lúc … (người kiểm)").
+   - Tài sản hỏng, sai vị trí, tem mờ…: bấm **Ghi tình trạng kiểm kê** → chọn tình trạng thực tế, ghi chú, chụp ảnh.
+   - Kiểm kê nhiều tài sản liền nhau: trang Quét → **Quét liên tục (kiểm kê)**. Quét lần lượt từng tem; máy rung, tài sản hiện ngay vào
+     danh sách **Vừa quét** dưới camera (không chuyển trang). Bấm vào tài sản trong danh sách để ghi tình trạng / ghi chú / ảnh.
+   - Tem mất / không quét được: mở trang tài sản (tìm theo mã, tên) → **Xác nhận kiểm kê**.
+   - Tài khoản *Chỉ xem* quét tem chỉ để xem, không ghi nhận kiểm kê.
+3. **Theo dõi**: menu **Kiểm kê** mở thẳng kiểm kê năm nay — tiến độ theo khối → từng đội / phòng ban (bấm để lọc),
+   tab **Chưa kiểm** (chưa tìm thấy), **Đã kiểm**, **Ngoài sổ** (quét được nhưng không có trong sổ sách đầu kỳ).
+   Ô chọn năm để xem lại các năm trước. Trang Tổng quan có thẻ tiến độ kiểm kê năm nay.
+4. **Biên bản Excel**: danh sách theo khối → đơn vị — theo sổ sách / thực tế / chênh lệch, tình trạng, người kiểm, thời gian, ghi chú; tổng hợp;
    chữ ký người lập biểu – kế toán trưởng – giám đốc (tên lấy ở Cài đặt); trang tiến độ theo đơn vị.
-5. **Kết thúc đợt** khi xong (mở lại được).
+5. **Kết thúc kiểm kê năm …** khi xong (nên xuất biên bản trước). Sau đó quét tem chỉ để xem, không ghi nhận kiểm kê nữa;
+   cần ghi thêm thì **Mở lại kiểm kê**. Sang năm mới, lần quét tem đầu tiên tự bắt đầu kiểm kê năm mới.
+
+![](anh-man-hinh/kiem-ke-nam.png)
 
 ## Tài sản của từng đội cấp nước và phòng ban
 
@@ -114,8 +129,8 @@ Mỗi tài sản thuộc 1 **đơn vị quản lý**; mỗi đơn vị thuộc 1
 - Trang **Tài sản**: ô đơn vị chia nhóm theo khối, có dòng **Cả các đội cấp nước** / **Cả khối văn phòng** để lọc theo khối.
 - Tài khoản giới hạn 1 đơn vị (vd tài khoản của Đội cấp nước số 2): mở trang Tài sản là thấy sẵn tài sản của đội mình
   (chọn "Mọi đơn vị" để xem cả công ty); trang Theo đơn vị đánh dấu "Đơn vị của bạn".
-- **Kiểm kê**: khi mở đợt, tích "Các đội cấp nước" hoặc "Khối văn phòng" để chọn cả khối; tiến độ và biên bản kiểm kê chia theo
-  khối → đơn vị.
+- **Kiểm kê**: tiến độ và biên bản kiểm kê chia theo khối → từng đội / phòng ban; bấm 1 đơn vị trong bảng tiến độ để xem
+  tài sản chưa kiểm của đơn vị đó (giao cho tổ kiểm kê của đội).
 - Chuyển tài sản giữa các đơn vị: trang tài sản → **Điều chuyển**.
 
 ## Tổng quan, xuất Excel
@@ -129,8 +144,8 @@ Mỗi tài sản thuộc 1 **đơn vị quản lý**; mỗi đơn vị thuộc 1
 | Quyền | Được làm |
 |---|---|
 | Chỉ xem | quét QR, xem thông tin / ảnh / lịch sử, xuất Excel |
-| Nhân viên kiểm tra | + kiểm tra, báo hỏng, bảo dưỡng / sửa chữa, chụp ảnh, quét kiểm kê |
-| Cán bộ quản lý tài sản | + thêm / sửa, điều chuyển, thanh lý, in tem, tem trắng, nhập Excel, mở đợt kiểm kê, thêm loại / đơn vị |
+| Nhân viên kiểm tra | + kiểm tra, báo hỏng, bảo dưỡng / sửa chữa, chụp ảnh, kiểm kê (quét tem là ghi nhận) |
+| Cán bộ quản lý tài sản | + thêm / sửa, điều chuyển, thanh lý, in tem, tem trắng, nhập Excel, bắt đầu / kết thúc kiểm kê năm, thêm loại / đơn vị |
 | Quản trị | + xoá, tài khoản, cài đặt |
 
 Tài khoản có thể **giới hạn 1 đơn vị**: chỉ thêm / sửa tài sản của đơn vị đó (kiểm tra, kiểm kê vẫn quét được mọi tài sản).

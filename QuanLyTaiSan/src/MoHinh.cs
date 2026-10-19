@@ -34,7 +34,7 @@ namespace QuanLyTaiSan
             switch (v)
             {
                 case VaiTro.QuanTri: return "Mọi quyền: xoá tài sản, danh mục, tài khoản, cài đặt.";
-                case VaiTro.CapNhat: return "Thêm / sửa tài sản, ảnh, bảo dưỡng, điều chuyển, thanh lý, in tem, nhập Excel, mở đợt kiểm kê.";
+                case VaiTro.CapNhat: return "Thêm / sửa tài sản, ảnh, bảo dưỡng, điều chuyển, thanh lý, in tem, nhập Excel, bắt đầu / kết thúc kiểm kê năm.";
                 case VaiTro.KiemTra: return "Quét QR, ghi kết quả kiểm tra / kiểm kê, báo hỏng, chụp ảnh.";
                 default: return "Quét QR, xem thông tin và ảnh, xuất Excel.";
             }
@@ -207,9 +207,11 @@ namespace QuanLyTaiSan
         public List<string> Anh = new List<string>();
     }
 
+    /// <summary>Đợt kiểm kê: mỗi năm 1 đợt cho toàn công ty, tự mở khi quét tem đầu tiên trong năm.</summary>
     public class DotKiemKe
     {
         public int Id;
+        public int Nam;
         public string Ten = "", GhiChu = "", NguoiTao = "";
         public DateTime TuNgay, Tao;
         public DateTime? DenNgay;

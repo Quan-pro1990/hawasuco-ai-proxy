@@ -138,6 +138,7 @@
   }
 
   function thongBao(s, loi) {
+    Array.prototype.forEach.call(document.querySelectorAll('.toast'), function (x) { x.remove(); });   // không chồng thông báo cũ
     var t = document.createElement('div');
     t.className = 'toast';
     if (loi) t.style.background = '#9b1c1c';
@@ -521,12 +522,16 @@
         o('#/ds?them=lauchuakiem&sap=kiemtra', fNguyen.format(t.lauChuaKiem), 'Chưa kiểm tra trong ' + t.ngayNhacKiemTra + ' ngày') +
         o('#/hoatdong?loai=kiemtra', fNguyen.format(t.kiemTraThang), 'Đã kiểm tra trong 30 ngày') +
         o('#/ds?them=chuaanh', fNguyen.format(t.chuaAnh), 'Chưa có ảnh') + '</div>';
-      t.kiemKe.forEach(function (k) {
-        var pc = k.tong ? Math.round(k.daKiem * 100 / k.tong) : 0;
-        h += '<a class="the" href="#/kiemke/' + k.id + '" style="display:block;text-decoration:none;color:inherit"><div class="hang"><b class="gian">' + BT.kiemke.replace('<svg', '<svg width="18" height="18" style="vertical-align:-3px;color:var(--chinh)"') + ' ' + esc(k.ten) +
-          '</b><span class="mo nho">' + esc(k.tenDonVi) + '</span></div><div class="tien-do"><i style="width:' + pc + '%"></i></div><div class="mo nho">Đã kiểm kê ' +
-          fNguyen.format(k.daKiem) + ' / ' + fNguyen.format(k.tong) + ' (' + pc + '%)' + (k.ngoaiSo ? ' · ngoài sổ ' + k.ngoaiSo : '') + '</div></a>';
-      });
+      var kk = t.kiemKeNam, bieuTuong = BT.kiemke.replace('<svg', '<svg width="18" height="18" style="vertical-align:-3px;color:var(--chinh)"');
+      if (kk) {
+        var pc = kk.tong ? Math.round(kk.daKiem * 100 / kk.tong) : 0;
+        h += '<a class="the" href="#/kiemke/' + kk.id + '" style="display:block;text-decoration:none;color:inherit"><div class="hang"><b class="gian">' + bieuTuong + ' ' + esc(kk.ten) + '</b>' +
+          (kk.dong ? '<span class="tt tt-ngung">Đã kết thúc</span>' : '<span class="mo nho">Quét tem = ghi nhận đã kiểm kê</span>') + '</div><div class="tien-do"><i style="width:' + pc + '%"></i></div><div class="mo nho">Đã kiểm kê ' +
+          fNguyen.format(kk.daKiem) + ' / ' + fNguyen.format(kk.tong) + ' (' + pc + '%) · chưa kiểm ' + fNguyen.format(kk.tong - kk.daKiem) + (kk.ngoaiSo ? ' · ngoài sổ ' + kk.ngoaiSo : '') + '</div></a>';
+      } else if (t.tong > 0) {
+        h += '<a class="the" href="#/kiemke" style="display:block;text-decoration:none;color:inherit"><div class="hang"><b class="gian">' + bieuTuong + ' Kiểm kê tài sản năm ' + t.namNay + '</b><span class="mo nho">Chưa bắt đầu</span></div>' +
+          '<div class="mo nho">Mỗi năm kiểm kê 1 lần. Quét tem QR của tài sản bất kỳ là tự bắt đầu và ghi nhận tài sản đó đã kiểm kê.</div></a>';
+      }
       h += '<div class="luoi2"><div class="the"><h3>Theo tình trạng</h3>' +
         veThanh(t.theoTinhTrang.filter(function (x) { return x.so > 0; }), function (x) { return '#/ds?tinhtrang=' + x.ma; },
           function (x) { return MAU_TT[x.ma]; }, function (x) { return '<span class="tt-' + x.ma + '" style="background:none;display:inline-flex">' + BT_TT[x.ma] + '</span>'; }) + '</div>' +
@@ -761,108 +766,146 @@
     });
   }
 
-  function trangQuet(nd, r, lan) {
-    var dotId = +r.q.dot || 0;
-    var dot = null;
-    var coCamera = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) && window.isSecureContext !== false;
-    nd.innerHTML = '<div class="tieude-trang"><h2>' + (dotId ? 'Quét kiểm kê' : 'Quét mã QR') + '</h2>' + (dotId ? '<a class="nut" href="#/kiemke/' + dotId + '">Xem đợt kiểm kê</a>' : '') + '</div>' +
-      (dotId ? '<div class="the kk-dang" data-dot><div class="mo">Đang tải đợt kiểm kê…</div></div>' : '') +
-      '<div class="quet-khung"><video playsinline muted></video><div class="ngam"><div></div></div><div class="tren"></div><div class="thongbao">Đưa tem QR vào giữa khung</div></div>' +
-      '<div class="quet-thay"><div class="hang"><button class="nut gian" type="button" data-anh>' + BT.camera + 'Chụp ảnh mã QR</button></div>' +
-      '<form class="hang" style="margin-top:8px" data-nhap><input class="gian ma" placeholder="Hoặc gõ mã tài sản, vd MB-00012" autocapitalize="characters" style="flex:1;width:auto">' +
-      '<button class="nut chinh" type="submit">Tìm</button></form><div data-kq></div></div>';
-    var video = nd.querySelector('video'), tb = nd.querySelector('.thongbao'), tren = nd.querySelector('.tren'), kqEl = nd.querySelector('[data-kq]');
-    var dangXuLy = false, maCuoi = '', lucCuoi = 0, maDaXong = '';
+  /** Quét tem = ghi nhận đã kiểm kê năm nay (chưa mở kiểm kê năm nay thì máy chủ tự mở; đã kiểm trong năm thì giữ lần trước). */
+  function ghiKiemKeQuet(id) {
+    return api('POST', 'taisan/' + id + '/kiemke', {});
+  }
+  function nhoKiemKeVuaGhi(id, x, loi) {
+    st.kkVuaGhi = { id: id, kq: x, loi: loi, luc: Date.now() };
+  }
 
-    function veDot() {
-      var el = nd.querySelector('[data-dot]');
-      if (!el || !dot) return;
-      var pc = dot.tong ? Math.round(dot.daKiem * 100 / dot.tong) : 0;
-      el.innerHTML = '<div class="hang"><b class="gian">' + esc(dot.ten) + '</b><span class="mo nho">' + esc(dot.tenDonVi) + '</span></div><div class="tien-do"><i style="width:' + pc + '%"></i></div>' +
-        '<div class="mo nho">Đã kiểm kê <b>' + fNguyen.format(dot.daKiem) + '</b> / ' + fNguyen.format(dot.tong) + ' (' + pc + '%)' + (dot.ngoaiSo ? ' · ngoài sổ ' + dot.ngoaiSo : '') +
-        (dot.dong ? ' · <b style="color:var(--do)">đợt đã kết thúc</b>' : '') + '</div>';
+  function trangQuet(nd, r, lan) {
+    var ghiKK = quyen(1);
+    var lienTuc = ghiKK && (r.q.lientuc === '1' || !!r.q.dot);
+    var namNay = new Date().getFullYear(), kk = null, daTaiKK = false;
+    var vuaQuet = [];
+    var coCamera = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) && window.isSecureContext !== false;
+    nd.innerHTML = '<div class="tieude-trang"><h2>' + (lienTuc ? 'Quét kiểm kê' : 'Quét mã QR') + '</h2></div>' +
+      (ghiKK ? '<div class="phan-doan"><a href="#/quet"' + (lienTuc ? '' : ' class="chon"') + '>Quét từng tài sản</a><a href="#/quet?lientuc=1"' + (lienTuc ? ' class="chon"' : '') + '>Quét liên tục (kiểm kê)</a></div>' +
+        '<div class="the kk-dang" data-kk><div class="mo nho">Đang tải tình hình kiểm kê…</div></div>' : '') +
+      '<div class="quet-khung' + (lienTuc ? ' lien-tuc' : '') + '"><video playsinline muted></video><div class="ngam"><div></div></div><div class="tren"></div><div class="thongbao">Đưa tem QR vào giữa khung</div></div>' +
+      '<div class="quet-thay"><div data-kq></div>' + (lienTuc ? '<div data-vuaquet></div>' : '') +
+      '<div class="hang" style="margin-top:12px"><button class="nut gian" type="button" data-anh>' + BT.camera + 'Chụp ảnh mã QR</button></div>' +
+      '<form class="hang" style="margin-top:8px" data-nhap><input class="gian ma" placeholder="Hoặc gõ mã tài sản, vd MB-00012" autocapitalize="characters" style="flex:1;width:auto">' +
+      '<button class="nut chinh" type="submit">Tìm</button></form></div>';
+    var video = nd.querySelector('video'), tb = nd.querySelector('.thongbao'), tren = nd.querySelector('.tren'), kqEl = nd.querySelector('[data-kq]');
+    var dangXuLy = false, maDaXong = '', ganDay = {};   // ganDay: mã → lúc xử lý, để camera không đọc lại liên tục 1 tem
+    var CHO = lienTuc ? 'Quét lần lượt tem từng tài sản' : 'Đưa tem QR vào giữa khung';
+    tb.textContent = CHO;
+
+    function veKK() {
+      var el = nd.querySelector('[data-kk]');
+      if (!el) return;
+      if (!kk) {
+        el.innerHTML = '<b>Kiểm kê năm ' + namNay + ': chưa bắt đầu</b><div class="mo nho">Quét tem đầu tiên sẽ tự mở kiểm kê năm ' + namNay + ' và ghi nhận tài sản đó đã kiểm kê.</div>';
+        return;
+      }
+      var pc = kk.tong ? Math.round(kk.daKiem * 100 / kk.tong) : 0;
+      el.innerHTML = '<div class="hang"><b class="gian">' + esc(kk.ten) + '</b><a class="nho" href="#/kiemke/' + kk.id + '">Xem tiến độ</a></div><div class="tien-do"><i style="width:' + pc + '%"></i></div>' +
+        '<div class="mo nho">Đã kiểm kê <b>' + fNguyen.format(kk.daKiem) + '</b> / ' + fNguyen.format(kk.tong) + ' (' + pc + '%)' + (kk.ngoaiSo ? ' · ngoài sổ ' + kk.ngoaiSo : '') +
+        (kk.dong ? ' · <b style="color:var(--do)">đã kết thúc — quét tem không ghi nhận kiểm kê nữa</b>' : ' · quét tem là ghi nhận đã kiểm kê') + '</div>';
     }
-    if (dotId) {
+    if (ghiKK) {
       api('GET', 'kiemke').then(function (d) {
         if (!con(lan)) return;
-        dot = d.ds.filter(function (x) { return x.id === dotId; })[0] || null;
-        if (!dot) nd.querySelector('[data-dot]').innerHTML = '<div class="loi">Không có đợt kiểm kê này.</div>';
-        else veDot();
-      });
+        namNay = d.namNay;
+        kk = d.ds.filter(function (x) { return x.id === d.dotNamNay; })[0] || null;
+        daTaiKK = true;
+        veKK();
+        veVuaQuet();
+      }, function () { });
     }
 
-    function xuLy(text) {
+    function veVuaQuet() {
+      var el = nd.querySelector('[data-vuaquet]');
+      if (!el) return;
+      el.innerHTML = vuaQuet.length ? '<div class="the vua-quet"><h3>Vừa quét <span class="mo nho">' + vuaQuet.length + ' tài sản — bấm vào tài sản để ghi tình trạng, ghi chú, ảnh</span></h3><ul class="ds-don">' +
+        vuaQuet.map(function (x, i) {
+          var t = x.taiSan;
+          return '<li><button type="button" class="dong" data-i="' + i + '">' + oAnhNho(t) + '<div class="gian"><div class="tieu"><b class="ma">' + esc(t.ma) + '</b> · ' + esc(t.ten) + '</div>' +
+            '<div class="mo nho tieu">' + esc(t.tenDonVi) + (t.viTri ? ' · ' + esc(t.viTri) : '') + '</div><div class="nho">' + ttHtml(x.tinhTrang, true) +
+            ' <span class="' + (x.moi ? 'xanh' : 'mo') + '">' + (x.moi ? 'Đã ghi nhận ' + esc(luc(x.luc).slice(11)) : 'Đã kiểm kê trước: ' + esc(luc(x.luc)) + ' · ' + esc(x.hoTen)) + '</span>' +
+            (x.ngoaiSo ? ' <span class="cam">· ngoài sổ</span>' : '') + '</div></div></button></li>';
+        }).join('') + '</ul></div>' :
+        '<p class="mo nho" style="text-align:center;margin:0 8px">Mỗi tem quét được ghi nhận ngay là đã kiểm kê năm ' + namNay + ' (giữ tình trạng hiện có). Tài sản hỏng, sai vị trí… thì bấm vào tài sản trong danh sách để ghi lại.</p>';
+      napAnh(el);
+    }
+    veVuaQuet();
+    if (lienTuc) {
+      nd.querySelector('[data-vuaquet]').onclick = function (e) {
+        var b = e.target.closest('[data-i]');
+        if (!b) return;
+        var x = vuaQuet[+b.getAttribute('data-i')];
+        moKiemKeNhanh(x.taiSan, { luc: x.luc, nguoi: x.hoTen, tinhTrang: x.tinhTrang, ghiChu: x.ghiChu, nam: namNay }, function (y) {
+          if (!con(lan)) return;
+          kk = y.dot; veKK();
+          var i = vuaQuet.indexOf(x);
+          if (i >= 0) vuaQuet[i] = y;
+          veVuaQuet();
+        });
+      };
+    }
+
+    function daGhiLienTuc(x, text) {
+      var t = x.taiSan;
+      vuaQuet = vuaQuet.filter(function (v) { return v.taiSan.id !== t.id; });
+      vuaQuet.unshift(x);
+      if (vuaQuet.length > 100) vuaQuet.length = 100;
+      veVuaQuet();
+      dangXuLy = false;
+      tb.textContent = (x.moi ? 'Đã ghi nhận ' : 'Đã kiểm kê trước đó: ') + t.ma + ' — quét tem tiếp theo';
+      if (navigator.vibrate) try { navigator.vibrate(x.moi ? [50, 60, 50] : 250); } catch (e) { }
+      thongBao(x.moi ? 'Đã kiểm kê ' + t.ma + (x.ngoaiSo ? ' (ngoài sổ)' : '') + ' — ' + x.dot.daKiem + '/' + x.dot.tong : t.ma + ' đã kiểm kê lúc ' + luc(x.luc) + ' (' + x.hoTen + ')');
+    }
+
+    /** tuTay: gõ mã / chụp ảnh — luôn xử lý, kể cả tem vừa quét. */
+    function xuLy(text, tuTay) {
       if (dangXuLy || !text) return;
       var bay = Date.now();
-      if (text === maCuoi && bay - lucCuoi < 4000) return;
-      if (text === maDaXong) return;   // tem vừa kiểm kê xong còn trong khung hình: chờ tem khác
-      maDaXong = '';
-      maCuoi = text; lucCuoi = bay;
+      if (!tuTay) {
+        if (text === maDaXong) return;   // quét liên tục: tem vừa xử lý còn trong khung hình — chờ tem khác
+        if (ganDay[text] && bay - ganDay[text] < (lienTuc ? 20000 : 4000)) return;
+      }
+      ganDay[text] = bay;
+      maDaXong = lienTuc ? text : '';
       dangXuLy = true;
       if (navigator.vibrate) try { navigator.vibrate(60); } catch (e) { }
       tb.textContent = 'Đang tìm…';
       api('GET', 'tim?ma=' + encodeURIComponent(text)).then(function (k) {
         if (!con(lan)) return;
         if (k.id) {
-          if (dotId) { moToKiemKe(k.id, text); return; }
-          dungCamera();
-          di('/ts/' + k.id);
-          return;
+          kqEl.innerHTML = '';
+          if (!ghiKK || (daTaiKK && kk && kk.dong && !lienTuc)) { dungCamera(); di('/ts/' + k.id); return; }
+          tb.textContent = 'Đang ghi nhận kiểm kê…';
+          return ghiKiemKeQuet(k.id).then(function (x) {
+            if (!con(lan)) return;
+            kk = x.dot; daTaiKK = true; veKK();
+            if (lienTuc) { daGhiLienTuc(x, text); return; }
+            nhoKiemKeVuaGhi(k.id, x);
+            dungCamera();
+            di('/ts/' + k.id);
+          }, function (e) {
+            if (!con(lan)) return;
+            if (lienTuc) { dangXuLy = false; tb.textContent = e.message; thongBao(e.message, true); return; }
+            nhoKiemKeVuaGhi(k.id, null, e);
+            dungCamera();
+            di('/ts/' + k.id);
+          });
         }
         dangXuLy = false;
-        tb.textContent = 'Đưa tem QR vào giữa khung';
-        kqEl.innerHTML = '<div class="the" style="margin-top:12px"><h3>Không có tài sản mã <span class="ma">' + esc(k.ma || text) + '</span></h3>' +
+        tb.textContent = CHO;
+        kqEl.innerHTML = '<div class="the" style="margin:0 0 12px"><h3>Không có tài sản mã <span class="ma">' + esc(k.ma || text) + '</span></h3>' +
           (k.hopLe ? '<p class="mo">Tem này chưa gắn với tài sản nào (tem in trước), hoặc tài sản đã bị xoá.</p>' + (k.duocTao ? '<a class="nut chinh" href="#/moi?ma=' + encodeURIComponent(k.ma) + '">' + BT.them + 'Khai báo tài sản với mã này</a>' : '') :
             '<p class="mo">Nội dung mã QR không phải tem tài sản: ' + esc(text.slice(0, 120)) + '</p>') + '</div>';
-      }, function (e) { dangXuLy = false; tb.textContent = e.message; });
-    }
-
-    function moToKiemKe(tsId, text) {
-      api('GET', 'taisan/' + tsId).then(function (t) {
-        if (!con(lan)) return;
-        var kk = (t.kiemKe || []).filter(function (x) { return x.id === dotId; })[0];
-        var ttChon = t.tinhTrang;
-        var k = hop('Kiểm kê tài sản', '<div class="to-quet"><div class="tom">' + oAnhNho(t) + '<div style="min-width:0"><div><b class="ma">' + esc(t.ma) + '</b></div><div>' + esc(t.ten) + '</div>' +
-          '<div class="mo nho">' + esc(t.tenDonVi) + (t.viTri ? ' · ' + esc(t.viTri) : '') + '</div></div></div>' +
-          (kk && kk.daKiem ? '<div class="bao">Đã kiểm kê lúc ' + esc(luc(kk.luc)) + ' (' + esc(kk.nguoi || '') + '). Lưu lại sẽ ghi lần kiểm mới.</div>' : '') +
-          (kk && !kk.trongSo ? '<div class="bao">Tài sản không có trong sổ sách của đợt này (đơn vị ' + esc(t.tenDonVi) + ') — vẫn ghi nhận là "ngoài sổ".</div>' : '') +
-          '<label class="nhan">Tình trạng thực tế</label><div class="chip-tt">' + MA_TT.filter(function (m) { return m !== 'thanhly'; }).map(function (m) {
-            return '<button type="button" data-tt="' + m + '"' + (m === ttChon ? ' class="chon"' : '') + '>' + BT_TT[m] + esc(TEN_TT[m]) + '</button>';
-          }).join('') + '</div><label class="nhan">Ghi chú</label><textarea data-gc placeholder="Vd: đúng vị trí, tem mờ cần dán lại…"></textarea>' +
-          '<label class="nhan">Ảnh (không bắt buộc)</label><div data-anh></div>' +
-          '<div class="chan"><a class="nut" href="#/ts/' + t.id + '">Xem tài sản</a><button class="nut" type="button" data-bo>Bỏ qua</button><button class="nut chinh" type="button" data-luu>Lưu &amp; quét tiếp</button></div></div>');
-        var layAnh = oChonAnh(k.querySelector('[data-anh]'));
-        k.querySelector('.chip-tt').onclick = function (e) {
-          var b = e.target.closest('button');
-          if (!b) return;
-          ttChon = b.getAttribute('data-tt');
-          Array.prototype.forEach.call(this.children, function (x) { x.classList.toggle('chon', x === b); });
-        };
-        k.khiDong = function () { dangXuLy = false; tb.textContent = 'Đưa tem QR vào giữa khung'; };
-        k.querySelector('[data-bo]').onclick = function () { k.dong(); };
-        k.querySelector('[data-luu]').onclick = function () {
-          var nut = this;
-          nut.disabled = true;
-          var files = layAnh();
-          guiNhieuAnh(t.id, files, false, function (i, n) { nut.textContent = 'Đang gửi ảnh ' + i + '/' + n + '…'; }).then(function (anh) {
-            nut.textContent = 'Đang lưu…';
-            return api('POST', 'kiemke/' + dotId + '/quet', { taiSan: t.id, tinhTrang: ttChon, ghiChu: k.querySelector('[data-gc]').value, anh: anh });
-          }).then(function (d) {
-            dot = d;
-            veDot();
-            maDaXong = text;
-            k.dong();
-            thongBao('Đã kiểm kê ' + t.ma + (d.laNgoaiSo ? ' (ngoài sổ)' : '') + ' — ' + d.daKiem + '/' + d.tong);
-          }, function (e) { nut.disabled = false; nut.textContent = 'Lưu & quét tiếp'; thongBao(e.message, true); });
-        };
+        if (lienTuc && navigator.vibrate) try { navigator.vibrate(400); } catch (e) { }
       }, function (e) { dangXuLy = false; tb.textContent = e.message; });
     }
 
     nd.querySelector('[data-nhap]').addEventListener('submit', function (e) {
       e.preventDefault();
-      var v = this.querySelector('input').value.trim();
-      maCuoi = ''; maDaXong = '';
-      if (v) xuLy(v);
+      var o = this.querySelector('input'), v = o.value.trim();
+      if (v) xuLy(v, true);
+      if (lienTuc) o.value = '';
     });
     nd.querySelector('[data-anh]').onclick = function () {
       chonFile('image/*', false, true).then(function (f) {
@@ -870,8 +913,7 @@
         tb.textContent = 'Đang đọc mã trong ảnh…';
         docQRTuFile(f[0]).then(function (text) {
           if (!text) { tb.textContent = 'Không thấy mã QR trong ảnh — chụp gần hơn, đủ sáng, không rung.'; return; }
-          maCuoi = '';
-          xuLy(text);
+          xuLy(text, true);
         }, function (e) { tb.textContent = e.message; });
       });
     };
@@ -929,7 +971,13 @@
     dangTai(nd);
     api('GET', 'tim?ma=' + encodeURIComponent(ma)).then(function (k) {
       if (!con(lan)) return;
-      if (k.id) { thayDuong('/ts/' + k.id); ve(); return; }
+      if (k.id) {
+        // mở tem bằng ứng dụng Camera của điện thoại: cũng ghi nhận đã kiểm kê năm nay như khi quét trong ứng dụng
+        var moTrang = function () { if (con(lan)) { thayDuong('/ts/' + k.id); ve(); } };
+        if (!quyen(1)) { moTrang(); return; }
+        ghiKiemKeQuet(k.id).then(function (x) { nhoKiemKeVuaGhi(k.id, x); moTrang(); }, function (e) { nhoKiemKeVuaGhi(k.id, null, e); moTrang(); });
+        return;
+      }
       nd.innerHTML = '<div class="the"><h3>Không có tài sản mã <span class="ma">' + esc(k.ma) + '</span></h3><p class="mo">Tem chưa gắn với tài sản nào (tem in trước), hoặc tài sản đã bị xoá.</p>' +
         '<div class="hang">' + (k.duocTao ? '<a class="nut chinh" href="#/moi?ma=' + encodeURIComponent(k.ma) + '">' + BT.them + 'Khai báo tài sản với mã này</a>' : '') +
         '<a class="nut" href="#/quet">' + BT.quet + 'Quét tem khác</a></div></div>';
@@ -948,8 +996,31 @@
     api('GET', 'taisan/' + id).then(function (t) { if (con(lan)) veTaiSan(nd, t, lan); }, function (e) { if (con(lan)) veLoi(nd, e); });
   }
 
+  /** Ô "kiểm kê năm nay" trên trang tài sản. vg: kết quả vừa ghi khi quét tem (nếu có). */
+  function kkBaoHtml(t, kt, vg) {
+    var k = t.kiemKeNam;
+    if (!k) return '';
+    var nut = function (ten, chinh) { return kt && !k.dong ? '<button class="nut nho' + (chinh ? ' chinh' : '') + '" type="button" data-kk>' + ten + '</button>' : ''; };
+    if (k.daKiem) {
+      var moi = vg && vg.kq && vg.kq.moi;
+      return '<div class="kk-bao xong' + (moi ? ' vua' : '') + '">' + BT_TT.tot + '<div class="gian"><b>' + (moi ? 'Vừa ghi nhận kiểm kê năm ' : 'Đã kiểm kê năm ') + k.nam + '</b><br>' +
+        esc(luc(k.luc)) + ' — ' + esc(k.nguoi || '') + ' · ' + esc(TEN_TT[k.tinhTrang] || k.tinhTrang || '') + (k.ghiChu ? ' · ' + esc(k.ghiChu) : '') +
+        (!k.trongSo ? ' · <i>ngoài sổ sách đầu kỳ</i>' : '') + '</div>' + nut('Ghi tình trạng kiểm kê') + '</div>';
+    }
+    if (k.dot && k.dong) return '<div class="kk-bao"><div class="gian"><b>Chưa kiểm kê năm ' + k.nam + '</b><br>Kiểm kê năm ' + k.nam + ' đã kết thúc mà chưa ghi nhận tài sản này.</div></div>';
+    return '<div class="kk-bao"><div class="gian"><b>Chưa kiểm kê năm ' + k.nam + '</b><br>' +
+      (!k.dot ? 'Kiểm kê năm ' + k.nam + ' chưa bắt đầu — quét tem QR (hoặc bấm xác nhận) sẽ tự bắt đầu và ghi nhận tài sản này.' :
+        k.trongSo ? 'Quét tem QR hoặc bấm xác nhận khi đã thấy tài sản tại chỗ.' : 'Tài sản không có trong sổ sách đầu kỳ — xác nhận sẽ ghi là "ngoài sổ".') +
+      '</div>' + nut('Xác nhận kiểm kê', true) + '</div>';
+  }
+
   function veTaiSan(nd, t, lan) {
     var sua = t.duocSua, kt = quyen(1);
+    var vg = st.kkVuaGhi && st.kkVuaGhi.id === t.id && Date.now() - st.kkVuaGhi.luc < 60000 ? st.kkVuaGhi : null;
+    st.kkVuaGhi = null;
+    if (vg && vg.loi && vg.loi.status !== 409) thongBao('Chưa ghi nhận được kiểm kê: ' + vg.loi.message, true);   // 409: kiểm kê năm nay đã kết thúc (ô kiểm kê đã ghi rõ)
+    else if (vg && vg.kq && vg.kq.moi) thongBao('Đã ghi nhận kiểm kê năm ' + t.kiemKeNam.nam + (vg.kq.ngoaiSo ? ' (ngoài sổ)' : '') + ' — ' + fNguyen.format(vg.kq.dot.daKiem) + '/' + fNguyen.format(vg.kq.dot.tong));
+    else if (vg && vg.kq) thongBao('Đã kiểm kê năm nay lúc ' + luc(vg.kq.luc) + ' (' + vg.kq.hoTen + ')');
     var anh = t.boAnh || [];
     var dong = function (k, v) { return v === '' || v == null ? '' : '<div class="k">' + esc(k) + '</div><div class="v">' + v + '</div>'; };
     var han = t.hanBaoTri ? soNgayTu(t.hanBaoTri) : null;
@@ -963,11 +1034,7 @@
       '</div><div><div class="hang"><span class="ma-nhan ma">' + esc(t.ma) + '</span>' + ttHtml(t.tinhTrang) + '</div>' +
       '<h2 class="ts-ten">' + esc(t.ten) + '</h2><div class="ts-phu">' + esc(t.tenLoai) + ' · ' + esc(t.tenDonVi) + '</div>' +
       (t.viTri ? '<div class="ts-phu" style="margin-top:2px">' + BT.ghim.replace('<svg', '<svg width="14" height="14" style="vertical-align:-2px"') + ' ' + esc(t.viTri) + '</div>' : '') +
-      (t.kiemKe || []).map(function (k) {
-        return '<div class="kk-bao' + (k.daKiem ? ' xong' : '') + '"><div class="gian"><b>' + esc(k.ten) + '</b><br>' + (k.daKiem ? 'Đã kiểm kê lúc ' + esc(luc(k.luc)) + ' — ' + esc(k.nguoi || '') :
-          (k.trongSo ? 'Chưa kiểm kê' : 'Không có trong sổ sách của đợt (có thể ghi "ngoài sổ")')) + '</div>' +
-          (kt ? '<button class="nut nho' + (k.daKiem ? '' : ' chinh') + '" type="button" data-kk="' + k.id + '">' + (k.daKiem ? 'Kiểm kê lại' : 'Xác nhận kiểm kê') + '</button>' : '') + '</div>';
-      }).join('') +
+      kkBaoHtml(t, kt, vg) +
       '<div class="hanh-dong">' +
       (kt ? '<button class="nut" type="button" data-hd="kiemtra">' + BT.kiemtra + 'Kiểm tra</button>' : '') +
       (kt ? '<button class="nut" type="button" data-chupanh>' + BT.camera + 'Chụp ảnh</button>' : '') +
@@ -1025,7 +1092,7 @@
         });
       }
       else if (x.hasAttribute('data-intem')) { st.temLe = [{ id: t.id, ma: t.ma, ten: t.ten, tenDonVi: t.tenDonVi, tenLoai: t.tenLoai }]; di('/nhan?le=1'); }
-      else if (x.hasAttribute('data-kk')) moKiemKeNhanh(t, +x.getAttribute('data-kk'), taiLai);
+      else if (x.hasAttribute('data-kk')) moKiemKeNhanh(t, t.kiemKeNam.daKiem ? t.kiemKeNam : null, taiLai);
       else if (x.hasAttribute('data-xoa')) {
         hoi('Xoá tài sản', 'Xoá hẳn ' + t.ma + ' "' + t.ten + '" khỏi danh sách? Tài sản không còn dùng nên ghi "Thanh lý" thay vì xoá. Ảnh và lịch sử vẫn giữ trên máy chủ.', 'Xoá', true).then(function (ok) {
           if (!ok) return;
@@ -1138,7 +1205,7 @@
         '<label class="nhan">Người sử dụng</label><input data-ng value="' + esc(t.nguoiSuDung) + '">' +
         '<label class="nhan">Ghi chú (số quyết định, biên bản bàn giao…)</label><textarea data-nd></textarea>';
     } else {
-      h += '<div class="bao">Tài sản chuyển sang "Đã thanh lý": không còn tính bảo dưỡng, không đưa vào các đợt kiểm kê sau. Thông tin và lịch sử vẫn giữ.</div>' +
+      h += '<div class="bao">Tài sản chuyển sang "Đã thanh lý": không còn tính bảo dưỡng, không vào sổ kiểm kê các năm sau. Thông tin và lịch sử vẫn giữ.</div>' +
         '<label class="nhan">Số quyết định / biên bản thanh lý <b>*</b></label><textarea data-nd placeholder="Vd: QĐ số 123/QĐ-CN ngày 10/10/2026, bán phế liệu"></textarea>' +
         '<label class="nhan">Giá trị thu hồi (đồng)</label><input data-cp inputmode="numeric" placeholder="Không bắt buộc">';
     }
@@ -1180,20 +1247,33 @@
     };
   }
 
-  function moKiemKeNhanh(t, dotId, taiLai) {
-    var tt = t.tinhTrang;
-    var k = hop('Xác nhận kiểm kê', '<p class="mo nho" style="margin:0"><b class="ma">' + esc(t.ma) + '</b> · ' + esc(t.ten) + '</p>' +
-      '<label class="nhan">Tình trạng thực tế</label>' + chipTinhTrang(tt, ['thanhly']) + '<label class="nhan">Ghi chú</label><textarea data-gc></textarea>' +
-      '<div class="chan"><button class="nut" type="button" data-huy>Huỷ</button><button class="nut chinh" type="button" data-luu>Xác nhận</button></div>');
+  /** Ghi / cập nhật kết quả kiểm kê năm nay của 1 tài sản: tình trạng thực tế, ghi chú, ảnh. kq: lần đã ghi (nếu có). */
+  function moKiemKeNhanh(t, kq, xong) {
+    var tt = (kq && kq.tinhTrang) || t.tinhTrang;
+    var nam = (kq && kq.nam) || (t.kiemKeNam && t.kiemKeNam.nam) || new Date().getFullYear();
+    var tenNut = kq ? 'Lưu' : 'Xác nhận';
+    var k = hop((kq ? 'Ghi tình trạng kiểm kê năm ' : 'Xác nhận kiểm kê năm ') + nam, '<div class="to-quet"><div class="tom">' + oAnhNho(t) +
+      '<div style="min-width:0"><div><b class="ma">' + esc(t.ma) + '</b></div><div>' + esc(t.ten) + '</div><div class="mo nho">' + esc(t.tenDonVi) + (t.viTri ? ' · ' + esc(t.viTri) : '') + '</div></div></div>' +
+      (kq ? '<div class="tin">Đã kiểm kê lúc ' + esc(luc(kq.luc)) + ' (' + esc(kq.nguoi || '') + '). Lưu sẽ ghi lại kết quả kiểm kê với tình trạng, ghi chú mới.</div>' : '') +
+      '<label class="nhan">Tình trạng thực tế</label>' + chipTinhTrang(tt, ['thanhly']) +
+      '<label class="nhan">Ghi chú</label><textarea data-gc placeholder="Vd: đúng vị trí, tem mờ cần dán lại…">' + esc((kq && kq.ghiChu) || '') + '</textarea>' +
+      '<label class="nhan">Ảnh (không bắt buộc)</label><div data-anh></div>' +
+      '<div class="chan"><button class="nut" type="button" data-huy>Huỷ</button><button class="nut chinh" type="button" data-luu>' + tenNut + '</button></div></div>');
+    napAnh(k);
+    var layAnh = oChonAnh(k.querySelector('[data-anh]'));
     ganChip(k, function (v) { tt = v; });
     k.querySelector('[data-huy]').onclick = function () { k.dong(); };
     k.querySelector('[data-luu]').onclick = function () {
-      this.disabled = true;
-      api('POST', 'kiemke/' + dotId + '/quet', { taiSan: t.id, tinhTrang: tt, ghiChu: k.querySelector('[data-gc]').value }).then(function (d) {
+      var nut = this;
+      nut.disabled = true;
+      guiNhieuAnh(t.id, layAnh(), false, function (i, n) { nut.textContent = 'Đang gửi ảnh ' + i + '/' + n + '…'; }).then(function (anh) {
+        nut.textContent = 'Đang lưu…';
+        return api('POST', 'taisan/' + t.id + '/kiemke', { lai: true, tinhTrang: tt, ghiChu: k.querySelector('[data-gc]').value, anh: anh });
+      }).then(function (x) {
         k.dong();
-        thongBao('Đã kiểm kê — ' + d.daKiem + '/' + d.tong);
-        taiLai();
-      }, function (e) { thongBao(e.message, true); k.dong(); });
+        thongBao('Đã ghi kiểm kê ' + t.ma + (x.ngoaiSo ? ' (ngoài sổ)' : '') + ' — ' + fNguyen.format(x.dot.daKiem) + '/' + fNguyen.format(x.dot.tong));
+        xong(x);
+      }, function (e) { nut.disabled = false; nut.textContent = tenNut; thongBao(e.message, true); });
     };
   }
 
@@ -1318,55 +1398,53 @@
   }
 
   // ------------------------------------------------------------------ kiểm kê
+  function theDot(k) {
+    var pc = k.tong ? Math.round(k.daKiem * 100 / k.tong) : 0;
+    return '<a class="the" href="#/kiemke/' + k.id + '" style="display:block;text-decoration:none;color:inherit"><div class="hang"><b class="gian">' + esc(k.ten) + '</b>' +
+      (k.dong ? '<span class="tt tt-ngung">Đã kết thúc</span>' : '<span class="tt tt-tot">' + BT_TT.tot + 'Đang kiểm kê</span>') + '</div>' +
+      '<div class="mo nho">' + (k.tenDonVi !== 'Toàn công ty' ? esc(k.tenDonVi) + ' · ' : '') + 'từ ' + esc(ngay(k.tuNgay)) + (k.denNgay ? ' đến ' + esc(ngay(k.denNgay)) : '') + '</div>' +
+      '<div class="tien-do"><i style="width:' + pc + '%"></i></div><div class="mo nho">Đã kiểm kê ' + fNguyen.format(k.daKiem) + ' / ' + fNguyen.format(k.tong) + ' (' + pc + '%)' +
+      (k.ngoaiSo ? ' · ngoài sổ ' + k.ngoaiSo : '') + '</div></a>';
+  }
+
+  /** Kiểm kê: mỗi năm 1 đợt toàn công ty. Đã có đợt năm nay thì mở thẳng trang tiến độ của năm nay. */
   function trangKiemKe(nd, r, lan) {
     if (r.p[1]) { trangDot(nd, +r.p[1], r.q, lan); return; }
     dangTai(nd);
     api('GET', 'kiemke').then(function (d) {
       if (!con(lan)) return;
-      nd.innerHTML = '<div class="tieude-trang"><h2>Kiểm kê tài sản</h2>' + (quyen(2) ? '<button class="nut chinh" type="button" data-moi>' + BT.them + 'Mở đợt kiểm kê</button>' : '') + '</div>' +
-        '<p class="mo nho" style="margin-top:-6px">Mở đợt → nhân viên quét tem từng tài sản (hoặc bấm "Xác nhận kiểm kê" trên trang tài sản) → theo dõi tiến độ, danh sách chưa tìm thấy → xuất biên bản Excel.</p>' +
-        (d.ds.length ? d.ds.map(function (k) {
-          var pc = k.tong ? Math.round(k.daKiem * 100 / k.tong) : 0;
-          return '<a class="the" href="#/kiemke/' + k.id + '" style="display:block;text-decoration:none;color:inherit"><div class="hang"><b class="gian">' + esc(k.ten) + '</b>' +
-            (k.dong ? '<span class="tt tt-ngung">Đã kết thúc</span>' : '<span class="tt tt-tot">' + BT_TT.tot + 'Đang kiểm kê</span>') + '</div>' +
-            '<div class="mo nho">' + esc(k.tenDonVi) + ' · từ ' + esc(ngay(k.tuNgay)) + (k.denNgay ? ' đến ' + esc(ngay(k.denNgay)) : '') + '</div>' +
-            '<div class="tien-do"><i style="width:' + pc + '%"></i></div><div class="mo nho">Đã kiểm kê ' + fNguyen.format(k.daKiem) + ' / ' + fNguyen.format(k.tong) + ' (' + pc + '%)' +
-            (k.ngoaiSo ? ' · ngoài sổ ' + k.ngoaiSo : '') + '</div></a>';
-        }).join('') : '<div class="the trong">Chưa có đợt kiểm kê nào.</div>');
+      if (d.dotNamNay) { thayDuong('/kiemke/' + d.dotNamNay); trangDot(nd, d.dotNamNay, {}, lan); return; }
+      var cu = d.ds.filter(function (k) { return k.nam !== d.namNay; });
+      nd.innerHTML = '<div class="tieude-trang"><h2>Kiểm kê tài sản</h2></div>' +
+        '<div class="the"><h3>Kiểm kê năm ' + d.namNay + ': chưa bắt đầu</h3>' +
+        '<ol style="margin:0 0 10px;padding-left:20px;line-height:1.8"><li>Mỗi năm kiểm kê 1 lần cho toàn công ty; sổ sách = mọi tài sản đang quản lý khi bắt đầu (tài sản khai báo thêm trong năm tự vào sổ).</li>' +
+        '<li>Nhân viên đi quét tem QR từng tài sản — <b>quét là ghi nhận đã kiểm kê</b>. Tài sản hỏng, sai vị trí… thì ghi thêm tình trạng, ghi chú, ảnh.</li>' +
+        '<li>Theo dõi tiến độ từng đội / phòng ban, danh sách chưa tìm thấy; cuối năm xuất biên bản kiểm kê Excel rồi kết thúc.</li></ol>' +
+        '<p class="mo nho">Kiểm kê năm ' + d.namNay + ' tự bắt đầu khi quét tem đầu tiên' + (quyen(2) ? ', hoặc bấm "Bắt đầu kiểm kê" để mở trước.' : '.') + '</p>' +
+        '<div class="hang">' + (quyen(2) ? '<button class="nut chinh" type="button" data-moi>' + BT.them + 'Bắt đầu kiểm kê năm ' + d.namNay + '</button>' : '') +
+        (quyen(1) ? '<a class="nut" href="#/quet?lientuc=1">' + BT.quet + 'Quét kiểm kê</a>' : '') + '</div></div>' +
+        (cu.length ? '<h3 style="margin:18px 0 8px">Các năm trước</h3>' + cu.map(theDot).join('') : '');
       var b = nd.querySelector('[data-moi]');
-      if (b) b.onclick = function () { moDot(null); };
+      if (b) b.onclick = function () {
+        b.disabled = true;
+        api('POST', 'kiemke', { id: 0, nam: d.namNay }).then(function (x) { thongBao('Đã bắt đầu kiểm kê năm ' + d.namNay); di('/kiemke/' + x.id); },
+          function (e) { b.disabled = false; thongBao(e.message, true); });
+      };
     }, function (e) { if (con(lan)) veLoi(nd, e); });
   }
 
   function moDot(dot) {
-    var moi = !dot;
-    var nam = new Date().getFullYear();
-    dot = dot || { id: 0, ten: 'Kiểm kê tài sản năm ' + nam, tuNgay: homNay(), denNgay: '', donVi: [], ghiChu: '' };
-    var k = hop(moi ? 'Mở đợt kiểm kê' : 'Sửa đợt kiểm kê', '<label class="nhan">Tên đợt <b>*</b></label><input data-ten value="' + esc(dot.ten) + '">' +
+    var k = hop('Sửa thông tin kiểm kê', '<label class="nhan">Tên <b>*</b></label><input data-ten value="' + esc(dot.ten) + '">' +
       '<div class="hang"><div class="gian"><label class="nhan">Từ ngày</label><input type="date" data-tu value="' + esc(dot.tuNgay || '') + '"></div>' +
       '<div class="gian"><label class="nhan">Đến ngày</label><input type="date" data-den value="' + esc(dot.denNgay || '') + '"></div></div>' +
-      (moi ? '<label class="nhan">Phạm vi (không chọn = toàn công ty)</label><div style="max-height:220px;overflow:auto;border:1px solid var(--vien);border-radius:8px;padding:4px 10px">' +
-        (st.dm.khoi || []).map(function (kh) {
-          var ds = st.dm.donVi.filter(function (d) { return d.khoi === kh.ma; });
-          if (!ds.length) return '';
-          return '<label class="chon-o" style="margin:8px 0 2px;font-weight:600"><input type="checkbox" data-cakhoi="' + kh.ma + '"> ' + esc(kh.ten) + '</label>' +
-            ds.map(function (d) { return '<label class="chon-o" style="margin:4px 0 4px 26px"><input type="checkbox" data-khoi="' + kh.ma + '" value="' + d.id + '"> ' + esc(d.ten) + ' <span class="mo nho">(' + d.soTaiSan + ')</span></label>'; }).join('');
-        }).join('') + '</div>' +
-        '<div class="goiy">Sổ sách của đợt = các tài sản đang quản lý của phạm vi tại thời điểm mở đợt.</div>' : '') +
       '<label class="nhan">Ghi chú (quyết định thành lập tổ kiểm kê…)</label><textarea data-gc>' + esc(dot.ghiChu || '') + '</textarea>' +
-      '<div class="chan"><button class="nut" type="button" data-huy>Huỷ</button><button class="nut chinh" type="button" data-luu>' + (moi ? 'Mở đợt' : 'Lưu') + '</button></div>');
+      '<div class="chan"><button class="nut" type="button" data-huy>Huỷ</button><button class="nut chinh" type="button" data-luu>Lưu</button></div>');
     k.querySelector('[data-huy]').onclick = function () { k.dong(); };
-    Array.prototype.forEach.call(k.querySelectorAll('[data-cakhoi]'), function (c) {
-      c.onchange = function () {
-        Array.prototype.forEach.call(k.querySelectorAll('[data-khoi="' + c.getAttribute('data-cakhoi') + '"]'), function (x) { x.checked = c.checked; });
-      };
-    });
     k.querySelector('[data-luu]').onclick = function () {
-      var dv = Array.prototype.map.call(k.querySelectorAll('input[data-khoi]:checked'), function (c) { return +c.value; });
-      this.disabled = true;
       var nut = this;
-      api('POST', 'kiemke', { id: dot.id, ten: k.querySelector('[data-ten]').value, tuNgay: k.querySelector('[data-tu]').value, denNgay: k.querySelector('[data-den]').value, donVi: moi ? dv : dot.donVi, ghiChu: k.querySelector('[data-gc]').value })
-        .then(function (r) { k.dong(); thongBao(moi ? 'Đã mở đợt kiểm kê' : 'Đã lưu'); if (moi) di('/kiemke/' + r.id); else ve(); }, function (e) { nut.disabled = false; thongBao(e.message, true); });
+      nut.disabled = true;
+      api('POST', 'kiemke', { id: dot.id, ten: k.querySelector('[data-ten]').value, tuNgay: k.querySelector('[data-tu]').value, denNgay: k.querySelector('[data-den]').value, ghiChu: k.querySelector('[data-gc]').value })
+        .then(function () { k.dong(); thongBao('Đã lưu'); ve(); }, function (e) { nut.disabled = false; thongBao(e.message, true); });
     };
   }
 
@@ -1379,18 +1457,23 @@
     tai().then(function (d) {
       if (!con(lan)) return;
       var pc = d.tong ? Math.round(d.daKiem * 100 / d.tong) : 0;
-      nd.innerHTML = '<div class="tieude-trang"><a class="nut-icon" href="#/kiemke" aria-label="Quay lại">' + BT.quaylai + '</a><h2>' + esc(d.ten) + '</h2>' +
-        (!d.dong && quyen(1) ? '<a class="nut chinh" href="#/quet?dot=' + d.id + '">' + BT.quet + 'Quét kiểm kê</a>' : '') +
+      var namNay = d.nam === d.namNay;
+      nd.innerHTML = '<div class="tieude-trang">' + (namNay ? '' : '<a class="nut-icon" href="#/kiemke" aria-label="Quay lại">' + BT.quaylai + '</a>') + '<h2>' + esc(d.ten) + '</h2>' +
+        (d.cacDot.length > 1 ? '<select data-nam aria-label="Chọn năm kiểm kê" style="width:auto">' + d.cacDot.map(function (x) {
+          return '<option value="' + x.id + '"' + (x.id === d.id ? ' selected' : '') + '>' + esc(d.cacDot.filter(function (y) { return y.nam === x.nam; }).length > 1 ? x.ten : 'Năm ' + x.nam) + '</option>';
+        }).join('') + '</select>' : '') +
+        (namNay && !d.dong && quyen(1) ? '<a class="nut chinh" href="#/quet?lientuc=1">' + BT.quet + 'Quét kiểm kê</a>' : '') +
         '<button class="nut" type="button" data-xuat>' + BT.excel + 'Biên bản Excel</button></div>' +
-        '<div class="the"><div class="hang"><span class="gian mo">' + esc(d.tenDonVi) + ' · từ ' + esc(ngay(d.tuNgay)) + (d.denNgay ? ' đến ' + esc(ngay(d.denNgay)) : '') + ' · mở bởi ' + esc(d.nguoiTao) + '</span>' +
+        '<div class="the"><div class="hang"><span class="gian mo">' + (d.tenDonVi !== 'Toàn công ty' ? esc(d.tenDonVi) + ' · ' : 'Toàn công ty · ') + 'từ ' + esc(ngay(d.tuNgay)) + (d.denNgay ? ' đến ' + esc(ngay(d.denNgay)) : '') + ' · bắt đầu bởi ' + esc(d.nguoiTao) + '</span>' +
         (d.dong ? '<span class="tt tt-ngung">Đã kết thúc</span>' : '<span class="tt tt-tot">' + BT_TT.tot + 'Đang kiểm kê</span>') + '</div>' +
+        (namNay && !d.dong ? '<div class="mo nho" style="margin:4px 0 2px">Quét tem QR của tài sản = ghi nhận đã kiểm kê. Tài sản khai báo mới trong năm tự đưa vào sổ sách.</div>' : '') +
         '<div class="tien-do" style="height:12px"><i style="width:' + pc + '%"></i></div><div><b>' + fNguyen.format(d.daKiem) + '</b> / ' + fNguyen.format(d.tong) + ' tài sản đã kiểm kê (' + pc + '%) · chưa tìm thấy <b>' +
         fNguyen.format(d.tong - d.daKiem) + '</b>' + (d.ngoaiSo ? ' · ngoài sổ ' + d.ngoaiSo : '') + '</div>' +
         (d.ghiChu ? '<div class="mo nho" style="margin-top:6px;white-space:pre-line">' + esc(d.ghiChu) + '</div>' : '') +
         (quyen(2) ? '<div class="hang" style="margin-top:10px"><button class="nut nho" type="button" data-sua>' + BT.sua + 'Sửa</button>' +
-          (!d.dong ? '<button class="nut nho" type="button" data-bosung>Bổ sung tài sản mới khai báo vào sổ</button>' : '') +
-          '<button class="nut nho" type="button" data-dong>' + (d.dong ? 'Mở lại đợt' : 'Kết thúc đợt') + '</button>' +
-          (quyen(3) ? '<button class="nut nho do" type="button" data-xoa>' + BT.xoa + 'Xoá đợt</button>' : '') + '</div>' : '') + '</div>' +
+          (!d.dong ? '<button class="nut nho" type="button" data-bosung>Bổ sung tài sản còn thiếu vào sổ</button>' : '') +
+          (!d.dong || namNay ? '<button class="nut nho" type="button" data-dong>' + (d.dong ? 'Mở lại kiểm kê' : 'Kết thúc kiểm kê năm ' + d.nam) + '</button>' : '') +
+          (quyen(3) ? '<button class="nut nho do" type="button" data-xoa>' + BT.xoa + 'Xoá</button>' : '') + '</div>' : '') + '</div>' +
         '<div class="luoi2"><div class="the phang"><div class="bang-cuon"><table class="bang" style="min-width:480px"><thead><tr><th>Đơn vị</th><th class="so">Sổ sách</th><th class="so">Đã kiểm</th><th class="so">Còn lại</th><th style="width:30%">Tiến độ</th></tr></thead><tbody>' +
         (st.dm.khoi || []).map(function (kh) {
           var ds = d.theoDonVi.filter(function (x) { return x.khoi === kh.ma; });
@@ -1440,16 +1523,17 @@
       nd.querySelector('[data-xuat]').onclick = function () { xuatExcel(this, 'POST', 'kiemke/' + id + '/xuat'); };
       var b;
       if ((b = nd.querySelector('[data-sua]'))) b.onclick = function () { moDot(d); };
+      if ((b = nd.querySelector('[data-nam]'))) b.onchange = function () { di('/kiemke/' + this.value); };
       if ((b = nd.querySelector('[data-bosung]'))) b.onclick = function () {
-        api('POST', 'kiemke/' + id + '/bosung').then(function (x) { thongBao(x.them ? 'Đã đưa thêm ' + x.them + ' tài sản vào sổ sách của đợt' : 'Không có tài sản mới để bổ sung'); ve(); }, function (e) { thongBao(e.message, true); });
+        api('POST', 'kiemke/' + id + '/bosung').then(function (x) { thongBao(x.them ? 'Đã đưa thêm ' + x.them + ' tài sản vào sổ sách kiểm kê' : 'Không có tài sản mới để bổ sung'); ve(); }, function (e) { thongBao(e.message, true); });
       };
       if ((b = nd.querySelector('[data-dong]'))) b.onclick = function () {
         var dong = !d.dong;
-        (dong ? hoi('Kết thúc đợt kiểm kê', 'Kết thúc đợt "' + d.ten + '"? Còn ' + (d.tong - d.daKiem) + ' tài sản chưa tìm thấy. Sau khi kết thúc không quét kiểm kê được nữa (có thể mở lại).', 'Kết thúc') : Promise.resolve(true))
+        (dong ? hoi('Kết thúc kiểm kê', 'Kết thúc "' + d.ten + '"? Còn ' + (d.tong - d.daKiem) + ' tài sản chưa tìm thấy. Sau khi kết thúc, quét tem không ghi nhận kiểm kê nữa (có thể mở lại). Nên xuất biên bản Excel trước.', 'Kết thúc') : Promise.resolve(true))
           .then(function (ok) { if (ok) api('POST', 'kiemke/' + id + '/dong', { dong: dong }).then(function () { ve(); }, function (e) { thongBao(e.message, true); }); });
       };
       if ((b = nd.querySelector('[data-xoa]'))) b.onclick = function () {
-        hoi('Xoá đợt kiểm kê', 'Xoá đợt "' + d.ten + '"? Lịch sử kiểm kê trên từng tài sản vẫn giữ.', 'Xoá', true).then(function (ok) {
+        hoi('Xoá kiểm kê', 'Xoá "' + d.ten + '"? Kết quả kiểm kê của năm bị xoá (lịch sử kiểm kê trên từng tài sản vẫn giữ).' + (namNay ? ' Lần quét tem tiếp theo sẽ bắt đầu lại kiểm kê năm ' + d.nam + '.' : ''), 'Xoá', true).then(function (ok) {
           if (ok) api('DELETE', 'kiemke?id=' + id).then(function () { di('/kiemke'); }, function (e) { thongBao(e.message, true); });
         });
       };

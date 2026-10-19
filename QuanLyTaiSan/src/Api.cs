@@ -47,6 +47,7 @@ namespace QuanLyTaiSan
                     case "POST anh": return TraLoi.Json(ThemAnh(dv, tk, id, b));
                     case "DELETE anh": dv.BoAnh(tk, id, ctx.Q("anh")); return TraLoi.Json(ChiTiet(dv, tk, id));
                     case "POST anhchinh": dv.DatAnhChinh(tk, id, Json.Chu(b, "anh")); return TraLoi.Json(ChiTiet(dv, tk, id));
+                    case "POST kiemke": return TraLoi.Json(KiemKeKhiQuet(dv, tk, id, b));
                 }
                 return TraLoi.Loi(404, "Không có địa chỉ này.");
             }
@@ -106,9 +107,15 @@ namespace QuanLyTaiSan
                 case "GET /kiemke": return TraLoi.Json(DanhSachDot(dv));
                 case "POST /kiemke":
                     {
-                        DateTime? tu = VanBan.Ngay(Json.Chu(b, "tuNgay"), "Ngày bắt đầu");
-                        DotKiemKe k = dv.LuuDot(tk, Json.So(b, "id", 0), Json.Chu(b, "ten"), tu ?? DateTime.Today,
-                                                VanBan.Ngay(Json.Chu(b, "denNgay"), "Ngày kết thúc"), Json.MangSo(b, "donVi"), Json.Chu(b, "ghiChu"));
+                        // id = 0: mở kiểm kê của năm (mỗi năm 1 đợt toàn công ty); id > 0: sửa tên, thời gian, ghi chú
+                        int idDot = Json.So(b, "id", 0);
+                        DotKiemKe k;
+                        if (idDot == 0) k = dv.MoKiemKeNam(tk, Json.So(b, "nam", DateTime.Today.Year));
+                        else
+                        {
+                            DateTime? tu = VanBan.Ngay(Json.Chu(b, "tuNgay"), "Ngày bắt đầu");
+                            k = dv.LuuDot(tk, idDot, Json.Chu(b, "ten"), tu ?? DateTime.Today, VanBan.Ngay(Json.Chu(b, "denNgay"), "Ngày kết thúc"), Json.Chu(b, "ghiChu"));
+                        }
                         return TraLoi.Json(new O { { "id", k.Id } });
                     }
                 case "DELETE /kiemke": dv.XoaDot(tk, SoNguyen(ctx.Q("id"), 0)); return TraLoi.Json(Ok);
@@ -439,18 +446,41 @@ namespace QuanLyTaiSan
                 r["nguoiSua"] = t.NguoiSua;
                 r["duocSua"] = dv.DuocSua(tk, t);
                 r["lichSu"] = dv.Kho.LichSu(t.Id).AsEnumerable().Reverse().Take(300).Select(s => (object)SuKienJson(dl, s, false)).ToList();
-                // đợt kiểm kê đang mở có tài sản này trong sổ sách (hoặc đang quét được): cho phép xác nhận ngay trên trang tài sản
-                r["kiemKe"] = dl.KiemKe.Where(k => !k.Dong).OrderByDescending(k => k.Id).Select(k =>
-                {
-                    SuKien kq;
-                    k.KetQua.TryGetValue(t.Id, out kq);
-                    return (object)new O
-                    {
-                        { "id", k.Id }, { "ten", k.Ten }, { "trongSo", k.DanhSach.Contains(t.Id) },
-                        { "daKiem", kq != null }, { "luc", kq == null ? null : (object)kq.Luc }, { "nguoi", kq == null ? null : kq.HoTen }
-                    };
-                }).ToList();
+                r["kiemKeNam"] = KiemKeNamCua(dv, t);
                 return r;
+            }
+        }
+
+        /// <summary>Tình hình kiểm kê năm nay của 1 tài sản (đợt chưa mở: dot = 0).</summary>
+        static O KiemKeNamCua(DichVu dv, TaiSan t)
+        {
+            int nam = DateTime.Today.Year;
+            DotKiemKe k = dv.DotCuaNam(nam);
+            SuKien kq = null;
+            if (k != null) k.KetQua.TryGetValue(t.Id, out kq);
+            return new O
+            {
+                { "nam", nam }, { "dot", k == null ? 0 : k.Id }, { "ten", k == null ? null : k.Ten }, { "dong", k != null && k.Dong },
+                { "trongSo", k != null && k.DanhSach.Contains(t.Id) }, { "daKiem", kq != null },
+                { "luc", kq == null ? null : (object)kq.Luc }, { "nguoi", kq == null ? null : kq.HoTen }, { "tinhTrang", kq == null ? null : kq.TinhTrang },
+                { "ghiChu", kq == null ? null : kq.NoiDung }
+            };
+        }
+
+        static O KiemKeKhiQuet(DichVu dv, TaiKhoan tk, int id, O b)
+        {
+            string tt = Json.Chu(b, "tinhTrang");
+            DichVu.KetQuaQuet kq = dv.KiemKeKhiQuet(tk, id, string.IsNullOrEmpty(tt) ? null : tt, Json.Chu(b, "ghiChu"), Json.Dung(b, "lai"),
+                                                    Json.SoThuc(b, "viDo"), Json.SoThuc(b, "kinhDo"), Json.MangChu(b, "anh"));
+            lock (dv.Khoa)
+            {
+                TaiSan t = dv.Dl.Tim(id);
+                return new O
+                {
+                    { "moi", kq.Moi }, { "ngoaiSo", kq.NgoaiSo }, { "dot", DotJson(dv.Dl, kq.Dot) },
+                    { "luc", kq.KetQua.Luc }, { "hoTen", kq.KetQua.HoTen }, { "tinhTrang", kq.KetQua.TinhTrang }, { "ghiChu", kq.KetQua.NoiDung },
+                    { "taiSan", t == null ? null : TomTat(dv.Dl, t) }
+                };
             }
         }
 
@@ -580,7 +610,8 @@ namespace QuanLyTaiSan
                     { "baoTri", hanBT.Take(12).Select(x => { O o = TomTat(dl, x.t); return (object)o; }).ToList() },
                     { "hong", dl.TaiSan.Where(t => t.TinhTrang == TinhTrang.Hong).OrderByDescending(t => t.Sua).Take(12).Select(t => (object)TomTat(dl, t)).ToList() },
                     { "hoatDong", dv.Kho.TatCaSuKien.Reverse().Take(15).Select(s => (object)SuKienJson(dl, s, true)).ToList() },
-                    { "kiemKe", dl.KiemKe.Where(k => !k.Dong).Select(k => (object)DotJson(dl, k)).ToList() }
+                    { "namNay", homNay.Year },
+                    { "kiemKeNam", dv.DotCuaNam(homNay.Year) == null ? null : DotJson(dl, dv.DotCuaNam(homNay.Year)) }
                 };
                 return r;
             }
@@ -656,7 +687,7 @@ namespace QuanLyTaiSan
             int daKiem = k.DanhSach.Count(id => k.KetQua.ContainsKey(id));
             return new O
             {
-                { "id", k.Id }, { "ten", k.Ten }, { "tuNgay", VanBan.NgayIso(k.TuNgay) }, { "denNgay", VanBan.NgayIso(k.DenNgay) }, { "dong", k.Dong },
+                { "id", k.Id }, { "nam", k.Nam }, { "ten", k.Ten }, { "tuNgay", VanBan.NgayIso(k.TuNgay) }, { "denNgay", VanBan.NgayIso(k.DenNgay) }, { "dong", k.Dong },
                 { "ghiChu", k.GhiChu }, { "donVi", k.DonVi }, { "tenDonVi", MoTaPhamVi(dl, k.DonVi) },
                 { "tong", k.DanhSach.Count }, { "daKiem", daKiem }, { "ngoaiSo", k.KetQua.Keys.Count(id => !k.DanhSach.Contains(id)) },
                 { "nguoiTao", k.NguoiTao }, { "tao", k.Tao }
@@ -684,7 +715,16 @@ namespace QuanLyTaiSan
 
         static O DanhSachDot(DichVu dv)
         {
-            lock (dv.Khoa) return new O { { "ds", dv.Dl.KiemKe.OrderByDescending(k => k.Id).Select(k => (object)DotJson(dv.Dl, k)).ToList() } };
+            lock (dv.Khoa)
+            {
+                int nam = DateTime.Today.Year;
+                DotKiemKe namNay = dv.DotCuaNam(nam);
+                return new O
+                {
+                    { "namNay", nam }, { "dotNamNay", namNay == null ? 0 : namNay.Id },
+                    { "ds", dv.Dl.KiemKe.OrderByDescending(k => k.Nam).ThenByDescending(k => k.Id).Select(k => (object)DotJson(dv.Dl, k)).ToList() }
+                };
+            }
         }
 
         static O ChiTietDot(DichVu dv, NguCanh ctx, int id)
@@ -714,6 +754,9 @@ namespace QuanLyTaiSan
                 var list = ds.OrderBy(t => t.Ma, StringComparer.OrdinalIgnoreCase).ToList();
                 var r = DotJson(dl, k);
                 r["theoDonVi"] = theoDv;
+                r["namNay"] = DateTime.Today.Year;
+                r["cacDot"] = dl.KiemKe.OrderByDescending(x => x.Nam).ThenByDescending(x => x.Id)
+                                .Select(x => (object)new O { { "id", x.Id }, { "nam", x.Nam }, { "ten", x.Ten } }).ToList();
                 r["soDong"] = list.Count;
                 r["ds"] = list.Take(500).Select(t =>
                 {
