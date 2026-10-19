@@ -337,7 +337,7 @@
     st.khung = false;
     var cty = st.ping && st.ping.congTy ? st.ping.congTy : '';
     app.innerHTML = '<form class="dangnhap" autocomplete="on">' +
-      '<div class="logo"><img src="icon-192.png" alt=""></div>' +
+      '<div class="logo"><img src="logo.png" alt="Logo công ty"></div>' +
       '<h1>Quản lý tài sản</h1><div class="congty">' + esc(cty) + '</div>' +
       (/^#\/ma\//.test(location.hash) ? '<div class="tin">Đăng nhập để xem tài sản vừa quét.</div>' : '') +
       (loi ? '<div class="loi">' + esc(loi) + '</div>' : '') +
@@ -369,7 +369,7 @@
 
   function veKhung() {
     var n = st.nguoi || {};
-    app.innerHTML = '<header class="dau"><img src="icon-192.png" alt=""><div class="tieude"><b>Quản lý tài sản</b><span>' + esc(n.congTy || '') +
+    app.innerHTML = '<header class="dau"><img src="logo.png" alt=""><div class="tieude"><b>Quản lý tài sản</b><span>' + esc(n.congTy || '') +
       '</span></div><div class="nguoi">' + esc(n.hoTen || n.ten || '') + '<small>' + esc(n.tenVaiTro || '') + '</small></div></header>' +
       '<div class="khung"><nav class="ben"><a class="quet" href="#/quet">' + BT.quet + 'Quét mã QR</a>' +
       MENU.map(function (m) {

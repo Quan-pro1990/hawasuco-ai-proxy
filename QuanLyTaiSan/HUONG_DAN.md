@@ -8,7 +8,7 @@ Thiết kế chi tiết: [THIET_KE.md](THIET_KE.md).
 |---|---|---|
 | ![](anh-man-hinh/dien-thoai-tai-san.png) | ![](anh-man-hinh/dien-thoai-xac-nhan-kiem-ke.png) | ![](anh-man-hinh/trang-tai-san.png) |
 
-Thêm: [tổng quan](anh-man-hinh/tong-quan.png) · [in tem QR](anh-man-hinh/in-tem.png) · [tiến độ kiểm kê khi quét](anh-man-hinh/dien-thoai-quet-kiem-ke.png)
+Thêm: [đăng nhập](anh-man-hinh/dien-thoai-dang-nhap.png) · [tổng quan](anh-man-hinh/tong-quan.png) · [in tem QR](anh-man-hinh/in-tem.png) · [tiến độ kiểm kê khi quét](anh-man-hinh/dien-thoai-quet-kiem-ke.png)
 
 ## Thư mục
 
