@@ -1,6 +1,6 @@
 {
   "name": "hawamap-ban-do-dan-duong",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Bản đồ dẫn đường (web/PWA): tìm địa điểm, chỉ đường, dẫn đường giọng nói tiếng Việt, cảnh báo tốc độ / camera, báo cáo giao thông, camera hành trình",
   "type": "module",
   "private": true,
