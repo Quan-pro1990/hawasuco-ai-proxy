@@ -45,6 +45,7 @@
     qr: svg('<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"/>'),
     xoa: svg('<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>'),
     sao: svg('<path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/>'),
+    donvi: svg('<path d="M3 21h18M5 21V7l7-4 7 4v14"/><path d="M9 21v-5h6v5M9 9h.01M15 9h.01M9 13h.01M15 13h.01"/>'),
     in: svg('<path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>'),
     tai: svg('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>'),
     len: svg('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>'),
@@ -362,10 +363,10 @@
 
   // ------------------------------------------------------------------ khung, điều hướng
   var MENU = [
-    ['tongquan', 'Tổng quan', 0], ['ds', 'Tài sản', 0], ['kiemke', 'Kiểm kê', 0], ['hoatdong', 'Hoạt động', 0],
+    ['tongquan', 'Tổng quan', 0], ['ds', 'Tài sản', 0], ['donvi', 'Theo đơn vị', 0], ['kiemke', 'Kiểm kê', 0], ['hoatdong', 'Hoạt động', 0],
     ['-'], ['nhan', 'In tem QR', 0], ['nhap', 'Nhập từ Excel', 2], ['danhmuc', 'Danh mục', 0], ['taikhoan', 'Tài khoản', 0], ['caidat', 'Cài đặt', 3]
   ];
-  var BT_MENU = { tongquan: 'tongquan', ds: 'taisan', kiemke: 'kiemke', hoatdong: 'hoatdong', nhan: 'tem', nhap: 'excel', danhmuc: 'danhmuc', taikhoan: 'taikhoan', caidat: 'caidat' };
+  var BT_MENU = { tongquan: 'tongquan', ds: 'taisan', donvi: 'donvi', kiemke: 'kiemke', hoatdong: 'hoatdong', nhan: 'tem', nhap: 'excel', danhmuc: 'danhmuc', taikhoan: 'taikhoan', caidat: 'caidat' };
 
   function veKhung() {
     var n = st.nguoi || {};
@@ -426,7 +427,7 @@
     Array.prototype.forEach.call(app.querySelectorAll('[data-m]'), function (a) {
       var m = a.getAttribute('data-m');
       var chon = m === trang || (m === 'ds' && (trang === 'ts' || trang === 'sua' || trang === 'moi' || trang === 'ma')) ||
-        (m === 'khac' && ['hoatdong', 'nhan', 'nhap', 'danhmuc', 'taikhoan', 'caidat', 'khac'].indexOf(trang) >= 0);
+        (m === 'khac' && ['donvi', 'hoatdong', 'nhan', 'nhap', 'danhmuc', 'taikhoan', 'caidat', 'khac'].indexOf(trang) >= 0);
       a.classList.toggle('chon', chon);
     });
     var nd = document.getElementById('nd');
@@ -435,7 +436,7 @@
     var lan = st.lan;
     window.scrollTo(0, 0);
     var trangs = {
-      tongquan: trangTongQuan, ds: trangDanhSach, quet: trangQuet, ts: trangTaiSan, ma: trangMa, sua: trangSua, moi: trangSua,
+      tongquan: trangTongQuan, ds: trangDanhSach, donvi: trangDonVi, quet: trangQuet, ts: trangTaiSan, ma: trangMa, sua: trangSua, moi: trangSua,
       kiemke: trangKiemKe, hoatdong: trangHoatDong, nhan: trangNhan, nhap: trangNhap, danhmuc: trangDanhMuc,
       taikhoan: trangTaiKhoan, caidat: trangCaiDat, khac: trangKhac
     };
@@ -453,11 +454,19 @@
       return '<option value="' + l.id + '"' + (String(l.id) === String(chon) ? ' selected' : '') + '>' + esc(l.ten) + '</option>';
     }).join('');
   }
-  function optDonVi(chon, rong) {
-    return (rong ? '<option value="">' + esc(rong) + '</option>' : '') + st.dm.donVi.map(function (d) {
-      return '<option value="' + d.id + '"' + (String(d.id) === String(chon) ? ' selected' : '') + '>' + esc(d.ten) + '</option>';
+  /** Danh sách chọn đơn vị, nhóm theo khối (các đội cấp nước / khối văn phòng). coKhoi: thêm dòng "cả khối" (giá trị "k:doi"). */
+  function optDonVi(chon, rong, coKhoi) {
+    return (rong ? '<option value="">' + esc(rong) + '</option>' : '') + (st.dm.khoi || []).map(function (k) {
+      var ds = st.dm.donVi.filter(function (d) { return d.khoi === k.ma; });
+      if (!ds.length) return '';
+      return '<optgroup label="' + esc(k.ten) + '">' +
+        (coKhoi ? '<option value="k:' + k.ma + '"' + ('k:' + k.ma === String(chon) ? ' selected' : '') + '>Cả ' + esc(k.ten.toLowerCase()) + '</option>' : '') +
+        ds.map(function (d) {
+          return '<option value="' + d.id + '"' + (String(d.id) === String(chon) ? ' selected' : '') + '>' + esc(d.ten) + '</option>';
+        }).join('') + '</optgroup>';
     }).join('');
   }
+  function tenKhoi(ma) { var k = (st.dm.khoi || []).filter(function (x) { return x.ma === ma; })[0]; return k ? k.ten : ''; }
   function optTT(chon, rong) {
     return (rong ? '<option value="">' + esc(rong) + '</option>' : '') + MA_TT.map(function (m) {
       return '<option value="' + m + '"' + (m === chon ? ' selected' : '') + '>' + esc(TEN_TT[m]) + '</option>';
@@ -522,7 +531,14 @@
         veThanh(t.theoTinhTrang.filter(function (x) { return x.so > 0; }), function (x) { return '#/ds?tinhtrang=' + x.ma; },
           function (x) { return MAU_TT[x.ma]; }, function (x) { return '<span class="tt-' + x.ma + '" style="background:none;display:inline-flex">' + BT_TT[x.ma] + '</span>'; }) + '</div>' +
         '<div class="the"><h3>Theo loại tài sản</h3>' + veThanh(t.theoLoai.slice(0, 12), function (x) { return '#/ds?loai=' + x.id; }) + '</div>' +
-        '<div class="the"><h3>Theo đơn vị quản lý</h3>' + veThanh(t.theoDonVi.slice(0, 14), function (x) { return '#/ds?donvi=' + x.id; }) + '</div>' +
+        '<div class="the"><h3><span class="gian">Theo đơn vị quản lý</span><a class="nut nho" href="#/donvi">Xem từng đơn vị</a></h3>' +
+        (st.dm.khoi || []).map(function (k) {
+          var ds = t.theoDonVi.filter(function (x) { return x.khoi === k.ma; });
+          if (!ds.length) return '';
+          var tong = ds.reduce(function (a, x) { return a + x.so; }, 0);
+          return '<div class="hang" style="margin:8px 0 4px"><a class="gian" href="#/ds?khoi=' + k.ma + '" style="font-weight:600;color:var(--chu);text-decoration:none">' + esc(k.ten) + '</a>' +
+            '<span class="mo nho">' + fNguyen.format(tong) + ' tài sản</span></div>' + veThanh(ds, function (x) { return '#/ds?donvi=' + x.id; });
+        }).join('') + '</div>' +
         '<div class="the"><h3><span class="gian">Đến hạn bảo dưỡng</span><a class="nut nho" href="#/ds?them=baotri&sap=baotri">Xem hết</a></h3>' +
         (t.baoTri.length ? '<ul class="ds-don">' + t.baoTri.map(function (x) {
           var n = soNgayTu(x.hanBaoTri);
@@ -542,11 +558,13 @@
   var SAP = { ma: 'Sắp theo mã', ten: 'Sắp theo tên', moi: 'Mới sửa gần đây', kiemtra: 'Lâu chưa kiểm tra trước', baotri: 'Hạn bảo dưỡng gần nhất', gia: 'Nguyên giá cao trước' };
 
   function trangDanhSach(nd, r, lan) {
-    var q = { q: r.q.q || '', loai: r.q.loai || '', donvi: r.q.donvi || '', tinhtrang: r.q.tinhtrang || '', them: r.q.them || '', sap: r.q.sap || 'ma' };
+    var q = { q: r.q.q || '', loai: r.q.loai || '', donvi: r.q.donvi || '', khoi: r.q.khoi || '', tinhtrang: r.q.tinhtrang || '', them: r.q.them || '', sap: r.q.sap || 'ma' };
+    // tài khoản của 1 đội / phòng ban: mở trang lần đầu thì lọc sẵn tài sản của đơn vị mình (chọn "Mọi đơn vị" để xem cả công ty)
+    if (!Object.keys(r.q).length && st.nguoi.donVi >= 0) { q.donvi = String(st.nguoi.donVi); thayDuong('/ds' + chuoiQuery(q)); }
     nd.innerHTML = '<div class="tieude-trang"><h2>Tài sản</h2>' + (quyen(2) ? '<a class="nut chinh" href="#/moi">' + BT.them + 'Thêm tài sản</a>' : '') +
       '<button class="nut" type="button" data-xuat>' + BT.excel + 'Xuất Excel</button><button class="nut" type="button" data-tem>' + BT.tem + 'In tem</button></div>' +
       '<div class="loc"><div class="tim">' + BT.tim + '<input type="search" placeholder="Tìm mã, tên, vị trí, số seri…" value="' + esc(q.q) + '" data-k="q"></div>' +
-      '<select data-k="loai">' + optLoai(q.loai, 'Mọi loại') + '</select><select data-k="donvi">' + optDonVi(q.donvi, 'Mọi đơn vị') + '</select>' +
+      '<select data-k="loai">' + optLoai(q.loai, 'Mọi loại') + '</select><select data-k="donvi">' + optDonVi(q.khoi ? 'k:' + q.khoi : q.donvi, 'Mọi đơn vị', true) + '</select>' +
       '<select data-k="tinhtrang">' + optTT(q.tinhtrang, 'Mọi tình trạng') + '</select>' +
       '<select data-k="them">' + Object.keys(THEM_LOC).map(function (k) { return '<option value="' + k + '"' + (k === q.them ? ' selected' : '') + '>' + esc(THEM_LOC[k]) + '</option>'; }).join('') + '</select>' +
       '<select data-k="sap">' + Object.keys(SAP).map(function (k) { return '<option value="' + k + '"' + (k === q.sap ? ' selected' : '') + '>' + esc(SAP[k]) + '</option>'; }).join('') + '</select></div>' +
@@ -564,7 +582,7 @@
     function tai(them) {
       var p = ++phien;
       if (!them) { trang = 1; tomTat.textContent = 'Đang tải…'; }
-      var qs = chuoiQuery({ q: q.q, loai: q.loai, donvi: q.donvi, tinhtrang: q.tinhtrang, them: q.them, sap: q.sap, trang: trang, co: 50 });
+      var qs = chuoiQuery({ q: q.q, loai: q.loai, donvi: q.donvi, khoi: q.khoi, tinhtrang: q.tinhtrang, them: q.them, sap: q.sap, trang: trang, co: 50 });
       api('GET', 'taisan' + qs).then(function (d) {
         if (!con(lan) || p !== phien) return;
         tomTat.innerHTML = '<b>' + fNguyen.format(d.tong) + '</b> tài sản' + (d.tongNguyenGia ? ' · nguyên giá ' + esc(tienGon(d.tongNguyenGia)) + ' · còn lại ' + esc(tienGon(d.tongConLai)) : '');
@@ -603,23 +621,72 @@
     });
     Array.prototype.forEach.call(nd.querySelectorAll('[data-k]'), function (o) {
       o.addEventListener(o.tagName === 'INPUT' ? 'input' : 'change', function () {
-        q[o.getAttribute('data-k')] = o.value;
+        var k = o.getAttribute('data-k');
+        if (k === 'donvi') { q.khoi = /^k:/.test(o.value) ? o.value.slice(2) : ''; q.donvi = q.khoi ? '' : o.value; }
+        else q[k] = o.value;
         thayDuong('/ds' + chuoiQuery(q));
         clearTimeout(hen);
         hen = setTimeout(function () { tai(false); }, o.tagName === 'INPUT' ? 300 : 0);
       });
     });
     nd.querySelector('[data-xuat]').onclick = function () {
-      var than = { q: q.q, loai: +q.loai || 0, donvi: +q.donvi || 0, tinhtrang: q.tinhtrang, them: q.them, sap: q.sap };
+      var than = { q: q.q, loai: +q.loai || 0, donvi: +q.donvi || 0, khoi: q.khoi, tinhtrang: q.tinhtrang, them: q.them, sap: q.sap };
       if (soChon()) than.ids = Object.keys(st.chon).map(Number);
       xuatExcel(this, 'POST', 'xuat/taisan', than);
     };
     nd.querySelector('[data-tem]').onclick = function () {
       if (soChon()) di('/nhan?chon=1');
-      else di('/nhan' + chuoiQuery({ q: q.q, loai: q.loai, donvi: q.donvi, tinhtrang: q.tinhtrang, them: q.them, sap: q.sap }));
+      else di('/nhan' + chuoiQuery({ q: q.q, loai: q.loai, donvi: q.donvi, khoi: q.khoi, tinhtrang: q.tinhtrang, them: q.them, sap: q.sap }));
     };
     veChon();
     tai(false);
+  }
+
+  // ------------------------------------------------------------------ tài sản theo đơn vị (từng đội cấp nước, phòng ban khối văn phòng)
+  function trangDonVi(nd, r, lan) {
+    dangTai(nd);
+    api('GET', 'theodonvi').then(function (d) {
+      if (!con(lan)) return;
+      var cuaToi = st.nguoi.donVi;
+      var viec = function (x) {
+        if (!x.so) return 'Chưa có tài sản';
+        var c = [];
+        if (x.hong) c.push('<span class="canh-do">' + x.hong + ' hỏng / đang sửa</span>');
+        if (x.denHanBaoTri) c.push('<span class="canh-cam">' + x.denHanBaoTri + ' đến hạn bảo dưỡng</span>');
+        if (x.lauChuaKiem) c.push(x.lauChuaKiem + ' chưa kiểm tra > ' + d.ngayNhacKiemTra + ' ngày');
+        if (x.chuaAnh) c.push(x.chuaAnh + ' chưa có ảnh');
+        return c.length ? c.join(' · ') : 'Không có việc cần xử lý';
+      };
+      var h = '<div class="tieude-trang"><h2>Tài sản theo đơn vị</h2><button class="nut" type="button" data-xuat="">' + BT.excel + 'Sổ tài sản các đơn vị (Excel)</button></div>' +
+        '<p class="mo nho" style="margin-top:-6px">Tài sản đang quản lý của từng đội cấp nước và phòng ban (không gồm đã thanh lý, mất). Bấm tên đơn vị để xem danh sách.' +
+        (quyen(2) ? ' Thêm / đổi khối của đơn vị ở <a href="#/danhmuc">Danh mục</a>.' : '') + '</p>';
+      d.khoi.forEach(function (k) {
+        if (!k.donVi.length) return;
+        h += '<section class="khoi"><div class="khoi-dau"><div class="gian"><h3>' + esc(k.ten) + '</h3><div class="mo nho">' + k.donVi.length + ' đơn vị · ' +
+          fNguyen.format(k.so) + ' tài sản · nguyên giá ' + esc(tienGon(k.nguyenGia)) + ' · còn lại ' + esc(tienGon(k.conLai)) +
+          (k.hong ? ' · <span class="canh-do">' + k.hong + ' hỏng / đang sửa</span>' : '') + '</div></div>' +
+          '<a class="nut nho" href="#/ds?khoi=' + k.ma + '">' + BT.taisan + 'Xem tài sản</a><button class="nut nho" type="button" data-xuat="k:' + k.ma + '">' + BT.excel + 'Sổ Excel của khối</button></div>' +
+          '<div class="luoi-dv">' + k.donVi.map(function (x) {
+            return '<div class="the dv' + (x.id === cuaToi ? ' cua-toi' : '') + '"><a class="dv-dau" href="#/ds?donvi=' + x.id + '"><b>' + esc(x.ten) + '</b>' +
+              '<span class="dv-so"><b>' + fNguyen.format(x.so) + '</b> tài sản</span></a>' +
+              (x.id === cuaToi ? '<div><span class="tt tt-tot">' + BT_TT.tot + 'Đơn vị của bạn</span></div>' : '') +
+              (x.ghiChu ? '<div class="mo nho">' + esc(x.ghiChu) + '</div>' : '') +
+              (x.so ? '<div class="dv-gt">Nguyên giá <b>' + esc(tienGon(x.nguyenGia)) + '</b> · còn lại <b>' + esc(tienGon(x.conLai)) + '</b></div>' : '') +
+              (x.theoLoai.length ? '<div class="mo nho">' + x.theoLoai.map(function (l) { return esc(l.ten) + ': ' + l.so; }).join(' · ') + '</div>' : '') +
+              '<div class="dv-viec nho">' + viec(x) + '</div>' +
+              '<div class="hang" style="margin-top:auto;padding-top:8px"><a class="nut nho" href="#/ds?donvi=' + x.id + '">Danh sách</a>' +
+              (x.so ? '<a class="nut nho" href="#/nhan?donvi=' + x.id + '">' + BT.tem + 'In tem</a>' : '') +
+              '<button class="nut nho" type="button" data-xuat="' + x.id + '">' + BT.excel + 'Sổ Excel</button></div></div>';
+          }).join('') + '</div></section>';
+      });
+      nd.innerHTML = h;
+      nd.onclick = function (e) {
+        var b = e.target.closest('[data-xuat]');
+        if (!b || b.disabled) return;
+        var v = b.getAttribute('data-xuat');
+        xuatExcel(b, 'POST', 'xuat/donvi', /^k:/.test(v) ? { khoi: v.slice(2) } : { donvi: +v || 0 });
+      };
+    }, function (e) { if (con(lan)) veLoi(nd, e); });
   }
 
   // ------------------------------------------------------------------ quét mã QR
@@ -916,7 +983,7 @@
     h += '<div class="luoi2"><div>' +
       '<div class="the"><h3>Thông tin chung</h3><div class="bang-tt">' +
       dong('Mã tài sản', '<span class="ma">' + esc(t.ma) + '</span>') + dong('Loại', esc(t.tenLoai) + (t.nhom ? '<div class="mo nho">' + esc(t.nhom) + '</div>' : '')) +
-      dong('Đơn vị quản lý', esc(t.tenDonVi)) + dong('Vị trí', esc(t.viTri)) +
+      dong('Đơn vị quản lý', '<a href="#/ds?donvi=' + t.donVi + '">' + esc(t.tenDonVi) + '</a><div class="mo nho">' + esc(tenKhoi(t.khoi)) + '</div>') + dong('Vị trí', esc(t.viTri)) +
       dong('Toạ độ', t.viDo != null ? '<a href="' + linkBanDo(t.viDo, t.kinhDo) + '" target="_blank" rel="noopener">' + t.viDo + ', ' + t.kinhDo + ' — xem bản đồ</a>' : '') +
       dong('Người sử dụng', esc(t.nguoiSuDung)) + dong('Hãng sản xuất', esc(t.hangSX)) + dong('Model / quy cách', esc(t.model)) + dong('Số seri', esc(t.soSeri)) +
       dong('Nước sản xuất', esc(t.nuocSX)) + dong('Năm sản xuất', t.namSX != null ? String(t.namSX) : '') +
@@ -1279,13 +1346,23 @@
       '<div class="hang"><div class="gian"><label class="nhan">Từ ngày</label><input type="date" data-tu value="' + esc(dot.tuNgay || '') + '"></div>' +
       '<div class="gian"><label class="nhan">Đến ngày</label><input type="date" data-den value="' + esc(dot.denNgay || '') + '"></div></div>' +
       (moi ? '<label class="nhan">Phạm vi (không chọn = toàn công ty)</label><div style="max-height:220px;overflow:auto;border:1px solid var(--vien);border-radius:8px;padding:4px 10px">' +
-        st.dm.donVi.map(function (d) { return '<label class="chon-o" style="margin:6px 0"><input type="checkbox" value="' + d.id + '"> ' + esc(d.ten) + ' <span class="mo nho">(' + d.soTaiSan + ')</span></label>'; }).join('') + '</div>' +
+        (st.dm.khoi || []).map(function (kh) {
+          var ds = st.dm.donVi.filter(function (d) { return d.khoi === kh.ma; });
+          if (!ds.length) return '';
+          return '<label class="chon-o" style="margin:8px 0 2px;font-weight:600"><input type="checkbox" data-cakhoi="' + kh.ma + '"> ' + esc(kh.ten) + '</label>' +
+            ds.map(function (d) { return '<label class="chon-o" style="margin:4px 0 4px 26px"><input type="checkbox" data-khoi="' + kh.ma + '" value="' + d.id + '"> ' + esc(d.ten) + ' <span class="mo nho">(' + d.soTaiSan + ')</span></label>'; }).join('');
+        }).join('') + '</div>' +
         '<div class="goiy">Sổ sách của đợt = các tài sản đang quản lý của phạm vi tại thời điểm mở đợt.</div>' : '') +
       '<label class="nhan">Ghi chú (quyết định thành lập tổ kiểm kê…)</label><textarea data-gc>' + esc(dot.ghiChu || '') + '</textarea>' +
       '<div class="chan"><button class="nut" type="button" data-huy>Huỷ</button><button class="nut chinh" type="button" data-luu>' + (moi ? 'Mở đợt' : 'Lưu') + '</button></div>');
     k.querySelector('[data-huy]').onclick = function () { k.dong(); };
+    Array.prototype.forEach.call(k.querySelectorAll('[data-cakhoi]'), function (c) {
+      c.onchange = function () {
+        Array.prototype.forEach.call(k.querySelectorAll('[data-khoi="' + c.getAttribute('data-cakhoi') + '"]'), function (x) { x.checked = c.checked; });
+      };
+    });
     k.querySelector('[data-luu]').onclick = function () {
-      var dv = Array.prototype.map.call(k.querySelectorAll('input[type=checkbox]:checked'), function (c) { return +c.value; });
+      var dv = Array.prototype.map.call(k.querySelectorAll('input[data-khoi]:checked'), function (c) { return +c.value; });
       this.disabled = true;
       var nut = this;
       api('POST', 'kiemke', { id: dot.id, ten: k.querySelector('[data-ten]').value, tuNgay: k.querySelector('[data-tu]').value, denNgay: k.querySelector('[data-den]').value, donVi: moi ? dv : dot.donVi, ghiChu: k.querySelector('[data-gc]').value })
@@ -1315,10 +1392,17 @@
           '<button class="nut nho" type="button" data-dong>' + (d.dong ? 'Mở lại đợt' : 'Kết thúc đợt') + '</button>' +
           (quyen(3) ? '<button class="nut nho do" type="button" data-xoa>' + BT.xoa + 'Xoá đợt</button>' : '') + '</div>' : '') + '</div>' +
         '<div class="luoi2"><div class="the phang"><div class="bang-cuon"><table class="bang" style="min-width:480px"><thead><tr><th>Đơn vị</th><th class="so">Sổ sách</th><th class="so">Đã kiểm</th><th class="so">Còn lại</th><th style="width:30%">Tiến độ</th></tr></thead><tbody>' +
-        d.theoDonVi.map(function (x) {
-          var p2 = x.tong ? Math.round(x.daKiem * 100 / x.tong) : 0;
-          return '<tr class="bam" data-dv="' + x.id + '"><td style="white-space:nowrap">' + esc(x.ten) + '</td><td class="so">' + x.tong + '</td><td class="so">' + x.daKiem + '</td><td class="so">' + (x.tong - x.daKiem) +
-            '</td><td><div class="tien-do" style="margin:6px 0"><i style="width:' + p2 + '%"></i></div></td></tr>';
+        (st.dm.khoi || []).map(function (kh) {
+          var ds = d.theoDonVi.filter(function (x) { return x.khoi === kh.ma; });
+          if (!ds.length) return '';
+          var tong = ds.reduce(function (a, x) { return a + x.tong; }, 0), da = ds.reduce(function (a, x) { return a + x.daKiem; }, 0);
+          var dongTD = function (x, lop) {
+            var p2 = x.tong ? Math.round(x.daKiem * 100 / x.tong) : 0;
+            return '<td class="so">' + x.tong + '</td><td class="so">' + x.daKiem + '</td><td class="so">' + (x.tong - x.daKiem) +
+              '</td><td><div class="tien-do" style="margin:6px 0"><i style="width:' + p2 + '%"></i></div></td></tr>';
+          };
+          return '<tr style="background:#f2f6fa"><td style="white-space:nowrap"><b>' + esc(kh.ten) + '</b></td>' + dongTD({ tong: tong, daKiem: da }) +
+            ds.map(function (x) { return '<tr class="bam" data-dv="' + x.id + '"><td style="white-space:nowrap;padding-left:22px">' + esc(x.ten) + '</td>' + dongTD(x); }).join('');
         }).join('') + '</tbody></table></div></div><div></div></div>' +
         '<div class="tab">' + [['chua', 'Chưa kiểm', d.tong - d.daKiem], ['da', 'Đã kiểm', d.daKiem], ['ngoai', 'Ngoài sổ', d.ngoaiSo], ['tatca', 'Tất cả', d.tong]].map(function (x) {
           return '<button type="button" data-loc="' + x[0] + '"' + (x[0] === loc ? ' class="chon"' : '') + '>' + x[1] + '<span>' + x[2] + '</span></button>';
@@ -1498,9 +1582,9 @@
     };
 
     if (r.q.le && st.temLe) { ds = st.temLe.slice(); veXem(); return; }
-    if (!r.q.chon && !r.q.q && !r.q.loai && !r.q.donvi && !r.q.tinhtrang && !r.q.them) { ds = []; veXem(); dem.innerHTML = 'Chưa chọn tài sản. Vào <a href="#/ds">Tài sản</a>, chọn (hoặc lọc) rồi bấm "In tem"; hoặc in tem trắng ở trên.'; return; }
+    if (!r.q.chon && !r.q.q && !r.q.loai && !r.q.donvi && !r.q.khoi && !r.q.tinhtrang && !r.q.them) { ds = []; veXem(); dem.innerHTML = 'Chưa chọn tài sản. Vào <a href="#/ds">Tài sản</a>, chọn (hoặc lọc) rồi bấm "In tem"; hoặc in tem trắng ở trên.'; return; }
     (r.q.chon ? api('POST', 'nhan', { ids: Object.keys(st.chon).map(Number), sap: 'ma' }) :
-      api('GET', 'nhan' + chuoiQuery({ q: r.q.q, loai: r.q.loai, donvi: r.q.donvi, tinhtrang: r.q.tinhtrang, them: r.q.them, sap: r.q.sap }))).then(function (d) {
+      api('GET', 'nhan' + chuoiQuery({ q: r.q.q, loai: r.q.loai, donvi: r.q.donvi, khoi: r.q.khoi, tinhtrang: r.q.tinhtrang, them: r.q.them, sap: r.q.sap }))).then(function (d) {
       if (!con(lan)) return;
       ds = d.ds;
       veXem();
@@ -1572,8 +1656,13 @@
         }).join('') + '</tbody></table></div></div>' +
         '<div class="the phang"><div class="hang" style="padding:14px 16px 6px"><h3 class="gian" style="font-size:16px">Đơn vị quản lý</h3>' + (sua ? '<button class="nut nho" type="button" data-themdv>' + BT.them + 'Thêm đơn vị</button>' : '') + '</div>' +
         '<div class="bang-cuon"><table class="bang"><thead><tr><th>Tên đơn vị</th><th>Ghi chú</th><th class="so">Số TS</th></tr></thead><tbody>' +
-        dm.donVi.map(function (d) {
-          return '<tr' + (sua ? ' class="bam" data-dv="' + d.id + '"' : '') + '><td><b>' + esc(d.ten) + '</b></td><td class="mo">' + esc(d.ghiChu) + '</td><td class="so"><a href="#/ds?donvi=' + d.id + '">' + d.soTaiSan + '</a></td></tr>';
+        dm.khoi.map(function (kh) {
+          var ds = dm.donVi.filter(function (d) { return d.khoi === kh.ma; });
+          return '<tr style="background:#f2f6fa"><td colspan="2"><b>' + esc(kh.ten) + '</b> <span class="mo nho">(' + ds.length + ' đơn vị)</span></td>' +
+            '<td class="so"><a href="#/ds?khoi=' + kh.ma + '">' + ds.reduce(function (a, d) { return a + d.soTaiSan; }, 0) + '</a></td></tr>' +
+            ds.map(function (d) {
+              return '<tr' + (sua ? ' class="bam" data-dv="' + d.id + '"' : '') + '><td style="padding-left:22px"><b>' + esc(d.ten) + '</b></td><td class="mo">' + esc(d.ghiChu) + '</td><td class="so"><a href="#/ds?donvi=' + d.id + '">' + d.soTaiSan + '</a></td></tr>';
+            }).join('');
         }).join('') + '</tbody></table></div></div>' +
         '<p class="mo nho">Nhóm tài sản theo cách phân loại tài sản cố định (nhà cửa, máy móc, phương tiện truyền dẫn…). Số năm khấu hao, chu kỳ bảo dưỡng là mặc định của loại; từng tài sản có thể ghi riêng.' +
         (xoa ? '' : ' Xoá loại / đơn vị cần tài khoản quản trị.') + '</p>';
@@ -1599,13 +1688,14 @@
         };
       }
       function moDv(d) {
-        d = d || { id: 0, ten: '', ghiChu: '' };
-        var k = hop(d.id ? 'Sửa đơn vị' : 'Thêm đơn vị', '<label class="nhan">Tên đơn vị <b>*</b></label><input data-ten value="' + esc(d.ten) + '">' +
+        d = d || { id: 0, ten: '', ghiChu: '', khoi: 'doi' };
+        var k = hop(d.id ? 'Sửa đơn vị' : 'Thêm đơn vị', '<label class="nhan">Tên đơn vị <b>*</b></label><input data-ten value="' + esc(d.ten) + '" placeholder="Vd: Đội Cấp nước số 7, Phòng Kế hoạch - Vật tư">' +
+          '<label class="nhan">Thuộc khối</label><select data-khoi>' + dm.khoi.map(function (kh) { return '<option value="' + kh.ma + '"' + (kh.ma === d.khoi ? ' selected' : '') + '>' + esc(kh.ten) + '</option>'; }).join('') + '</select>' +
           '<label class="nhan">Ghi chú (địa chỉ, người phụ trách…)</label><input data-gc value="' + esc(d.ghiChu) + '">' +
           '<div class="chan">' + (d.id && xoa ? '<button class="nut do" type="button" data-xoa style="margin-right:auto">Xoá</button>' : '') + '<button class="nut" type="button" data-huy>Huỷ</button><button class="nut chinh" type="button" data-luu>Lưu</button></div>');
         k.querySelector('[data-huy]').onclick = function () { k.dong(); };
         k.querySelector('[data-luu]').onclick = function () {
-          api('POST', 'donvi', { id: d.id, ten: k.querySelector('[data-ten]').value, ghiChu: k.querySelector('[data-gc]').value })
+          api('POST', 'donvi', { id: d.id, ten: k.querySelector('[data-ten]').value, ghiChu: k.querySelector('[data-gc]').value, khoi: k.querySelector('[data-khoi]').value })
             .then(function (x) { st.dm = x; k.dong(); thongBao('Đã lưu'); ve(); }, function (e) { thongBao(e.message, true); });
         };
         var bx = k.querySelector('[data-xoa]');
@@ -1713,7 +1803,7 @@
 
   // ------------------------------------------------------------------ menu "Thêm" trên điện thoại
   function trangKhac(nd) {
-    var muc = [['hoatdong', 'Hoạt động', 'Kiểm tra, bảo dưỡng, kiểm kê gần đây', 0], ['nhan', 'In tem QR', 'Tem dán tài sản, tem trắng', 0], ['nhap', 'Nhập từ Excel', 'Đưa sổ tài sản vào phần mềm', 2],
+    var muc = [['donvi', 'Theo đơn vị', 'Tài sản của từng đội cấp nước, phòng ban', 0], ['hoatdong', 'Hoạt động', 'Kiểm tra, bảo dưỡng, kiểm kê gần đây', 0], ['nhan', 'In tem QR', 'Tem dán tài sản, tem trắng', 0], ['nhap', 'Nhập từ Excel', 'Đưa sổ tài sản vào phần mềm', 2],
       ['danhmuc', 'Danh mục', 'Loại tài sản, đơn vị quản lý', 0], ['taikhoan', 'Tài khoản', 'Đổi mật khẩu' + (quyen(3) ? ', quản lý người dùng' : ''), 0], ['caidat', 'Cài đặt', 'Tên công ty, địa chỉ QR, người ký', 3]];
     nd.innerHTML = '<div class="tieude-trang"><h2>Thêm</h2></div><div class="the menu-khac">' + muc.filter(function (m) { return quyen(m[3]); }).map(function (m) {
       return '<a href="#/' + m[0] + '">' + BT[BT_MENU[m[0]]] + '<div>' + esc(m[1]) + '<small>' + esc(m[2]) + '</small></div></a>';

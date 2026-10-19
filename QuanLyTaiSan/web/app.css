@@ -258,6 +258,23 @@ label.nhan b { color: var(--do); font-weight: 600; }
   .ds-ts .giua .t2, .ds-ts .giua .tt, .ds-ts .giua .t1 .ma-dt { display: none; }
 }
 
+/* ---------- theo đơn vị ---------- */
+.khoi { margin-bottom: 20px; }
+.khoi-dau { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 6px 0 10px; padding-bottom: 8px; border-bottom: 2px solid var(--vien); }
+.khoi-dau h3 { font-size: 17px; color: var(--chinh-dam); }
+.luoi-dv { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); gap: 12px; }
+.luoi-dv .the { margin: 0; display: flex; flex-direction: column; gap: 5px; }
+.the.dv.cua-toi { border-color: var(--chinh); box-shadow: inset 0 0 0 1px var(--chinh); }
+.dv-dau { display: flex; align-items: baseline; gap: 8px; color: var(--chu); text-decoration: none; }
+.dv-dau > b { font-size: 15.5px; flex: 1; min-width: 0; }
+.dv-dau:hover > b { text-decoration: underline; }
+.dv-so { color: var(--mo); font-size: 13.5px; white-space: nowrap; }
+.dv-so b { color: var(--chu); font-size: 18px; }
+.dv-gt { font-size: 14px; }
+.dv-viec { color: var(--mo); }
+.canh-do { color: var(--do); font-weight: 600; }
+.canh-cam { color: var(--cam); font-weight: 600; }
+
 /* ---------- trang tài sản ---------- */
 .ts-dau { display: grid; grid-template-columns: 1fr; gap: 14px; margin-bottom: 12px; }
 @media (min-width: 900px) { .ts-dau { grid-template-columns: 380px 1fr; } }

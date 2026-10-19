@@ -94,7 +94,8 @@ namespace QuanLyTaiSan
             }
         }
 
-        public DonVi LuuDonVi(TaiKhoan tk, int id, string ten, string ghiChu)
+        /// <param name="khoi">Khoi.Doi / Khoi.VanPhong; trống = giữ khối cũ (đơn vị mới: đoán theo tên)</param>
+        public DonVi LuuDonVi(TaiKhoan tk, int id, string ten, string ghiChu, string khoi)
         {
             CanQuyen(tk, VaiTro.CapNhat);
             ten = VanBan.Cat(ten, 120);
@@ -109,8 +110,11 @@ namespace QuanLyTaiSan
                     d = new DonVi { Id = ++Dl.IdDonVi };
                     Dl.DonVi.Add(d);
                 }
+                bool moi = d.Ten.Length == 0;
                 d.Ten = ten;
                 d.GhiChu = VanBan.Cat(ghiChu, 300);
+                if (!string.IsNullOrEmpty(khoi)) d.Khoi = Khoi.Chuan(khoi);
+                else if (moi) d.Khoi = Khoi.TuTen(ten);
                 LuuDuLieu();
                 return d;
             }

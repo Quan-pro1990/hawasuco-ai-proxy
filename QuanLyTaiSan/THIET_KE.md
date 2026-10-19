@@ -82,7 +82,7 @@ kiểm tra và kiểm kê vẫn quét được mọi tài sản (để ghi nhậ
 | Đối tượng | Thông tin chính |
 |---|---|
 | Loại tài sản | tên, tiền tố mã, nhóm TSCĐ (nhà cửa vật kiến trúc / máy móc thiết bị / phương tiện vận tải, truyền dẫn / thiết bị dụng cụ quản lý / khác / công cụ dụng cụ), số năm khấu hao mặc định, chu kỳ bảo dưỡng mặc định (ngày), **danh sách thông số kỹ thuật riêng** (vd máy bơm: lưu lượng, cột áp, công suất) |
-| Đơn vị quản lý | tên (phòng ban, đội cấp nước, nhà máy), ghi chú |
+| Đơn vị quản lý | tên, ghi chú, **khối**: *Các đội cấp nước* (Đội Cấp nước số 1–6, trạm, nhà máy) hoặc *Khối văn phòng* (Ban Giám đốc, các phòng) |
 | Tài sản | mã, tên, loại, đơn vị, vị trí, toạ độ GPS, người sử dụng, hãng, model, số seri, nước / năm sản xuất, ngày đưa vào sử dụng, nguyên giá, số năm khấu hao, bảo hành đến, chu kỳ bảo dưỡng, lần bảo dưỡng cuối, tình trạng, thông số kỹ thuật, ghi chú, bộ ảnh (ảnh chính), lần kiểm tra cuối |
 | Sự kiện (lịch sử) | khai báo, sửa thông tin (ghi rõ trường nào đổi từ gì sang gì), kiểm tra, bảo dưỡng / sửa chữa (chi phí), điều chuyển, thanh lý, thêm ảnh, kiểm kê — kèm người làm, thời gian, tình trạng ghi nhận, ghi chú, ảnh, toạ độ |
 | Đợt kiểm kê | tên, thời gian, phạm vi đơn vị, **sổ sách lúc mở đợt** (danh sách tài sản), kết quả từng tài sản (dựng lại từ lịch sử) |
@@ -114,7 +114,8 @@ C:\QuanLyTaiSanData\
 |---|---|
 | Đăng nhập | tên, mật khẩu; mở từ tem thì đăng nhập xong vào thẳng tài sản |
 | Tổng quan | số tài sản, nguyên giá, giá trị còn lại, hỏng / đang sửa, đến hạn bảo dưỡng, lâu chưa kiểm tra, chưa có ảnh; biểu đồ theo tình trạng / loại / đơn vị (bấm để lọc); đợt kiểm kê đang mở; hoạt động gần đây |
-| Tài sản | tìm (không dấu cũng được), lọc loại / đơn vị / tình trạng / đến hạn bảo dưỡng / lâu chưa kiểm tra / chưa có ảnh, sắp xếp; chọn nhiều → in tem, xuất Excel |
+| Tài sản | tìm (không dấu cũng được), lọc loại / đơn vị / cả khối / tình trạng / đến hạn bảo dưỡng / lâu chưa kiểm tra / chưa có ảnh, sắp xếp; chọn nhiều → in tem, xuất Excel. Tài khoản 1 đơn vị: mở ra là lọc sẵn đơn vị mình |
+| **Theo đơn vị** | chia theo khối (Các đội cấp nước / Khối văn phòng), mỗi đội / phòng ban 1 thẻ: số tài sản, nguyên giá, còn lại, loại chính, việc cần xử lý (hỏng, đến hạn bảo dưỡng, lâu chưa kiểm tra, chưa có ảnh); nút danh sách, in tem, sổ Excel của đơn vị / của khối / cả công ty |
 | **Quét QR** | camera sau, khung ngắm, đèn pin (nếu máy hỗ trợ), rung khi đọc được; chụp ảnh mã QR; gõ mã. Mã chưa có → khai báo mới với mã đó |
 | **Trang tài sản** | ảnh lớn + dải ảnh (xem toàn màn hình, vuốt qua lại), mã, tình trạng, tên, loại, đơn vị, vị trí; nút Kiểm tra · Chụp ảnh · Bảo dưỡng / sửa · Sửa · Điều chuyển · In tem · Thanh lý; thông tin chung, thông số kỹ thuật, giá trị & bảo dưỡng, tem QR, **lịch sử dạng dòng thời gian** có ảnh và vị trí; thanh nhắc "Chưa kiểm kê" khi có đợt đang mở |
 | Thêm / sửa | đủ các trường, thông số kỹ thuật theo loại + thêm tuỳ ý, lấy toạ độ GPS hiện tại, chụp ảnh ngay khi khai báo |
@@ -127,18 +128,20 @@ C:\QuanLyTaiSanData\
 
 1. **Đưa tài sản vào phần mềm** — nhập file Excel sổ tài sản cố định đang dùng (phần mềm tự nhận cột theo tiêu đề; mã đã có = cập nhật;
    loại / đơn vị chưa có thì tạo mới) hoặc thêm từng tài sản.
-2. **Dán tem** — in tem theo đơn vị / loại, giao đội dán; hoặc in tem trắng, dán ngoài hiện trường rồi quét để khai báo (chụp ảnh, lấy GPS tại chỗ).
-3. **Kiểm tra định kỳ / tuần tra** — quét tem → Kiểm tra → chọn tình trạng, ghi chú, chụp ảnh, ghi vị trí → lưu. Tình trạng tài sản cập nhật ngay;
+2. **Giao tài sản cho đơn vị** — mỗi tài sản thuộc 1 đội cấp nước hoặc 1 phòng ban; mỗi đơn vị in **Sổ theo dõi tài sản tại đơn vị sử dụng**
+   (Excel) để trưởng đơn vị ký nhận; tài khoản của đội / phòng chỉ sửa được tài sản của mình.
+3. **Dán tem** — in tem theo đơn vị / loại, giao đội dán; hoặc in tem trắng, dán ngoài hiện trường rồi quét để khai báo (chụp ảnh, lấy GPS tại chỗ).
+4. **Kiểm tra định kỳ / tuần tra** — quét tem → Kiểm tra → chọn tình trạng, ghi chú, chụp ảnh, ghi vị trí → lưu. Tình trạng tài sản cập nhật ngay;
    tổng quan hiện danh sách hỏng.
-4. **Báo hỏng → sửa chữa** — người kiểm tra chọn "Hỏng, cần sửa chữa" kèm ảnh; tổ sửa chữa xử lý xong quét tem → Bảo dưỡng / sửa:
+5. **Báo hỏng → sửa chữa** — người kiểm tra chọn "Hỏng, cần sửa chữa" kèm ảnh; tổ sửa chữa xử lý xong quét tem → Bảo dưỡng / sửa:
    nội dung, chi phí, tình trạng sau sửa, ảnh. Lịch sử giữ đủ, cộng được chi phí sửa chữa theo tài sản.
-5. **Bảo dưỡng theo chu kỳ** — tổng quan nhắc tài sản đến hạn; ghi bảo dưỡng xong hạn tự lùi theo chu kỳ.
-6. **Điều chuyển** — đổi đơn vị / vị trí / người sử dụng, ghi số quyết định; lịch sử ghi "Đơn vị: A → B".
-7. **Kiểm kê cuối năm** — mở đợt (toàn công ty hoặc vài đơn vị): phần mềm chốt sổ sách tại thời điểm đó. Tổ kiểm kê đi quét tem từng tài sản,
+6. **Bảo dưỡng theo chu kỳ** — tổng quan nhắc tài sản đến hạn; ghi bảo dưỡng xong hạn tự lùi theo chu kỳ.
+7. **Điều chuyển** — đổi đơn vị / vị trí / người sử dụng, ghi số quyết định; lịch sử ghi "Đơn vị: A → B".
+8. **Kiểm kê cuối năm** — mở đợt (toàn công ty, cả khối các đội cấp nước / khối văn phòng, hoặc vài đơn vị): phần mềm chốt sổ sách tại thời điểm đó. Tổ kiểm kê đi quét tem từng tài sản,
    xác nhận tình trạng thực tế. Theo dõi tiến độ, danh sách **chưa tìm thấy**, tài sản **ngoài sổ** (quét được nhưng không có trong sổ sách của đợt:
    thuộc đơn vị ngoài phạm vi đợt, hoặc khai báo sau khi mở đợt). Kết thúc đợt → xuất **biên bản kiểm kê Excel** (theo sổ sách / thực tế / chênh lệch, tình trạng, người kiểm,
    chữ ký người lập – kế toán trưởng – giám đốc) và trang tiến độ theo đơn vị.
-8. **Thanh lý** — ghi số quyết định / biên bản, giá trị thu hồi; tài sản chuyển "Đã thanh lý", không còn nhắc bảo dưỡng, không vào đợt kiểm kê sau.
+9. **Thanh lý** — ghi số quyết định / biên bản, giá trị thu hồi; tài sản chuyển "Đã thanh lý", không còn nhắc bảo dưỡng, không vào đợt kiểm kê sau.
 
 ## 8. API (JSON, `https://<máy chủ>/taisan/api/...`, đăng nhập bằng `Authorization: Bearer <token>`)
 
@@ -146,7 +149,8 @@ C:\QuanLyTaiSanData\
 |---|---|
 | `POST dangnhap`, `POST dangxuat`, `GET toi`, `POST doimatkhau` | đăng nhập (sai 5 lần khoá 10 phút), phiên 60 ngày |
 | `GET danhmuc`, `POST/DELETE loai`, `POST/DELETE donvi`, `POST caidat` | danh mục, cài đặt |
-| `GET taisan?q=&loai=&donvi=&tinhtrang=&them=&sap=&trang=` | danh sách có lọc, phân trang |
+| `GET taisan?q=&loai=&donvi=&khoi=&tinhtrang=&them=&sap=&trang=` | danh sách có lọc (khoi = doi / vanphong), phân trang |
+| `GET theodonvi`, `POST xuat/donvi` | số liệu theo khối → đơn vị; sổ tài sản Excel (cả công ty / 1 khối / 1 đơn vị) |
 | `GET taisan/{id}`, `POST taisan`, `DELETE taisan?id=` | chi tiết (kèm lịch sử, ảnh, đợt kiểm kê đang mở), thêm / sửa (chặn sửa đè bằng số phiên bản), xoá |
 | `GET tim?ma=<nội dung QR>` | đổi nội dung tem → tài sản |
 | `POST taisan/{id}/sukien` | kiểm tra, bảo dưỡng, điều chuyển, thanh lý |

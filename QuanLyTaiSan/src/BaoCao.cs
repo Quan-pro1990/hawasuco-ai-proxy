@@ -19,6 +19,8 @@ namespace QuanLyTaiSan
         static readonly XKieu TieuDeCot = new XKieu { Co = 11, Dam = true, Khung = true, XuongDong = true, Ngang = "center", Nen = "FFDCE6F1" };
         static readonly XKieu Nhom = new XKieu { Co = 11, Dam = true, Khung = true, Nen = "FFF2F2F2" };
         static readonly XKieu NhomSo = Nhom.Voi(k => { k.Ngang = "right"; k.DinhDang = "#,##0"; });
+        static readonly XKieu NhomKhoi = new XKieu { Co = 11, Dam = true, Khung = true, Nen = "FFD6E4F0" };
+        static readonly XKieu NhomKhoiSo = NhomKhoi.Voi(k => { k.Ngang = "right"; k.DinhDang = "#,##0"; });
         static readonly XKieu TieuDe = new XKieu { Co = 15, Dam = true, Ngang = "center" };
         static readonly XKieu GiuaDam = new XKieu { Co = 11, Ngang = "center", Dam = true };
         static readonly XKieu GiuaNghieng = new XKieu { Co = 11, Ngang = "center", Nghieng = true };
@@ -165,24 +167,37 @@ namespace QuanLyTaiSan
                         t.Dat(r, c + 1, v[c], c == 5 || c == 6 ? KhungSo : c == 0 || c >= 7 && c <= 9 || c == 12 ? KhungGiua : Khung);
                     r++;
                 };
-                int nhom = 0;
-                foreach (var g in trongSo.GroupBy(x => x.DonViId).OrderBy(g => dl.TenDonVi(g.Key), VanBan.SoSanhTen))
+                // dòng tổng của 1 nhóm (khối hoặc đơn vị): nguyên giá, còn lại, sổ sách, thực tế, chênh lệch
+                Action<string, List<TaiSan>, XKieu, XKieu> dongNhom = (tieuDe, gl, kieu, kieuSo) =>
                 {
-                    var gl = g.ToList();
-                    t.GopO(r, 1, r, 5, LaMa(++nhom) + ". " + dl.TenDonVi(g.Key), Nhom);
-                    t.Dat(r, 6, gl.Sum(x => x.NguyenGia ?? 0), NhomSo);
-                    t.Dat(r, 7, gl.Sum(x => TinhToan.GiaTriConLai(dl, x, homNay) ?? 0), NhomSo);
-                    t.Dat(r, 8, gl.Count, NhomSo);
+                    t.GopO(r, 1, r, 5, tieuDe, kieu);
+                    t.Dat(r, 6, gl.Sum(x => x.NguyenGia ?? 0), kieuSo);
+                    t.Dat(r, 7, gl.Sum(x => TinhToan.GiaTriConLai(dl, x, homNay) ?? 0), kieuSo);
+                    t.Dat(r, 8, gl.Count, kieuSo);
                     int daKiem = gl.Count(x => k.KetQua.ContainsKey(x.Id));
-                    t.Dat(r, 9, daKiem, NhomSo);
-                    t.Dat(r, 10, daKiem - gl.Count, NhomSo);
-                    for (int c = 11; c <= n; c++) t.Dat(r, c, "", Nhom);
+                    t.Dat(r, 9, daKiem, kieuSo);
+                    t.Dat(r, 10, daKiem - gl.Count, kieuSo);
+                    for (int c = 11; c <= n; c++) t.Dat(r, c, "", kieu);
                     r++;
-                    foreach (TaiSan x in gl.OrderBy(x => x.Ma, StringComparer.OrdinalIgnoreCase)) dong(x, true);
+                };
+                var thuTu = dl.DonViTheoThuTu().Select(x => x.Id).ToList();
+                var theoDv = trongSo.GroupBy(x => x.DonViId).OrderBy(g => thuTu.IndexOf(g.Key) < 0 ? int.MaxValue : thuTu.IndexOf(g.Key)).ToList();
+                int soKhoi = 0;
+                foreach (string kh in Khoi.Ma)
+                {
+                    var cacDv = theoDv.Where(g => dl.KhoiCua(g.Key) == kh).ToList();
+                    if (cacDv.Count == 0) continue;
+                    dongNhom((char)('A' + soKhoi++) + ". " + Khoi.Ten(kh).ToUpper(CultureInfo.GetCultureInfo("vi-VN")), cacDv.SelectMany(g => g).ToList(), NhomKhoi, NhomKhoiSo);
+                    int nhom = 0;
+                    foreach (var g in cacDv)
+                    {
+                        dongNhom(LaMa(++nhom) + ". " + dl.TenDonVi(g.Key), g.ToList(), Nhom, NhomSo);
+                        foreach (TaiSan x in g.OrderBy(x => x.Ma, StringComparer.OrdinalIgnoreCase)) dong(x, true);
+                    }
                 }
                 if (ngoaiSo.Count > 0)
                 {
-                    t.GopO(r, 1, r, n, LaMa(++nhom) + ". Tài sản kiểm kê thấy nhưng không có trong sổ sách của đợt (khai báo sau khi mở đợt hoặc thuộc đơn vị khác)", Nhom);
+                    t.GopO(r, 1, r, n, (char)('A' + soKhoi++) + ". Tài sản kiểm kê thấy nhưng không có trong sổ sách của đợt (khai báo sau khi mở đợt hoặc thuộc đơn vị khác)", NhomKhoi);
                     r++;
                     foreach (TaiSan x in ngoaiSo.OrderBy(x => x.Ma, StringComparer.OrdinalIgnoreCase)) dong(x, false);
                 }
@@ -209,33 +224,175 @@ namespace QuanLyTaiSan
                     th.Dat(3, c + 1, c2[c], TieuDeCot);
                     th.RongCot[c + 1] = r2[c];
                 }
-                int rr = 4;
-                foreach (var g in trongSo.GroupBy(x => x.DonViId).OrderBy(g => dl.TenDonVi(g.Key), VanBan.SoSanhTen))
+                int rr = 4, sttDv = 0;
+                Action<string, string, IEnumerable<TaiSan>, XKieu, XKieu> dongTienDo = (sttDong, tenDong, ds, kieu, kieuSo) =>
                 {
-                    var kqs = g.Select(x => { SuKien s; return k.KetQua.TryGetValue(x.Id, out s) ? s : null; }).Where(s => s != null).ToList();
-                    th.Dat(rr, 1, rr - 3, KhungGiua);
-                    th.Dat(rr, 2, dl.TenDonVi(g.Key), Khung);
-                    th.Dat(rr, 3, g.Count(), KhungSo);
-                    th.Dat(rr, 4, kqs.Count, KhungSo);
-                    th.CongThuc(rr, 5, "C" + rr + "-D" + rr, g.Count() - kqs.Count, KhungSo);
-                    th.CongThuc(rr, 6, "IF(C" + rr + "=0,0,ROUND(D" + rr + "/C" + rr + "*100,1))", g.Count() == 0 ? 0 : Math.Round(kqs.Count * 100.0 / g.Count(), 1),
-                                Khung.Voi(x => { x.Ngang = "right"; x.DinhDang = "0.0"; }));
-                    th.Dat(rr, 7, kqs.Count(s => s.TinhTrang == TinhTrang.Hong || s.TinhTrang == TinhTrang.DangSua), KhungSo);
-                    th.Dat(rr, 8, kqs.Count(s => s.TinhTrang == TinhTrang.Ngung || s.TinhTrang == TinhTrang.Mat), KhungSo);
+                    var l = ds.ToList();
+                    var kqs = l.Select(x => { SuKien s; return k.KetQua.TryGetValue(x.Id, out s) ? s : null; }).Where(s => s != null).ToList();
+                    th.Dat(rr, 1, sttDong, kieu == Khung ? KhungGiua : kieu);
+                    th.Dat(rr, 2, tenDong, kieu);
+                    th.Dat(rr, 3, l.Count, kieuSo);
+                    th.Dat(rr, 4, kqs.Count, kieuSo);
+                    th.CongThuc(rr, 5, "C" + rr + "-D" + rr, l.Count - kqs.Count, kieuSo);
+                    th.CongThuc(rr, 6, "IF(C" + rr + "=0,0,ROUND(D" + rr + "/C" + rr + "*100,1))", l.Count == 0 ? 0 : Math.Round(kqs.Count * 100.0 / l.Count, 1),
+                                kieu.Voi(x => { x.Ngang = "right"; x.DinhDang = "0.0"; }));
+                    th.Dat(rr, 7, kqs.Count(s => s.TinhTrang == TinhTrang.Hong || s.TinhTrang == TinhTrang.DangSua), kieuSo);
+                    th.Dat(rr, 8, kqs.Count(s => s.TinhTrang == TinhTrang.Ngung || s.TinhTrang == TinhTrang.Mat), kieuSo);
                     rr++;
+                };
+                int soKhoi2 = 0;
+                foreach (string kh in Khoi.Ma)
+                {
+                    var cacDv = theoDv.Where(g => dl.KhoiCua(g.Key) == kh).ToList();
+                    if (cacDv.Count == 0) continue;
+                    dongTienDo(((char)('A' + soKhoi2++)).ToString(), Khoi.Ten(kh), cacDv.SelectMany(g => g), NhomKhoi, NhomKhoiSo);
+                    foreach (var g in cacDv) dongTienDo((++sttDv).ToString(), dl.TenDonVi(g.Key), g, Khung, KhungSo);
                 }
+                if (trongSo.Count > 0) dongTienDo("", "TỔNG CỘNG", trongSo, Nhom, NhomSo);
                 th.Ngang = false;
             }
             return new KeyValuePair<string, byte[]>(TenTep("Bien ban kiem ke - " + VanBan.BoDauGiuHoa(ten)), so.LuuBytes());
         }
 
+        // ------------------------------------------------------------------ sổ tài sản theo đơn vị (từng đội / phòng ban)
+
+        /// <summary>
+        /// Sổ theo dõi tài sản tại đơn vị sử dụng: trang "Tổng hợp" (theo khối → đơn vị) + mỗi đơn vị 1 trang danh sách.
+        /// khoi = "" mọi khối; donVi = 0 mọi đơn vị. Chỉ tài sản đang quản lý (không gồm đã thanh lý / mất).
+        /// </summary>
+        public static KeyValuePair<string, byte[]> SoTheoDonVi(DichVu dv, string khoi, int donVi)
+        {
+            var so = new XSo();
+            string tenTep;
+            lock (dv.Khoa)
+            {
+                DuLieu dl = dv.Dl;
+                DateTime homNay = DateTime.Today;
+                var cacDv = dl.DonViTheoThuTu().Where(d => (string.IsNullOrEmpty(khoi) || d.Khoi == khoi) && (donVi <= 0 || d.Id == donVi)).ToList();
+                if (cacDv.Count == 0) throw new LoiApi(404, "Không có đơn vị này.");
+                var ds = cacDv.ToDictionary(d => d.Id, d => dl.TaiSan.Where(t => t.DonViId == d.Id && TinhTrang.ConDung(t.TinhTrang))
+                                                                    .OrderBy(t => VanBan.KhoaTuNhien(dl.TenLoai(t.LoaiId)), VanBan.SoSanhTen)
+                                                                    .ThenBy(t => t.Ma, StringComparer.OrdinalIgnoreCase).ToList());
+                if (cacDv.Count > 1) TrangTongHopDonVi(so, dl, cacDv, ds, homNay);
+                foreach (DonVi d in cacDv)
+                    if (ds[d.Id].Count > 0 || cacDv.Count == 1) TrangDonVi(so, dl, d, ds[d.Id], homNay);
+                tenTep = donVi > 0 ? "So tai san - " + VanBan.BoDauGiuHoa(cacDv[0].Ten)
+                       : !string.IsNullOrEmpty(khoi) ? "So tai san - " + VanBan.BoDauGiuHoa(Khoi.Ten(khoi)) : "So tai san theo don vi";
+            }
+            return new KeyValuePair<string, byte[]>(TenTep(tenTep), so.LuuBytes());
+        }
+
+        static void TrangTongHopDonVi(XSo so, DuLieu dl, List<DonVi> cacDv, Dictionary<int, List<TaiSan>> ds, DateTime homNay)
+        {
+            XTrang t = so.Them("Tổng hợp");
+            int ngayNhac = Math.Max(1, dl.CaiDat.NgayNhacKiemTra);
+            string[] cot = { "STT", "Đơn vị", "Số tài sản", "Nguyên giá (đồng)", "Khấu hao luỹ kế (tạm tính)", "Giá trị còn lại (tạm tính)",
+                             "Đang dùng tốt", "Cần theo dõi", "Hỏng / đang sửa", "Ngừng sử dụng", "Đến hạn bảo dưỡng (≤ 7 ngày)", "Chưa kiểm tra > " + ngayNhac + " ngày" };
+            double[] rong = { 6, 34, 11, 17, 17, 17, 11, 11, 11, 11, 13, 13 };
+            int n = cot.Length;
+            t.GopO(1, 1, 1, 6, dl.CaiDat.TenCongTy, new XKieu { Co = 11, Dam = true });
+            t.GopO(2, 1, 2, n, "TỔNG HỢP TÀI SẢN THEO ĐƠN VỊ", TieuDe);
+            t.GopO(3, 1, 3, n, "Tính đến ngày " + Ngay(homNay) + " — tài sản đang quản lý (không gồm đã thanh lý, mất)", GiuaNghieng);
+            for (int c = 0; c < n; c++)
+            {
+                t.Dat(5, c + 1, cot[c], TieuDeCot);
+                t.RongCot[c + 1] = rong[c];
+            }
+            t.CaoDong[5] = 45;
+            int r = 6, soKhoi = 0, stt = 0;
+            Action<string, string, List<TaiSan>, XKieu, XKieu> dong = (sttDong, ten, l, kieu, kieuSo) =>
+            {
+                t.Dat(r, 1, sttDong, kieu == Khung ? KhungGiua : kieu);
+                t.Dat(r, 2, ten, kieu);
+                t.Dat(r, 3, l.Count, kieuSo);
+                t.Dat(r, 4, l.Sum(x => x.NguyenGia ?? 0), kieuSo);
+                t.Dat(r, 5, l.Sum(x => TinhToan.KhauHaoLuyKe(dl, x, homNay) ?? 0), kieuSo);
+                t.Dat(r, 6, l.Sum(x => TinhToan.GiaTriConLai(dl, x, homNay) ?? 0), kieuSo);
+                t.Dat(r, 7, l.Count(x => x.TinhTrang == TinhTrang.Tot), kieuSo);
+                t.Dat(r, 8, l.Count(x => x.TinhTrang == TinhTrang.TheoDoi), kieuSo);
+                t.Dat(r, 9, l.Count(x => x.TinhTrang == TinhTrang.Hong || x.TinhTrang == TinhTrang.DangSua), kieuSo);
+                t.Dat(r, 10, l.Count(x => x.TinhTrang == TinhTrang.Ngung), kieuSo);
+                t.Dat(r, 11, l.Count(x => { DateTime? h = TinhToan.HanBaoTri(dl, x); return h.HasValue && h.Value <= homNay.AddDays(7); }), kieuSo);
+                t.Dat(r, 12, l.Count(x => !x.KiemTraCuoi.HasValue || x.KiemTraCuoi.Value < homNay.AddDays(-ngayNhac)), kieuSo);
+                r++;
+            };
+            foreach (string kh in Khoi.Ma)
+            {
+                var trongKhoi = cacDv.Where(d => d.Khoi == kh).ToList();
+                if (trongKhoi.Count == 0) continue;
+                dong(((char)('A' + soKhoi++)).ToString(), Khoi.Ten(kh).ToUpper(CultureInfo.GetCultureInfo("vi-VN")), trongKhoi.SelectMany(d => ds[d.Id]).ToList(), NhomKhoi, NhomKhoiSo);
+                foreach (DonVi d in trongKhoi) dong((++stt).ToString(), d.Ten, ds[d.Id], Khung, KhungSo);
+            }
+            dong("", "TỔNG CỘNG", cacDv.SelectMany(d => ds[d.Id]).ToList(), Nhom, NhomSo);
+            r++;
+            t.GopO(r++, 1, r - 1, n, "Khấu hao luỹ kế, giá trị còn lại: tạm tính theo đường thẳng từ ngày đưa vào sử dụng (tham khảo; số chính thức theo sổ kế toán).",
+                   new XKieu { Co = 10, Nghieng = true });
+            r++;
+            ChuKy(t, r, n, dl.CaiDat, new[] { "NGƯỜI LẬP BIỂU", "KẾ TOÁN TRƯỞNG", "GIÁM ĐỐC" }, new[] { dl.CaiDat.NguoiLap, dl.CaiDat.KeToanTruong, dl.CaiDat.GiamDoc });
+            t.LapTu = 5;
+            t.LapDen = 5;
+            t.CoDinhDong = 5;
+            t.Ngang = true;
+        }
+
+        static void TrangDonVi(XSo so, DuLieu dl, DonVi d, List<TaiSan> ds, DateTime homNay)
+        {
+            XTrang t = so.Them(d.Ten);
+            string[] cot = { "STT", "Mã tài sản", "Tên tài sản", "Loại tài sản", "Vị trí", "Người sử dụng", "Hãng / model", "Số seri", "Năm SX",
+                             "Ngày đưa vào SD", "Nguyên giá (đồng)", "Khấu hao luỹ kế (tạm tính)", "Giá trị còn lại (tạm tính)", "Tình trạng", "Kiểm tra lần cuối", "Ghi chú" };
+            double[] rong = { 5, 13, 32, 20, 24, 16, 18, 13, 7, 11, 15, 15, 15, 16, 11, 24 };
+            int n = cot.Length;
+            t.GopO(1, 1, 1, 5, dl.CaiDat.TenCongTy, new XKieu { Co = 11, Dam = true });
+            t.GopO(2, 1, 2, n, "SỔ THEO DÕI TÀI SẢN TẠI ĐƠN VỊ SỬ DỤNG", TieuDe);
+            t.GopO(3, 1, 3, n, "Đơn vị: " + d.Ten + " (" + Khoi.Ten(d.Khoi).ToLower(CultureInfo.GetCultureInfo("vi-VN")) + ")", GiuaDam);
+            t.GopO(4, 1, 4, n, "Tính đến ngày " + Ngay(homNay) + " — " + ds.Count + " tài sản đang quản lý", GiuaNghieng);
+            for (int c = 0; c < n; c++)
+            {
+                t.Dat(6, c + 1, cot[c], TieuDeCot);
+                t.RongCot[c + 1] = rong[c];
+            }
+            t.CaoDong[6] = 33;
+            int r = 7;
+            foreach (TaiSan x in ds)
+            {
+                string hang = (x.HangSX + (x.HangSX.Length > 0 && x.Model.Length > 0 ? " / " : "") + x.Model).Trim();
+                object[] v =
+                {
+                    r - 6, x.Ma, x.Ten, dl.TenLoai(x.LoaiId), x.ViTri, x.NguoiSuDung, hang, x.SoSeri, x.NamSX.HasValue ? (object)x.NamSX.Value : "",
+                    Ngay(x.NgaySuDung), So(x.NguyenGia), So(TinhToan.KhauHaoLuyKe(dl, x, homNay)), So(TinhToan.GiaTriConLai(dl, x, homNay)),
+                    TinhTrang.Ten(x.TinhTrang), Ngay(x.KiemTraCuoi), x.GhiChu
+                };
+                for (int c = 0; c < n; c++)
+                    t.Dat(r, c + 1, v[c], c >= 10 && c <= 12 ? KhungSo : c == 0 || c == 8 || c == 9 || c == 14 ? KhungGiua : Khung);
+                r++;
+            }
+            t.GopO(r, 1, r, 10, "TỔNG CỘNG (" + ds.Count + " tài sản)", Nhom.Voi(k => k.Ngang = "center"));
+            for (int c = 11; c <= 13; c++)
+            {
+                string cotChu = XlsxReader.TenCot(c);
+                double tong = c == 11 ? ds.Sum(x => x.NguyenGia ?? 0) : c == 12 ? ds.Sum(x => TinhToan.KhauHaoLuyKe(dl, x, homNay) ?? 0) : ds.Sum(x => TinhToan.GiaTriConLai(dl, x, homNay) ?? 0);
+                if (ds.Count > 0) t.CongThuc(r, c, "SUM(" + cotChu + "7:" + cotChu + (r - 1) + ")", tong, NhomSo);
+                else t.Dat(r, c, 0, NhomSo);
+            }
+            for (int c = 14; c <= n; c++) t.Dat(r, c, "", Nhom);
+            r += 2;
+            ChuKy(t, r, n, dl.CaiDat, new[] { "NGƯỜI LẬP BIỂU", "TRƯỞNG ĐƠN VỊ", "KẾ TOÁN TRƯỞNG" }, new[] { dl.CaiDat.NguoiLap, "", dl.CaiDat.KeToanTruong });
+            t.LapTu = 6;
+            t.LapDen = 6;
+            t.CoDinhDong = 6;
+            t.CoDinhCot = 3;
+            t.Ngang = true;
+        }
+
         static void ChuKy(XTrang t, int r, int n, CaiDat cd, string[] chucDanh, string[] ten)
         {
+            // 3 khối chữ ký chia đều bề ngang, không chồng cột (trang 12 cột trước đây bị chồng → mất chữ ký thứ 3)
+            int w = n / 3;
             DateTime d = DateTime.Today;
-            t.GopO(r, n - 4, r, n, (cd.DiaDanh.Length > 0 ? cd.DiaDanh + ", " : "") + "ngày " + d.Day + " tháng " + d.Month + " năm " + d.Year, GiuaNghieng);
+            t.GopO(r, 2 * w + 1, r, n, (cd.DiaDanh.Length > 0 ? cd.DiaDanh + ", " : "") + "ngày " + d.Day + " tháng " + d.Month + " năm " + d.Year, GiuaNghieng);
             r++;
-            int[] cot = { 1, (n / 2) - 1, n - 4 };
-            int[] den = { 4, (n / 2) + 2, n };
+            int[] cot = { 1, w + 1, 2 * w + 1 };
+            int[] den = { w, 2 * w, n };
             for (int i = 0; i < 3; i++)
             {
                 t.GopO(r, cot[i], r, den[i], chucDanh[i], GiuaDam);
@@ -316,7 +473,11 @@ namespace QuanLyTaiSan
                 }
                 r++;
                 h.Dat(r++, 1, "ĐƠN VỊ QUẢN LÝ", new XKieu { Co = 11, Dam = true });
-                foreach (DonVi d in dv.Dl.DonVi.OrderBy(x => x.Ten, VanBan.SoSanhTen)) h.Dat(r++, 1, d.Ten, Thuong);
+                foreach (DonVi d in dv.Dl.DonViTheoThuTu())
+                {
+                    h.Dat(r, 1, d.Ten, Thuong);
+                    h.Dat(r++, 2, Khoi.Ten(d.Khoi), Thuong);
+                }
             }
             h.Ngang = false;
             return new KeyValuePair<string, byte[]>("Mau nhap tai san.xlsx", so.LuuBytes());
@@ -559,7 +720,7 @@ namespace QuanLyTaiSan
                     DonVi d = Dl.DonVi.FirstOrDefault(x => VanBan.BoDau(x.Ten) == k);
                     if (d != null) return d;
                     if (taoDonVi.TryGetValue(k, out d)) return d;
-                    d = new DonVi { Ten = VanBan.Cat(ten, 120) };
+                    d = new DonVi { Ten = VanBan.Cat(ten, 120), Khoi = Khoi.TuTen(ten) };
                     taoDonVi[k] = d;
                     donViMoi.Add(d.Ten);
                     return d;

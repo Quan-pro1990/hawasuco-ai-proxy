@@ -265,7 +265,7 @@ namespace QuanLyTaiSan
             }
             foreach (DonVi dv in d.DonVi)
             {
-                var e = new XElement("DonVi", new XAttribute("id", dv.Id), new XAttribute("ten", dv.Ten));
+                var e = new XElement("DonVi", new XAttribute("id", dv.Id), new XAttribute("ten", dv.Ten), new XAttribute("khoi", dv.Khoi));
                 A(e, "ghiChu", dv.GhiChu);
                 r.Add(e);
             }
@@ -325,6 +325,7 @@ namespace QuanLyTaiSan
             foreach (XElement e in r.Elements("DonVi"))
             {
                 var dv = new DonVi { Id = I(e, "id"), Ten = S(e, "ten"), GhiChu = S(e, "ghiChu") };
+                dv.Khoi = S(e, "khoi").Length > 0 ? Khoi.Chuan(S(e, "khoi")) : Khoi.TuTen(dv.Ten);   // dữ liệu trước khi có khối
                 d.DonVi.Add(dv);
                 d.IdDonVi = Math.Max(d.IdDonVi, dv.Id);
             }

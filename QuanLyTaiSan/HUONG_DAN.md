@@ -8,7 +8,7 @@ Thiết kế chi tiết: [THIET_KE.md](THIET_KE.md).
 |---|---|---|
 | ![](anh-man-hinh/dien-thoai-tai-san.png) | ![](anh-man-hinh/dien-thoai-xac-nhan-kiem-ke.png) | ![](anh-man-hinh/trang-tai-san.png) |
 
-Thêm: [đăng nhập](anh-man-hinh/dien-thoai-dang-nhap.png) · [tổng quan](anh-man-hinh/tong-quan.png) · [in tem QR](anh-man-hinh/in-tem.png) · [tiến độ kiểm kê khi quét](anh-man-hinh/dien-thoai-quet-kiem-ke.png)
+Thêm: [đăng nhập](anh-man-hinh/dien-thoai-dang-nhap.png) · [theo đơn vị](anh-man-hinh/theo-don-vi.png) · [tổng quan](anh-man-hinh/tong-quan.png) · [in tem QR](anh-man-hinh/in-tem.png) · [tiến độ kiểm kê khi quét](anh-man-hinh/dien-thoai-quet-kiem-ke.png)
 
 ## Thư mục
 
@@ -43,7 +43,9 @@ Sau khi cài, đăng nhập quản trị → **Cài đặt** → *Địa chỉ i
 
 1. **Danh mục**: đã có sẵn 13 loại tài sản của ngành nước (máy bơm, tủ điện – biến tần, máy phát, thiết bị xử lý nước, thuỷ lượng kế,
    van – trụ cứu hoả, đường ống, giếng khoan, nhà trạm – bể chứa, xe, thiết bị văn phòng, dụng cụ, khác) với tiền tố mã, số năm khấu hao,
-   chu kỳ bảo dưỡng, thông số kỹ thuật riêng; và các phòng ban, Đội cấp nước số 1–6. Bấm vào dòng để sửa, thêm cho đúng thực tế công ty.
+   chu kỳ bảo dưỡng, thông số kỹ thuật riêng; và đơn vị quản lý chia 2 khối: **Các đội cấp nước** (Đội Cấp nước số 1–6) và
+   **Khối văn phòng** (Ban Giám đốc, Phòng Tổ chức - Hành chính, Kế toán - Tài vụ, Kỹ thuật, Kinh doanh). Bấm vào dòng để sửa,
+   thêm cho đúng thực tế công ty (khi thêm đơn vị chọn khối).
 2. **Đưa tài sản vào**:
    - **Nhập từ Excel**: tải file mẫu, hoặc dùng luôn file sổ tài sản cố định đang có — phần mềm tự nhận các cột theo tiêu đề
      (Mã tài sản, Tên tài sản, Loại, Đơn vị, Vị trí, Hãng, Model, Số seri, Năm sản xuất, Ngày đưa vào sử dụng, Nguyên giá, Số năm khấu hao,
@@ -99,10 +101,27 @@ Mở địa chỉ máy chủ bằng Chrome (iPhone: Safari), đăng nhập, menu
    chữ ký người lập biểu – kế toán trưởng – giám đốc (tên lấy ở Cài đặt); trang tiến độ theo đơn vị.
 5. **Kết thúc đợt** khi xong (mở lại được).
 
+## Tài sản của từng đội cấp nước và phòng ban
+
+Mỗi tài sản thuộc 1 **đơn vị quản lý**; mỗi đơn vị thuộc 1 **khối**: *Các đội cấp nước* hoặc *Khối văn phòng*.
+
+- Trang **Theo đơn vị** (menu trái; trên điện thoại: Thêm → Theo đơn vị): mỗi khối 1 phần, mỗi đội / phòng ban 1 thẻ —
+  số tài sản, nguyên giá, giá trị còn lại, loại tài sản nhiều nhất, việc cần xử lý (hỏng / đang sửa, đến hạn bảo dưỡng,
+  lâu chưa kiểm tra, chưa có ảnh). Nút trên mỗi thẻ: **Danh sách**, **In tem** cho đơn vị đó, **Sổ Excel** của đơn vị.
+- **Sổ tài sản (Excel)**: cả công ty, cả khối hoặc 1 đơn vị — trang **Tổng hợp** (theo khối → từng đơn vị: số lượng, nguyên giá,
+  khấu hao, còn lại, tình trạng) và mỗi đơn vị 1 trang "Sổ theo dõi tài sản tại đơn vị sử dụng" có chỗ ký người lập, trưởng đơn vị,
+  kế toán trưởng. Chỉ gồm tài sản đang quản lý (không có đã thanh lý, mất).
+- Trang **Tài sản**: ô đơn vị chia nhóm theo khối, có dòng **Cả các đội cấp nước** / **Cả khối văn phòng** để lọc theo khối.
+- Tài khoản giới hạn 1 đơn vị (vd tài khoản của Đội cấp nước số 2): mở trang Tài sản là thấy sẵn tài sản của đội mình
+  (chọn "Mọi đơn vị" để xem cả công ty); trang Theo đơn vị đánh dấu "Đơn vị của bạn".
+- **Kiểm kê**: khi mở đợt, tích "Các đội cấp nước" hoặc "Khối văn phòng" để chọn cả khối; tiến độ và biên bản kiểm kê chia theo
+  khối → đơn vị.
+- Chuyển tài sản giữa các đơn vị: trang tài sản → **Điều chuyển**.
+
 ## Tổng quan, xuất Excel
 
-- **Tổng quan**: số tài sản, nguyên giá, giá trị còn lại, hỏng / đang sửa, đến hạn bảo dưỡng (7 ngày), chưa kiểm tra lâu, chưa có ảnh —
-  bấm từng ô / từng thanh biểu đồ để ra danh sách tương ứng.
+- **Tổng quan**: số tài sản, nguyên giá, giá trị còn lại, hỏng / đang sửa, đến hạn bảo dưỡng (7 ngày), chưa kiểm tra lâu, chưa có ảnh;
+  biểu đồ theo tình trạng, loại, đơn vị (chia theo khối) — bấm từng ô / từng thanh để ra danh sách tương ứng.
 - Trang **Tài sản** → **Xuất Excel**: xuất đúng danh sách đang lọc (hoặc các tài sản đã chọn), có tổng nguyên giá, khấu hao, giá trị còn lại.
 
 ## Quyền người dùng

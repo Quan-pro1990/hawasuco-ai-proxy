@@ -76,7 +76,9 @@ namespace QuanLyTaiSan
                                Json.So(b, "soNamKhauHao", 0), Json.So(b, "chuKyBaoTri", 0), Json.MangChu(b, "truong"));
                     return TraLoi.Json(DanhMuc(dv));
                 case "DELETE /loai": dv.XoaLoai(tk, SoNguyen(ctx.Q("id"), 0)); return TraLoi.Json(DanhMuc(dv));
-                case "POST /donvi": dv.LuuDonVi(tk, Json.So(b, "id", 0), Json.Chu(b, "ten"), Json.Chu(b, "ghiChu")); return TraLoi.Json(DanhMuc(dv));
+                case "POST /donvi": dv.LuuDonVi(tk, Json.So(b, "id", 0), Json.Chu(b, "ten"), Json.Chu(b, "ghiChu"), Json.Chu(b, "khoi")); return TraLoi.Json(DanhMuc(dv));
+                case "GET /theodonvi": return TraLoi.Json(TheoDonVi(dv));
+                case "POST /xuat/donvi": return TraLoi.Json(Link(dv, BaoCao.SoTheoDonVi(dv, Json.Chu(b, "khoi") ?? "", Json.So(b, "donvi", 0))));
                 case "DELETE /donvi": dv.XoaDonVi(tk, SoNguyen(ctx.Q("id"), 0)); return TraLoi.Json(DanhMuc(dv));
                 case "POST /caidat": dv.LuuCaiDat(tk, b); return TraLoi.Json(DanhMuc(dv));
 
@@ -224,10 +226,12 @@ namespace QuanLyTaiSan
                             { "id", l.Id }, { "ten", l.Ten }, { "tienTo", l.TienTo }, { "nhom", l.Nhom }, { "soNamKhauHao", l.SoNamKhauHao },
                             { "chuKyBaoTri", l.ChuKyBaoTri }, { "truong", l.Truong }, { "soTaiSan", dem.TryGetValue(l.Id, out n) ? n : 0 }
                         }).ToList() },
-                    { "donVi", dl.DonVi.OrderBy(x => x.Ten, VanBan.SoSanhTen).Select(x => (object)new O
+                    { "donVi", dl.DonViTheoThuTu().Select(x => (object)new O
                         {
-                            { "id", x.Id }, { "ten", x.Ten }, { "ghiChu", x.GhiChu }, { "soTaiSan", demDv.TryGetValue(x.Id, out n) ? n : 0 }
+                            { "id", x.Id }, { "ten", x.Ten }, { "ghiChu", x.GhiChu }, { "khoi", x.Khoi }, { "tenKhoi", Khoi.Ten(x.Khoi) },
+                            { "soTaiSan", demDv.TryGetValue(x.Id, out n) ? n : 0 }
                         }).ToList() },
+                    { "khoi", Khoi.Ma.Select(x => (object)new O { { "ma", x }, { "ten", Khoi.Ten(x) } }).ToList() },
                     { "tinhTrang", TinhTrang.Ma.Select(x => (object)new O { { "ma", x }, { "ten", TinhTrang.Ten(x) } }).ToList() },
                     { "nhom", new[] { "Nhà cửa, vật kiến trúc", "Máy móc, thiết bị", "Phương tiện vận tải, thiết bị truyền dẫn",
                                       "Thiết bị, dụng cụ quản lý", "Tài sản cố định khác", "Công cụ, dụng cụ" } },
@@ -245,7 +249,7 @@ namespace QuanLyTaiSan
 
         public class Loc
         {
-            public string Q = "", TinhTrang = "", Them = "";
+            public string Q = "", TinhTrang = "", Them = "", Khoi = "";
             public int Loai, DonVi;
             public string Sap = "ma";
             public List<int> Ids;
@@ -256,7 +260,7 @@ namespace QuanLyTaiSan
             var l = new Loc
             {
                 Q = ctx.Q("q") ?? "", TinhTrang = ctx.Q("tinhtrang") ?? "", Them = ctx.Q("them") ?? "", Loai = SoNguyen(ctx.Q("loai"), 0),
-                DonVi = SoNguyen(ctx.Q("donvi"), 0), Sap = ctx.Q("sap") ?? "ma"
+                DonVi = SoNguyen(ctx.Q("donvi"), 0), Sap = ctx.Q("sap") ?? "ma", Khoi = ctx.Q("khoi") ?? ""
             };
             string ids = ctx.Q("ids");
             if (!string.IsNullOrEmpty(ids)) l.Ids = ids.Split(',').Select(x => SoNguyen(x, 0)).Where(x => x > 0).ToList();
@@ -268,7 +272,7 @@ namespace QuanLyTaiSan
             var l = new Loc
             {
                 Q = Json.Chu(b, "q") ?? "", TinhTrang = Json.Chu(b, "tinhtrang") ?? "", Them = Json.Chu(b, "them") ?? "",
-                Loai = Json.So(b, "loai", 0), DonVi = Json.So(b, "donvi", 0), Sap = Json.Chu(b, "sap") ?? "ma"
+                Loai = Json.So(b, "loai", 0), DonVi = Json.So(b, "donvi", 0), Sap = Json.Chu(b, "sap") ?? "ma", Khoi = Json.Chu(b, "khoi") ?? ""
             };
             if (Json.Co(b, "ids")) l.Ids = Json.MangSo(b, "ids");
             return l;
@@ -285,6 +289,7 @@ namespace QuanLyTaiSan
             }
             if (l.Loai > 0) q = q.Where(t => t.LoaiId == l.Loai);
             if (l.DonVi > 0) q = q.Where(t => t.DonViId == l.DonVi);
+            if (l.Khoi.Length > 0) q = q.Where(t => dl.KhoiCua(t.DonViId) == l.Khoi);
             if (l.TinhTrang.Length > 0) q = q.Where(t => t.TinhTrang == l.TinhTrang);
             DateTime homNay = DateTime.Today;
             if (l.Them == "baotri")
@@ -320,7 +325,7 @@ namespace QuanLyTaiSan
             return new O
             {
                 { "id", t.Id }, { "ma", t.Ma }, { "ten", t.Ten }, { "loai", t.LoaiId }, { "tenLoai", dl.TenLoai(t.LoaiId) },
-                { "donVi", t.DonViId }, { "tenDonVi", dl.TenDonVi(t.DonViId) }, { "viTri", t.ViTri }, { "tinhTrang", t.TinhTrang },
+                { "donVi", t.DonViId }, { "tenDonVi", dl.TenDonVi(t.DonViId) }, { "khoi", dl.KhoiCua(t.DonViId) }, { "viTri", t.ViTri }, { "tinhTrang", t.TinhTrang },
                 { "anh", t.AnhDaiDien }, { "soAnh", t.Anh.Count }, { "nguyenGia", t.NguyenGia },
                 { "kiemTraCuoi", t.KiemTraCuoi.HasValue ? (object)t.KiemTraCuoi.Value : null }, { "hanBaoTri", VanBan.NgayIso(han) }
             };
@@ -565,11 +570,10 @@ namespace QuanLyTaiSan
                     { "theoLoai", dl.Loai.Select(l => new { l, ds = dangQL.Where(t => t.LoaiId == l.Id).ToList() }).Where(x => x.ds.Count > 0)
                                    .OrderByDescending(x => x.ds.Count)
                                    .Select(x => (object)new O { { "id", x.l.Id }, { "ten", x.l.Ten }, { "so", x.ds.Count }, { "nguyenGia", x.ds.Sum(t => t.NguyenGia ?? 0) } }).ToList() },
-                    { "theoDonVi", dl.DonVi.Select(d => new { d, ds = dangQL.Where(t => t.DonViId == d.Id).ToList() }).Where(x => x.ds.Count > 0)
-                                   .OrderByDescending(x => x.ds.Count)
+                    { "theoDonVi", dl.DonViTheoThuTu().Select(d => new { d, ds = dangQL.Where(t => t.DonViId == d.Id).ToList() }).Where(x => x.ds.Count > 0)
                                    .Select(x => (object)new O
                                    {
-                                       { "id", x.d.Id }, { "ten", x.d.Ten }, { "so", x.ds.Count },
+                                       { "id", x.d.Id }, { "ten", x.d.Ten }, { "khoi", x.d.Khoi }, { "so", x.ds.Count },
                                        { "hong", x.ds.Count(t => t.TinhTrang == TinhTrang.Hong || t.TinhTrang == TinhTrang.DangSua) },
                                        { "nguyenGia", x.ds.Sum(t => t.NguyenGia ?? 0) }
                                    }).ToList() },
@@ -579,6 +583,52 @@ namespace QuanLyTaiSan
                     { "kiemKe", dl.KiemKe.Where(k => !k.Dong).Select(k => (object)DotJson(dl, k)).ToList() }
                 };
                 return r;
+            }
+        }
+
+        /// <summary>Tài sản chia theo khối → đơn vị: số lượng, giá trị, tình trạng, việc cần làm của từng đội / phòng ban.</summary>
+        static O TheoDonVi(DichVu dv)
+        {
+            lock (dv.Khoa)
+            {
+                DuLieu dl = dv.Dl;
+                DateTime homNay = DateTime.Today;
+                int ngayNhac = Math.Max(1, dl.CaiDat.NgayNhacKiemTra);
+                Func<List<TaiSan>, O> soLieu = ds => new O
+                {
+                    { "so", ds.Count }, { "nguyenGia", ds.Sum(t => t.NguyenGia ?? 0) }, { "conLai", ds.Sum(t => TinhToan.GiaTriConLai(dl, t, homNay) ?? 0) },
+                    { "tot", ds.Count(t => t.TinhTrang == TinhTrang.Tot) }, { "theoDoi", ds.Count(t => t.TinhTrang == TinhTrang.TheoDoi) },
+                    { "hong", ds.Count(t => t.TinhTrang == TinhTrang.Hong || t.TinhTrang == TinhTrang.DangSua) },
+                    { "ngung", ds.Count(t => t.TinhTrang == TinhTrang.Ngung) },
+                    { "denHanBaoTri", ds.Count(t => { DateTime? h = TinhToan.HanBaoTri(dl, t); return h.HasValue && h.Value <= homNay.AddDays(7); }) },
+                    { "lauChuaKiem", ds.Count(t => !t.KiemTraCuoi.HasValue || t.KiemTraCuoi.Value < homNay.AddDays(-ngayNhac)) },
+                    { "chuaAnh", ds.Count(t => t.Anh.Count == 0) }
+                };
+                var cacKhoi = new List<object>();
+                foreach (string kh in Khoi.Ma)
+                {
+                    var donVi = new List<object>();
+                    var tatCa = new List<TaiSan>();
+                    foreach (DonVi d in dl.DonViTheoThuTu().Where(x => x.Khoi == kh))
+                    {
+                        var ds = dl.TaiSan.Where(t => t.DonViId == d.Id && TinhTrang.ConDung(t.TinhTrang)).ToList();
+                        tatCa.AddRange(ds);
+                        O o = soLieu(ds);
+                        o["id"] = d.Id;
+                        o["ten"] = d.Ten;
+                        o["ghiChu"] = d.GhiChu;
+                        o["ngungQuanLy"] = dl.TaiSan.Count(t => t.DonViId == d.Id && !TinhTrang.ConDung(t.TinhTrang));
+                        o["theoLoai"] = ds.GroupBy(t => t.LoaiId).OrderByDescending(g => g.Count()).Take(4)
+                                          .Select(g => (object)new O { { "ten", dl.TenLoai(g.Key) }, { "so", g.Count() } }).ToList();
+                        donVi.Add(o);
+                    }
+                    O k = soLieu(tatCa);
+                    k["ma"] = kh;
+                    k["ten"] = Khoi.Ten(kh);
+                    k["donVi"] = donVi;
+                    cacKhoi.Add(k);
+                }
+                return new O { { "khoi", cacKhoi }, { "ngayNhacKiemTra", ngayNhac } };
             }
         }
 
@@ -607,10 +657,29 @@ namespace QuanLyTaiSan
             return new O
             {
                 { "id", k.Id }, { "ten", k.Ten }, { "tuNgay", VanBan.NgayIso(k.TuNgay) }, { "denNgay", VanBan.NgayIso(k.DenNgay) }, { "dong", k.Dong },
-                { "ghiChu", k.GhiChu }, { "donVi", k.DonVi }, { "tenDonVi", k.DonVi.Count == 0 ? "Toàn công ty" : string.Join(", ", k.DonVi.Select(x => dl.TenDonVi(x))) },
+                { "ghiChu", k.GhiChu }, { "donVi", k.DonVi }, { "tenDonVi", MoTaPhamVi(dl, k.DonVi) },
                 { "tong", k.DanhSach.Count }, { "daKiem", daKiem }, { "ngoaiSo", k.KetQua.Keys.Count(id => !k.DanhSach.Contains(id)) },
                 { "nguoiTao", k.NguoiTao }, { "tao", k.Tao }
             };
+        }
+
+        /// <summary>"Toàn công ty", "Các đội cấp nước" (đủ mọi đội), hoặc danh sách tên đơn vị.</summary>
+        static string MoTaPhamVi(DuLieu dl, List<int> donVi)
+        {
+            if (donVi.Count == 0) return "Toàn công ty";
+            var chon = new HashSet<int>(donVi);
+            var phan = new List<string>();
+            foreach (string kh in Khoi.Ma)
+            {
+                var trongKhoi = dl.DonViTheoThuTu().Where(d => d.Khoi == kh).ToList();
+                if (trongKhoi.Count > 1 && trongKhoi.All(d => chon.Contains(d.Id)))
+                {
+                    phan.Add(Khoi.Ten(kh));
+                    foreach (DonVi d in trongKhoi) chon.Remove(d.Id);
+                }
+            }
+            phan.AddRange(dl.DonViTheoThuTu().Where(d => chon.Contains(d.Id)).Select(d => d.Ten));
+            return string.Join(", ", phan);
         }
 
         static O DanhSachDot(DichVu dv)
@@ -629,10 +698,12 @@ namespace QuanLyTaiSan
                 DotKiemKe k = dl.TimDot(id);
                 if (k == null) throw new LoiApi(404, "Không có đợt kiểm kê này.");
                 var trongSo = k.DanhSach.Select(x => dl.Tim(x)).Where(t => t != null).ToList();
-                var theoDv = trongSo.GroupBy(t => t.DonViId).Select(g => (object)new O
+                var thuTu = dl.DonViTheoThuTu().Select(x => x.Id).ToList();
+                var theoDv = trongSo.GroupBy(t => t.DonViId).OrderBy(g => thuTu.IndexOf(g.Key) < 0 ? int.MaxValue : thuTu.IndexOf(g.Key)).Select(g => (object)new O
                 {
-                    { "id", g.Key }, { "ten", dl.TenDonVi(g.Key) }, { "tong", g.Count() }, { "daKiem", g.Count(t => k.KetQua.ContainsKey(t.Id)) }
-                }).OrderBy(o => (string)((O)o)["ten"], VanBan.SoSanhTen).ToList();
+                    { "id", g.Key }, { "ten", dl.TenDonVi(g.Key) }, { "khoi", dl.KhoiCua(g.Key) }, { "tong", g.Count() },
+                    { "daKiem", g.Count(t => k.KetQua.ContainsKey(t.Id)) }
+                }).ToList();
                 IEnumerable<TaiSan> ds;
                 if (loc == "da") ds = trongSo.Where(t => k.KetQua.ContainsKey(t.Id));
                 else if (loc == "ngoai") ds = k.KetQua.Keys.Where(x => !k.DanhSach.Contains(x)).Select(x => dl.Tim(x)).Where(t => t != null);

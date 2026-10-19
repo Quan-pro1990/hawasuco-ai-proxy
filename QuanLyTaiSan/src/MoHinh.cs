@@ -117,10 +117,32 @@ namespace QuanLyTaiSan
         public List<string> Truong = new List<string>();   // thông số kỹ thuật riêng của loại (vd "Công suất (kW)")
     }
 
+    /// <summary>Khối đơn vị: các đội cấp nước (sản xuất, mạng lưới) và khối văn phòng (phòng ban, ban giám đốc).</summary>
+    public static class Khoi
+    {
+        public const string Doi = "doi", VanPhong = "vanphong";
+
+        public static readonly string[] Ma = { Doi, VanPhong };
+
+        public static string Ten(string ma) { return ma == Doi ? "Các đội cấp nước" : "Khối văn phòng"; }
+
+        public static string Chuan(string ma) { return ma == Doi ? Doi : VanPhong; }
+
+        /// <summary>Đoán khối theo tên đơn vị (dữ liệu cũ, đơn vị tạo khi nhập Excel): "Đội…", "Trạm…", "Nhà máy…" = đội cấp nước.</summary>
+        public static string TuTen(string tenDonVi)
+        {
+            string k = VanBan.BoDau(tenDonVi).Trim();
+            if (k.StartsWith("doi") || k.Contains("doi cap nuoc") || k.StartsWith("tram") || k.StartsWith("nha may") ||
+                k.StartsWith("nmn") || k.StartsWith("xi nghiep") || k.StartsWith("to ")) return Doi;
+            return VanPhong;
+        }
+    }
+
     public class DonVi
     {
         public int Id;
         public string Ten = "", GhiChu = "";
+        public string Khoi = QuanLyTaiSan.Khoi.VanPhong;
     }
 
     public class TaiSan
@@ -262,6 +284,13 @@ namespace QuanLyTaiSan
 
         public string TenLoai(int id) { LoaiTaiSan l = TimLoai(id); return l == null ? "" : l.Ten; }
         public string TenDonVi(int id) { DonVi d = TimDonVi(id); return d == null ? "" : d.Ten; }
+        public string KhoiCua(int donVi) { DonVi d = TimDonVi(donVi); return d == null ? QuanLyTaiSan.Khoi.VanPhong : d.Khoi; }
+
+        /// <summary>Đơn vị theo thứ tự hiển thị: các đội cấp nước trước, khối văn phòng sau; trong khối theo tên (số 2 trước số 10).</summary>
+        public List<DonVi> DonViTheoThuTu()
+        {
+            return DonVi.OrderBy(x => x.Khoi == QuanLyTaiSan.Khoi.Doi ? 0 : 1).ThenBy(x => VanBan.KhoaTuNhien(x.Ten), VanBan.SoSanhTen).ToList();
+        }
 
         /// <summary>Ghi nhận mã đã dùng để mã tự cấp sau này không trùng (vd "MB-00012" → MB: 12).</summary>
         public void GhiNhanMa(string ma)
@@ -313,10 +342,10 @@ namespace QuanLyTaiSan
             loai("Thiết bị văn phòng, tin học", "VP", ql, 5, 0, new[] { "Cấu hình" });
             loai("Dụng cụ, thiết bị thi công", "DC", ql, 5, 0, new string[0]);
             loai("Tài sản khác", "TS", khac, 5, 0, new string[0]);
-            foreach (string ten in new[] { "Phòng Kỹ thuật", "Phòng Kế toán - Tài vụ", "Phòng Tổ chức - Hành chính", "Phòng Kinh doanh",
-                                           "Đội Cấp nước số 1", "Đội Cấp nước số 2", "Đội Cấp nước số 3", "Đội Cấp nước số 4",
-                                           "Đội Cấp nước số 5", "Đội Cấp nước số 6" })
-                d.DonVi.Add(new DonVi { Id = ++d.IdDonVi, Ten = ten });
+            for (int i = 1; i <= 6; i++)
+                d.DonVi.Add(new DonVi { Id = ++d.IdDonVi, Ten = "Đội Cấp nước số " + i, Khoi = QuanLyTaiSan.Khoi.Doi });
+            foreach (string ten in new[] { "Ban Giám đốc", "Phòng Tổ chức - Hành chính", "Phòng Kế toán - Tài vụ", "Phòng Kỹ thuật", "Phòng Kinh doanh" })
+                d.DonVi.Add(new DonVi { Id = ++d.IdDonVi, Ten = ten, Khoi = QuanLyTaiSan.Khoi.VanPhong });
             return d;
         }
     }
@@ -366,6 +395,12 @@ namespace QuanLyTaiSan
                 else sb.Append(c);
             }
             return sb.ToString().Normalize(NormalizationForm.FormC);
+        }
+
+        /// <summary>Khoá sắp xếp tự nhiên: "Đội số 2" trước "Đội số 10".</summary>
+        public static string KhoaTuNhien(string s)
+        {
+            return Regex.Replace(s ?? "", @"\d+", m => m.Value.PadLeft(9, '0'));
         }
 
         public static string Cat(string s, int n)
