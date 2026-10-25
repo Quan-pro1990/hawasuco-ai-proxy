@@ -1,5 +1,9 @@
-# Build ứng dụng Android HawaMap (điện thoại + Android Auto) thành tệp APK trên máy chủ của GitHub.
-# Tải APK: tab Actions → lần chạy "Build APK HawaMap" mới nhất → mục Artifacts → HawaMap-apk.
+# Build ứng dụng Android HawaMap (điện thoại + Android Auto) trên máy chủ của GitHub:
+#  - HawaMap-apk: tệp .apk cài thẳng lên điện thoại (ký bằng khoá thử cố định).
+#  - HawaMap-aab: tệp .aab tải lên Google Play (Thử nghiệm nội bộ) — Android Auto chỉ chạy ứng dụng dẫn đường cài từ Google Play.
+#    Ký bằng khoá tải lên riêng nếu đã đặt bí mật HAWAMAP_KHOA_TAI_LEN_BASE64, HAWAMAP_MAT_KHAU_KHO, HAWAMAP_BI_DANH_KHOA
+#    (và HAWAMAP_MAT_KHAU_KHOA nếu khác mật khẩu kho) trong Settings → Secrets and variables → Actions; chưa đặt thì ký bằng khoá thử.
+# Tải về: tab Actions → lần chạy "Build APK HawaMap" mới nhất → mục Artifacts.
 name: Build APK HawaMap
 
 on:
@@ -26,20 +30,44 @@ jobs:
           java-version: '17'
           cache: gradle
 
-      - name: Build APK
+      - name: Khoá tải lên Google Play (nếu đã đặt bí mật)
+        env:
+          KHOA_BASE64: ${{ secrets.HAWAMAP_KHOA_TAI_LEN_BASE64 }}
+        run: |
+          if [ -n "$KHOA_BASE64" ]; then
+            echo "$KHOA_BASE64" | base64 -d > "$RUNNER_TEMP/khoa-tai-len.jks"
+            echo "HAWAMAP_KHOA_TAI_LEN=$RUNNER_TEMP/khoa-tai-len.jks" >> "$GITHUB_ENV"
+            echo "Ký tệp .aab bằng khoá tải lên riêng"
+          else
+            echo "Chưa đặt khoá tải lên riêng: tệp .aab ký bằng khoá thử (chỉ nên dùng để thử nội bộ)"
+          fi
+
+      - name: Build APK và AAB
+        env:
+          HAWAMAP_MAT_KHAU_KHO: ${{ secrets.HAWAMAP_MAT_KHAU_KHO }}
+          HAWAMAP_BI_DANH_KHOA: ${{ secrets.HAWAMAP_BI_DANH_KHOA }}
+          HAWAMAP_MAT_KHAU_KHOA: ${{ secrets.HAWAMAP_MAT_KHAU_KHOA }}
         run: |
           chmod +x gradlew
-          ./gradlew --no-daemon --stacktrace assembleDebug
+          ./gradlew --no-daemon --stacktrace assembleDebug bundleRelease
 
-      - name: Đặt tên tệp APK
+      - name: Đặt tên tệp
         run: |
           PHIEN_BAN=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
           mkdir -p ra
           cp app/build/outputs/apk/debug/app-debug.apk "ra/HawaMap-$PHIEN_BAN.apk"
+          cp app/build/outputs/bundle/release/app-release.aab "ra/HawaMap-$PHIEN_BAN.aab"
+          rm -f "$RUNNER_TEMP/khoa-tai-len.jks"
           ls -la ra
 
       - uses: actions/upload-artifact@v4
         with:
           name: HawaMap-apk
           path: BanDoDanDuong/android/ra/*.apk
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: HawaMap-aab
+          path: BanDoDanDuong/android/ra/*.aab
           if-no-files-found: error

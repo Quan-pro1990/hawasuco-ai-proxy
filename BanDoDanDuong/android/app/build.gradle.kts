@@ -8,14 +8,15 @@ plugins {
 
 android {
     namespace = "vn.hawasuco.hawamap"
-    compileSdk = 35
+    // Google Play: ứng dụng mới / bản cập nhật gửi từ 31/8/2026 phải nhắm Android 16 (API 36)
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "vn.hawasuco.hawamap"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 10207
-        versionName = "1.2.7"
+        targetSdk = 36
+        versionCode = 10208
+        versionName = "1.2.8"
     }
 
     signingConfigs {
@@ -27,10 +28,25 @@ android {
             keyAlias = "androiddebugkey"
             keyPassword = "android"
         }
+        // bản tải lên Google Play (.aab): khoá tải lên riêng lấy từ biến môi trường (bí mật của GitHub Actions,
+        // xem HUONG_DAN_CAI_APK.md mục 3); chưa có thì ký bằng khoá thử để vẫn thử nội bộ được
+        val khoaThu = getByName("debug")
+        create("taiLenPlay") {
+            val kho = System.getenv("HAWAMAP_KHOA_TAI_LEN")?.let { file(it) }
+            if (kho != null && kho.exists()) {
+                storeFile = kho
+                storePassword = System.getenv("HAWAMAP_MAT_KHAU_KHO")
+                keyAlias = System.getenv("HAWAMAP_BI_DANH_KHOA")
+                keyPassword = System.getenv("HAWAMAP_MAT_KHAU_KHOA")?.takeIf { it.isNotEmpty() } ?: System.getenv("HAWAMAP_MAT_KHAU_KHO")
+            } else {
+                initWith(khoaThu)
+            }
+        }
     }
 
     buildTypes {
         release {
+            signingConfig = signingConfigs.getByName("taiLenPlay")
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }

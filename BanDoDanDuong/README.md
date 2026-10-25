@@ -167,16 +167,19 @@ từ một nơi. Biểu tượng mũi tên rẽ của hai ứng dụng được 
 
 **Cách nhanh nhất — không cần cài gì:** mỗi lần mã ứng dụng thay đổi, GitHub Actions tự build tệp APK
 (`.github/workflows/build-apk.yml`). Vào tab **Actions** của kho → **Build APK HawaMap** → lần chạy mới nhất → mục
-**Artifacts** → tải **HawaMap-apk**. Cài lên điện thoại và bật Android Auto (kể cả không dây) theo
-[`android/HUONG_DAN_CAI_APK.md`](android/HUONG_DAN_CAI_APK.md). Bản APK ký bằng khoá thử cố định `android/app/khoa-ky/`
-(không bí mật) để các bản sau cài đè được; đưa lên Google Play thì dùng khoá riêng.
+**Artifacts** → tải **HawaMap-apk** để cài lên điện thoại. Android Auto (kể cả không dây) chỉ chạy ứng dụng dẫn đường cài từ
+Google Play — mục "Nguồn không xác định" của Android Auto không áp dụng cho ứng dụng viết bằng thư viện Android for Cars — nên muốn
+dùng trên xe thì tải **HawaMap-aab** lên Google Play → *Thử nghiệm nội bộ* (không cần chờ duyệt, tối đa 100 người thử), xem
+[`android/HUONG_DAN_CAI_APK.md`](android/HUONG_DAN_CAI_APK.md) mục 3. Bản APK ký bằng khoá thử cố định `android/app/khoa-ky/`
+(không bí mật) để các bản sau cài đè được; bản AAB ký bằng khoá tải lên riêng nếu đặt bí mật `HAWAMAP_KHOA_TAI_LEN_BASE64`…
+trong GitHub Actions. Ứng dụng nhắm Android 16 (API 36) theo yêu cầu của Google Play từ 31/8/2026.
 
 **Tự build trên máy:**
 
 1. Cài [Android Studio](https://developer.android.com/studio), mở thư mục `android/` (hoặc dòng lệnh: `cd android && ./gradlew assembleDebug`).
    Mỗi lần build, trang web trong `public/` được chép tự động vào ứng dụng.
 2. Thử trên máy tính bằng **Desktop Head Unit**: cài "Android Auto Desktop Head Unit Emulator" trong SDK Manager; trên điện thoại
-   bật chế độ nhà phát triển của Android Auto (bấm 10 lần vào phiên bản trong cài đặt Android Auto) → *Start head unit server*;
+   bật chế độ nhà phát triển của Android Auto (cài đặt Android Auto → *Giới thiệu* → bấm 10 lần vào *Phiên bản và thông tin về quyền*) → *Start head unit server*;
    chạy `adb forward tcp:5277 tcp:5277` rồi mở `desktop-head-unit`. Bấm nút "Chạy thử" ở màn hình xem trước tuyến để thử dẫn đường.
 3. Máy chủ báo cáo dùng chung: điền vào `android/app/src/main/res/values/cau_hinh.xml`.
 4. Phát hành: Google Play duyệt riêng ứng dụng cho Android Auto (Play Console → Advanced settings → Form factors → Android Auto),
