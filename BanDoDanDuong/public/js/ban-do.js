@@ -3,7 +3,7 @@
  * Bản đồ (MapLibre GL): kiểu bản đồ, các lớp tuyến đường / báo cáo / điểm cảnh báo / kết quả tìm kiếm,
  * chấm vị trí của tôi và camera bám theo xe khi dẫn đường (nghiêng 3D, xoay theo hướng đi).
  */
-import { CAU_HINH } from './cau-hinh.js';
+import { CAU_HINH, kieuVietmap } from './cau-hinh.js';
 import { caiDat, doc, ghi } from './kho.js';
 import { lechGoc, khungBao } from './hinh-hoc.js';
 import { svgBieuTuongBanDo, svgBienBao, svgBienVN, svgDiemBanDo, SVG_MUI_TEN_TUYEN, SVG_CO_DICH, taiAnh, icon } from './bieu-tuong.js';
@@ -30,8 +30,8 @@ function diem(p, props = {}) {
 }
 
 export function layKieuBanDo(ten) {
-  if (ten === 'vietmap' && caiDat.styleVietmap) return { ten: 'VietMap', style: caiDat.styleVietmap };
-  return CAU_HINH.kieuBanDo[ten] || CAU_HINH.kieuBanDo.tieuchuan;
+  if (ten === 'vietmap' && caiDat.styleVietmap) return { ten: 'VietMap', style: caiDat.styleVietmap, vietmap: true };
+  return kieuVietmap(ten, caiDat.khoaVietmap) || CAU_HINH.kieuBanDo[ten] || CAU_HINH.kieuBanDo.tieuchuan;
 }
 
 export class BanDo {
@@ -72,7 +72,16 @@ export class BanDo {
       const c = this.map.getCenter();
       ghi('khungnhin', { c: [+c.lng.toFixed(5), +c.lat.toFixed(5)], z: +this.map.getZoom().toFixed(2) });
     });
-    this.map.on('error', e => console.warn('Bản đồ:', e && e.error ? e.error.message : e));
+    this.map.on('error', e => {
+      console.warn('Bản đồ:', e && e.error ? e.error.message : e);
+      // không tải được kiểu bản đồ VietMap (khoá sai, hết hạn mức, kiểu chưa được cấp quyền): báo để quay về kiểu mặc định
+      const loi = e && e.error, st = loi && loi.status;
+      if (layKieuBanDo(this.kieu).vietmap && !this.map.isStyleLoaded() && this.loiKieuDaBao !== this.kieu &&
+        (st === 401 || st === 403 || /style/i.test((loi && loi.url) || ''))) {
+        this.loiKieuDaBao = this.kieu;
+        if (this.cb.loiKieu) this.cb.loiKieu(this.kieu, st);
+      }
+    });
     // người dùng tự kéo / xoay bản đồ thì thôi bám theo vị trí
     for (const ev of ['dragstart', 'rotatestart', 'pitchstart']) {
       this.map.on(ev, e => {
@@ -100,6 +109,7 @@ export class BanDo {
 
   /** Kiểu có "bienDoi": tải kiểu gốc rồi tô lại (màu Google Maps, ảnh vệ tinh…) trước khi vẽ. */
   napKieu(k) {
+    this.loiKieuDaBao = null;
     const bd = k.bienDoi && BIEN_DOI_KIEU[k.bienDoi];
     this.map.setStyle(k.style, bd ? { diff: false, transformStyle: bd } : { diff: false });
   }
@@ -142,7 +152,8 @@ export class BanDo {
 
   async sauKhiTaiStyle() {
     const m = this.map;
-    this.vietHoaNhan();
+    // kiểu của VietMap đã ghi tên tiếng Việt theo dữ liệu của họ: giữ nguyên
+    if (!layKieuBanDo(this.kieu).vietmap) this.vietHoaNhan();
     const anh = await this.anh;
     if (!m.getStyle()) return;
     for (const [k, img] of [...Object.entries(anh), ...this.anhBienSo]) if (!m.hasImage(k)) m.addImage(k, img, { pixelRatio: 2 });

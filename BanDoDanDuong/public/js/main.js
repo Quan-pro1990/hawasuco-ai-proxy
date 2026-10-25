@@ -1,5 +1,5 @@
 /* HawaMap — bản đồ dẫn đường. Điều khiển chính: nối bản đồ, tìm kiếm, lộ trình, dẫn đường, cảnh báo, báo cáo, camera. */
-import { CAU_HINH } from './cau-hinh.js';
+import { CAU_HINH, KIEU_VIETMAP } from './cau-hinh.js';
 import {
   caiDat, doiCaiDat, ngheDoiCaiDat, khoiPhucCaiDat, diaDiemDaLuu, luuNhaCoQuan, laYeuThich, doiYeuThich, boYeuThich,
   lichSuTim, themLichSu, xoaLichSu
@@ -74,6 +74,13 @@ const banDo = new BanDo('ban-do', {
   chamTuyenPhu: i => chonTuyen(i),
   chamDiaDiem: dd => { if (st.cheDo === 'chinh' || st.cheDo === 'diadiem') chonDiaDiem({ ...dd, diaChi: '' }, { timDiaChi: true }); },
   boTheoDoi: () => capNhatNutViTri(),
+  // không tải được bản đồ VietMap: báo rõ và quay về bản đồ mặc định
+  loiKieu: (_kieu, ma) => {
+    thongBao(ma === 401 || ma === 403 ? 'Khoá VietMap Maps API không dùng được cho bản đồ này (sai khoá, hết hạn mức hoặc chưa được cấp quyền). Đã chuyển về bản đồ mặc định.'
+      : 'Không tải được bản đồ VietMap. Đã chuyển về bản đồ mặc định.', { loai: 'loi', thoiGian: 7000 });
+    if (/^vietmap/.test(caiDat.kieuBanDo)) doiCaiDat({ kieuBanDo: 'tieuchuan' });
+    else banDo.doiKieu('tieuchuan');
+  },
   daiTaiStyle: () => {
     document.documentElement.dataset.giaoDien = banDo.laKieuToi() ? 'toi' : 'sang';
     setTimeout(tuCapNhatOffline, 15000);
@@ -1454,21 +1461,34 @@ function moPopupBaoCao(id, p) {
 
 // ================================================================== kiểu bản đồ
 function kieuMongMuon() {
-  if (caiDat.tuDongBanDem && caiDat.kieuBanDo === 'tieuchuan' && laBanDem(st.viTri ? st.viTri.viTri : CAU_HINH.viTriMacDinh.tam)) return 'bandem';
+  const dem = () => laBanDem(st.viTri ? st.viTri.viTri : CAU_HINH.viTriMacDinh.tam);
+  if (caiDat.tuDongBanDem && caiDat.kieuBanDo === 'tieuchuan' && dem()) return 'bandem';
+  // bản đồ VietMap (khoá API, không dùng đường dẫn style riêng): ban đêm chuyển sang kiểu tối của VietMap
+  if (caiDat.tuDongBanDem && caiDat.kieuBanDo === 'vietmap' && caiDat.khoaVietmap && !caiDat.styleVietmap && dem()) return 'vietmapdem';
   return caiDat.kieuBanDo;
 }
 
+/** Các loại bản đồ chọn được: 4 loại có sẵn, thêm bản đồ VietMap khi đã nhập khoá API hoặc đường dẫn style VietMap. */
+function dsKieuBanDo() {
+  const kieu = { ...CAU_HINH.kieuBanDo };
+  if (caiDat.khoaVietmap) for (const [k, v] of Object.entries(KIEU_VIETMAP)) kieu[k] = v;
+  if (caiDat.styleVietmap) kieu.vietmap = { ten: 'VietMap' };
+  return kieu;
+}
+/** Ảnh xem trước của kiểu VietMap: dùng ảnh của loại tương ứng. */
+const XEM_TRUOC_VIETMAP = { vietmap: 'tieuchuan', vietmapdem: 'bandem', vietmapvetinh: 'vetinh' };
+
 /** Bảng chọn lớp bản đồ kiểu Google Maps: loại bản đồ (ảnh xem trước) và chi tiết bản đồ (ô bật / tắt). */
 function moLopBanDo() {
-  const kieu = { ...CAU_HINH.kieuBanDo };
-  if (caiDat.styleVietmap) kieu.vietmap = { ten: 'VietMap' };
+  const kieu = dsKieuBanDo();
   const chiTiet = (k, ten, ic) => `<label class="o-ct"><input type="checkbox" data-cd="${k}" data-kieu="bat"${caiDat[k] ? ' checked' : ''}>` +
     `<span class="anh-ct">${icon(ic)}</span><span>${esc(ten)}</span></label>`;
   hienTamPhu(`<div class="dd-dau"><div class="tieu-de-tam">Loại bản đồ</div>
       <button class="nut-icon" data-hd="dong-tam" aria-label="Đóng">${icon('dong')}</button></div>
     <div class="luoi-kieu">${Object.entries(kieu).map(([k, v]) =>
       `<button class="${caiDat.kieuBanDo === k ? 'chon' : ''}" data-hd="doi-kieu" data-k="${k}" aria-pressed="${caiDat.kieuBanDo === k}">` +
-      `<span class="anh-kieu">${XEM_TRUOC_KIEU[k] || ''}</span>${esc(v.ten)}</button>`).join('')}</div>
+      `<span class="anh-kieu">${XEM_TRUOC_KIEU[k] || XEM_TRUOC_KIEU[XEM_TRUOC_VIETMAP[k]] || ''}</span>${esc(v.ten)}</button>`).join('')}</div>
+    ${caiDat.khoaVietmap ? '<p class="ghi-chu">Bản đồ VietMap dùng khoá VietMap Maps API của bạn (Cài đặt → Nâng cao); kiểu vệ tinh cần khoá được VietMap cấp quyền.</p>' : ''}
     <div class="tieu-de-nho">Chi tiết bản đồ</div>
     <div class="luoi-chi-tiet">${chiTiet('hienBaoCao', 'Báo cáo giao thông', 'ketxe')}${chiTiet('hienDiemCanhBao', 'Camera, biển báo', 'cameratocdo')}
       ${chiTiet('nha3D', 'Nhà 3D', 'nha')}${chiTiet('dd3D', 'Nghiêng 3D khi dẫn đường', 'chiduong')}${chiTiet('tuDongBanDem', 'Tự chuyển ban đêm', 'dongho')}</div>`);
@@ -1508,7 +1528,7 @@ const NHOM_CAI_DAT = [
     { hd: 'trang-du-lieu', ten: 'Dữ liệu giao thông và tự động cập nhật', icon: 'capnhat' }
   ] },
   { ten: 'Bản đồ', muc: [
-    { k: 'kieuBanDo', loai: 'chon', ten: 'Kiểu bản đồ', ds: () => [...Object.entries(CAU_HINH.kieuBanDo).map(([k, v]) => [k, v.ten]), ...(caiDat.styleVietmap ? [['vietmap', 'VietMap']] : [])] },
+    { k: 'kieuBanDo', loai: 'chon', ten: 'Kiểu bản đồ', ds: () => Object.entries(dsKieuBanDo()).map(([k, v]) => [k, v.ten]) },
     { k: 'tuDongBanDem', loai: 'bat', ten: 'Tự chuyển bản đồ ban đêm (theo giờ mặt trời lặn / mọc)' },
     { k: 'nha3D', loai: 'bat', ten: 'Hiện nhà 3D' },
     { k: 'hienBaoCao', loai: 'bat', ten: 'Hiện báo cáo giao thông' },
@@ -1526,7 +1546,7 @@ const NHOM_CAI_DAT = [
   ] },
   { ten: 'Nâng cao', muc: [
     { k: 'mayChuBaoCao', loai: 'chu', ten: 'Máy chủ báo cáo', goiY: 'Để trống = máy chủ của trang này (api)' },
-    { k: 'khoaVietmap', loai: 'chu', ten: 'Khoá VietMap API (tìm kiếm, chỉ đường)', goiY: 'Không bắt buộc' },
+    { k: 'khoaVietmap', loai: 'chu', ten: 'Khoá VietMap Maps API (bản đồ VietMap, tìm kiếm, chỉ đường)', goiY: 'Không bắt buộc — đăng ký tại maps.vietmap.vn' },
     { k: 'styleVietmap', loai: 'chu', ten: 'Đường dẫn style bản đồ VietMap', goiY: 'https://…/style.json?apikey=…' },
     { hd: 'xoa-lich-su-cd', ten: 'Xoá lịch sử tìm kiếm', icon: 'xoa' },
     { hd: 'khoi-phuc-cd', ten: 'Khôi phục cài đặt gốc', icon: 'caidat' }
@@ -1604,8 +1624,10 @@ function veLaiNhomGiong() {
 }
 
 ngheDoiCaiDat(thay => {
-  if ('kieuBanDo' in thay || 'tuDongBanDem' in thay || 'styleVietmap' in thay) {
-    if ('styleVietmap' in thay && caiDat.kieuBanDo === 'vietmap') banDo.kieu = '';
+  if ('kieuBanDo' in thay || 'tuDongBanDem' in thay || 'styleVietmap' in thay || 'khoaVietmap' in thay) {
+    // đổi khoá / đường dẫn style khi đang xem bản đồ VietMap: nạp lại; xoá khoá thì quay về kiểu mặc định
+    if (('styleVietmap' in thay || 'khoaVietmap' in thay) && /^vietmap/.test(banDo.kieu)) banDo.kieu = '';
+    if (!(caiDat.kieuBanDo in dsKieuBanDo())) caiDat.kieuBanDo = 'tieuchuan';
     banDo.doiKieu(kieuMongMuon());
   }
   if ('nha3D' in thay) banDo.dat3D(caiDat.nha3D);
@@ -1665,6 +1687,7 @@ async function trangOffline() {
       ${soO > TOI_DA_O ? `<b class="chu-do">Vùng quá lớn (tối đa ${TOI_DA_O.toLocaleString('vi-VN')} ô): phóng to bản đồ hoặc chọn mức chi tiết thấp hơn.</b>` : ''}</p>
       ${tai ? `<div class="tien-do-tai"><div class="thanh"><i id="tien-do-offline" style="width:${tai.pt || 0}%"></i></div>
         <span id="chu-tien-do-offline">${esc(tai.chu || 'Đang chuẩn bị…')}</span><button class="nut vien" data-hd="huy-offline">Huỷ</button></div>`
+      : layKieuBanDo(banDo.kieu).vietmap ? '<p class="ghi-chu">Bản đồ VietMap không tải về để dùng offline (dữ liệu và hạn mức thuộc VietMap Maps API). Chọn loại bản đồ khác để tải vùng offline.</p>'
       : `<div class="hang-nut"><button class="nut" data-hd="tai-offline"${soO > TOI_DA_O || !t.nguon.length ? ' disabled' : ''}>${icon('taive')}Tải vùng này</button></div>`}</div>
     <div class="nhom"><h4>Vùng đã tải (${ds.length})</h4>${ds.length ? ds.map(v => `<div class="dong-ds">
       <span class="dt-icon">${icon('lop')}</span>

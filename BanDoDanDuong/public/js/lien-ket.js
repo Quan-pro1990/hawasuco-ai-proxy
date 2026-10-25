@@ -1,5 +1,5 @@
 /*
- * Đọc liên kết / văn bản chia sẻ từ ứng dụng bản đồ khác (Google Maps, Apple Maps, geo:, google.navigation:,
+ * Đọc liên kết / văn bản chia sẻ từ ứng dụng bản đồ khác (Google Maps, Apple Maps, VietMap, geo:, google.navigation:,
  * hoặc toạ độ gõ tay) ra địa điểm. Dùng chung cho trang web và máy chủ (server.js mở liên kết rút gọn).
  */
 
@@ -79,8 +79,14 @@ export function docLienKet(chuoi) {
 
   const laGoogle = laMienGoogle(host) && (host.startsWith('maps.') || url.pathname.startsWith('/maps'));
   const laApple = host === 'maps.apple.com';
-  if (!laGoogle && !laApple) return null;
+  const laVietmap = /(^|\.)vietmap\.vn$/.test(host);
+  if (!laGoogle && !laApple && !laVietmap) return null;
   const q = url.searchParams;
+  if (laVietmap) {
+    // VietMap Live / VietMap Maps trên web: ?cp=<vĩ độ>,<kinh độ>&z=<mức phóng> (tâm khung nhìn); chỉ đọc toạ độ trong liên kết
+    for (const k of ['cp', 'center', 'll', 'q']) if (tuGiaTri(q.get(k), kq) && kq.viTri) break;
+    return kq.viTri || kq.truyVan ? kq : null;
+  }
   const duong = giaiMa(url.pathname);
 
   // điểm của địa điểm (!3d<lat>!4d<lng>) chính xác hơn tâm khung nhìn (@lat,lng)

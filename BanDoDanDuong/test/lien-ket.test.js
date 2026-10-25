@@ -33,6 +33,9 @@ test('đọc liên kết Google Maps, Apple Maps', () => {
   assert.deepEqual(docLienKet('https://maps.apple.com/?ll=21.03,105.85&q=H%E1%BB%93%20G%C6%B0%C6%A1m'), { viTri: [105.85, 21.03], ten: 'Hồ Gươm' });
   // văn bản chia sẻ từ ứng dụng Google Maps: tên, địa chỉ và liên kết rút gọn
   assert.deepEqual(docLienKet('Nhà hát Lớn Hà Nội\n1 Tràng Tiền, Hoàn Kiếm\nhttps://maps.app.goo.gl/AbCdEf123'), { rutGon: 'https://maps.app.goo.gl/AbCdEf123' });
+  // liên kết VietMap Live (tâm khung nhìn cp=<vĩ độ>,<kinh độ>)
+  assert.deepEqual(docLienKet('https://tools.vietmap.vn/live/?cp=9.784514%2C105.471974&z=14.50'), { viTri: [105.471974, 9.784514] });
+  assert.equal(docLienKet('https://vietmap.vn.evil.com/live/?cp=9.78,105.47'), null);
   assert.equal(docLienKet('https://example.com/maps?q=21.03,105.85'), null);
   assert.equal(docLienKet('https://www.google.com/search?q=21.03,105.85'), null);
 });

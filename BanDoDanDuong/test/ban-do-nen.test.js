@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { veTinhLai } from '../public/js/ve-tinh.js';
 import { BIEN_DOI, BANG_SANG, BANG_TOI, NHOM_DIEM, BIEU_TUONG_DIEM } from '../public/js/kieu-google.js';
-import { CAU_HINH } from '../public/js/cau-hinh.js';
+import { CAU_HINH, kieuVietmap, KIEU_VIETMAP } from '../public/js/cau-hinh.js';
 import { BIEN_VN, docBienBaoChiTiet, soTuThe, chuBien } from '../public/js/luat-duong.js';
 import { svgBienVN, laBienVN } from '../public/js/bieu-tuong.js';
 import { LOAI_CANH_BAO } from '../public/js/loai-canh-bao.js';
@@ -179,4 +179,15 @@ test('mọi nhóm địa điểm có biểu tượng', async () => {
   // vệ tinh dùng cùng biểu tượng địa điểm
   const vt = veTinhLai(null, kieuMau());
   assert.equal(vt.layers.find(l => l.id === 'poi_r1').layout['icon-image'], BIEU_TUONG_DIEM);
+});
+
+test('bản đồ VietMap chính thức: chỉ khi có khoá VietMap Maps API của người dùng', () => {
+  assert.equal(kieuVietmap('vietmap', ''), null);
+  assert.equal(kieuVietmap('tieuchuan', 'abc'), null);
+  const k = kieuVietmap('vietmap', 'khoa của tôi');
+  assert.equal(k.style, 'https://maps.vietmap.vn/maps/styles/tm/style.json?apikey=khoa%20c%E1%BB%A7a%20t%C3%B4i');
+  assert.equal(k.vietmap, true);
+  assert.equal(kieuVietmap('vietmapdem', 'x').toi, true);
+  assert.match(kieuVietmap('vietmapvetinh', 'x').style, /\/styles\/hm\//);
+  assert.deepEqual(Object.keys(KIEU_VIETMAP), ['vietmap', 'vietmapdem', 'vietmapvetinh']);
 });

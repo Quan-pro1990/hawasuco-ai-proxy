@@ -48,6 +48,8 @@ export const CAU_HINH = {
     overpass: ['https://overpass-api.de/api/interpreter', 'https://overpass.private.coffee/api/interpreter'],
     // VietMap Maps API (tuỳ chọn, cần khoá)
     vietmap: {
+      // kiểu bản đồ chính thức (MapLibre style.json): {ma} = tm (mặc định), dm (tối), hm (vệ tinh lai), lm (sáng); {khoa} = khoá API
+      kieuBanDo: 'https://maps.vietmap.vn/maps/styles/{ma}/style.json?apikey={khoa}',
       goiY: 'https://maps.vietmap.vn/api/autocomplete/v3',
       chiTiet: 'https://maps.vietmap.vn/api/place/v3',
       nguoc: 'https://maps.vietmap.vn/api/reverse/v3',
@@ -55,3 +57,20 @@ export const CAU_HINH = {
     }
   }
 };
+
+/**
+ * Kiểu bản đồ chính thức của VietMap qua VietMap Maps API, dùng khoá API của người dùng (Cài đặt → Nâng cao).
+ * Chỉ dùng dịch vụ có khoá theo điều khoản của VietMap; không lấy ô bản đồ từ trang, công cụ khác của VietMap.
+ */
+export const KIEU_VIETMAP = {
+  vietmap: { ten: 'VietMap', ma: 'tm' },
+  vietmapdem: { ten: 'VietMap tối', ma: 'dm', toi: true },
+  vietmapvetinh: { ten: 'VietMap vệ tinh', ma: 'hm' }
+};
+
+/** Cấu hình kiểu bản đồ VietMap `ten` với khoá `khoa`; null nếu không phải kiểu VietMap hoặc chưa có khoá. */
+export function kieuVietmap(ten, khoa) {
+  const k = KIEU_VIETMAP[ten];
+  if (!k || !khoa) return null;
+  return { ...k, vietmap: true, style: CAU_HINH.dichVu.vietmap.kieuBanDo.replace('{ma}', k.ma).replace('{khoa}', encodeURIComponent(khoa)) };
+}

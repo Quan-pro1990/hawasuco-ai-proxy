@@ -376,6 +376,39 @@ try {
   await page.waitForTimeout(800);
   await chup(page, '14d-bien-bao');
 
+  console.log('Bản đồ VietMap (khoá API của người dùng), liên kết VietMap Live');
+  const datKhoa = async khoa => {
+    await page.click('[data-hd="menu"]');
+    await page.click('#menu [data-hd="trang-cai-dat"]');
+    await page.locator('input[data-cd="khoaVietmap"]').fill(khoa);
+    await page.locator('input[data-cd="khoaVietmap"]').dispatchEvent('change');
+    await page.click('[data-hd="dong-trang"]');
+  };
+  await datKhoa('khoa-thu');
+  await page.click('[data-hd="lop-ban-do"]');
+  const tenKieuVm = await page.$$eval('.luoi-kieu button', ds => ds.map(b => b.textContent.trim()));
+  kiem(['VietMap', 'VietMap tối', 'VietMap vệ tinh'].every(t => tenKieuVm.includes(t)), 'có khoá VietMap: bảng loại bản đồ thêm bản đồ VietMap (' + tenKieuVm.join(', ') + ')');
+  const yeuCauVm = page.waitForRequest(r => /maps\.vietmap\.vn\/maps\/styles\/tm\/style\.json\?apikey=khoa-thu/.test(r.url()), { timeout: 10000 }).catch(() => null);
+  await page.click('[data-hd="doi-kieu"][data-k="vietmap"]');
+  kiem(!!(await yeuCauVm), 'chọn VietMap: tải kiểu bản đồ chính thức của VietMap Maps API bằng khoá của người dùng');
+  await page.waitForFunction(() => window.hawamap.banDo.map.isStyleLoaded() && !!window.hawamap.banDo.map.getLayer('tuyen'), null, { timeout: 10000 }).catch(() => {});
+  kiem(await page.evaluate(() => window.hawamap.banDo.kieu === 'vietmap' && !!window.hawamap.banDo.map.getLayer('tuyen')), 'bản đồ VietMap hiện, giữ các lớp riêng');
+  await page.click('#tam-duoi [data-hd="dong-tam"]').catch(() => {});
+  // khoá bị từ chối: báo rõ, quay về bản đồ mặc định
+  await datKhoa('sai');
+  await page.waitForFunction(() => /Khoá VietMap Maps API không dùng được/.test(document.querySelector('#thong-bao').textContent), null, { timeout: 10000 }).catch(() => {});
+  kiem(/Khoá VietMap Maps API không dùng được/.test(await page.innerText('#thong-bao')) && await page.evaluate(() => window.hawamap.caiDat.kieuBanDo) === 'tieuchuan',
+    'khoá VietMap bị từ chối: báo rõ và quay về bản đồ mặc định');
+  await datKhoa('');
+  // dán liên kết VietMap Live vào ô tìm kiếm: mở đúng chỗ
+  await page.click('.o-tim');
+  await page.fill('#o-tim', 'https://tools.vietmap.vn/live/?cp=21.0287%2C105.8522&z=14.50');
+  await page.press('#o-tim', 'Enter');
+  await page.waitForSelector('#tam-duoi:not([hidden]) .dd-ten h2', { timeout: 10000 }).catch(() => {});
+  const vtVm = await page.evaluate(() => window.hawamap.st.diaDiem && window.hawamap.st.diaDiem.viTri);
+  kiem(vtVm && Math.abs(vtVm[0] - 105.8522) < 1e-6 && Math.abs(vtVm[1] - 21.0287) < 1e-6, 'dán liên kết VietMap Live mở đúng toạ độ');
+  await page.click('#tam-duoi [data-hd="dong-tam"]').catch(() => {});
+
   console.log('Chế độ lái xe, camera hành trình');
   await page.click('[data-hd="menu"]');
   await page.click('[data-hd="che-do-lai-xe"]');

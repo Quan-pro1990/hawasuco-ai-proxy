@@ -63,6 +63,10 @@ export async function giaLapMang(ctx) {
     const url = route.request().url();
     if (/openfreemap\.org\/styles/.test(url)) return json(route, style(false, true));
     if (/voyager-gl-style/.test(url)) return json(route, style(false));
+    // VietMap Maps API: khoá "sai" bị từ chối như máy chủ thật
+    const vm = /maps\.vietmap\.vn\/maps\/styles\/(tm|dm|hm)\/style\.json\?apikey=([^&]+)/.exec(url);
+    if (vm) return vm[2] === 'sai' ? route.fulfill({ status: 403, contentType: 'application/json', body: '{"message":"Invalid apikey"}', headers: { 'Access-Control-Allow-Origin': '*' } })
+      : json(route, style(vm[1] === 'dm'));
     if (/openfreemap\.org\/(planet|fonts)\/.*\.pbf$/.test(url)) return route.fulfill({ status: 200, contentType: 'application/x-protobuf', body: Buffer.alloc(0), headers: { 'Access-Control-Allow-Origin': '*' } });
     if (/dark-matter-gl-style/.test(url)) return json(route, style(true));
     if (/router\.project-osrm\.org|routing\.openstreetmap\.de/.test(url)) return json(route, mau.tuyenOsrm());
