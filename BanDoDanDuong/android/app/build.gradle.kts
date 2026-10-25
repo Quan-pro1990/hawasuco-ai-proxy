@@ -14,8 +14,19 @@ android {
         applicationId = "vn.hawasuco.hawamap"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 10201
+        versionName = "1.2.1"
+    }
+
+    signingConfigs {
+        // khoá ký cố định cho bản cài thử (không phải bí mật): mọi lần build cùng chữ ký nên cài đè được bản cũ.
+        // Đưa lên Google Play thì tạo khoá riêng, giữ kín (hoặc dùng Play App Signing).
+        getByName("debug") {
+            storeFile = file("khoa-ky/hawamap-thu.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
     }
 
     buildTypes {

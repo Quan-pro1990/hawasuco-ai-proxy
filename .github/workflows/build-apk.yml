@@ -1,0 +1,45 @@
+# Build ứng dụng Android HawaMap (điện thoại + Android Auto) thành tệp APK trên máy chủ của GitHub.
+# Tải APK: tab Actions → lần chạy "Build APK HawaMap" mới nhất → mục Artifacts → HawaMap-apk.
+name: Build APK HawaMap
+
+on:
+  push:
+    paths:
+      - 'BanDoDanDuong/android/**'
+      - 'BanDoDanDuong/public/**'
+      - '.github/workflows/build-apk.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: BanDoDanDuong/android
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Build APK
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon --stacktrace assembleDebug
+
+      - name: Đặt tên tệp APK
+        run: |
+          PHIEN_BAN=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
+          mkdir -p ra
+          cp app/build/outputs/apk/debug/app-debug.apk "ra/HawaMap-$PHIEN_BAN.apk"
+          ls -la ra
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: HawaMap-apk
+          path: BanDoDanDuong/android/ra/*.apk
+          if-no-files-found: error
