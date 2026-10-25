@@ -15,7 +15,7 @@ import { timDuong, PHUONG_TIEN, tenDuong, thaoTacNgan } from './chi-duong.js';
 import { DanDuong } from './dan-duong.js';
 import { NguonViTri } from './vi-tri.js';
 import { MoPhong } from './mo-phong.js';
-import { noi, imLang, moKhoaAmThanh, bip, danhSachGiong, doiGiong, coGiongNoi } from './giong-noi.js';
+import { noi, imLang, moKhoaAmThanh, bip, danhSachGiong, doiGiong, coGiongNoi, datGiongGoc, trangThaiGiongGoc, coTiengViet } from './giong-noi.js';
 import { ThongTinDuong } from './duong-xa.js';
 import { CanhBao } from './canh-bao.js';
 import { LOAI_CANH_BAO, MUC_CANH_BAO, mucCanhBao } from './loai-canh-bao.js';
@@ -962,6 +962,10 @@ function batDauDanDuong({ moPhong = false, tuGoc = false } = {}) {
   banDo.datTheoDoi('huong');
   capNhatNutViTri();
   giuManHinh(true);
+  if (caiDat.giongNoi && coTiengViet() === false && !st.daNhacGiongViet) {
+    st.daNhacGiongViet = true;
+    thongBao('Máy chưa có giọng đọc tiếng Việt — vào Cài đặt → Giọng nói để cài', { thoiGian: 6000 });
+  }
   if (caiDat.tuGhiHanhTrinh && !moPhong) ghiHT.batDau(st.dd.tenDen);
   if (!moPhong) tuMoCamera();
   noi(st.dd.may.loiBatDau(), { chen: true });
@@ -1411,10 +1415,11 @@ function moLopBanDo() {
 // ================================================================== trang: cài đặt
 const NHOM_CAI_DAT = [
   { ten: 'Giọng nói', muc: [
+    { html: () => ghiChuGiong() },
     { k: 'giongNoi', loai: 'bat', ten: 'Hướng dẫn bằng giọng nói' },
     { k: 'amLuong', loai: 'truot', ten: 'Âm lượng', min: 0.1, max: 1, buoc: 0.1 },
     { k: 'tocDoNoi', loai: 'truot', ten: 'Tốc độ đọc', min: 0.7, max: 1.5, buoc: 0.05 },
-    { k: 'tenGiong', loai: 'chon', ten: 'Giọng đọc', ds: () => [['', 'Tự chọn'], ...danhSachGiong().map(v => [v.name, v.name])] },
+    { k: 'tenGiong', loai: 'chon', ten: 'Giọng đọc tiếng Việt', ds: () => [['', 'Tự chọn'], ...dsGiongChon()] },
     { hd: 'nghe-thu', ten: 'Nghe thử giọng đọc', icon: 'loa' }
   ] },
   { ten: 'Cảnh báo', muc: [
@@ -1466,8 +1471,45 @@ const NHOM_CAI_DAT = [
   ] }
 ];
 
+/** Các giọng tiếng Việt chọn được: của Android (ứng dụng) hoặc của trình duyệt. */
+function dsGiongChon() {
+  if (laAppAndroid) {
+    const tt = trangThaiGiongGoc();
+    return ((tt && tt.ds) || []).map((g, i) => {
+      const ma = (/-x-([a-z]+)-/.exec(g.ten) || [])[1];
+      return [g.ten, `Giọng ${i + 1}${ma ? ' (' + ma + ')' : ''}${g.canMang ? ' · cần mạng' : ''}`];
+    });
+  }
+  return danhSachGiong().map(v => [v.name, v.name]);
+}
+
+const TEN_BO_DOC = { 'com.google.android.tts': 'Google', 'com.samsung.SMT': 'Samsung', 'com.huawei.hiai': 'Huawei' };
+
+/** Dòng trạng thái đầu nhóm "Giọng nói": máy có giọng tiếng Việt không, đang dùng bộ đọc nào, nút cài giọng. */
+function ghiChuGiong() {
+  const co = coTiengViet();
+  if (laAppAndroid) {
+    const tt = trangThaiGiongGoc();
+    if (co === null) return '<p class="ghi-chu cd-ghi-chu">Đang kiểm tra giọng đọc tiếng Việt trên máy…</p>';
+    if (!co) {
+      return `<div class="ghi-chu cd-ghi-chu canh">Máy chưa có giọng đọc tiếng Việt nên HawaMap tạm không đọc hướng dẫn (để không đọc bằng giọng nước ngoài).
+        Cài giọng tiếng Việt cho "Dịch vụ lời nói của Google" rồi quay lại ứng dụng.
+        <button class="nut chinh" data-hd="cai-giong-viet">${icon('taive')}Cài giọng tiếng Việt</button></div>`;
+    }
+    return `<p class="ghi-chu cd-ghi-chu">Đang đọc bằng giọng tiếng Việt của ${esc(TEN_BO_DOC[tt.may] || tt.may || 'Android')}.</p>`;
+  }
+  if (co === false) {
+    return `<div class="ghi-chu cd-ghi-chu canh">Thiết bị chưa có giọng đọc tiếng Việt: câu dẫn đường có thể bị đọc bằng giọng nước ngoài.
+      Android: Cài đặt → Hệ thống → Ngôn ngữ → Chuyển văn bản thành giọng nói → chọn "Dịch vụ lời nói của Google" → tải tiếng Việt.
+      iPhone: Cài đặt → Trợ năng → Nội dung được đọc → Giọng nói → Tiếng Việt.</div>`;
+  }
+  return '';
+}
+
 function trangCaiDat() {
+  if (laAppAndroid) guiGoc('hoiGiong');
   const dong = m => {
+    if (m.html) return m.html();
     if (m.muc) {
       const v = mucCanhBao(m.muc);
       return `<label class="cd-dong cd-muc"><span class="cd-ic" style="background:${m.mau}">${icon(m.icon)}</span><span>${esc(m.ten)}</span>
@@ -1483,8 +1525,16 @@ function trangCaiDat() {
     if (m.loai === 'truot') return `<label class="cd-dong"><span>${esc(m.ten)}</span><input type="range" min="${m.min}" max="${m.max}" step="${m.buoc}" value="${v}" data-cd="${m.k}" data-kieu="so"></label>`;
     return `<label class="cd-dong cot"><span>${esc(m.ten)}</span><input class="o-nhap" type="text" value="${esc(v)}" placeholder="${esc(m.goiY || '')}" data-cd="${m.k}" data-kieu="chu" spellcheck="false" autocomplete="off"></label>`;
   };
-  moTrang('Cài đặt', NHOM_CAI_DAT.map(n => `<div class="nhom"><h4>${esc(n.ten)}</h4>${n.muc.filter(m => !m.chiAndroid || laAppAndroid).map(dong).join('')}</div>`).join('') +
-    (coGiongNoi() && !danhSachGiong().length ? '<p class="ghi-chu">Thiết bị chưa có giọng đọc tiếng Việt. Trên Android: Cài đặt → Hệ thống → Ngôn ngữ → Chuyển văn bản thành giọng nói → tải gói tiếng Việt.</p>' : ''));
+  moTrang('Cài đặt', NHOM_CAI_DAT.map(n => `<div class="nhom"><h4>${esc(n.ten)}</h4>${n.muc.filter(m => !m.chiAndroid || laAppAndroid).map(dong).join('')}</div>`).join(''));
+}
+
+/** Trang Cài đặt đang mở: vẽ lại khi trạng thái giọng đọc đổi (vừa dò xong, vừa cài giọng). */
+function veLaiCaiDatNeuMo() {
+  if (!$('#trang').hidden && $('#tieu-de-trang').textContent === 'Cài đặt') {
+    const y = $('#than-trang').scrollTop;
+    trangCaiDat();
+    $('#than-trang').scrollTop = y;
+  }
 }
 
 ngheDoiCaiDat(thay => {
@@ -2069,7 +2119,12 @@ const HD = {
   'trang-bao-cao': () => { moMenu(false); trangBaoCaoCuaToi(); },
   'trang-huong-dan': () => { moMenu(false); trangHuongDan(); },
   'trang-gioi-thieu': () => { moMenu(false); trangGioiThieu(); },
-  'nghe-thu': () => { moKhoaAmThanh(); noi('Sau 300 mét, rẽ phải vào đường Trần Phú.', { chen: true, batBuoc: true }); },
+  'nghe-thu': () => {
+    moKhoaAmThanh();
+    if (laAppAndroid && coTiengViet() === false) return thongBao('Máy chưa có giọng đọc tiếng Việt: bấm "Cài giọng tiếng Việt" ở trên');
+    noi('Sau 300 mét, rẽ phải vào Trần Phú (QL6). Phía trước có camera phạt tốc độ, tốc độ tối đa 50 km/h.', { chen: true, batBuoc: true });
+  },
+  'cai-giong-viet': () => guiGoc('caiGiongViet'),
   'xoa-lich-su-cd': () => { xoaLichSu(); thongBao('Đã xoá lịch sử tìm kiếm'); },
   'khoi-phuc-cd': async () => { if (await hoiXacNhan('Đưa mọi cài đặt về mặc định?')) { khoiPhucCaiDat(); trangCaiDat(); thongBao('Đã khôi phục cài đặt gốc'); } },
   'xem-da-luu': el => {
@@ -2362,6 +2417,13 @@ window.hawamap = {
     dongBoBatDau: du => dongBoBatDau(typeof du === 'string' ? JSON.parse(du) : du),
     dongBoKetThuc: () => ketThucDanDuong({ tuGoc: true }),
     quayLai: () => quayLai(),
+    // trạng thái giọng đọc của Android (cau/GiongNoi.kt): có tiếng Việt không, danh sách giọng
+    giongNoi: du => {
+      const tt = typeof du === 'string' ? JSON.parse(du) : du;
+      datGiongGoc(tt);
+      caiDat.tenGiong = tt.chon || '';
+      veLaiCaiDatNeuMo();
+    },
     // bộ chuyển OBD-II Bluetooth thường của ứng dụng Android (cau/Obd.kt)
     obd: (loai, du) => { if (st.obd && st.obd.cong instanceof CongGoc) st.obd.cong.suKien(loai, du); }
   }

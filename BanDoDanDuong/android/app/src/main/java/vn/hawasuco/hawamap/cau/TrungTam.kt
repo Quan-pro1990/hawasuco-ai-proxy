@@ -36,6 +36,13 @@ object TrungTam {
 
     fun khoiTao(ctx: Context) {
         app = ctx.applicationContext
+        GiongNoi.khiDoi = { baoGiongNoi() }
+    }
+
+    /** Gửi trạng thái giọng đọc (có tiếng Việt không, danh sách giọng) cho các trang để hiện trong Cài đặt. */
+    fun baoGiongNoi(chi: TrangWeb? = null) {
+        val js = "window.hawamap&&hawamap.goc.giongNoi(${JSONObject.quote(GiongNoi.trangThai().toString())})"
+        if (chi != null) chi.goi(js) else listOfNotNull(dienThoai, xe).forEach { it.goi(js) }
     }
 
     fun dangKy(t: TrangWeb) {
@@ -67,8 +74,12 @@ object TrungTam {
                 NguonViTri.cuoi?.let { tu.viTri(it) }
                 val p = phien
                 if (dangDanDuong && p != null) tu.goi("hawamap.goc.dongBoBatDau(${JSONObject.quote(p)})")
+                baoGiongNoi(tu)
                 baoMoi(tu, loai, du)
             }
+            "chonGiong" -> GiongNoi.chonGiong(du.optString("ten"))
+            "caiGiongViet" -> GiongNoi.moCaiGiong(app)
+            "hoiGiong" -> baoGiongNoi(tu)
             "traLoi" -> tu.nhanTraLoi(du)
             "noi" -> if (laNguonGiongNoi(tu)) {
                 GiongNoi.noi(du.optString("chu"), du.optBoolean("chen"), du.optDouble("amLuong", 1.0).toFloat(), du.optDouble("toc", 1.0).toFloat())

@@ -8,7 +8,7 @@
  *    không bị cắt bớt.
  *  - Tìm kiếm, chỉ đường, báo cáo: luôn lấy từ mạng.
  */
-const PHIEN_BAN = 'hawamap-v6';
+const PHIEN_BAN = 'hawamap-v7';
 const KHO_TRANG = PHIEN_BAN + '-trang';
 const KHO_BAN_DO = 'hawamap-ban-do';
 const KHO_TAI = 'hawamap-ban-do-tai';

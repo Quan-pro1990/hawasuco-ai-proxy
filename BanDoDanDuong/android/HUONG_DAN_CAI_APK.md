@@ -54,6 +54,7 @@ Android Auto **chỉ hiện ứng dụng cài từ Google Play**, trừ khi bậ
 | Không thấy HawaMap trên màn hình xe | Chưa bật **Nguồn không xác định** (mục 3), hoặc chưa tích HawaMap trong **Tùy chỉnh trình chạy**. Ngắt kết nối rồi kết nối lại xe |
 | Không kết nối không dây được | Kiểm tra xe / bộ chuyển có hỗ trợ không dây; bật Bluetooth và Wi-Fi; xoá ghép đôi cũ trên xe và trên điện thoại rồi ghép lại; thử cắm cáp một lần |
 | Điện thoại báo "Ứng dụng chưa được cài đặt" | Gỡ bản HawaMap cũ có khoá ký khác rồi cài lại |
+| Giọng dẫn đường không phải tiếng Việt, hoặc không đọc | Vào HawaMap → **Cài đặt** → **Giọng nói**: dòng đầu cho biết máy có giọng tiếng Việt chưa. Chưa có thì bấm **Cài giọng tiếng Việt** (cài "Dịch vụ lời nói của Google" và tải tiếng Việt), xong quay lại HawaMap. Có nhiều giọng thì chọn ở mục **Giọng đọc tiếng Việt**, bấm **Nghe thử** |
 | Bản đồ trên xe trắng hoặc không có vị trí | Cho phép quyền vị trí cho HawaMap; mở HawaMap trên điện thoại một lần trước khi kết nối xe |
 | Muốn thử trên máy tính, không cần xe | Dùng Desktop Head Unit (DHU) theo README, mục "Build Android (Android Auto)" |
 

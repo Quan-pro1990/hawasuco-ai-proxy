@@ -149,7 +149,7 @@ dẫn đường, cảnh báo vẫn do mã JavaScript đã kiểm thử đảm nh
 | Màn hình xe | Car App Library, mẫu `NavigationTemplate`; bản đồ vẽ lên Surface của xe (WebView trên màn hình ảo) | `CPMapTemplate`; bản đồ là WKWebView trong cửa sổ CarPlay |
 | Thẻ chỉ hướng trên xe | mũi tên rẽ, khoảng cách, tên đường, bước kế tiếp, giờ đến, quãng đường còn lại; báo cho màn hình phụ / HUD của xe (`NavigationManager`) | `CPNavigationSession` (thao tác rẽ, ước tính thời gian), cảnh báo camera bằng `CPNavigationAlert` |
 | Tìm kiếm / danh sách trên xe | `SearchTemplate`, danh sách Đã lưu · Quanh đây · Báo cáo, xem trước tuyến `RoutePreviewNavigationTemplate` (Bắt đầu / Chạy thử) | `CPSearchTemplate`, `CPListTemplate`, xem trước tuyến (Bắt đầu / Tuyến khác / Chạy thử) |
-| Giọng nói | TextToSpeech tiếng Việt, loại âm "hướng dẫn dẫn đường" (ra loa xe, tự giảm nhạc) | AVSpeechSynthesizer `vi-VN`, chế độ `voicePrompt` |
+| Giọng nói | TextToSpeech tiếng Việt, loại âm "hướng dẫn dẫn đường" (ra loa xe, tự giảm nhạc); bộ đọc mặc định không có tiếng Việt (vd. Samsung) thì tự dùng bộ đọc khác có tiếng Việt (ưu tiên Google), chọn giọng trong Cài đặt; máy không có giọng tiếng Việt thì không đọc bằng giọng nước ngoài mà nhắc cài | AVSpeechSynthesizer `vi-VN`, chế độ `voicePrompt` |
 | GPS | LocationManager, dịch vụ chạy nền khi dẫn đường | CLLocationManager, chế độ nền `location` |
 | Khác | "Ok Google, chỉ đường tới …" (intent `geo:`), nút Back, lưu GPX vào Tải xuống | giữ sáng màn hình, chia sẻ tệp GPX |
 | Mở từ ứng dụng khác | `geo:`, `google.navigation:`, liên kết Google Maps ("Mở bằng HawaMap"), "Chia sẻ" văn bản; tự mở liên kết rút gọn `maps.app.goo.gl` (chỉ đi qua tên miền Google) | dán liên kết vào ô tìm kiếm |

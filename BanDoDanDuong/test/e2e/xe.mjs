@@ -155,6 +155,26 @@ try {
   kiem((await dt.tin('xinQuyenNoi')).length === 1, 'bật bong bóng nổi thì xin quyền hiển thị trên ứng dụng khác');
   await dt.page.click('[data-hd="nghe-thu"]');
   kiem((await dt.tin('noi')).some(n => n.chu.includes('Trần Phú')), 'nghe thử giọng đọc qua giọng của hệ điều hành');
+  // giọng đọc của Android: thiếu tiếng Việt → nút cài, không đọc; có giọng → chọn giọng, gửi lựa chọn xuống Android
+  kiem((await dt.tin('hoiGiong')).length >= 1, 'mở Cài đặt thì hỏi trạng thái giọng đọc của Android');
+  await dt.page.evaluate(() => window.hawamap.goc.giongNoi(JSON.stringify({ tiengViet: false, dangDo: false, may: '', giong: '', chon: '', ds: [] })));
+  await dt.page.waitForSelector('[data-hd="cai-giong-viet"]');
+  await dt.page.click('[data-hd="cai-giong-viet"]');
+  kiem((await dt.tin('caiGiongViet')).length === 1, 'máy thiếu giọng tiếng Việt: Cài đặt có nút cài giọng (Dịch vụ lời nói của Google)');
+  const soCauTruoc = (await dt.tin('noi')).length;
+  await dt.page.click('[data-hd="nghe-thu"]');
+  kiem((await dt.tin('noi')).length === soCauTruoc, 'thiếu giọng tiếng Việt thì không gửi câu nghe thử (tránh đọc bằng giọng nước ngoài)');
+  await dt.page.evaluate(() => window.hawamap.goc.giongNoi({ tiengViet: true, dangDo: false, may: 'com.google.android.tts', giong: 'vi-vn-x-gft-local', chon: '',
+    ds: [{ ten: 'vi-vn-x-gft-local', canMang: false }, { ten: 'vi-vn-x-vif-network', canMang: true }] }));
+  await dt.page.waitForFunction(() => /giọng tiếng Việt của Google/.test(document.querySelector('#than-trang').innerText), null, { timeout: 5000 }).catch(() => {});
+  const tuyChon = await dt.page.locator('select[data-cd="tenGiong"] option').allInnerTexts();
+  kiem(tuyChon.join('|') === 'Tự chọn|Giọng 1 (gft)|Giọng 2 (vif) · cần mạng', 'danh sách giọng tiếng Việt của Android để chọn (' + tuyChon.join(' | ') + ')');
+  await dt.page.selectOption('select[data-cd="tenGiong"]', 'vi-vn-x-gft-local');
+  kiem((await dt.tin('chonGiong')).some(t => t.ten === 'vi-vn-x-gft-local'), 'chọn giọng thì báo Android đổi giọng');
+  await dt.page.click('[data-hd="nghe-thu"]');
+  const cauNghe = (await dt.tin('noi')).pop();
+  kiem(!!cauNghe && /quốc lộ 6/.test(cauNghe.chu) && /50 ki lô mét trên giờ/.test(cauNghe.chu),
+    'câu gửi xuống giọng đọc Android đã đổi chữ viết tắt (QL6, km/h) thành chữ đầy đủ (' + (cauNghe && cauNghe.chu) + ')');
   await dt.page.evaluate(async () => (await import('./js/giao-dien.js')).taiXuong('thu.gpx', '<gpx/>', 'application/gpx+xml'));
   await dt.page.waitForFunction(() => window.__tin.some(t => t.loai === 'luuTep'), null, { timeout: 5000 });
   const tep = (await dt.tin('luuTep'))[0];

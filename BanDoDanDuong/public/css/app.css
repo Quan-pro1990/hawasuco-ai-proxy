@@ -782,3 +782,9 @@ body.mat-gps .hud .dong-ho span::after { content: "Mất GPS"; font-size: 9.5px;
 
 /* ---------------------------------------------------------------- tìm dọc đường khi dẫn đường */
 .hang-chip.trong-tam { position: static; flex-wrap: wrap; overflow: visible; padding: 8px 0 4px; }
+
+/* ---------------------------------------------------------------- trạng thái giọng đọc tiếng Việt (Cài đặt → Giọng nói) */
+.nhom .cd-ghi-chu { margin: 8px 16px 4px; }
+.cd-ghi-chu.canh { background: #fff4e5; color: #7a4100; border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+:root[data-giao-dien="toi"] .cd-ghi-chu.canh { background: #3a2a12; color: #ffd9a8; }
+.cd-ghi-chu.canh .nut { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; }

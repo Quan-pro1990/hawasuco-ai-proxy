@@ -8,7 +8,6 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import android.speech.tts.TextToSpeech
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.webkit.PermissionRequest
@@ -135,10 +134,16 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (GiongNoi.thieuTiengViet && !daNhacCaiGiong) {
-            daNhacCaiGiong = true
-            Toast.makeText(this, "Máy chưa có giọng đọc tiếng Việt. Hãy cài trong Cài đặt → Chuyển văn bản thành giọng nói.", Toast.LENGTH_LONG).show()
-            try { startActivity(Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA)) } catch (e: Exception) { /* không có ứng dụng cài giọng */ }
+        if (GiongNoi.thieuTiengViet) {
+            if (!daNhacCaiGiong) {
+                // lần đầu: nhắc và mở chỗ cài giọng tiếng Việt của Google
+                daNhacCaiGiong = true
+                Toast.makeText(this, "Máy chưa có giọng đọc tiếng Việt. Hãy cài giọng tiếng Việt cho \"Dịch vụ lời nói của Google\" để nghe dẫn đường.", Toast.LENGTH_LONG).show()
+                GiongNoi.moCaiGiong(this)
+            } else {
+                // quay lại sau khi cài: dò lại bộ đọc có tiếng Việt
+                GiongNoi.thuLai()
+            }
         }
     }
 
