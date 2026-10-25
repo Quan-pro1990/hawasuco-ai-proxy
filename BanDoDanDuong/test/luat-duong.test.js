@@ -67,7 +67,7 @@ test('đọc biển báo Việt Nam trong thẻ traffic_sign', () => {
   assert.deepEqual(docBienBao('VN:P.130'), ['P130']);
   assert.deepEqual(docBienBao('VN:P.131a;VN:P.125'), ['P131A', 'P125']);
   assert.deepEqual(docBienBao('VN:DP.133'), ['DP133']);
-  assert.deepEqual(docBienBao('VN:P102,VN:P.127[50]'), ['P102']);            // P.127 (tốc độ tối đa) lấy từ maxspeed
+  assert.deepEqual(docBienBao('VN:P102,VN:P.127[50]'), ['P102', 'P127']);
   assert.deepEqual(docBienBao('DE:274'), []);
   assert.equal(apDungTheoNgay('le', new Date(2026, 9, 17)), true);             // ngày 17: lẻ
   assert.equal(apDungTheoNgay('chan', new Date(2026, 9, 17)), false);

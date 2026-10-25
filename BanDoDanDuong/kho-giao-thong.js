@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 import { CAU_HINH } from './public/js/cau-hinh.js';
-import { cauTruyVanO, docDiemOverpass, khungO, laMaO } from './public/js/duong-xa.js';
+import { cauTruyVanO, docDiemOverpass, khungO, laMaO, oCanLamMoi, PHIEN_BAN_DIEM } from './public/js/duong-xa.js';
 
 export const CHU_KY = 7 * 86400000;
 const BO_SAU = 30 * 86400000;
@@ -45,7 +45,7 @@ export function taoKhoGiaoThong({ thuMuc, layMang = globalThis.fetch, chuKy = CH
     if (dangTai.has(khoa)) return dangTai.get(khoa);
     const viec = hang.then(async () => {
       const d = await goiOverpass(cauTruyVanO(khungO(ma), lop));
-      const o = { ma, lop, capNhat: Date.now(), dungLuc: Date.now(), diem: [...docDiemOverpass(d.elements || []).values()] };
+      const o = { ma, lop, capNhat: Date.now(), dungLuc: Date.now(), pb: PHIEN_BAN_DIEM, diem: [...docDiemOverpass(d.elements || []).values()] };
       await fsp.mkdir(thuMuc, { recursive: true });
       const tep = tepCua(ma, lop), tam = tep + '.tmp';
       await fsp.writeFile(tam, JSON.stringify(o));
@@ -73,7 +73,7 @@ export function taoKhoGiaoThong({ thuMuc, layMang = globalThis.fetch, chuKy = CH
       if (loi && bayGio - loi.luc < 120000) throw loi.loi;
       return taiTuOverpass(ma, lop);
     }
-    if (bayGio - o.capNhat > chuKy && !(loi && bayGio - loi.luc < 3600000)) taiTuOverpass(ma, lop).catch(() => {});
+    if (oCanLamMoi(o, bayGio, chuKy) && !(loi && bayGio - loi.luc < 3600000)) taiTuOverpass(ma, lop).catch(() => {});
     if (bayGio - (o.dungLuc || 0) > 86400000) {
       o.dungLuc = bayGio;
       fsp.writeFile(tepCua(ma, lop), JSON.stringify(o)).catch(() => {});
@@ -91,7 +91,7 @@ export function taoKhoGiaoThong({ thuMuc, layMang = globalThis.fetch, chuKy = CH
       const o = await docTep(t.replace(/(-nho)?\.json$/, ''), t.includes('-nho') ? 'nho' : 'chinh');
       if (!o) continue;
       if (bayGio - (o.dungLuc || o.capNhat) > BO_SAU) { await fsp.rm(path.join(thuMuc, t), { force: true }); soXoa++; continue; }
-      if (bayGio - o.capNhat <= chuKy) continue;
+      if (!oCanLamMoi(o, bayGio, chuKy)) continue;
       try { await taiTuOverpass(o.ma, o.lop); soLamMoi++; } catch (e) { /* lần sau thử lại */ }
     }
     return { soLamMoi, soXoa };

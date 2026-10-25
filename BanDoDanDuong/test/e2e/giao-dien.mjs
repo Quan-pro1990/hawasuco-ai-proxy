@@ -256,6 +256,11 @@ try {
   await page.click('[data-hd="doi-kieu"][data-k="vetinh"]');
   await page.click('#tam-duoi [data-hd="dong-tam"]');
   await page.waitForTimeout(1500);
+  const lopVt = await page.evaluate(() => window.hawamap.banDo.map.getStyle().layers.map(l => l.id));
+  kiem(lopVt[0] === 've-tinh' && lopVt.includes('highway-name-major') && lopVt.includes('road_primary') && !lopVt.includes('nen') && lopVt.includes('tuyen'),
+    'bản đồ vệ tinh lai: ảnh vệ tinh + đường, tên đường của bản đồ thường, giữ các lớp riêng (' + lopVt.slice(0, 4).join(', ') + '…)');
+  kiem(await page.evaluate(() => window.hawamap.banDo.map.getPaintProperty('highway-name-major', 'text-color')) === '#ffffff', 'tên đường trên ảnh vệ tinh chữ trắng viền tối');
+  await chup(page, '14a-ve-tinh');
   await page.evaluate(() => { const m = window.hawamap.banDo; m.datTheoDoi('khong'); m.map.jumpTo({ center: [105.8522, 21.0287], zoom: 15 }); });
   await page.waitForTimeout(800);
   await page.click('[data-hd="menu"]');
@@ -276,6 +281,22 @@ try {
   await page.click('[data-hd="lop-ban-do"]');
   await page.click('[data-hd="doi-kieu"][data-k="tieuchuan"]');
   await page.click('#tam-duoi [data-hd="dong-tam"]');
+  await page.waitForTimeout(1200);
+  // biển báo Việt Nam vẽ như biển thật trên bản đồ, biển ghi số (tốc độ, chiều cao) tạo ảnh khi gặp
+  const coAnhBien = await page.evaluate(async () => {
+    const b = window.hawamap.banDo;
+    b.map.jumpTo({ center: [105.8522, 21.0287], zoom: 17, pitch: 0, bearing: 0 });
+    await b.datDiemCanhBao([
+      { id: 't1', viTri: [105.8515, 21.0289], icon: 'bs-tocdo-40' }, { id: 't2', viTri: [105.8520, 21.0289], icon: 'w-dibo' },
+      { id: 't3', viTri: [105.8525, 21.0289], icon: 'stop' }, { id: 't4', viTri: [105.8530, 21.0289], icon: 'bs-cao-3.5' },
+      { id: 't5', viTri: [105.8515, 21.0284], icon: 'nhuong' }, { id: 't6', viTri: [105.8520, 21.0284], icon: 'camquaydau' },
+      { id: 't7', viTri: [105.8525, 21.0284], icon: 'w-congtruong' }, { id: 't8', viTri: [105.8530, 21.0284], icon: 'camcoi' }
+    ]);
+    return ['cb-bs-tocdo-40', 'cb-bs-cao-3.5', 'cb-w-dibo', 'cb-stop', 'cb-nhuong', 'cb-camcoi'].every(k => b.map.hasImage(k));
+  });
+  kiem(coAnhBien, 'biển báo trên bản đồ: biển tốc độ / chiều cao ghi số, biển nguy hiểm, STOP, cấm còi');
+  await page.waitForTimeout(800);
+  await chup(page, '14d-bien-bao');
 
   console.log('Chế độ lái xe, camera hành trình');
   await page.click('[data-hd="menu"]');
@@ -356,6 +377,12 @@ try {
   await may.page.waitForSelector('[data-hd="cap-nhat-du-lieu"]');
   const trangDl = await may.page.innerText('#than-trang');
   kiem(/[1-9]\d* khu vực/.test(trangDl) && /1 trạm/.test(trangDl), 'trang dữ liệu giao thông: dữ liệu khu vực và bảng phí trong máy');
+  const dongNgay = trangDl.split('\n').find(d => d.includes('OpenStreetMap ngày')) || 'không có ngày';
+  kiem(/bản đồ nền/i.test(trangDl) && /OpenStreetMap ngày 22\/10\/2025/.test(trangDl), 'trang dữ liệu: ngày dữ liệu bản đồ nền (' + dongNgay.trim() + ')');
+  await may.page.click('[data-hd="lam-moi-ban-do"]');
+  await may.page.waitForFunction(() => /Đã tải bản đồ nền mới nhất/.test(document.querySelector('#thong-bao').textContent), null, { timeout: 15000 }).catch(() => {});
+  kiem(/Đã tải bản đồ nền mới nhất \(dữ liệu ngày 22\/10\/2025\)/.test(await may.page.innerText('#thong-bao')), 'bấm "Tải lại bản đồ nền mới nhất"');
+  kiem(await may.page.evaluate(() => !!window.hawamap.banDo.map.getLayer('tuyen')), 'tải lại bản đồ nền vẫn giữ các lớp riêng');
   await may.page.click('[data-hd="cap-nhat-du-lieu"]');
   await may.page.waitForFunction(() => /Đã cập nhật dữ liệu giao thông/.test(document.querySelector('#thong-bao').textContent), null, { timeout: 15000 }).catch(() => {});
   kiem(/Đã cập nhật dữ liệu giao thông/.test(await may.page.innerText('#thong-bao')), 'bấm "Cập nhật ngay" tải lại dữ liệu giao thông');

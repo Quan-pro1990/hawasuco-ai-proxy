@@ -7,7 +7,7 @@ import {
 import { khoangCach, catTuyen, diemTaiS, tichLuy } from './hinh-hoc.js';
 import { quangDuong, thoiGian, gioDen, ngayGio, thoiGianTruoc, tocDoKmh, kichThuoc, esc } from './dinh-dang.js';
 import { doc, ghi } from './kho.js';
-import { icon, muiTenRe, muiTenLan, svgBienCam, laBienCam } from './bieu-tuong.js';
+import { icon, muiTenRe, muiTenLan, svgBienCam, svgBienVN } from './bieu-tuong.js';
 import { BanDo, layKieuBanDo } from './ban-do.js';
 import { $, $$, chenBieuTuong, thongBao, hopThoai, hoiXacNhan, TamDuoi, moTrang, dongTrang, taiXuong } from './giao-dien.js';
 import { goiY, timDayDu, layToaDo, diaChiTuToaDo, khuVucTuToaDo } from './tim-kiem.js';
@@ -30,7 +30,7 @@ import { DANH_MUC, layDanhMuc, timQuanh, timDocTuyen } from './dia-diem.js';
 import { GhiHanhTrinh, danhSachHanhTrinh, xoaHanhTrinh, tongKet, xuatGpx, svgBieuDoTocDo } from './hanh-trinh.js';
 import { CameraHanhTrinh, hoTroCamera, danhSachDoan, doiKhoaDoan, xoaDoan, layDoan, TuDongGhi, CHAT_LUONG } from './camera-hanh-trinh.js';
 import { laAppGoc, cheDoXe, cauHinhGoc, guiGoc } from './cau-noi.js';
-import { tepCuaKieu, diaChiVung, demOVung, taiDiaChi, vungDaTai, luuVung, xoaVung, canCapNhat, dangDungWifi, TOI_DA_O } from './ban-do-offline.js';
+import { tepCuaKieu, diaChiVung, demOVung, taiDiaChi, vungDaTai, luuVung, xoaVung, canCapNhat, dangDungWifi, TOI_DA_O, KHO_BAN_DO } from './ban-do-offline.js';
 
 const st = {
   cheDo: 'chinh',          // chinh | diadiem | danhmuc | lotrinh | danduong
@@ -331,7 +331,7 @@ function renderHudDd(cb) {
 }
 
 /** Viền đỏ như biển cấm cho camera, biển cấm; loại khác viền theo màu của loại. */
-const VIEN_DO = new Set(['camera', 'cameraden', 'cameratb', 'cameragiamsat', 'kiemtra', 'camre', 'camvuot', 'duongcam', 'camdungdo']);
+const VIEN_DO = new Set(['camera', 'cameraden', 'cameratb', 'cameragiamsat', 'kiemtra', 'camre', 'camvuot', 'duongcam', 'camdungdo', 'biencam', 'bientocdo']);
 
 function cotCanhBao(cb) {
   const ds = [];
@@ -341,8 +341,9 @@ function cotCanhBao(cb) {
   if (!ds.length) return '';
   return `<div class="cot-cb">${ds.map(d => {
     const ten = d.loai === 'ghtiep' ? `${d.ten} ${d.gioiHan} km/h` : d.ten + (d.gioiHan ? ` (tối đa ${d.gioiHan} km/h)` : '');
+    const bien = d.loai !== 'ghtiep' && svgBienVN(d.icon);
     const hinh = d.loai === 'ghtiep' ? `<span class="cbt-len">${icon('len')}</span><div class="bien-toc-do nho"><b>${d.gioiHan}</b></div>`
-      : laBienCam(d.icon) ? `<span class="cbt-bien">${svgBienCam(d.icon)}</span>`
+      : bien ? `<span class="cbt-bien">${bien}</span>`
       : `<span class="cbt-icon" style="--vien:${VIEN_DO.has(d.loai) ? '#e53935' : d.mau || '#e53935'}">${icon(d.icon)}</span>`;
     return `<div class="cbt${d.hienTai ? ' hien-tai' : ''}" title="${esc(ten)}">${hinh}<b>${d.hienTai ? 'Ngay đây' : quangDuong(d.kc)}</b><span class="an-chu">${esc(ten)}</span></div>`;
   }).join('')}</div>`;
@@ -390,7 +391,8 @@ function renderCanhBao(el, d) {
   el.hidden = false;
   const pt = Math.max(0, Math.min(100, 100 - d.kc / d.kcBao * 100));
   el.dataset.loai = d.loai;
-  el.innerHTML = `<div class="cb-icon" style="background:${d.mau || '#e53935'}">${icon(d.icon)}</div>
+  const bien = svgBienVN(d.icon);
+  el.innerHTML = `${bien ? `<div class="cb-icon bien">${bien}</div>` : `<div class="cb-icon" style="background:${d.mau || '#e53935'}">${icon(d.icon)}</div>`}
     <div class="cb-chu"><b>${d.hienTai ? 'Ngay đây' : quangDuong(d.kc)}</b><span>${esc(d.ten)}</span>${d.phu ? `<small>${esc(d.phu)}</small>` : ''}</div>
     ${d.gioiHan ? `<div class="bien-toc-do nho"><b>${d.gioiHan}</b></div>` : ''}
     <div class="cb-thanh"><i style="width:${pt}%"></i></div>`;
@@ -1698,9 +1700,10 @@ async function tuCapNhatDuLieu({ ep = false } = {}) {
 }
 
 async function trangDuLieu() {
-  const [tt, kieuNen] = [await duLieuGT.trangThai().catch(() => ({ soO: 0, soDiem: 0 })), layKieuBanDo(banDo.kieu).ten];
+  const [tt, kieu] = [await duLieuGT.trangThai().catch(() => ({ soO: 0, soDiem: 0 })), layKieuBanDo(banDo.kieu)];
   const phi = thongTinBangPhi();
   const lan = doc('capnhatdl', 0);
+  const ngayNen = banDo.ngayDuLieuNen();
   const bat = (k, ten) => `<label class="cd-dong"><span>${esc(ten)}</span><span class="cong-tac"><input type="checkbox" data-cd="${k}" data-kieu="bat"${caiDat[k] ? ' checked' : ''}><span></span></span></label>`;
   moTrang('Dữ liệu giao thông', `<div class="nhom"><h4>Dữ liệu trong máy</h4>
       <div class="cd-dong"><span>Camera, biển báo, trạm thu phí… (khu vực ~11 km)</span><b>${tt.soO} khu vực · ${(tt.soDiem || 0).toLocaleString('vi-VN')} điểm</b></div>
@@ -1709,12 +1712,30 @@ async function trangDuLieu() {
       <div class="cd-dong"><span>Bảng phí trạm thu phí</span><b>${phi.soTram ? `${phi.soTram} trạm${phi.capNhat ? ' · ' + esc(phi.capNhat) : ''}` : 'chưa có'}</b></div>
       <div class="cd-dong"><span>Lần tự kiểm tra gần nhất</span><b>${lan ? ngayGio(lan) : 'chưa có'}</b></div>
       <div class="hang-nut"><button class="nut" data-hd="cap-nhat-du-lieu"${st.dangCapNhatDl ? ' disabled' : ''}>${icon('capnhat')}${st.dangCapNhatDl ? 'Đang cập nhật…' : 'Cập nhật ngay'}</button></div></div>
+    <div class="nhom"><h4>Bản đồ nền</h4>
+      <div class="cd-dong"><span>Kiểu bản đồ</span><b>${esc(kieu.ten)}</b></div>
+      <div class="cd-dong"><span>Dữ liệu đường, tên đường, địa điểm</span><b id="ngay-ban-do">${ngayNen ? 'OpenStreetMap ngày ' + ngayNen.toLocaleDateString('vi-VN') : 'bản mới nhất của máy chủ bản đồ'}</b></div>
+      ${kieu.lai ? `<div class="cd-dong"><span>Ảnh vệ tinh</span><b>${esc(CAU_HINH.anhVeTinh.ghiNguon.replace(/^©\s*/, ''))}</b></div>` : ''}
+      <div class="hang-nut"><button class="nut vien" data-hd="lam-moi-ban-do">${icon('capnhat')}Tải lại bản đồ nền mới nhất</button></div></div>
     <div class="nhom"><h4>Tự động cập nhật</h4>${bat('tuCapNhatDuLieu', 'Tự cập nhật dữ liệu giao thông mỗi tuần')}
       ${bat('capNhatChiWifi', 'Chỉ tự cập nhật khi dùng Wi-Fi')}${bat('capNhatOffline', 'Tự cập nhật vùng bản đồ offline mỗi tuần')}</div>
-    <p class="ghi-chu">Nguồn: đường, biển báo, camera, trạm thu phí lấy từ OpenStreetMap (cộng đồng cập nhật hằng ngày); bản đồ nền "${esc(kieuNen)}"
-    tự theo phiên bản mới nhất của máy chủ bản đồ, ô đã lưu quá 7 ngày được tải lại; tìm đường dùng dữ liệu mới nhất của máy chủ OSRM;
+    <p class="ghi-chu">Nguồn: đường, biển báo, camera, trạm thu phí lấy từ OpenStreetMap (cộng đồng cập nhật hằng ngày); bản đồ nền
+    (kể cả tên đường, địa danh trên bản đồ vệ tinh) do OpenFreeMap dựng lại từ OpenStreetMap mỗi tuần, ứng dụng tự theo phiên bản mới nhất,
+    ô đã lưu quá 7 ngày được tải lại; tìm đường dùng dữ liệu mới nhất của máy chủ OSRM;
     báo cáo kẹt xe, tai nạn là thời gian thực. ${dungMayChu() ? 'Máy chủ HawaMap lưu sẵn dữ liệu và tự cập nhật mỗi tuần cho mọi máy.' : 'Chưa kết nối máy chủ HawaMap: dữ liệu được tải thẳng từ OpenStreetMap.'}
     Mức phí lấy từ bảng phí do đơn vị vận hành cập nhật hoặc từ OpenStreetMap; chỉ để tham khảo.</p>`);
+}
+
+/** Xoá ô bản đồ đã lưu (trừ vùng tải về để dùng offline) rồi nạp lại kiểu bản đồ: lấy dữ liệu nền mới nhất ngay. */
+async function lamMoiBanDoNen() {
+  if (!navigator.onLine) return thongBao('Đang mất mạng, chưa tải lại được bản đồ', { loai: 'loi' });
+  try { if (window.caches) await caches.delete(KHO_BAN_DO); } catch (e) { /* trình duyệt không cho dùng bộ đệm */ }
+  const xong = new Promise(ok => { banDo.map.once('idle', ok); setTimeout(ok, 10000); });
+  banDo.taiLaiKieu();
+  await xong;
+  const ngay = banDo.ngayDuLieuNen();
+  thongBao(ngay ? `Đã tải bản đồ nền mới nhất (dữ liệu ngày ${ngay.toLocaleDateString('vi-VN')})` : 'Đã tải lại bản đồ nền mới nhất', { loai: 'tot' });
+  if (!$('#trang').hidden && $('#tieu-de-trang').textContent === 'Dữ liệu giao thông') trangDuLieu();
 }
 
 // ================================================================== trang: thông số xe (OBD-II)
@@ -2063,6 +2084,7 @@ const HD = {
   'mo-hud': () => { moMenu(false); batHud(true); },
   'trang-offline': () => { moMenu(false); trangOffline(); },
   'trang-du-lieu': () => { moMenu(false); trangDuLieu(); },
+  'lam-moi-ban-do': () => lamMoiBanDoNen(),
   'cap-nhat-du-lieu': async () => {
     if (!navigator.onLine) return thongBao('Đang mất mạng, chưa cập nhật được', { loai: 'loi' });
     const cho = tuCapNhatDuLieu({ ep: true });

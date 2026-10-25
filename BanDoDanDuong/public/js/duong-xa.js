@@ -7,7 +7,7 @@
  */
 import { CAU_HINH } from './cau-hinh.js';
 import { khoangCach, chieuLenDoan, phuongVi, lechGoc } from './hinh-hoc.js';
-import { docBienBao, BIEN_VN, chieuMotChieu } from './luat-duong.js';
+import { docBienBaoChiTiet, soTuThe, BIEN_VN, chieuMotChieu } from './luat-duong.js';
 import { docPhiOsm } from './phi-cao-toc.js';
 
 const LOAI_DUONG = 'motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street|service|road|' +
@@ -85,6 +85,13 @@ const LOAI_CAMERA = ['camera', 'cameraden', 'cameratb', 'cameragiamsat', 'kiemtr
 //  - chinh: mọi loại điểm trừ đèn tín hiệu / vạch qua đường;  - nho: đèn tín hiệu, vạch qua đường (rất nhiều, chỉ tải khi bật).
 export const CO_O = 0.1;
 export const LOP_NHO = ['dentinhieu', 'vachqua'];
+/** Phiên bản cách đọc điểm (tăng khi đọc thêm loại điểm / biển báo mới): ô lưu bằng bản cũ hơn được tải lại ở nền. */
+export const PHIEN_BAN_DIEM = 2;
+
+/** Ô đã lưu cần tải lại: quá chu kỳ cập nhật, hoặc đọc bằng phiên bản cũ. */
+export function oCanLamMoi(o, bayGio, chuKy) {
+  return bayGio - o.capNhat > chuKy || (o.pb || 1) < PHIEN_BAN_DIEM;
+}
 
 /** Mã ô chứa điểm [lng, lat]. */
 export function maO(lng, lat) {
@@ -190,8 +197,14 @@ export function docDiemOverpass(ds) {
       continue;
     }
     if (e.type === 'node' && t.traffic_sign) {
-      // biển báo Việt Nam (đường cấm, cấm vượt, cấm dừng / đỗ…): mỗi biển trên nút là một điểm
-      for (const ma of docBienBao(t.traffic_sign)) them(`osm${e.id}-${ma}`, BIEN_VN[ma].loai, [e.lon, e.lat], t, { bien: ma });
+      // biển báo Việt Nam (đường cấm, cấm vượt, cấm dừng / đỗ, biển nguy hiểm, STOP…): mỗi biển trên nút là một điểm;
+      // biển ghi số (tốc độ, tải trọng, chiều cao) lấy số trong [ ] của traffic_sign hoặc thẻ maxspeed / maxweight / maxheight
+      for (const { ma, so } of docBienBaoChiTiet(t.traffic_sign)) {
+        const b = BIEN_VN[ma];
+        const giaTri = b.so ? so || soTuThe(b.so, t) : null;
+        if (b.so && !giaTri) continue;
+        them(`osm${e.id}-${ma}`, b.loai, [e.lon, e.lat], t, giaTri ? { bien: ma, so: giaTri } : { bien: ma });
+      }
     }
     if (e.type === 'node' && kq.has('osm' + e.id)) continue;      // đã có loại chi tiết hơn từ quan hệ enforcement
     const loai = phanLoaiDiem(t);

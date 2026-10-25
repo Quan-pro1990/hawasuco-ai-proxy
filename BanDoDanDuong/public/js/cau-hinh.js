@@ -18,23 +18,15 @@ export const CAU_HINH = {
   kieuBanDo: {
     tieuchuan: { ten: 'Tiêu chuẩn', mau: '#e8eef3', style: 'https://tiles.openfreemap.org/styles/liberty' },
     giaothong: { ten: 'Giao thông', mau: '#f4efe6', style: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json' },
-    vetinh: {
-      ten: 'Vệ tinh', mau: '#3b4a3a',
-      style: {
-        version: 8,
-        sources: {
-          anh: { type: 'raster', tileSize: 256, maxzoom: 19, tiles: [NHAN_VE_TINH + '/World_Imagery/MapServer/tile/{z}/{y}/{x}'], attribution: '© Esri, Maxar, Earthstar Geographics' },
-          duong: { type: 'raster', tileSize: 256, maxzoom: 19, tiles: [NHAN_VE_TINH + '/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}'] },
-          nhan: { type: 'raster', tileSize: 256, maxzoom: 19, tiles: [NHAN_VE_TINH + '/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}'] }
-        },
-        layers: [
-          { id: 'anh', type: 'raster', source: 'anh' },
-          { id: 'duong', type: 'raster', source: 'duong' },
-          { id: 'nhan', type: 'raster', source: 'nhan' }
-        ]
-      }
-    },
+    // Vệ tinh lai: ảnh vệ tinh (anhVeTinh) + đường, tên đường, địa danh tiếng Việt lấy từ kiểu "Tiêu chuẩn" (xem ve-tinh.js)
+    vetinh: { ten: 'Vệ tinh', mau: '#3b4a3a', style: 'https://tiles.openfreemap.org/styles/liberty', lai: true },
     bandem: { ten: 'Ban đêm', mau: '#1f2633', toi: true, style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json' }
+  },
+
+  // Ảnh vệ tinh cho kiểu "Vệ tinh" (Esri World Imagery, ảnh Maxar / Earthstar Geographics)
+  anhVeTinh: {
+    tiles: [NHAN_VE_TINH + '/World_Imagery/MapServer/tile/{z}/{y}/{x}'], maxzoom: 19,
+    ghiNguon: '© Esri, Maxar, Earthstar Geographics'
   },
 
   dichVu: {

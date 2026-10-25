@@ -9,7 +9,7 @@ import { khoangCach, phuongVi, lechGoc, chieuLenDoan, timChiSo, diemTaiS, tichLu
 import { quangDuongNoi, thoiGianTruoc, tocDoKmh } from './dinh-dang.js';
 import { LOAI_BAO_CAO } from './loai-bao-cao.js';
 import { LOAI_CANH_BAO, BIEN_RE, NGUY_HIEM, mucCanhBao, kcBaoTruoc } from './loai-canh-bao.js';
-import { camPhuongTien, diNguocChieu, chieuMotChieu, camDungDo, camVuot, BIEN_VN, apDungTheoNgay } from './luat-duong.js';
+import { camPhuongTien, diNguocChieu, chieuMotChieu, camDungDo, camVuot, BIEN_VN, apDungTheoNgay, chuBien } from './luat-duong.js';
 
 const LOAI_CAMERA = new Set(['camera', 'cameraden', 'cameratb', 'cameragiamsat', 'kiemtra']);
 
@@ -266,8 +266,9 @@ export class CanhBao {
       if (d.bien) {
         // biển báo Việt Nam: biển riêng cho ô tô / xe máy, biển cấm đỗ ngày chẵn / lẻ chỉ áp dụng đúng ngày
         const b = BIEN_VN[d.bien];
-        if ((b.xe && b.xe !== phuongTien) || !apDungTheoNgay(b.ngay)) continue;
-        Object.assign(x, { ten: b.ten, icon: b.icon, het: !!b.het });
+        if (!b || (b.xe && b.xe !== phuongTien) || !apDungTheoNgay(b.ngay)) continue;
+        Object.assign(x, { ten: chuBien(b.ten, d.so), nghe: chuBien(b.nghe, d.so), icon: b.so ? `bs-${b.so}-${d.so}` : b.icon, het: !!b.het });
+        if (b.so) x.gioiHan = null;          // số đã ghi trên biển
       }
       if (d.loai === 'thuphi' && this.layPhi) {
         const phi = this.layPhi(d);
@@ -463,6 +464,9 @@ export class CanhBao {
         if (d.het) return 'Hết đoạn cấm vượt.';
         return d.bien ? `Phía trước ${kc} có biển cấm vượt.` : `Phía trước ${kc} bắt đầu đoạn cấm vượt.`;
       case 'camdungdo': return `Phía trước có ${BIEN_VN[d.bien].nghe}.`;
+      case 'biencam': case 'bientocdo': case 'biennguyhiem':
+        if (d.het) return d.nghe[0].toUpperCase() + d.nghe.slice(1) + '.';
+        return `${d.loai === 'biennguyhiem' ? 'Chú ý, phía' : 'Phía'} trước ${kc} có ${d.nghe}.`;
       case 'gioihan': return `Phía trước ${kc}, tốc độ tối đa ${d.gioiHan} ki lô mét trên giờ.`;
       case 'khuccua': return `Chú ý, phía trước ${kc} có khúc cua ${d.gap ? 'gấp ' : ''}${d.cuaPhai ? 'bên phải' : 'bên trái'}. Giảm tốc độ.`;
       case 'nguyhiem': return `Chú ý, phía trước ${kc} có ${NGUY_HIEM[d.nguyHiem] || 'đoạn đường nguy hiểm'}.`;

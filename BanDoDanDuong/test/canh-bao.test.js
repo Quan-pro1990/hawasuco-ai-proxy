@@ -458,3 +458,29 @@ test('camera phạt nguội: đọc kèm giới hạn của đường, nhắc gi
     globalThis.fetch = fetchCu;
   }
 });
+
+test('biển nguy hiểm, biển cấm khác, biển tốc độ ghi số: hiện trên bản đồ, đọc tiếng Việt', () => {
+  const { ttd, cb, noi } = duongLuat();
+  ttd.diem = docDiemOverpass([
+    { type: 'node', id: 11, lat: 21.04005, lon: 105.8632, tags: { traffic_sign: 'VN:W.207a;VN:P.127[40]' } },
+    { type: 'node', id: 12, lat: 21.04005, lon: 105.8640, tags: { traffic_sign: 'VN:P.117', maxheight: '3.5' } },
+    { type: 'node', id: 13, lat: 21.04005, lon: 105.8650, tags: { traffic_sign: 'VN:P.127' } },          // không ghi số: bỏ
+    { type: 'node', id: 14, lat: 21.04005, lon: 105.8655, tags: { traffic_sign: 'VN:R.122' } }
+  ]);
+  assert.deepEqual([...ttd.diem.keys()].sort(), ['osm11-P127', 'osm11-W207', 'osm12-P117', 'osm14-R122']);
+  const ds = cb.danhSachDiem('oto');
+  const tim = b => ds.find(d => d.bien === b);
+  assert.equal(tim('W207').icon, 'w-uutien');
+  assert.equal(tim('P127').icon, 'bs-tocdo-40');
+  assert.equal(tim('P127').ten, 'Tốc độ tối đa 40 km/h');
+  assert.equal(tim('P127').muc, 1, 'biển tốc độ mặc định chỉ hiển thị');
+  assert.equal(tim('P117').ten, 'Hạn chế chiều cao 3,5 m');
+  assert.ok(cb.diemBanDo().some(d => d.icon === 'bs-cao-3.5'));
+  // đi về phía Đông qua các biển: đọc biển nguy hiểm, biển chiều cao, biển STOP; không đọc biển tốc độ
+  for (const lng of [105.8610, 105.8618, 105.8626, 105.8634, 105.8642]) cb.capNhat({ viTri: [lng, 21.04], huong: 90, tocDo: 12 }, null, 'oto');
+  assert.ok(noi.some(s => /^Chú ý, phía trước .* có giao nhau với đường không ưu tiên\.$/.test(s)), noi.join('|'));
+  assert.ok(noi.some(s => /có biển hạn chế chiều cao 3,5 mét\./.test(s)), noi.join('|'));
+  assert.ok(!noi.some(s => /tốc độ tối đa 40/.test(s)), noi.join('|'));
+  assert.equal(cb.cauCanhBao({ ...tim('R122'), kc: 120 }), 'Phía trước 100 mét có biển dừng lại.');
+  assert.equal(cb.cauCanhBao({ loai: 'biencam', kc: 50, het: true, nghe: 'hết tất cả các lệnh cấm' }), 'Hết tất cả các lệnh cấm.');
+});

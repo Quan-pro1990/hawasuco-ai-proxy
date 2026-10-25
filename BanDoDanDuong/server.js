@@ -32,7 +32,7 @@ import { taoKhoGiaoThong } from './kho-giao-thong.js';
 
 const THU_MUC = path.dirname(fileURLToPath(import.meta.url));
 const THU_MUC_WEB = path.join(THU_MUC, 'public');
-const PHIEN_BAN = '1.2.3';
+const PHIEN_BAN = '1.2.4';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8',
@@ -199,7 +199,7 @@ export function taoMayChu({
       if (!ds.length || ds.length > 9 || !ds.every(laMaO) || (lop !== 'chinh' && lop !== 'nho')) return guiJson(res, 400, { loi: 'Danh sách ô không hợp lệ' });
       const o = {}, loi = {};
       await Promise.all(ds.map(async ma => {
-        try { const x = await khoGT.lay(ma, lop); o[ma] = { capNhat: x.capNhat, diem: x.diem }; } catch (e) { loi[ma] = e.message; }
+        try { const x = await khoGT.lay(ma, lop); o[ma] = { capNhat: x.capNhat, pb: x.pb || 1, diem: x.diem }; } catch (e) { loi[ma] = e.message; }
       }));
       if (!Object.keys(o).length) return guiJson(res, 502, { loi: 'Không lấy được dữ liệu giao thông', chiTiet: loi });
       return guiJson(res, 200, { o, loi });

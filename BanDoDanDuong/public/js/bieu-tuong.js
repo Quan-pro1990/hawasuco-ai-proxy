@@ -221,6 +221,88 @@ export function svgBienCam(ten) {
     `<circle cx="16" cy="16" r="13.5" fill="${nen}" stroke="${vien}" stroke-width="3.6"/>${noiDung}</svg>`;
 }
 
+// Biển cấm thêm (QCVN 41): người, xe đạp vẽ lại từ biểu tượng nét, còi, hết mọi lệnh cấm
+const NET = (ten, x, y, k, mau = '#1f2937', day = 2.6) =>
+  `<g transform="translate(${x} ${y}) scale(${k})" fill="none" stroke="${mau}" stroke-width="${day}" stroke-linecap="round" stroke-linejoin="round">${P[ten]}</g>`;
+Object.assign(BIEN_CAM, {
+  camxedap: ['#fff', '#d32f2f', NET('xedap', 7, 7.5, 0.75) + GACH],
+  camdibo: ['#fff', '#d32f2f', NET('dibo', 7, 7, 0.75) + GACH],
+  camcoi: ['#fff', '#d32f2f', '<path d="M9 13.6v4.8h3.2l6.6 4.2V9.4l-6.6 4.2z" fill="#1f2937"/><path d="M21 13.2q1.6 2.8 0 5.6" stroke="#1f2937" stroke-width="1.4" fill="none"/>' + GACH],
+  hetcam: ['#fff', '#1f2937', '<path d="M7.6 20.6l13-13M9.6 22.6l13-13M11.6 24.6l13-13M5.8 18.2l12.4-12.4" stroke="#1f2937" stroke-width="1"/>']
+});
+
+// ------------------------------------------------------------------ biển báo nguy hiểm, STOP, biển ghi số
+/** Ký hiệu đen trên biển nguy hiểm tam giác vàng viền đỏ (khung 32×32, lòng tam giác khoảng x 9…23, y 12…25). */
+const W_NET = ten => NET(ten, 9.4, 11.8, 0.55, '#111', 3.2);
+const W_MUI = mui => `<g transform="translate(9.4 11.8) scale(0.55)" fill="none" stroke="#111" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">${MUI_BIEN[mui]}</g>`;
+const KY_NGUY_HIEM = {
+  'w-cuatrai': W_MUI('trai'),
+  'w-cuaphai': W_MUI('phai'),
+  'w-cuakep': '<path d="M14 25v-4.2l4-3.2v-2.4l-2-2" fill="none" stroke="#111" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.6 14.6l2.2-2.4.4 3.2z" fill="#111" stroke="#111" stroke-width="1.2" stroke-linejoin="round"/>',
+  'w-hep': '<path d="M11.5 25l2.3-5V13M20.5 25l-2.3-5V13" fill="none" stroke="#111" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>',
+  'w-giaonhau': '<path d="M16 12v13M10.5 19.2h11" stroke="#111" stroke-width="2.6" stroke-linecap="round"/>',
+  'w-uutien': '<path d="M16 12v13" stroke="#111" stroke-width="3.4" stroke-linecap="round"/><path d="M11 19.2h10" stroke="#111" stroke-width="1.6" stroke-linecap="round"/>',
+  'w-den': '<rect x="13.5" y="11.4" width="5" height="13.6" rx="1.6" fill="#111"/><circle cx="16" cy="14" r="1.35" fill="#e53935"/><circle cx="16" cy="18.2" r="1.35" fill="#ffd400"/><circle cx="16" cy="22.4" r="1.35" fill="#43a047"/>',
+  'w-raochan': '<path d="M10.5 25v-9M21.5 25v-9" stroke="#111" stroke-width="1.6" stroke-linecap="round"/><path d="M10.5 17.6h11M10.5 21.4h11" stroke="#111" stroke-width="1.8"/><path d="M13 16.8l2 1.6M17 16.8l2 1.6M13 20.6l2 1.6M17 20.6l2 1.6" stroke="#ffd400" stroke-width="1"/>',
+  'w-tau': '<path d="M10 23.6V18h3.2v-3.4h5.6V18H22v5.6z" fill="#111"/><circle cx="12.6" cy="24.4" r="1.25" fill="#111"/><circle cx="16" cy="24.4" r="1.25" fill="#111"/><circle cx="19.4" cy="24.4" r="1.25" fill="#111"/><path d="M14.4 16h3.2v2h-3.2z" fill="#ffd400"/>',
+  'w-docxuong': '<path d="M9.6 25h12.8L9.6 16.4z" fill="#111"/>',
+  'w-doclen': '<path d="M9.6 25h12.8V16.4z" fill="#111"/>',
+  'w-xoc': '<path d="M9.4 23.6q1.65-4 3.3 0t3.3 0 3.3 0 3.3 0" fill="none" stroke="#111" stroke-width="1.8" stroke-linecap="round"/>',
+  'w-go': '<path d="M9 24.4h4q3-5.4 6 0h4" fill="none" stroke="#111" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>',
+  'w-dibo': W_NET('dibo'),
+  'w-treem': NET('dibo', 8.6, 13.4, 0.46, '#111', 3.4) + NET('dibo', 14.2, 14.4, 0.42, '#111', 3.6),
+  'w-congtruong': '<circle cx="14.2" cy="13.6" r="1.5" fill="#111"/><path d="M14 15.6l-1.6 3.9 2.2 1.4M14 15.6l2.6 2.4 2-1.1M12.4 19.5l-1.6 4.6M14.6 20.9l.9 3.2M17.4 17.4l3 4" fill="none" stroke="#111" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M17.6 25.2q2.6-3.4 5 0z" fill="#111"/>',
+  'w-cham': '<path d="M16 13v7.2" stroke="#111" stroke-width="2.8" stroke-linecap="round"/><circle cx="16" cy="23.4" r="1.6" fill="#111"/>',
+  'w-dicham': '<text x="16" y="20.4" font-family="Arial,Helvetica,sans-serif" font-size="4.6" font-weight="700" text-anchor="middle" fill="#111">ĐI</text><text x="16" y="25" font-family="Arial,Helvetica,sans-serif" font-size="4.6" font-weight="700" text-anchor="middle" fill="#111">CHẬM</text>'
+};
+
+function svgBienNguyHiem(ten) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 32 32">` +
+    `<path d="M16 3.2L29.6 27.6H2.4z" fill="#ffd400" stroke="#d32f2f" stroke-width="2.6" stroke-linejoin="round"/>${KY_NGUY_HIEM[ten]}</svg>`;
+}
+
+/** W.208 Giao nhau với đường ưu tiên: tam giác ngược nền trắng viền đỏ. */
+const SVG_NHUONG = '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 32 32">' +
+  '<path d="M2.6 4.4h26.8L16 28.4z" fill="#fff" stroke="#d32f2f" stroke-width="3.4" stroke-linejoin="round"/></svg>';
+
+/** R.122 Dừng lại: bát giác đỏ chữ STOP. */
+const SVG_STOP = '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 32 32">' +
+  '<path d="M10.3 1.8h11.4l8.5 8.5v11.4l-8.5 8.5H10.3l-8.5-8.5V10.3z" fill="#d32f2f" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/>' +
+  '<text x="16" y="19.4" font-family="Arial,Helvetica,sans-serif" font-size="8.4" font-weight="700" text-anchor="middle" fill="#fff">STOP</text></svg>';
+
+/**
+ * Biển ghi số: tocdo (P.127 tốc độ tối đa), hettocdo (DP.134), tai (P.115, tấn), cao (P.117, mét).
+ * Tên ảnh trên bản đồ "bs-<kiểu>-<số>", vd. "bs-tocdo-50".
+ */
+function svgBienSo(kieu, so) {
+  const chu = String(so).replace('.', ',') + (kieu === 'tai' ? 't' : kieu === 'cao' ? 'm' : '');
+  const co = chu.length <= 2 ? 13 : chu.length === 3 ? 10.5 : chu.length === 4 ? 8.6 : 7.4;
+  const het = kieu === 'hettocdo';
+  const mauChu = het ? '#6b7280' : '#111';
+  const them = kieu === 'cao' ? '<path d="M14 6.6h4L16 9.2zM14 25.4h4L16 22.8z" fill="#111"/>' : '';
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 32 32">` +
+    `<circle cx="16" cy="16" r="13.5" fill="#fff" stroke="${het ? '#6b7280' : '#d32f2f'}" stroke-width="${het ? 2 : 3.6}"/>${them}` +
+    `<text x="16" y="${16 + co * 0.36}" font-family="Arial,Helvetica,sans-serif" font-size="${co}" font-weight="700" text-anchor="middle" fill="${mauChu}">${chu}</text>` +
+    (het ? '<path d="M7.6 24.4L24.4 7.6" stroke="#1f2937" stroke-width="1.6"/>' : '') + '</svg>';
+}
+
+/** Tên ảnh biển ghi số trên bản đồ. */
+export function tenBienSo(kieu, so) { return `bs-${kieu}-${so}`; }
+
+/** Ảnh biển báo Việt Nam vẽ như biển thật (biển cấm, cấm rẽ, nguy hiểm, STOP, biển ghi số); null nếu không phải biển. */
+export function svgBienVN(ten) {
+  const m = /^bs-(tocdo|hettocdo|tai|cao)-(\d+(?:\.\d+)?)$/.exec(ten || '');
+  if (m) return svgBienSo(m[1], m[2]);
+  if (ten in BIEN_CAM) return svgBienCam(ten);
+  if (ten in BIEN) return svgBienBao(ten);
+  if (ten in KY_NGUY_HIEM) return svgBienNguyHiem(ten);
+  if (ten === 'nhuong') return SVG_NHUONG;
+  if (ten === 'stop') return SVG_STOP;
+  return null;
+}
+
+export function laBienVN(ten) { return svgBienVN(ten) != null; }
+
 /** Cờ ca-rô trong vòng tròn trắng: điểm đến khi dẫn đường. */
 export const SVG_CO_DICH = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" width="36" height="36">' +
   '<circle cx="18" cy="18" r="16" fill="#fff" stroke="#1f2937" stroke-width="2.2"/>' +

@@ -16,13 +16,22 @@ const duongNen = {
   features: [[A, B], [B, C], [C, D], [A, [105.8548, 21.025]], [[105.8548, 21.025], D], [[105.846, 21.0304], [105.858, 21.0304]], [[105.846, 21.0325], [105.858, 21.0325]]]
     .map(c => ({ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: c } }))
 };
-const style = (toi) => ({
+const style = (toi, vector = false) => ({
   version: 8,
-  sources: { duong: { type: 'geojson', data: duongNen } },
+  ...(vector ? { glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf' } : {}),
+  sources: {
+    duong: { type: 'geojson', data: duongNen },
+    // như OpenFreeMap: ô vector có ngày dữ liệu trong địa chỉ (ô rỗng khi kiểm thử)
+    ...(vector ? { nen: { type: 'vector', tiles: ['https://tiles.openfreemap.org/planet/20251022_001001_pt/{z}/{x}/{y}.pbf'], maxzoom: 14 } } : {})
+  },
   layers: [
     { id: 'nen', type: 'background', paint: { 'background-color': toi ? '#1d2330' : '#eef0e6' } },
     { id: 'duong-vien', type: 'line', source: 'duong', paint: { 'line-color': toi ? '#39414f' : '#cfd5dc', 'line-width': 16 } },
-    { id: 'duong', type: 'line', source: 'duong', paint: { 'line-color': toi ? '#4a5262' : '#ffffff', 'line-width': 12 } }
+    { id: 'duong', type: 'line', source: 'duong', paint: { 'line-color': toi ? '#4a5262' : '#ffffff', 'line-width': 12 } },
+    ...(vector ? [
+      { id: 'road_primary', type: 'line', source: 'nen', 'source-layer': 'transportation', paint: { 'line-color': '#fc8', 'line-width': 3 } },
+      { id: 'highway-name-major', type: 'symbol', source: 'nen', 'source-layer': 'transportation_name', layout: { 'text-field': ['get', 'name'], 'text-font': ['Noto Sans Regular'] }, paint: { 'text-color': '#666' } }
+    ] : [])
   ]
 });
 const xang = { elements: [
@@ -50,7 +59,9 @@ const json = (route, du) => route.fulfill({ status: 200, contentType: 'applicati
 export async function giaLapMang(ctx) {
   await ctx.route(/^https?:\/\/(?!127\.0\.0\.1)/, async (route) => {
     const url = route.request().url();
-    if (/openfreemap\.org\/styles|voyager-gl-style/.test(url)) return json(route, style(false));
+    if (/openfreemap\.org\/styles/.test(url)) return json(route, style(false, true));
+    if (/voyager-gl-style/.test(url)) return json(route, style(false));
+    if (/openfreemap\.org\/(planet|fonts)\/.*\.pbf$/.test(url)) return route.fulfill({ status: 200, contentType: 'application/x-protobuf', body: Buffer.alloc(0), headers: { 'Access-Control-Allow-Origin': '*' } });
     if (/dark-matter-gl-style/.test(url)) return json(route, style(true));
     if (/router\.project-osrm\.org|routing\.openstreetmap\.de/.test(url)) return json(route, mau.tuyenOsrm());
     if (/server\.arcgisonline\.com\/.*\/tile\//.test(url)) return route.fulfill({ status: 200, contentType: 'image/png', body: ANH_O, headers: { 'Access-Control-Allow-Origin': '*' } });

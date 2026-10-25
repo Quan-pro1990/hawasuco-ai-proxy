@@ -6,11 +6,12 @@
 import { CAU_HINH } from './cau-hinh.js';
 import { caiDat, doc, ghi } from './kho.js';
 import { lechGoc, khungBao } from './hinh-hoc.js';
-import { svgBieuTuongBanDo, svgBienBao, svgBienCam, laBienCam, SVG_MUI_TEN_TUYEN, SVG_CO_DICH, taiAnh, icon } from './bieu-tuong.js';
+import { svgBieuTuongBanDo, svgBienBao, svgBienVN, SVG_MUI_TEN_TUYEN, SVG_CO_DICH, taiAnh, icon } from './bieu-tuong.js';
 import { BIEN_VN } from './luat-duong.js';
 import { LOAI_BAO_CAO } from './loai-bao-cao.js';
 import { LOAI_CANH_BAO, BIEN_RE } from './loai-canh-bao.js';
 import { DANH_MUC } from './dia-diem.js';
+import { veTinhLai } from './ve-tinh.js';
 
 const RONG = { type: 'FeatureCollection', features: [] };
 /** [viền, lõi] của đường tuyến: xanh dương khi xem lộ trình, xanh lá khi dẫn đường. */
@@ -43,12 +44,14 @@ export class BanDo {
     this.hienThi = null;
     this.lucZoomTay = 0;
     this.anh = this.taiCacAnh();
+    this.anhBienSo = new Map();     // 'cb-bs-tocdo-50' → ảnh biển ghi số đã tạo
 
     const cu = doc('khungnhin', null);
     this.kieu = kieuDau;
+    const k = layKieuBanDo(this.kieu);
     this.map = new maplibregl.Map({
       container: idKhung,
-      style: layKieuBanDo(this.kieu).style,
+      style: k.lai ? undefined : k.style,
       center: cu ? cu.c : CAU_HINH.viTriMacDinh.tam,
       zoom: cu ? cu.z : CAU_HINH.viTriMacDinh.zoom,
       attributionControl: { compact: true },
@@ -59,6 +62,7 @@ export class BanDo {
         'NavigationControl.ZoomIn': 'Phóng to', 'NavigationControl.ZoomOut': 'Thu nhỏ'
       }
     });
+    if (k.lai) this.napKieu(k);
     this.map.on('style.load', () => this.sauKhiTaiStyle());
     this.map.on('moveend', () => {
       const c = this.map.getCenter();
@@ -84,19 +88,43 @@ export class BanDo {
   doiKieu(ten) {
     if (ten === this.kieu) return;
     this.kieu = ten;
-    this.map.setStyle(layKieuBanDo(ten).style, { diff: false });
+    this.napKieu(layKieuBanDo(ten));
+  }
+
+  /** Nạp lại kiểu đang dùng (lấy bản mới nhất từ máy chủ bản đồ). */
+  taiLaiKieu() { this.napKieu(layKieuBanDo(this.kieu)); }
+
+  /** Kiểu "lai" (vệ tinh) tải kiểu vector rồi biến thành ảnh vệ tinh + lớp chữ (ve-tinh.js). */
+  napKieu(k) {
+    this.map.setStyle(k.style, k.lai ? { diff: false, transformStyle: veTinhLai } : { diff: false });
   }
 
   laKieuToi() { return !!layKieuBanDo(this.kieu).toi; }
+
+  /**
+   * Ngày của phiên bản dữ liệu bản đồ nền, đọc từ địa chỉ ô vector (OpenFreeMap: …/planet/20251022_001001_pt/{z}/{x}/{y}.pbf);
+   * null nếu máy chủ bản đồ không ghi ngày (CARTO) hoặc chưa tải xong.
+   */
+  ngayDuLieuNen() {
+    const st = this.map.getStyle();
+    for (const id of Object.keys((st && st.sources) || {})) {
+      const s = this.map.getSource(id);
+      const m = s && s.type === 'vector' && s.tiles && /\/(20\d{2})(\d{2})(\d{2})_\d+/.exec(s.tiles[0]);
+      if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+    }
+    return null;
+  }
 
   async taiCacAnh() {
     const ds = { 'mui-ten-tuyen': SVG_MUI_TEN_TUYEN };
     for (const [k, v] of Object.entries(LOAI_BAO_CAO)) ds['bc-' + k] = svgBieuTuongBanDo(v.icon, v.mau);
     for (const v of Object.values(LOAI_CANH_BAO)) if (!v.khongBanDo) ds['cb-' + v.icon] = svgBieuTuongBanDo(v.icon, v.mau);
     for (const v of Object.values(BIEN_RE)) ds['cb-' + v.icon] = svgBienBao(v.icon);
-    // biển báo Việt Nam (đường cấm, cấm vượt, cấm dừng / đỗ…) vẽ như biển thật
+    // biển báo Việt Nam (đường cấm, cấm vượt, cấm dừng / đỗ, biển nguy hiểm, STOP…) vẽ như biển thật;
+    // biển ghi số (tốc độ, tải trọng, chiều cao) tạo khi gặp (anhBienSo)
     for (const ten of new Set([...Object.values(BIEN_VN).map(b => b.icon), 'duongcam', 'camvuot', 'camdungdo'])) {
-      if (laBienCam(ten)) ds['cb-' + ten] = svgBienCam(ten);
+      const svg = svgBienVN(ten);
+      if (svg) ds['cb-' + ten] = svg;
     }
     for (const d of DANH_MUC) ds['dm-' + d.id] = svgBieuTuongBanDo(d.icon, d.mau);
     ds['dm-ghim'] = svgBieuTuongBanDo('ghim', '#e53935');
@@ -110,7 +138,7 @@ export class BanDo {
     this.vietHoaNhan();
     const anh = await this.anh;
     if (!m.getStyle()) return;
-    for (const [k, img] of Object.entries(anh)) if (!m.hasImage(k)) m.addImage(k, img, { pixelRatio: 2 });
+    for (const [k, img] of [...Object.entries(anh), ...this.anhBienSo]) if (!m.hasImage(k)) m.addImage(k, img, { pixelRatio: 2 });
     for (const n of NGUON) if (!m.getSource(n)) m.addSource(n, { type: 'geojson', data: this.duLieu[n] });
 
     const nhanDau = (m.getStyle().layers.find(l => l.type === 'symbol') || {}).id;
@@ -226,7 +254,17 @@ export class BanDo {
     this.datNguon('bao-cao', { type: 'FeatureCollection', features: ds.map(b => diem([b.lng, b.lat], { id: b.id, loai: b.loai })) });
   }
 
-  datDiemCanhBao(ds) {
+  async datDiemCanhBao(ds) {
+    // biển ghi số chưa có ảnh: tạo ảnh trước rồi mới vẽ (MapLibre bỏ qua biểu tượng thiếu ảnh)
+    const phien = this.phienCb = (this.phienCb || 0) + 1;
+    const thieu = [...new Set(ds.map(d => 'cb-' + d.icon))].filter(k => k.startsWith('cb-bs-') && !this.anhBienSo.has(k));
+    if (thieu.length) {
+      await Promise.all(thieu.map(async k => {
+        try { this.anhBienSo.set(k, await taiAnh(svgBienVN(k.slice(3)))); } catch (e) { /* bỏ biển này */ }
+      }));
+      if (phien !== this.phienCb) return;            // đã có danh sách mới hơn
+      for (const k of thieu) if (this.anhBienSo.has(k) && this.map.getStyle() && !this.map.hasImage(k)) this.map.addImage(k, this.anhBienSo.get(k), { pixelRatio: 2 });
+    }
     this.datNguon('canh-bao', { type: 'FeatureCollection', features: ds.map(d => diem(d.viTri, { id: d.id, icon: d.icon, nho: d.nho })) });
   }
 

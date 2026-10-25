@@ -8,7 +8,7 @@
  *    không bị cắt bớt.
  *  - Tìm kiếm, chỉ đường, báo cáo: luôn lấy từ mạng.
  */
-const PHIEN_BAN = 'hawamap-v8';
+const PHIEN_BAN = 'hawamap-v9';
 const KHO_TRANG = PHIEN_BAN + '-trang';
 const KHO_BAN_DO = 'hawamap-ban-do';
 const KHO_TAI = 'hawamap-ban-do-tai';
@@ -23,7 +23,7 @@ const VO_UNG_DUNG = [
   'js/giong-noi.js', 'js/cau-noi.js', 'js/duong-xa.js', 'js/canh-bao.js', 'js/bao-cao.js', 'js/loai-bao-cao.js', 'js/dia-diem.js',
   'js/hanh-trinh.js', 'js/camera-hanh-trinh.js', 'js/loai-canh-bao.js', 'js/nhac-nho.js', 'js/ban-do-offline.js',
   'js/lien-ket.js', 'js/obd.js', 'js/luat-duong.js', 'js/du-lieu-giao-thong.js', 'js/phi-cao-toc.js',
-  'js/dan-duong-thong-minh.js', 'du-lieu/phi-cao-toc.json'
+  'js/dan-duong-thong-minh.js', 'js/ve-tinh.js', 'du-lieu/phi-cao-toc.json'
 ];
 
 const NGUON_BAN_DO = [

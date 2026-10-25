@@ -6,6 +6,8 @@
 import { doc, ghi } from './kho.js';
 
 export const KHO_TAI = 'hawamap-ban-do-tai';
+/** Bộ đệm ô bản đồ đã xem (sw.js tự lưu, tự cắt bớt); xoá đi để tải lại bản đồ nền mới nhất. */
+export const KHO_BAN_DO = 'hawamap-ban-do';
 export const TOI_DA_O = 8000;
 const SONG_SONG = 6;
 

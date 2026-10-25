@@ -6,7 +6,7 @@
  * Ô không dùng tới trong 30 ngày thì xoá để không chiếm bộ nhớ.
  */
 import { idb } from './kho.js';
-import { cauTruyVanO, docDiemOverpass, khungO, truyVanOverpass } from './duong-xa.js';
+import { cauTruyVanO, docDiemOverpass, khungO, truyVanOverpass, oCanLamMoi, PHIEN_BAN_DIEM } from './duong-xa.js';
 
 export const CHU_KY_CAP_NHAT = 7 * 86400000;
 const BO_SAU = 30 * 86400000;
@@ -58,7 +58,7 @@ export class NguonDuLieuGiaoThong {
         if (!o) { can.push({ ma, lop }); continue; }
         this.bo.set(khoa, o);
         ds.push(o);
-        if (bayGio - o.capNhat > CHU_KY_CAP_NHAT && bayGio - (this.lanThu.get(khoa) || 0) > 3600000) this.choLamMoi.add(khoa);
+        if (oCanLamMoi(o, bayGio, CHU_KY_CAP_NHAT) && bayGio - (this.lanThu.get(khoa) || 0) > 3600000) this.choLamMoi.add(khoa);
         if (bayGio - (o.dungLuc || 0) > 86400000) { o.dungLuc = bayGio; this.kho.luu(o).catch(() => {}); }
       }
     }
@@ -87,7 +87,7 @@ export class NguonDuLieuGiaoThong {
             const d = await r.json();
             if (!r.ok) throw new Error(d.loi || 'Máy chủ lỗi ' + r.status);
             for (const m of phan) {
-              if (d.o && d.o[m]) ds.push(await this.luu(m, lop, d.o[m].capNhat, d.o[m].diem));
+              if (d.o && d.o[m]) ds.push(await this.luu(m, lop, d.o[m].capNhat, d.o[m].diem, d.o[m].pb));
               else conLai.push({ ma: m, lop });
             }
           } catch (e) {
@@ -99,7 +99,7 @@ export class NguonDuLieuGiaoThong {
     for (const { ma, lop } of conLai) {
       try {
         const d = await truyVanOverpass(cauTruyVanO(khungO(ma), lop));
-        ds.push(await this.luu(ma, lop, Date.now(), [...docDiemOverpass(d.elements).values()]));
+        ds.push(await this.luu(ma, lop, Date.now(), [...docDiemOverpass(d.elements).values()], PHIEN_BAN_DIEM));
       } catch (e) {
         loi.push(e);
       }
@@ -107,8 +107,8 @@ export class NguonDuLieuGiaoThong {
     return { ds, loi };
   }
 
-  async luu(ma, lop, capNhat, diem) {
-    const o = { khoa: ma + ':' + lop, ma, lop, capNhat, dungLuc: Date.now(), diem };
+  async luu(ma, lop, capNhat, diem, pb = 1) {
+    const o = { khoa: ma + ':' + lop, ma, lop, capNhat, dungLuc: Date.now(), diem, pb };
     const cu = this.bo.get(o.khoa);
     this.bo.set(o.khoa, o);
     try { await this.kho.luu(o); } catch (e) { /* bộ nhớ đầy: vẫn dùng trong phiên */ }
@@ -148,7 +148,7 @@ export class NguonDuLieuGiaoThong {
         soXoa++;
         continue;
       }
-      if (!tatCa && bayGio - o.capNhat <= CHU_KY_CAP_NHAT) continue;
+      if (!tatCa && !oCanLamMoi(o, bayGio, CHU_KY_CAP_NHAT)) continue;
       const kq = await this.taiMoi([{ ma: o.ma, lop: o.lop }]);
       if (kq.loi.length) soLoi++; else soLamMoi++;
     }
