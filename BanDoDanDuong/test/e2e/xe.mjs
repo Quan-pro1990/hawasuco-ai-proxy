@@ -30,8 +30,17 @@ async function moTrangGoc(vaiTro, { rong, cao, tiLe = 1 }) {
   const ctx = await trinhDuyet.newContext({ viewport: { width: rong, height: cao }, deviceScaleFactor: tiLe, locale: 'vi-VN', serviceWorkers: 'allow' });
   await ctx.addInitScript(([vt]) => {
     window.__tin = [];
+    // trạng thái giọng đọc giả lập; trả lời "hoiGiong" / "chonGiong" giống cau/GiongNoi.kt + TrungTam.kt
+    window.__giong = { tiengViet: true, dangDo: false, may: 'com.google.android.tts', giong: 'vi-vn-x-gft-local', chon: '',
+      ds: [{ ten: 'vi-vn-x-gft-local', canMang: false }, { ten: 'vi-vn-x-vif-network', canMang: true }] };
+    const baoGiong = () => setTimeout(() => window.hawamap && window.hawamap.goc.giongNoi(JSON.stringify(window.__giong)), 20);
     window.HawaMapAndroid = {
-      guiTin: (loai, du) => window.__tin.push({ loai, du: JSON.parse(du), luc: Date.now() }),
+      guiTin: (loai, du) => {
+        const d = JSON.parse(du);
+        window.__tin.push({ loai, du: d, luc: Date.now() });
+        if (loai === 'hoiGiong' || loai === 'sanSang') baoGiong();
+        if (loai === 'chonGiong') { window.__giong.chon = d.ten; baoGiong(); }
+      },
       cauHinh: () => JSON.stringify({ vaiTro: vt, nenTang: 'android' })
     };
     try { localStorage.setItem('hawamap.caidat', JSON.stringify({ tuDongBanDem: false })); } catch (e) { /* bỏ qua */ }
@@ -157,6 +166,16 @@ try {
   kiem((await dt.tin('noi')).some(n => n.chu.includes('Trần Phú')), 'nghe thử giọng đọc qua giọng của hệ điều hành');
   // giọng đọc của Android: thiếu tiếng Việt → nút cài, không đọc; có giọng → chọn giọng, gửi lựa chọn xuống Android
   kiem((await dt.tin('hoiGiong')).length >= 1, 'mở Cài đặt thì hỏi trạng thái giọng đọc của Android');
+  // Android trả lời ngay: trang Cài đặt không được vẽ lại liên tục (ô chọn bị thay mới thì không bấm chọn được)
+  await dt.page.evaluate(() => { window.__oChon = document.querySelector('select[data-cd="tenGiong"]'); });
+  await dt.page.waitForTimeout(1500);
+  const soHoi = (await dt.tin('hoiGiong')).length;
+  kiem(soHoi <= 2 && await dt.page.evaluate(() => window.__oChon === document.querySelector('select[data-cd="tenGiong"]')),
+    `trang Cài đặt đứng yên sau khi Android báo trạng thái giọng (hỏi ${soHoi} lần, ô chọn giọng không bị thay mới)`);
+  await dt.page.selectOption('select[data-cd="tenGiong"]', 'vi-vn-x-vif-network');
+  await dt.page.waitForTimeout(400);
+  kiem(await dt.page.inputValue('select[data-cd="tenGiong"]') === 'vi-vn-x-vif-network' && (await dt.tin('chonGiong')).some(t => t.ten === 'vi-vn-x-vif-network'),
+    'bấm chọn giọng đọc: giữ đúng lựa chọn và báo Android đổi giọng');
   await dt.page.evaluate(() => window.hawamap.goc.giongNoi(JSON.stringify({ tiengViet: false, dangDo: false, may: '', giong: '', chon: '', ds: [] })));
   await dt.page.waitForSelector('[data-hd="cai-giong-viet"]');
   await dt.page.click('[data-hd="cai-giong-viet"]');

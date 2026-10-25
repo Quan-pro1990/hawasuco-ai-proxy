@@ -1506,35 +1506,39 @@ function ghiChuGiong() {
   return '';
 }
 
-function trangCaiDat() {
-  if (laAppAndroid) guiGoc('hoiGiong');
-  const dong = m => {
-    if (m.html) return m.html();
-    if (m.muc) {
-      const v = mucCanhBao(m.muc);
-      return `<label class="cd-dong cd-muc"><span class="cd-ic" style="background:${m.mau}">${icon(m.icon)}</span><span>${esc(m.ten)}</span>
-        <select data-muc="${m.muc}">${MUC_CANH_BAO.map(([g, t]) => `<option value="${g}"${g === v ? ' selected' : ''}>${t}</option>`).join('')}</select></label>`;
-    }
-    if (m.hd) return `<button class="cd-dong cd-nut" data-hd="${m.hd}">${icon(m.icon)}<span>${esc(m.ten)}</span></button>`;
-    const v = caiDat[m.k];
-    if (m.loai === 'bat') return `<label class="cd-dong"><span>${esc(m.ten)}</span><span class="cong-tac"><input type="checkbox" data-cd="${m.k}" data-kieu="bat"${v ? ' checked' : ''}><span></span></span></label>`;
-    if (m.loai === 'chon') {
-      return `<label class="cd-dong"><span>${esc(m.ten)}</span><select data-cd="${m.k}" data-kieu="${m.so ? 'so' : 'chu'}">${m.ds().map(([g, t]) =>
-        `<option value="${esc(g)}"${String(g) === String(v) ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
-    }
-    if (m.loai === 'truot') return `<label class="cd-dong"><span>${esc(m.ten)}</span><input type="range" min="${m.min}" max="${m.max}" step="${m.buoc}" value="${v}" data-cd="${m.k}" data-kieu="so"></label>`;
-    return `<label class="cd-dong cot"><span>${esc(m.ten)}</span><input class="o-nhap" type="text" value="${esc(v)}" placeholder="${esc(m.goiY || '')}" data-cd="${m.k}" data-kieu="chu" spellcheck="false" autocomplete="off"></label>`;
-  };
-  moTrang('Cài đặt', NHOM_CAI_DAT.map(n => `<div class="nhom"><h4>${esc(n.ten)}</h4>${n.muc.filter(m => !m.chiAndroid || laAppAndroid).map(dong).join('')}</div>`).join(''));
+/** Một dòng của trang Cài đặt. */
+function dongCaiDat(m) {
+  if (m.html) return m.html();
+  if (m.muc) {
+    const v = mucCanhBao(m.muc);
+    return `<label class="cd-dong cd-muc"><span class="cd-ic" style="background:${m.mau}">${icon(m.icon)}</span><span>${esc(m.ten)}</span>
+      <select data-muc="${m.muc}">${MUC_CANH_BAO.map(([g, t]) => `<option value="${g}"${g === v ? ' selected' : ''}>${t}</option>`).join('')}</select></label>`;
+  }
+  if (m.hd) return `<button class="cd-dong cd-nut" data-hd="${m.hd}">${icon(m.icon)}<span>${esc(m.ten)}</span></button>`;
+  const v = caiDat[m.k];
+  if (m.loai === 'bat') return `<label class="cd-dong"><span>${esc(m.ten)}</span><span class="cong-tac"><input type="checkbox" data-cd="${m.k}" data-kieu="bat"${v ? ' checked' : ''}><span></span></span></label>`;
+  if (m.loai === 'chon') {
+    return `<label class="cd-dong"><span>${esc(m.ten)}</span><select data-cd="${m.k}" data-kieu="${m.so ? 'so' : 'chu'}">${m.ds().map(([g, t]) =>
+      `<option value="${esc(g)}"${String(g) === String(v) ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
+  }
+  if (m.loai === 'truot') return `<label class="cd-dong"><span>${esc(m.ten)}</span><input type="range" min="${m.min}" max="${m.max}" step="${m.buoc}" value="${v}" data-cd="${m.k}" data-kieu="so"></label>`;
+  return `<label class="cd-dong cot"><span>${esc(m.ten)}</span><input class="o-nhap" type="text" value="${esc(v)}" placeholder="${esc(m.goiY || '')}" data-cd="${m.k}" data-kieu="chu" spellcheck="false" autocomplete="off"></label>`;
 }
 
-/** Trang Cài đặt đang mở: vẽ lại khi trạng thái giọng đọc đổi (vừa dò xong, vừa cài giọng). */
-function veLaiCaiDatNeuMo() {
-  if (!$('#trang').hidden && $('#tieu-de-trang').textContent === 'Cài đặt') {
-    const y = $('#than-trang').scrollTop;
-    trangCaiDat();
-    $('#than-trang').scrollTop = y;
-  }
+const noiDungNhom = n => `<h4>${esc(n.ten)}</h4>${n.muc.filter(m => !m.chiAndroid || laAppAndroid).map(dongCaiDat).join('')}`;
+
+function trangCaiDat() {
+  moTrang('Cài đặt', NHOM_CAI_DAT.map((n, i) => `<div class="nhom" data-nhom="${i}">${noiDungNhom(n)}</div>`).join(''));
+}
+
+/**
+ * Trạng thái giọng đọc vừa đổi (dò xong, vừa cài / chọn giọng) mà trang Cài đặt đang mở: chỉ vẽ lại nhóm "Giọng nói".
+ * Không vẽ lại cả trang và không hỏi lại Android ở đây — hỏi lại thì Android trả lời, trang lại vẽ, lại hỏi… thành vòng lặp,
+ * các ô chọn bị thay mới liên tục nên không bấm chọn được.
+ */
+function veLaiNhomGiong() {
+  const el = !$('#trang').hidden && $('#tieu-de-trang').textContent === 'Cài đặt' && $('#than-trang .nhom[data-nhom="0"]');
+  if (el) el.innerHTML = noiDungNhom(NHOM_CAI_DAT[0]);
 }
 
 ngheDoiCaiDat(thay => {
@@ -2113,7 +2117,11 @@ const HD = {
   },
   'thoat-lai-xe': () => batLaiXe(false),
   // trang
-  'trang-cai-dat': () => { moMenu(false); trangCaiDat(); },
+  'trang-cai-dat': () => {
+    moMenu(false);
+    trangCaiDat();
+    if (laAppAndroid) guiGoc('hoiGiong');          // hỏi một lần khi mở trang (vừa cài giọng thì có danh sách mới)
+  },
   'trang-da-luu': () => { moMenu(false); trangDaLuu(); },
   'trang-hanh-trinh': () => { moMenu(false); trangHanhTrinh(); },
   'trang-bao-cao': () => { moMenu(false); trangBaoCaoCuaToi(); },
@@ -2420,9 +2428,10 @@ window.hawamap = {
     // trạng thái giọng đọc của Android (cau/GiongNoi.kt): có tiếng Việt không, danh sách giọng
     giongNoi: du => {
       const tt = typeof du === 'string' ? JSON.parse(du) : du;
+      const doi = JSON.stringify(tt) !== JSON.stringify(trangThaiGiongGoc());
       datGiongGoc(tt);
       caiDat.tenGiong = tt.chon || '';
-      veLaiCaiDatNeuMo();
+      if (doi) veLaiNhomGiong();
     },
     // bộ chuyển OBD-II Bluetooth thường của ứng dụng Android (cau/Obd.kt)
     obd: (loai, du) => { if (st.obd && st.obd.cong instanceof CongGoc) st.obd.cong.suKien(loai, du); }

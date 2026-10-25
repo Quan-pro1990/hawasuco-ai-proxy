@@ -14,8 +14,8 @@ android {
         applicationId = "vn.hawasuco.hawamap"
         minSdk = 26
         targetSdk = 35
-        versionCode = 10202
-        versionName = "1.2.2"
+        versionCode = 10203
+        versionName = "1.2.3"
     }
 
     signingConfigs {
