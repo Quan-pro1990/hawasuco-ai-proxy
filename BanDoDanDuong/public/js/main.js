@@ -36,6 +36,7 @@ const st = {
   cheDo: 'chinh',          // chinh | diadiem | danhmuc | lotrinh | danduong
   viTri: null,             // vị trí mới nhất
   cbCuoi: null,            // kết quả cảnh báo mới nhất
+  nghe: null,              // đang tìm bằng giọng nói: { goiYCu, coKetQua, loi, r (Web Speech) | goc (ứng dụng Android) }
   diaDiem: null,           // địa điểm đang xem
   danhMuc: null,           // { dm, ds, docTuyen }
   lt: null,                // lộ trình đang lập: { diem: [], phuongTien, tuyen: [], chon, loi, choGps, batDauNgay }
@@ -98,7 +99,10 @@ let camera = null;
 const tuGhi = new TuDongGhi();
 
 document.documentElement.dataset.giaoDien = layKieuBanDo(kieuMongMuon()).toi ? 'toi' : 'sang';
-if (!(window.SpeechRecognition || window.webkitSpeechRecognition)) document.documentElement.classList.add('khong-mic');
+// tìm bằng giọng nói: ứng dụng Android dùng bộ nhận dạng giọng nói của máy (WebView không có Web Speech API)
+const NhanDangGiong = window.SpeechRecognition || window.webkitSpeechRecognition;
+const ngheGoc = laAppAndroid && !!cauHinhGoc.nghe;
+if (laAppAndroid ? !ngheGoc : !NhanDangGiong) document.documentElement.classList.add('khong-mic');
 renderChip();
 datCheDo('chinh');
 nguonViTri.batDau();
@@ -411,7 +415,7 @@ const GOI_Y_O_TIM = {
   'them-dung': 'Thêm điểm dừng'
 };
 
-function moTimKiem(mucDich = 'xem') {
+function moTimKiem(mucDich = 'xem', { goPhim = true } = {}) {
   st.mucDichTim = mucDich;
   $('#man-tim').hidden = false;
   const o = $('#o-tim');
@@ -419,10 +423,11 @@ function moTimKiem(mucDich = 'xem') {
   o.placeholder = GOI_Y_O_TIM[mucDich] || (mucDich === 'diem:0' ? 'Chọn điểm xuất phát' : 'Chọn điểm đến');
   $('#nut-xoa-tim').hidden = true;
   renderTimRong();
-  setTimeout(() => o.focus(), 60);
+  if (goPhim) setTimeout(() => o.focus(), 60);
 }
 
 function dongTimKiem() {
+  if (st.nghe) dungNghe();
   $('#man-tim').hidden = true;
   $('#o-tim').blur();
   if (huyGoiY) huyGoiY.abort();
@@ -530,27 +535,73 @@ async function chonKetQua(kq) {
   }
 }
 
+/** Lỗi nhận dạng giọng nói (mã của Web Speech API và của ứng dụng Android) → câu báo; '' = không báo. */
+const LOI_NGHE = {
+  'not-allowed': 'Chưa cho phép dùng micro. Hãy cho phép quyền Micro cho trang này (biểu tượng ổ khoá cạnh địa chỉ trang) rồi thử lại',
+  'service-not-allowed': 'Trình duyệt không cho dùng nhận dạng giọng nói (Safari: bật Siri và Đọc chính tả trong Cài đặt)',
+  'no-speech': 'Không nghe thấy tiếng nói, bấm micro rồi nói lại',
+  'audio-capture': 'Không dùng được micro (micro đang bận hoặc không có micro)',
+  network: 'Tìm bằng giọng nói cần kết nối Internet',
+  'language-not-supported': 'Trình duyệt chưa nhận dạng được tiếng Việt',
+  khongco: 'Máy chưa có dịch vụ nhận dạng giọng nói: hãy cài hoặc bật ứng dụng Google rồi thử lại',
+  aborted: '', huy: ''
+};
+
+/** Bấm micro: nghe tên địa điểm rồi tìm. Bấm lần nữa khi đang nghe thì thôi. */
 function noiTim() {
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) return thongBao('Trình duyệt không hỗ trợ tìm bằng giọng nói');
-  if ($('#man-tim').hidden) moTimKiem(st.mucDichTim === 'xem' ? 'xem' : st.mucDichTim);
+  if (st.nghe) return dungNghe();
+  if (!ngheGoc && !NhanDangGiong) return thongBao('Trình duyệt không hỗ trợ tìm bằng giọng nói, hãy dùng Chrome hoặc Edge', { loai: 'loi' });
+  if (!ngheGoc && !window.isSecureContext) return thongBao('Tìm bằng giọng nói cần mở HawaMap qua địa chỉ https://', { loai: 'loi', thoiGian: 5000 });
+  if ($('#man-tim').hidden) moTimKiem('xem', { goPhim: false });
+  else $('#o-tim').blur();
   const o = $('#o-tim');
-  const r = new SR();
+  st.nghe = { goiYCu: o.placeholder, coKetQua: false, loi: null };
+  o.placeholder = 'Đang nghe… hãy nói tên địa điểm';
+  document.body.classList.add('dang-nghe');
+  if (ngheGoc) { st.nghe.goc = true; guiGoc('ngheTim'); return; }
+  const r = st.nghe.r = new NhanDangGiong();
   r.lang = 'vi-VN';
   r.interimResults = false;
   r.maxAlternatives = 1;
-  const goiYCu = o.placeholder;
-  o.placeholder = 'Đang nghe… hãy nói tên địa điểm';
-  document.body.classList.add('dang-nghe');
-  r.onresult = e => {
-    const s = e.results[0][0].transcript;
-    o.value = s;
-    $('#nut-xoa-tim').hidden = false;
-    timGoiY(s);
-  };
-  r.onerror = () => thongBao('Không nghe rõ, vui lòng thử lại');
-  r.onend = () => { o.placeholder = goiYCu; document.body.classList.remove('dang-nghe'); };
-  try { r.start(); } catch (e) { thongBao('Không bật được micro'); }
+  r.onresult = e => nhanLoiNoi(e.results[0] && e.results[0][0] ? e.results[0][0].transcript : '');
+  r.onerror = e => { if (st.nghe) st.nghe.loi = e.error || 'loi'; };
+  r.onend = () => xongNghe();
+  try { r.start(); } catch (e) { st.nghe.loi = 'audio-capture'; xongNghe(); }
+}
+
+function dungNghe() {
+  const n = st.nghe;
+  if (n && n.r) { n.loi = 'aborted'; try { n.r.abort(); } catch (e) { xongNghe(); } } else xongNghe('huy');
+}
+
+function nhanLoiNoi(chu) {
+  if (!st.nghe || !chu || !chu.trim()) return;
+  st.nghe.coKetQua = true;
+  const o = $('#o-tim');
+  o.value = chu.trim();
+  $('#nut-xoa-tim').hidden = false;
+  timGoiY(o.value);
+}
+
+/** Kết thúc một lần nghe; `loi` (mã lỗi) nếu có. Không có kết quả mà cũng không có lỗi: báo không nghe rõ. */
+function xongNghe(loi) {
+  const n = st.nghe;
+  if (!n) return;
+  st.nghe = null;
+  $('#o-tim').placeholder = n.goiYCu;
+  document.body.classList.remove('dang-nghe');
+  if (n.coKetQua) return;
+  const ma = loi || n.loi || 'khongnghe';
+  const cau = ma in LOI_NGHE ? LOI_NGHE[ma] : 'Không nghe rõ, vui lòng thử lại';
+  if (cau) thongBao(cau, { loai: 'loi', thoiGian: cau.length > 50 ? 6000 : 3500 });
+}
+
+/** Ứng dụng Android trả kết quả nhận dạng: { chu } hoặc { loi: 'huy' | 'khongnghe' | 'khongco' }. */
+function ketQuaNgheGoc(du) {
+  const kq = typeof du === 'string' ? JSON.parse(du) : du || {};
+  if (!st.nghe || !st.nghe.goc) return;
+  if (kq.chu) nhanLoiNoi(kq.chu);
+  xongNghe(kq.loi);
 }
 
 // ================================================================== chọn trên bản đồ (tâm ngắm)
@@ -2455,6 +2506,8 @@ window.hawamap = {
       caiDat.tenGiong = tt.chon || '';
       if (doi) veLaiNhomGiong();
     },
+    // kết quả tìm bằng giọng nói của ứng dụng Android (MainActivity: RecognizerIntent)
+    ketQuaNghe: du => ketQuaNgheGoc(du),
     // bộ chuyển OBD-II Bluetooth thường của ứng dụng Android (cau/Obd.kt)
     obd: (loai, du) => { if (st.obd && st.obd.cong instanceof CongGoc) st.obd.cong.suKien(loai, du); }
   }

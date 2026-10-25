@@ -4,8 +4,9 @@
  *
  * Trang → ứng dụng:  guiGoc(loai, du)
  *   sanSang · noi {chu, chen, amLuong, toc} · danDuong {trạng thái} · batDau {tuyen, diemDen, tenDen, phuongTien, moPhong}
- *   ketThuc · traLoi {id, ketQua | loi} · giuManHinh {bat} · luuTep {ten, kieu, base64}
- * Ứng dụng → trang:  window.hawamap.goc.viTri(...), .lenh(id, ten, thamSo), .dongBoBatDau(du), .dongBoKetThuc()
+ *   ketThuc · traLoi {id, ketQua | loi} · giuManHinh {bat} · luuTep {ten, kieu, base64} · ngheTim (tìm bằng giọng nói, Android)
+ * Ứng dụng → trang:  window.hawamap.goc.viTri(...), .lenh(id, ten, thamSo), .dongBoBatDau(du), .dongBoKetThuc(),
+ *   .ketQuaNghe({chu} | {loi})
  */
 const w = typeof window !== 'undefined' ? window : {};
 const android = w.HawaMapAndroid || null;

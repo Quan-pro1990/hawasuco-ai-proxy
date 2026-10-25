@@ -1,6 +1,8 @@
 package vn.hawasuco.hawamap
 
 import android.Manifest
+import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
@@ -8,6 +10,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.speech.RecognizerIntent
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.webkit.PermissionRequest
@@ -50,6 +53,18 @@ class MainActivity : ComponentActivity() {
             if (coQuyenBluetooth()) ketNoiObd().chonThietBi()
             else trang.goi("window.hawamap&&hawamap.goc.obd('loi','Cần quyền Thiết bị lân cận (Bluetooth) để kết nối OBD')")
         }
+    }
+
+    /** Tìm bằng giọng nói: hộp nghe của máy (thường là của Google), chữ nghe được trả cho trang (main.js ketQuaNgheGoc). */
+    private val ngheGiong = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { kq ->
+        val chu = kq.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull { it.isNotBlank() }
+        traKetQuaNghe(
+            when {
+                kq.resultCode == Activity.RESULT_OK && chu != null -> JSONObject().put("chu", chu)
+                kq.resultCode == Activity.RESULT_CANCELED -> JSONObject().put("loi", "huy")
+                else -> JSONObject().put("loi", "khongnghe")
+            }
+        )
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -188,6 +203,28 @@ class MainActivity : ComponentActivity() {
         if (duoc.isEmpty()) request.deny() else request.grant(duoc.toTypedArray())
     }
 
+    /**
+     * WebView không có nhận dạng giọng nói (Web Speech API) như Chrome: mở hộp nghe tiếng Việt của máy.
+     * Không cần quyền micro cho HawaMap, ứng dụng nghe (Google) tự xin quyền của nó.
+     */
+    private fun ngheTim() {
+        val i = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+            .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            .putExtra(RecognizerIntent.EXTRA_LANGUAGE, "vi-VN")
+            .putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "vi-VN")
+            .putExtra(RecognizerIntent.EXTRA_PROMPT, "Nói tên địa điểm cần tìm")
+            .putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+        try {
+            ngheGiong.launch(i)
+        } catch (e: ActivityNotFoundException) {
+            traKetQuaNghe(JSONObject().put("loi", "khongco"))
+        }
+    }
+
+    private fun traKetQuaNghe(du: JSONObject) {
+        trang.goi("window.hawamap&&hawamap.goc.ketQuaNghe(${JSONObject.quote(du.toString())})")
+    }
+
     private fun coQuyenBluetooth(): Boolean = Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
         checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
 
@@ -200,6 +237,7 @@ class MainActivity : ComponentActivity() {
                 xinQuyen.launch(arrayOf(Manifest.permission.BLUETOOTH_CONNECT))
             }
             "obdGui" -> obd?.gui(du.optString("chuoi"))
+            "ngheTim" -> ngheTim()
             "hud" -> BongBong.capNhat(du)
             // người dùng bật bong bóng nổi: mở trang cấp quyền "Hiển thị trên ứng dụng khác" nếu chưa có
             "xinQuyenNoi" -> if (!Settings.canDrawOverlays(this)) {

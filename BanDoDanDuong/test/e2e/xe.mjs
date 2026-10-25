@@ -41,7 +41,7 @@ async function moTrangGoc(vaiTro, { rong, cao, tiLe = 1 }) {
         if (loai === 'hoiGiong' || loai === 'sanSang') baoGiong();
         if (loai === 'chonGiong') { window.__giong.chon = d.ten; baoGiong(); }
       },
-      cauHinh: () => JSON.stringify({ vaiTro: vt, nenTang: 'android' })
+      cauHinh: () => JSON.stringify({ vaiTro: vt, nenTang: 'android', nghe: vt === 'dienthoai' })
     };
     try { localStorage.setItem('hawamap.caidat', JSON.stringify({ tuDongBanDem: false })); } catch (e) { /* bỏ qua */ }
   }, [vaiTro]);
@@ -205,6 +205,25 @@ try {
   kiem(moLk === true && (await dt.page.innerText('#tam-duoi')).includes('Hồ Gươm'), 'mở địa điểm từ liên kết geo: do Android chuyển tới');
   kiem(await dt.lenh('moLienKet', { chuoi: 'không có địa điểm nào' }) === false, 'báo lại khi nội dung chia sẻ không có địa điểm');
   await dt.page.click('#tam-duoi [data-hd="dong-tam"]');
+
+  // tìm bằng giọng nói: WebView không có Web Speech API, trang nhờ ứng dụng mở hộp nghe (RecognizerIntent) rồi nhận chữ về
+  kiem(await dt.page.locator('#lop-chinh .nut-mic').isVisible(), 'ứng dụng Android: hiện nút micro');
+  await dt.page.click('#lop-chinh .nut-mic');
+  kiem((await dt.tin('ngheTim')).length === 1 && await dt.page.evaluate(() => document.body.classList.contains('dang-nghe')), 'bấm micro: nhờ ứng dụng mở hộp nghe giọng nói');
+  await dt.page.evaluate(() => window.hawamap.goc.ketQuaNghe(JSON.stringify({ chu: 'Nhà hát Lớn' })));
+  await dt.page.waitForSelector('.dong-tim[data-hd="chon-kq"]', { timeout: 5000 }).catch(() => {});
+  kiem(await dt.page.inputValue('#o-tim') === 'Nhà hát Lớn' && (await dt.page.locator('.dong-tim[data-hd="chon-kq"]').count()) > 0,
+    'nhận chữ từ ứng dụng: điền ô tìm và hiện gợi ý');
+  await dt.page.click('#man-tim .nut-mic');
+  await dt.page.evaluate(() => window.hawamap.goc.ketQuaNghe(JSON.stringify({ loi: 'khongco' })));
+  await dt.page.waitForTimeout(200);
+  kiem(/chưa có dịch vụ nhận dạng giọng nói/.test(await dt.page.innerText('#thong-bao')) && !(await dt.page.evaluate(() => document.body.classList.contains('dang-nghe'))),
+    'máy không có dịch vụ nhận dạng: báo cài ứng dụng Google');
+  await dt.page.click('#man-tim .nut-mic');
+  await dt.page.evaluate(() => { document.querySelector('#thong-bao').textContent = ''; window.hawamap.goc.ketQuaNghe(JSON.stringify({ loi: 'huy' })); });
+  await dt.page.waitForTimeout(200);
+  kiem(!/nghe/i.test(await dt.page.innerText('#thong-bao')), 'đóng hộp nghe: không báo lỗi');
+  await dt.page.click('[data-hd="dong-tim"]');
 
   // OBD-II qua bộ chuyển Bluetooth thường (cau/Obd.kt): trang gửi lệnh ELM327 qua obdGui, "Android" trả lời qua goc.obd
   await dt.page.click('[data-hd="menu"]');

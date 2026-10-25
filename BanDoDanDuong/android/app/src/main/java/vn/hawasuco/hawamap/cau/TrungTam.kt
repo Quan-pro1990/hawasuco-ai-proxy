@@ -64,6 +64,8 @@ object TrungTam {
         .put("vaiTro", vaiTro.ma)
         .put("nenTang", "android")
         .put("hud", "trai")
+        // tìm bằng giọng nói qua ứng dụng (MainActivity.ngheTim), chỉ trên điện thoại
+        .put("nghe", vaiTro == VaiTro.DIEN_THOAI)
         .put("mayChuBaoCao", app.getString(R.string.may_chu_bao_cao))
 
     fun nhanTin(tu: TrangWeb, loai: String, duChuoi: String) {

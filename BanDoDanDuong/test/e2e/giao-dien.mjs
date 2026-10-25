@@ -38,6 +38,26 @@ async function moTrang({ rong = 412, cao = 860 } = {}) {
   });
   // tắt tự chuyển bản đồ ban đêm để ảnh chụp giống nhau dù chạy lúc nào
   await ctx.addInitScript(() => { try { localStorage.setItem('hawamap.caidat', JSON.stringify({ tuDongBanDem: false })); } catch (e) { /* bỏ qua */ } });
+  // nhận dạng giọng nói giả (Chromium không có máy chủ nhận dạng khi kiểm thử): window.__nghe = { chu } hoặc { loi }
+  await ctx.addInitScript(() => {
+    window.__nghe = { chu: 'Nhà hát Lớn' };
+    window.__soLanNghe = 0;
+    class NgheGia {
+      start() {
+        window.__soLanNghe++;
+        const kq = window.__nghe;
+        this.hen = setTimeout(() => {
+          if (kq.loi) this.onerror && this.onerror({ error: kq.loi });
+          else if (kq.chu) this.onresult && this.onresult({ results: [[{ transcript: kq.chu }]] });
+          this.onend && this.onend();
+        }, kq.cho || 150);
+      }
+      abort() { clearTimeout(this.hen); this.onerror && this.onerror({ error: 'aborted' }); this.onend && this.onend(); }
+      stop() { this.abort(); }
+    }
+    Object.defineProperty(window, 'webkitSpeechRecognition', { value: NgheGia, configurable: true, writable: true });
+    Object.defineProperty(window, 'SpeechRecognition', { value: NgheGia, configurable: true, writable: true });
+  });
   await giaLapMang(ctx);
   const page = await ctx.newPage();
   const loi = [];
@@ -81,6 +101,31 @@ try {
   kiem(viTriChon && Math.abs(viTriChon[0] - tamSau[0]) < 1e-6 && Math.abs(viTriChon[1] - tamSau[1]) < 1e-6, 'chọn đúng điểm dưới ghim sau khi kéo');
   await page.click('#tam-duoi [data-hd="dong-tam"]').catch(() => {});
   await page.waitForTimeout(400);
+
+  // tìm bằng giọng nói: bấm micro ở màn hình chính → mở ô tìm, điền câu nghe được, hiện gợi ý
+  kiem(await page.locator('#lop-chinh .nut-mic').isVisible(), 'hiện nút micro tìm bằng giọng nói');
+  await page.click('#lop-chinh .nut-mic');
+  kiem(await page.evaluate(() => document.body.classList.contains('dang-nghe') && !document.querySelector('#man-tim').hidden), 'bấm micro: mở ô tìm kiếm, đang nghe');
+  await page.waitForSelector('.dong-tim[data-hd="chon-kq"]', { timeout: 5000 }).catch(() => {});
+  kiem(await page.inputValue('#o-tim') === 'Nhà hát Lớn' && (await page.locator('.dong-tim[data-hd="chon-kq"]').count()) > 0 &&
+    !(await page.evaluate(() => document.body.classList.contains('dang-nghe'))), 'tìm bằng giọng nói: điền câu nghe được và hiện gợi ý');
+  await chup(page, '02c-tim-giong-noi');
+  await page.evaluate(() => { window.__nghe = { loi: 'not-allowed' }; });
+  await page.click('#man-tim .nut-mic');
+  await page.waitForFunction(() => /Chưa cho phép dùng micro/.test(document.querySelector('#thong-bao').textContent), null, { timeout: 3000 }).catch(() => {});
+  kiem(/Chưa cho phép dùng micro/.test(await page.innerText('#thong-bao')), 'chặn quyền micro: báo rõ cách cho phép');
+  await page.evaluate(() => { window.__nghe = { loi: 'no-speech' }; });
+  await page.click('#man-tim .nut-mic');
+  await page.waitForFunction(() => /Không nghe thấy tiếng nói/.test(document.querySelector('#thong-bao').textContent), null, { timeout: 3000 }).catch(() => {});
+  kiem(/Không nghe thấy tiếng nói/.test(await page.innerText('#thong-bao')), 'không nói gì: báo nói lại');
+  // bấm micro lần nữa khi đang nghe thì thôi nghe, không báo lỗi
+  await page.evaluate(() => { window.__nghe = { chu: 'Hồ Gươm', cho: 3000 }; document.querySelector('#thong-bao').textContent = ''; });
+  await page.click('#man-tim .nut-mic');
+  await page.click('#man-tim .nut-mic');
+  await page.waitForTimeout(300);
+  kiem(!(await page.evaluate(() => document.body.classList.contains('dang-nghe'))) && !/Không nghe/.test(await page.innerText('#thong-bao')) &&
+    await page.inputValue('#o-tim') === 'Nhà hát Lớn', 'bấm micro lần nữa: thôi nghe');
+  await page.click('[data-hd="dong-tim"]');
 
   await page.click('.o-tim');
   await page.waitForSelector('#man-tim:not([hidden]) .luoi-danh-muc');

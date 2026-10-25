@@ -15,7 +15,7 @@ Muốn build lại bằng tay: tab **Actions** → **Build APK HawaMap** → **R
 1. Chép tệp APK sang điện thoại (Zalo, Google Drive, email, hoặc cáp USB).
 2. Trên điện thoại, mở tệp APK. Lần đầu Android hỏi quyền **Cài ứng dụng không rõ nguồn gốc** cho ứng dụng đang mở tệp (Tệp, Chrome, Zalo…): bật cho phép rồi quay lại.
 3. Bấm **Cài đặt**. Nếu Google Play Protect cảnh báo ứng dụng lạ: bấm **Thông tin chi tiết** → **Vẫn cài đặt**.
-4. Mở HawaMap, cho phép **vị trí** (dẫn đường, cảnh báo tốc độ), **thông báo** (dẫn đường chạy nền); micro, camera chỉ cần khi dùng tìm bằng giọng nói, camera hành trình.
+4. Mở HawaMap, cho phép **vị trí** (dẫn đường, cảnh báo tốc độ), **thông báo** (dẫn đường chạy nền); micro, camera chỉ cần khi dùng camera hành trình. Tìm bằng giọng nói dùng hộp nghe của Google: lần đầu Google có thể hỏi quyền micro cho chính nó.
 
 Cần Android 8.0 trở lên. Bản sau cài đè được lên bản trước (cùng khoá ký), không mất dữ liệu.
 
@@ -55,6 +55,7 @@ Android Auto **chỉ hiện ứng dụng cài từ Google Play**, trừ khi bậ
 | Không kết nối không dây được | Kiểm tra xe / bộ chuyển có hỗ trợ không dây; bật Bluetooth và Wi-Fi; xoá ghép đôi cũ trên xe và trên điện thoại rồi ghép lại; thử cắm cáp một lần |
 | Điện thoại báo "Ứng dụng chưa được cài đặt" | Gỡ bản HawaMap cũ có khoá ký khác rồi cài lại |
 | Giọng dẫn đường không phải tiếng Việt, hoặc không đọc | Vào HawaMap → **Cài đặt** → **Giọng nói**: dòng đầu cho biết máy có giọng tiếng Việt chưa. Chưa có thì bấm **Cài giọng tiếng Việt** (cài "Dịch vụ lời nói của Google" và tải tiếng Việt), xong quay lại HawaMap. Có nhiều giọng thì chọn ở mục **Giọng đọc tiếng Việt**, bấm **Nghe thử** |
+| Bấm micro tìm bằng giọng nói báo "chưa có dịch vụ nhận dạng giọng nói" | Cài / bật ứng dụng **Google** (hoặc "Dịch vụ lời nói của Google") từ Google Play; trong ứng dụng Google cho phép **Micro**. Muốn nhận dạng khi không có mạng: ứng dụng Google → Cài đặt → Giọng nói → Nhận dạng giọng nói ngoại tuyến → tải **Tiếng Việt** |
 | Bản đồ trên xe trắng hoặc không có vị trí | Cho phép quyền vị trí cho HawaMap; mở HawaMap trên điện thoại một lần trước khi kết nối xe |
 | Muốn thử trên máy tính, không cần xe | Dùng Desktop Head Unit (DHU) theo README, mục "Build Android (Android Auto)" |
 
