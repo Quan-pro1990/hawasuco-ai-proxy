@@ -134,3 +134,37 @@ test('giãn cách lần thử khi Overpass lỗi hoặc máy chủ vẫn trả b
     assert.equal(lan, 1);
   } finally { tra(); }
 });
+
+test('"Cập nhật ngay": máy chủ lấy bản OpenStreetMap mới trong ngày thay cho bản lưu cả tuần', async () => {
+  const thuMuc = await fs.mkdtemp(path.join(os.tmpdir(), 'hawamap-gt-'));
+  let goi = 0;
+  const layMang = async () => { goi++; return { ok: true, json: async () => overpassDiemDayDu() }; };
+  const kho = taoKhoGiaoThong({ thuMuc: path.join(thuMuc, 'giao-thong'), layMang });
+  await kho.lay('2858_1110');
+  const tep = path.join(thuMuc, 'giao-thong', '2858_1110.json');
+  const o = JSON.parse(await fs.readFile(tep, 'utf8'));
+  await fs.writeFile(tep, JSON.stringify({ ...o, capNhat: Date.now() - 2 * NGAY }));
+  // bình thường: ô 2 ngày tuổi vẫn còn hạn (7 ngày), không gọi Overpass
+  await kho.lay('2858_1110');
+  await new Promise(ok => setTimeout(ok, 30));
+  assert.equal(goi, 1);
+  // người dùng bấm "Cập nhật ngay": chờ tải lại xong rồi trả bản mới
+  const moi = await kho.lay('2858_1110', 'chinh', Date.now(), { moi: true });
+  assert.equal(goi, 2);
+  assert.ok(Date.now() - moi.capNhat < 60000);
+  // vừa tải trong ngày: không gọi lại
+  await kho.lay('2858_1110', 'chinh', Date.now(), { moi: true });
+  assert.equal(goi, 2);
+
+  // qua API: moi=1
+  await fs.writeFile(tep, JSON.stringify({ ...o, capNhat: Date.now() - 2 * NGAY }));
+  const mc = taoMayChu({ thuMucDuLieu: thuMuc, ghiLog: false, layMang, henGio: false });
+  await new Promise(ok => mc.listen(0, '127.0.0.1', ok));
+  const goc = `http://127.0.0.1:${mc.address().port}`;
+  try {
+    const r = await (await fetch(goc + '/api/giao-thong?o=2858_1110&moi=1')).json();
+    assert.ok(Date.now() - r.o['2858_1110'].capNhat < 60000);
+  } finally {
+    await new Promise(ok => mc.close(ok));
+  }
+});

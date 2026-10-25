@@ -71,8 +71,8 @@ export class NguonDuLieuGiaoThong {
     return { ds, loi };
   }
 
-  /** Tải các ô từ máy chủ (nếu có) hoặc Overpass rồi lưu vào máy. */
-  async taiMoi(can) {
+  /** Tải các ô từ máy chủ (nếu có) hoặc Overpass rồi lưu vào máy. `moi`: nhờ máy chủ lấy bản mới trong ngày. */
+  async taiMoi(can, { moi = false } = {}) {
     const ds = [], loi = [];
     let conLai = can;
     const mc = this.layMayChu();
@@ -83,7 +83,7 @@ export class NguonDuLieuGiaoThong {
         for (let i = 0; i < ma.length; i += 9) {
           const phan = ma.slice(i, i + 9);
           try {
-            const r = await fetch(`${mc}/giao-thong?lop=${lop}&o=${phan.join(',')}`, { cache: 'no-store' });
+            const r = await fetch(`${mc}/giao-thong?lop=${lop}&o=${phan.join(',')}${moi ? '&moi=1' : ''}`, { cache: 'no-store' });
             const d = await r.json();
             if (!r.ok) throw new Error(d.loi || 'Máy chủ lỗi ' + r.status);
             for (const m of phan) {
@@ -149,7 +149,7 @@ export class NguonDuLieuGiaoThong {
         continue;
       }
       if (!tatCa && !oCanLamMoi(o, bayGio, CHU_KY_CAP_NHAT)) continue;
-      const kq = await this.taiMoi([{ ma: o.ma, lop: o.lop }]);
+      const kq = await this.taiMoi([{ ma: o.ma, lop: o.lop }], { moi: tatCa });
       if (kq.loi.length) soLoi++; else soLamMoi++;
     }
     return { soO: ds.length - soXoa, soLamMoi, soXoa, soLoi };
@@ -162,6 +162,7 @@ export class NguonDuLieuGiaoThong {
     return {
       soO: new Set(ds.map(o => o.ma)).size,
       soDiem: ds.reduce((t, o) => t + o.diem.length, 0),
+      soBien: ds.reduce((t, o) => t + o.diem.filter(d => d.bien).length, 0),
       cuNhat: luc.length ? Math.min(...luc) : null,
       moiNhat: luc.length ? Math.max(...luc) : null
     };

@@ -32,7 +32,7 @@ import { taoKhoGiaoThong } from './kho-giao-thong.js';
 
 const THU_MUC = path.dirname(fileURLToPath(import.meta.url));
 const THU_MUC_WEB = path.join(THU_MUC, 'public');
-const PHIEN_BAN = '1.2.6';
+const PHIEN_BAN = '1.2.7';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8',
@@ -196,10 +196,12 @@ export function taoMayChu({
       if (quaGioiHan('gt:' + ip, 300)) return guiJson(res, 429, { loi: 'Quá nhiều yêu cầu, vui lòng thử lại sau ít phút' });
       const ds = (url.searchParams.get('o') || '').split(',').filter(Boolean);
       const lop = url.searchParams.get('lop') || 'chinh';
+      // moi=1: người dùng bấm "Cập nhật ngay" → ô cũ hơn 1 ngày tải lại từ OpenStreetMap (giới hạn riêng để không quá tải Overpass)
+      const moi = url.searchParams.get('moi') === '1' && !quaGioiHan('gtm:' + ip, 60);
       if (!ds.length || ds.length > 9 || !ds.every(laMaO) || (lop !== 'chinh' && lop !== 'nho')) return guiJson(res, 400, { loi: 'Danh sách ô không hợp lệ' });
       const o = {}, loi = {};
       await Promise.all(ds.map(async ma => {
-        try { const x = await khoGT.lay(ma, lop); o[ma] = { capNhat: x.capNhat, pb: x.pb || 1, diem: x.diem }; } catch (e) { loi[ma] = e.message; }
+        try { const x = await khoGT.lay(ma, lop, Date.now(), { moi }); o[ma] = { capNhat: x.capNhat, pb: x.pb || 1, diem: x.diem }; } catch (e) { loi[ma] = e.message; }
       }));
       if (!Object.keys(o).length) return guiJson(res, 502, { loi: 'Không lấy được dữ liệu giao thông', chiTiet: loi });
       return guiJson(res, 200, { o, loi });
@@ -233,6 +235,7 @@ export function taoMayChu({
       const kieu = LOAI_BAO_CAO[d.loai];
       const lng = Number(d.lng), lat = Number(d.lat);
       if (!kieu) return guiJson(res, 400, { loi: 'Loại báo cáo không hợp lệ' });
+      if (kieu.batBuocPhu && !(kieu.phu && kieu.phu[d.phu])) return guiJson(res, 400, { loi: 'Chưa chọn loại ' + kieu.ten.toLowerCase() });
       if (!isFinite(lng) || !isFinite(lat) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return guiJson(res, 400, { loi: 'Toạ độ không hợp lệ' });
       if (!d.thietBi || String(d.thietBi).length > 100) return guiJson(res, 400, { loi: 'Thiếu mã thiết bị' });
       const bayGio = Date.now();

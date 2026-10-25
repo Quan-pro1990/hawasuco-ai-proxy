@@ -9,7 +9,7 @@ import { khoangCach, phuongVi, lechGoc, chieuLenDoan, timChiSo, diemTaiS, tichLu
 import { quangDuongNoi, thoiGianTruoc, tocDoKmh } from './dinh-dang.js';
 import { LOAI_BAO_CAO } from './loai-bao-cao.js';
 import { LOAI_CANH_BAO, BIEN_RE, NGUY_HIEM, mucCanhBao, kcBaoTruoc } from './loai-canh-bao.js';
-import { camPhuongTien, diNguocChieu, chieuMotChieu, camDungDo, camVuot, BIEN_VN, apDungTheoNgay, chuBien } from './luat-duong.js';
+import { camPhuongTien, diNguocChieu, chieuMotChieu, camDungDo, camVuot, BIEN_VN, apDungTheoNgay, chuBien, bieuTuongBien } from './luat-duong.js';
 
 const LOAI_CAMERA = new Set(['camera', 'cameraden', 'cameratb', 'cameragiamsat', 'kiemtra']);
 
@@ -84,6 +84,7 @@ export class CanhBao {
     this.ghBaoTruocLuc = 0;
     this.phienDuong = -1;
     this.kdc = null;               // đang trong khu đông dân cư?
+    this.huongBien = new Map();    // id biển theo chiều + phiên dữ liệu đường → hướng đi biển áp dụng
     this.kdcGanDay = [];
     this.donLuc = Date.now();
     this.luat = { duongCam: null, nguocChieu: false, camDungDo: null, camVuot: null };
@@ -267,7 +268,7 @@ export class CanhBao {
         // biển báo Việt Nam: biển riêng cho ô tô / xe máy, biển cấm đỗ ngày chẵn / lẻ chỉ áp dụng đúng ngày
         const b = BIEN_VN[d.bien];
         if (!b || (b.xe && b.xe !== phuongTien) || !apDungTheoNgay(b.ngay)) continue;
-        Object.assign(x, { ten: chuBien(b.ten, d.so), nghe: chuBien(b.nghe, d.so), icon: b.so ? `bs-${b.so}-${d.so}` : b.icon, het: !!b.het });
+        Object.assign(x, { ten: chuBien(b.ten, d.so), nghe: chuBien(b.nghe, d.so), icon: bieuTuongBien(d.bien, d.so), het: !!b.het });
         if (b.so) x.gioiHan = null;          // số đã ghi trên biển
       }
       if (d.loai === 'thuphi' && this.layPhi) {
@@ -286,6 +287,20 @@ export class CanhBao {
       if (b.loai === 'camera') {
         const loai = (kieu.phu[b.phu] || {}).canhBao || 'camera', k = LOAI_CANH_BAO[loai], muc = mucCanhBao(loai);
         if (muc) ds.push({ id: 'bc' + b.id, loai, viTri, ten: k.ten, icon: k.icon, mau: k.mau, muc, kcBao: kcBaoTruoc(loai), gioiHan: null, baoCao: true });
+      } else if (b.loai === 'bienbao') {
+        // biển báo do cộng đồng báo: như biển trong dữ liệu; báo tại chỗ khi đang đi thì chỉ áp dụng cho hướng đi lúc báo
+        const v = kieu.phu[b.phu], s = v && BIEN_VN[v.bien];
+        if (!s || (s.xe && s.xe !== phuongTien) || !apDungTheoNgay(s.ngay)) continue;
+        // biển đã có trong dữ liệu OpenStreetMap (cùng biển, cách < 40 m): không báo lần nữa
+        if (ds.some(d => d.bien === v.bien && !d.baoCao && khoangCach(d.viTri, viTri) < 40)) continue;
+        const muc = mucCanhBao(s.loai);
+        if (muc) {
+          ds.push({
+            id: 'bc' + b.id, loai: s.loai, bien: v.bien, so: v.so, viTri, ten: chuBien(s.ten, v.so), nghe: chuBien(s.nghe, v.so),
+            icon: bieuTuongBien(v.bien, v.so), mau: LOAI_CANH_BAO[s.loai].mau, muc, kcBao: kcBaoTruoc(s.loai), het: !!s.het,
+            gioiHan: null, baoCao: true, huongAp: b.huong == null ? null : b.huong
+          });
+        }
       } else if (mucBc) {
         ds.push({
           id: 'bc' + b.id, loai: 'baocao', loaiBaoCao: b.loai, viTri, ten: kieu.ten, icon: kieu.icon, mau: kieu.mau, muc: mucBc,
@@ -323,6 +338,12 @@ export class CanhBao {
         if (goc < 60 && thang * Math.sin(goc * Math.PI / 180) < lech) kc = thang;
       }
       if (kc == null || kc > d.kcBao) continue;
+      // biển chỉ áp dụng một chiều: bỏ khi xe (hoặc tuyến tại chỗ biển) đi hướng khác
+      const huongAp = this.huongApDung(d);
+      if (huongAp != null) {
+        const huongDi = dd ? diemTaiS(dd.tuyen.toaDo, dd.tuyen.tichLuy, dd.tt.s + kc).huong : vt.huong;
+        if (huongDi == null || Math.abs(lechGoc(huongDi, huongAp)) > 60) continue;
+      }
       // hai cửa của một hầm: chỉ lấy cửa gần hơn
       if (d.cung) { if (daXet.has(d.cung)) continue; daXet.add(d.cung); d.id = d.cung; }
       ds.push({ ...d, kc });
@@ -348,6 +369,29 @@ export class CanhBao {
     // thẻ cảnh báo chính: loại quan trọng hơn trước, cùng mức thì gần hơn trước
     ds.sort((a, b) => (LOAI_CANH_BAO[b.loai].uuTien - LOAI_CANH_BAO[a.loai].uuTien) || (a.kc - b.kc));
     return ds[0] || null;
+  }
+
+  /**
+   * Hướng đi (độ) mà biển áp dụng; null = mọi hướng (hoặc chưa có dữ liệu đường quanh biển).
+   *  - báo cáo biển báo: hướng xe lúc báo (huongAp);
+   *  - biển theo chiều của OpenStreetMap (chieu = forward / backward): theo chiều vẽ của con đường chứa nút biển.
+   */
+  huongApDung(d) {
+    if (d.huongAp != null) return d.huongAp;
+    if (!d.chieu) return null;
+    const khoa = d.id + '|' + this.thongTinDuong.phienDuong;
+    if (this.huongBien.has(khoa)) return this.huongBien.get(khoa);
+    let huong = null;
+    for (const w of this.thongTinDuong.duong || []) {
+      const c = w.toaDo, i = c.findIndex(p => Math.abs(p[0] - d.viTri[0]) < 2e-7 && Math.abs(p[1] - d.viTri[1]) < 2e-7);
+      if (i < 0 || c.length < 2) continue;
+      const [a, b] = i < c.length - 1 ? [c[i], c[i + 1]] : [c[i - 1], c[i]];
+      huong = (phuongVi(a, b) + (d.chieu === 'backward' ? 180 : 0)) % 360;
+      break;
+    }
+    if (this.huongBien.size > 1000) this.huongBien.clear();
+    this.huongBien.set(khoa, huong);
+    return huong;
   }
 
   /** Khúc cua phía trước: theo hình dạng tuyến khi dẫn đường (trừ chỗ rẽ đã có hướng dẫn), hoặc theo con đường đang đi. */

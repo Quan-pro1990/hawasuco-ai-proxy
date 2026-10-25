@@ -23,7 +23,7 @@ export const LOAI_CANH_BAO = {
   camvuot: { ten: 'Đoạn cấm vượt', icon: 'camvuot', mau: '#c62828', kc: 300, uuTien: 2, macDinh: 2 },
   camdungdo: { ten: 'Cấm dừng, cấm đỗ xe (khi đi chậm)', icon: 'camdungdo', mau: '#1d4ed8', kc: 150, uuTien: 1, macDinh: 2 },
   camre: { ten: 'Biển cấm rẽ, chỉ được rẽ', icon: 'camretrai', mau: '#c62828', kc: 200, uuTien: 2, macDinh: 2 },
-  biencam: { ten: 'Biển cấm khác, biển STOP (cấm quay đầu, tải trọng, chiều cao…)', icon: 'duongcam', mau: '#c62828', kc: 200, uuTien: 1, macDinh: 2 },
+  biencam: { ten: 'Biển cấm, hiệu lệnh khác (cấm quay đầu, tải trọng, chiều cao, STOP, vòng xuyến, khu dân cư…)', icon: 'duongcam', mau: '#c62828', kc: 200, uuTien: 1, macDinh: 2 },
   biennguyhiem: { ten: 'Biển báo nguy hiểm (giao nhau, chỗ ngoặt, dốc, công trường, trẻ em…)', icon: 'canhbao', mau: '#e0a800', kc: 250, uuTien: 1, macDinh: 2 },
   bientocdo: { ten: 'Biển tốc độ tối đa (tốc độ của đường đã có ở mục giới hạn)', icon: 'tocke', mau: '#dc2626', kc: 300, uuTien: 0, macDinh: 1 },
   duongsat: { ten: 'Đường sắt giao cắt', icon: 'duongsat', mau: '#b45309', kc: 300, uuTien: 2, macDinh: 2 },

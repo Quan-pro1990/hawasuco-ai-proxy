@@ -536,6 +536,8 @@ body.dang-chon-bd #lop-chinh, body.dang-chon-bd #khung-lt, body.dang-chon-bd .ta
 .dt-icon .ic { width: 20px; height: 20px; }
 .dt-icon.xanh { color: var(--chinh); background: var(--chinh-nhat); }
 .dt-icon.tron { color: #fff; }
+.dt-icon.bien { background: none; border-radius: 0; }
+.dt-icon.bien svg { width: 36px; height: 36px; display: block; }
 .dt-chu, .dong-ds-chu { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; text-align: left; }
 .dt-chu b, .dong-ds-chu b { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dt-chu small, .dong-ds-chu small { color: var(--mo); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -627,6 +629,8 @@ body.dang-chon-bd #lop-chinh, body.dang-chon-bd #khung-lt, body.dang-chon-bd .ta
 .popup-bc .maplibregl-popup-close-button { font-size: 18px; color: var(--mo); right: 4px; top: 2px; }
 .pbc-dau { display: flex; align-items: center; gap: 10px; padding-right: 14px; }
 .pbc-dau > span { width: 40px; height: 40px; border-radius: 50%; color: #fff; display: flex; align-items: center; justify-content: center; flex: none; }
+.pbc-dau > span.bien { border-radius: 0; }
+.pbc-dau > span.bien svg { width: 40px; height: 40px; display: block; }
 .pbc-dau b { display: block; font-size: 15px; }
 .pbc-dau small { color: var(--mo); }
 .pbc p { margin: 8px 0 0; }

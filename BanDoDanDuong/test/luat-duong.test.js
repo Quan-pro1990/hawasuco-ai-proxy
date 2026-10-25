@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  trongDieuKien, docConditional, camPhuongTien, diNguocChieu, chieuMotChieu, camDungDo, camVuot, docBienBao, apDungTheoNgay
+  trongDieuKien, docConditional, camPhuongTien, diNguocChieu, chieuMotChieu, camDungDo, camVuot, docBienBao, apDungTheoNgay, docBienTuThe
 } from '../public/js/luat-duong.js';
 
 const luc = (thu, gio, phut = 0) => new Date(2026, 9, 18 + thu, gio, phut);   // 18/10/2026 là Chủ nhật (thu = 0)
@@ -72,4 +72,16 @@ test('đọc biển báo Việt Nam trong thẻ traffic_sign', () => {
   assert.equal(apDungTheoNgay('le', new Date(2026, 9, 17)), true);             // ngày 17: lẻ
   assert.equal(apDungTheoNgay('chan', new Date(2026, 9, 17)), false);
   assert.equal(apDungTheoNgay(undefined), true);
+});
+
+test('đọc mọi cách gắn biển báo của OpenStreetMap', () => {
+  assert.deepEqual(docBienTuThe({ traffic_sign: 'vn:p.102' }), [{ ma: 'P102', so: null, chieu: null }]);
+  assert.deepEqual(docBienTuThe({ traffic_sign: 'maxspeed', maxspeed: '60' }), [{ ma: 'P127', so: null, chieu: null }]);
+  assert.deepEqual(docBienTuThe({ traffic_sign: 'city_limit', city_limit: 'end' }), [{ ma: 'R421', so: null, chieu: null }]);
+  assert.deepEqual(docBienTuThe({ traffic_sign: 'VN:R.303', direction: 'backward' }), [{ ma: 'R303', so: null, chieu: 'backward' }]);
+  assert.deepEqual(docBienTuThe({ 'traffic_sign:forward': 'VN:P.127[60]', 'traffic_sign:backward': 'VN:P.127[40];VN:W.246b' }), [
+    { ma: 'P127', so: 60, chieu: 'forward' }, { ma: 'P127', so: 40, chieu: 'backward' }, { ma: 'W246', so: null, chieu: 'backward' }]);
+  assert.deepEqual(docBienTuThe({ highway: 'give_way', direction: 'forward' }), [{ ma: 'W208', so: null, chieu: 'forward' }]);
+  assert.deepEqual(docBienTuThe({ highway: 'stop' }), [], 'nút dừng không có chiều: không biết áp dụng cho ai');
+  assert.deepEqual(docBienTuThe({ traffic_sign: 'DE:274' }), []);
 });

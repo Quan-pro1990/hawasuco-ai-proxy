@@ -126,7 +126,9 @@ test('ô lưới dữ liệu giao thông và câu truy vấn từng lớp', () =
   const q = cauTruyVanO([105.8, 21, 105.9, 21.1], 'chinh');
   assert.match(q, /\(21,105\.8,21\.1,105\.9\)/);                                   // (nam,tây,bắc,đông)
   assert.match(q, /highway=speed_camera/);
-  assert.match(q, /traffic_sign~"\^VN:"/);
+  assert.match(q, /\[traffic_sign\];/);
+  assert.match(q, /"traffic_sign:forward"/);
+  assert.match(q, /\[highway~"\^\(stop\|give_way\)\$"\]\[direction~/);
   assert.match(q, /type=enforcement/);
   assert.match(q, /type=restriction/);
   assert.match(q, /out tags geom/);
@@ -483,4 +485,41 @@ test('biển nguy hiểm, biển cấm khác, biển tốc độ ghi số: hiệ
   assert.ok(!noi.some(s => /tốc độ tối đa 40/.test(s)), noi.join('|'));
   assert.equal(cb.cauCanhBao({ ...tim('R122'), kc: 120 }), 'Phía trước 100 mét có biển dừng lại.');
   assert.equal(cb.cauCanhBao({ loai: 'biencam', kc: 50, het: true, nghe: 'hết tất cả các lệnh cấm' }), 'Hết tất cả các lệnh cấm.');
+});
+
+test('biển chỉ áp dụng một chiều (traffic_sign:forward / backward) và biển báo cộng đồng báo theo hướng xe', () => {
+  const { ttd, cb, noi } = duongLuat();
+  // con đường vẽ từ Tây sang Đông, biển "người đi bộ cắt ngang" chỉ cho chiều vẽ (đi về phía Đông)
+  ttd.duong.push({ id: 600, tags: { highway: 'tertiary', name: 'Tràng Thi' }, toaDo: [[105.870, 21.045], [105.875, 21.045], [105.880, 21.045]] });
+  ttd.diem = docDiemOverpass([
+    { type: 'node', id: 21, lat: 21.045, lon: 105.875, tags: { 'traffic_sign:forward': 'VN:W.224' } },
+    { type: 'node', id: 22, lat: 21.0452, lon: 105.8735, tags: { highway: 'stop' } }                    // không có chiều: bỏ
+  ]);
+  assert.deepEqual([...ttd.diem.keys()], ['osm21-W224-f']);
+  for (const lng of [105.8720, 105.8726, 105.8732]) cb.capNhat({ viTri: [lng, 21.045], huong: 90, tocDo: 10 }, null, 'oto');
+  assert.ok(noi.some(s => /người đi bộ cắt ngang/.test(s)), 'đi đúng chiều thì báo: ' + noi.join('|'));
+  // đi ngược chiều vẽ (về phía Tây): không báo
+  const b = duongLuat();
+  b.ttd.duong.push(ttd.duong[ttd.duong.length - 1]);
+  b.ttd.diem = ttd.diem;
+  for (const lng of [105.8780, 105.8774, 105.8768]) b.cb.capNhat({ viTri: [lng, 21.045], huong: 270, tocDo: 10 }, null, 'oto');
+  assert.ok(!b.noi.some(s => /người đi bộ/.test(s)), b.noi.join('|'));
+
+  // biển báo do người dùng báo khi đang đi về phía Đông: chỉ báo cho xe đi về phía Đông; trùng biển dữ liệu thì không thêm
+  const bc = [{ id: 'x1', loai: 'bienbao', phu: 'camquaydau', lng: 105.8640, lat: 21.0401, huong: 90, taoLuc: Date.now() },
+    { id: 'x2', loai: 'bienbao', phu: 'tocdo60', lng: 105.8700, lat: 21.0401, huong: null, taoLuc: Date.now() }];
+  const c = duongLuat();
+  c.cb.layBaoCao = () => bc;
+  const ds = c.cb.danhSachDiem('oto');
+  const quayDau = ds.find(d => d.id === 'bcx1');
+  assert.ok(quayDau && quayDau.bien === 'P124A' && quayDau.icon === 'camquaydau' && quayDau.huongAp === 90);
+  assert.equal(ds.find(d => d.id === 'bcx2').icon, 'bs-tocdo-60');
+  for (const lng of [105.8615, 105.8622, 105.8629]) c.cb.capNhat({ viTri: [lng, 21.04], huong: 90, tocDo: 10 }, null, 'oto');
+  assert.ok(c.noi.some(s => /cấm quay đầu xe/.test(s)), c.noi.join('|'));
+  const d = duongLuat();
+  d.cb.layBaoCao = () => bc;
+  for (const lng of [105.8665, 105.8658, 105.8651]) d.cb.capNhat({ viTri: [lng, 21.04], huong: 270, tocDo: 10 }, null, 'oto');
+  assert.ok(!d.noi.some(s => /quay đầu/.test(s)), d.noi.join('|'));
+  c.ttd.diem = docDiemOverpass([{ type: 'node', id: 31, lat: 21.0401, lon: 105.86402, tags: { traffic_sign: 'VN:P.124a' } }]);
+  assert.equal(c.cb.danhSachDiem('oto').filter(x => x.bien === 'P124A').length, 1, 'biển đã có trong dữ liệu thì báo cáo trùng không thêm');
 });

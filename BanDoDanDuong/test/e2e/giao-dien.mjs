@@ -240,6 +240,8 @@ try {
   await page.evaluate(([lng, lat]) => { const m = window.hawamap.banDo; m.datTheoDoi('khong'); m.map.jumpTo({ center: [lng, lat + 0.002], zoom: 16, pitch: 0, bearing: 0, padding: { top: 0, bottom: 0, left: 0, right: 0 } }); }, [bc.lng, bc.lat]);
   await page.waitForTimeout(1500);
   const diem = await page.evaluate(([lng, lat]) => { const p = window.hawamap.banDo.map.project([lng, lat]); return { x: p.x, y: p.y }; }, [bc.lng, bc.lat]);
+  // chờ biểu tượng báo cáo đã vẽ đúng chỗ sẽ chạm (bản đồ có thể đang vẽ lại sau khi tải báo cáo quanh vùng mới)
+  await page.waitForFunction(([x, y]) => window.hawamap.banDo.map.queryRenderedFeatures([x, y], { layers: ['bao-cao'] }).length > 0, [diem.x, diem.y], { timeout: 5000 }).catch(() => {});
   await page.mouse.click(diem.x, diem.y);
   await page.waitForSelector('.pbc', { timeout: 5000 }).catch(() => {});
   kiem(await page.locator('.pbc').count() === 1, 'bấm biểu tượng báo cáo trên bản đồ mở thông tin báo cáo');
@@ -254,6 +256,22 @@ try {
   await page.waitForSelector('.thong-bao.hien');
   const ds2 = await (await fetch(GOC + 'api/bao-cao')).json();
   kiem(ds2.baoCao.some(b => b.loai === 'camera' && b.phu === 'dendo'), 'báo cáo camera phạt đèn đỏ (chọn loại camera)');
+  // báo cáo biển báo: chọn biển (hình biển thật), máy chủ ghi kèm biển, bản đồ vẽ hình biển
+  await page.waitForTimeout(400);
+  await page.click('#lop-chinh [data-hd="bao-cao"]');
+  await page.click('[data-hd="gui-bc"][data-loai="bienbao"]');
+  await page.waitForSelector('[data-hd="gui-bc"][data-phu="tocdo50"]');
+  kiem(await page.locator('.ds-lua-chon .dt-icon.bien svg').count() >= 20, 'chọn biển báo: danh sách có hình biển thật');
+  await chup(page, '10c-bao-cao-bien-bao');
+  await page.click('[data-hd="gui-bc"][data-phu="tocdo50"]');
+  await page.waitForSelector('.thong-bao.hien');
+  const ds3 = await (await fetch(GOC + 'api/bao-cao')).json();
+  kiem(ds3.baoCao.some(b => b.loai === 'bienbao' && b.phu === 'tocdo50'), 'báo cáo biển báo được gửi lên máy chủ (biển tốc độ 50)');
+  await page.waitForFunction(() => window.hawamap.banDo.map.hasImage('cb-bs-tocdo-50'), null, { timeout: 5000 }).catch(() => {});
+  kiem(await page.evaluate(() => window.hawamap.banDo.map.hasImage('cb-bs-tocdo-50') &&
+    window.hawamap.banDo.duLieu['bao-cao'].features.some(f => f.properties.anh === 'cb-bs-tocdo-50')), 'biển cộng đồng báo vẽ bằng hình biển trên bản đồ');
+  const thieuPhu = await fetch(GOC + 'api/bao-cao', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ loai: 'bienbao', lng: 105.85, lat: 21.03, thietBi: 'thu' }) });
+  kiem(thieuPhu.status === 400, 'máy chủ từ chối báo cáo biển báo không nói rõ biển nào');
 
   console.log('Liên kết Google Maps');
   await page.keyboard.press('Escape');

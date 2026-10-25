@@ -10,6 +10,8 @@ import { CAU_HINH } from './public/js/cau-hinh.js';
 import { cauTruyVanO, docDiemOverpass, khungO, laMaO, oCanLamMoi, PHIEN_BAN_DIEM } from './public/js/duong-xa.js';
 
 export const CHU_KY = 7 * 86400000;
+/** "Cập nhật ngay" của người dùng: ô cũ hơn 1 ngày được tải lại từ OpenStreetMap ngay (chờ kết quả). */
+export const TUOI_MOI = 86400000;
 const BO_SAU = 30 * 86400000;
 
 /**
@@ -63,8 +65,11 @@ export function taoKhoGiaoThong({ thuMuc, layMang = globalThis.fetch, chuKy = CH
     try { return JSON.parse(await fsp.readFile(tepCua(ma, lop), 'utf8')); } catch (e) { return null; }
   }
 
-  /** Một ô: bản lưu còn hạn thì trả ngay; quá hạn thì trả bản cũ và tải lại ở nền; chưa có thì tải ngay. */
-  async function lay(ma, lop = 'chinh', bayGio = Date.now()) {
+  /**
+   * Một ô: bản lưu còn hạn thì trả ngay; quá hạn thì trả bản cũ và tải lại ở nền; chưa có thì tải ngay.
+   * `moi` (người dùng bấm "Cập nhật ngay"): bản lưu cũ hơn 1 ngày thì chờ tải lại xong, lỗi thì vẫn trả bản cũ.
+   */
+  async function lay(ma, lop = 'chinh', bayGio = Date.now(), { moi = false } = {}) {
     if (!laMaO(ma) || (lop !== 'chinh' && lop !== 'nho')) throw new Error('Mã ô không hợp lệ');
     const o = await docTep(ma, lop);
     const loi = thatBai.get(ma + ':' + lop);
@@ -73,7 +78,11 @@ export function taoKhoGiaoThong({ thuMuc, layMang = globalThis.fetch, chuKy = CH
       if (loi && bayGio - loi.luc < 120000) throw loi.loi;
       return taiTuOverpass(ma, lop);
     }
-    if (oCanLamMoi(o, bayGio, chuKy) && !(loi && bayGio - loi.luc < 3600000)) taiTuOverpass(ma, lop).catch(() => {});
+    const vuaLoi = loi && bayGio - loi.luc < (moi ? 120000 : 3600000);
+    if (moi && oCanLamMoi(o, bayGio, TUOI_MOI) && !vuaLoi) {
+      try { return await taiTuOverpass(ma, lop); } catch (e) { return o; }
+    }
+    if (oCanLamMoi(o, bayGio, chuKy) && !vuaLoi) taiTuOverpass(ma, lop).catch(() => {});
     if (bayGio - (o.dungLuc || 0) > 86400000) {
       o.dungLuc = bayGio;
       fsp.writeFile(tepCua(ma, lop), JSON.stringify(o)).catch(() => {});

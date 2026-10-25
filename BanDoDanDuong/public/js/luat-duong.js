@@ -157,6 +157,13 @@ export const BIEN_VN = {
   P136: { loai: 'biencam', ten: 'Cấm đi thẳng', nghe: 'biển cấm đi thẳng', icon: 'camdithang' },
   DP135: { loai: 'biencam', ten: 'Hết tất cả các lệnh cấm', nghe: 'hết tất cả các lệnh cấm', icon: 'hetcam', het: true },
   R122: { loai: 'biencam', ten: 'Dừng lại (STOP)', nghe: 'biển dừng lại', icon: 'stop' },
+  // biển hiệu lệnh, chỉ dẫn
+  R301A: { loai: 'biencam', ten: 'Chỉ được đi thẳng', nghe: 'biển chỉ được đi thẳng', icon: 'chidithang' },
+  R301B: { loai: 'biencam', ten: 'Chỉ được rẽ phải', nghe: 'biển chỉ được rẽ phải', icon: 'chirephai' },
+  R301C: { loai: 'biencam', ten: 'Chỉ được rẽ trái', nghe: 'biển chỉ được rẽ trái', icon: 'chiretrai' },
+  R303: { loai: 'biencam', ten: 'Nơi giao nhau chạy theo vòng xuyến', nghe: 'nơi giao nhau chạy theo vòng xuyến', icon: 'vongxuyen' },
+  R420: { loai: 'biencam', ten: 'Bắt đầu khu đông dân cư', nghe: 'biển bắt đầu khu đông dân cư', icon: 'kdc-vao' },
+  R421: { loai: 'biencam', ten: 'Hết khu đông dân cư', nghe: 'hết khu đông dân cư', icon: 'kdc-ra', het: true },
   // tốc độ tối đa ghi trên biển
   P127: { loai: 'bientocdo', ten: 'Tốc độ tối đa {} km/h', nghe: 'biển tốc độ tối đa {} ki lô mét trên giờ', icon: 'tocdo', so: 'tocdo' },
   DP134: { loai: 'bientocdo', ten: 'Hết hạn chế tốc độ {} km/h', nghe: 'hết hạn chế tốc độ tối đa', icon: 'hettocdo', so: 'hettocdo', het: true },
@@ -168,29 +175,42 @@ export const BIEN_VN = {
   W203A: { loai: 'biennguyhiem', ten: 'Đường bị hẹp cả hai bên', nghe: 'đường bị hẹp', icon: 'w-hep' },
   W203B: { loai: 'biennguyhiem', ten: 'Đường bị hẹp về phía trái', nghe: 'đường bị hẹp bên trái', icon: 'w-hep' },
   W203C: { loai: 'biennguyhiem', ten: 'Đường bị hẹp về phía phải', nghe: 'đường bị hẹp bên phải', icon: 'w-hep' },
+  W204: { loai: 'biennguyhiem', ten: 'Đường hai chiều', nghe: 'đường hai chiều', icon: 'w-haichieu' },
   W205A: { loai: 'biennguyhiem', ten: 'Đường giao nhau', nghe: 'đường giao nhau', icon: 'w-giaonhau' },
   W205B: { loai: 'biennguyhiem', ten: 'Đường giao nhau', nghe: 'đường giao nhau', icon: 'w-giaonhau' },
   W205C: { loai: 'biennguyhiem', ten: 'Đường giao nhau', nghe: 'đường giao nhau', icon: 'w-giaonhau' },
   W205D: { loai: 'biennguyhiem', ten: 'Đường giao nhau', nghe: 'đường giao nhau', icon: 'w-giaonhau' },
   W205E: { loai: 'biennguyhiem', ten: 'Đường giao nhau', nghe: 'đường giao nhau', icon: 'w-giaonhau' },
+  W206: { loai: 'biennguyhiem', ten: 'Giao nhau chạy theo vòng xuyến', nghe: 'giao nhau chạy theo vòng xuyến', icon: 'w-vongxuyen' },
   W207: { loai: 'biennguyhiem', ten: 'Giao nhau với đường không ưu tiên', nghe: 'giao nhau với đường không ưu tiên', icon: 'w-uutien' },
   W208: { loai: 'biennguyhiem', ten: 'Giao nhau với đường ưu tiên', nghe: 'giao nhau với đường ưu tiên, chú ý nhường đường', icon: 'nhuong' },
   W209: { loai: 'biennguyhiem', ten: 'Giao nhau có tín hiệu đèn', nghe: 'giao nhau có đèn tín hiệu', icon: 'w-den' },
   W210: { loai: 'biennguyhiem', ten: 'Giao nhau với đường sắt có rào chắn', nghe: 'giao nhau với đường sắt có rào chắn', icon: 'w-raochan' },
   W211A: { loai: 'biennguyhiem', ten: 'Giao nhau với đường sắt không có rào chắn', nghe: 'giao nhau với đường sắt không có rào chắn', icon: 'w-tau' },
+  W212: { loai: 'biennguyhiem', ten: 'Cầu hẹp', nghe: 'cầu hẹp', icon: 'w-hep' },
   W219: { loai: 'biennguyhiem', ten: 'Dốc xuống nguy hiểm', nghe: 'dốc xuống nguy hiểm', icon: 'w-docxuong' },
   W220: { loai: 'biennguyhiem', ten: 'Dốc lên nguy hiểm', nghe: 'dốc lên nguy hiểm', icon: 'w-doclen' },
   W221A: { loai: 'biennguyhiem', ten: 'Đường có ổ gà, lồi lõm', nghe: 'đường có ổ gà, lồi lõm', icon: 'w-xoc' },
   W221B: { loai: 'biennguyhiem', ten: 'Đường có gồ giảm tốc', nghe: 'đường có gồ giảm tốc', icon: 'w-go' },
+  W222A: { loai: 'biennguyhiem', ten: 'Đường trơn', nghe: 'đường trơn', icon: 'w-tron' },
   W224: { loai: 'biennguyhiem', ten: 'Đường người đi bộ cắt ngang', nghe: 'đường người đi bộ cắt ngang', icon: 'w-dibo' },
   W225: { loai: 'biennguyhiem', ten: 'Trẻ em', nghe: 'biển trẻ em, chú ý giảm tốc độ', icon: 'w-treem' },
+  W226: { loai: 'biennguyhiem', ten: 'Đường người đi xe đạp cắt ngang', nghe: 'đường người đi xe đạp cắt ngang', icon: 'w-xedap' },
   W227: { loai: 'biennguyhiem', ten: 'Công trường', nghe: 'công trường', icon: 'w-congtruong' },
+  W228: { loai: 'biennguyhiem', ten: 'Đá lở', nghe: 'đoạn đường có đá lở', icon: 'w-dalo' },
   W233: { loai: 'biennguyhiem', ten: 'Nguy hiểm khác', nghe: 'biển báo nguy hiểm', icon: 'w-cham' },
-  W245A: { loai: 'biennguyhiem', ten: 'Đi chậm', nghe: 'biển đi chậm', icon: 'w-dicham' }
+  W240: { loai: 'biennguyhiem', ten: 'Đường hầm', nghe: 'đường hầm', icon: 'w-ham' },
+  W241: { loai: 'biennguyhiem', ten: 'Ùn tắc giao thông', nghe: 'đoạn đường hay ùn tắc', icon: 'w-untac' },
+  W244: { loai: 'biennguyhiem', ten: 'Đoạn đường hay xảy ra tai nạn', nghe: 'đoạn đường hay xảy ra tai nạn', icon: 'w-tainan' },
+  W245A: { loai: 'biennguyhiem', ten: 'Đi chậm', nghe: 'biển đi chậm', icon: 'w-dicham' },
+  W246: { loai: 'biennguyhiem', ten: 'Chú ý chướng ngại vật', nghe: 'chướng ngại vật', icon: 'w-chuongngai' }
 };
 
 /** Biển nhiều kiểu con dùng chung một nghĩa (W.207a…l: giao nhau với đường không ưu tiên). */
-const BIEN_GOP = { W207: /^W207[A-L]$/ };
+const BIEN_GOP = { W207: /^W207[A-L]$/, W246: /^W246[A-C]$/ };
+
+/** Giá trị traffic_sign theo kiểu quốc tế của OpenStreetMap (không có tiền tố VN:) → biển Việt Nam tương ứng. */
+const BIEN_QUOC_TE = { maxspeed: 'P127', stop: 'R122', give_way: 'W208', city_limit: 'R420' };
 
 function maBien(ma) {
   if (BIEN_VN[ma]) return ma;
@@ -205,12 +225,41 @@ function maBien(ma) {
 export function docBienBaoChiTiet(s) {
   const kq = [];
   for (const phan of String(s || '').split(/;|,(?![^[]*\])/)) {
-    const m = /^\s*VN:\s*([A-Za-z]{0,2})[.\s-]*(\d{3})([a-zA-Z]?)\s*(?:\[\s*(\d+(?:[.,]\d+)?)\s*\])?/.exec(phan);
-    if (!m) continue;
-    const ma = maBien((m[1] || 'P').toUpperCase() + m[2] + m[3].toUpperCase());
-    if (ma && !kq.some(b => b.ma === ma)) kq.push({ ma, so: m[4] ? +m[4].replace(',', '.') : null });
+    const m = /^\s*VN:\s*([A-Za-z]{0,2})[.\s-]*(\d{3})([a-zA-Z]?)\s*(?:\[\s*(\d+(?:[.,]\d+)?)\s*\])?/i.exec(phan);
+    const qt = !m && /^\s*([a-z_]+)\s*(?:\[\s*(\d+(?:\.\d+)?)\s*\])?\s*$/i.exec(phan);
+    const ma = m ? maBien((m[1] || 'P').toUpperCase() + m[2] + m[3].toUpperCase()) : qt ? BIEN_QUOC_TE[qt[1].toLowerCase()] : null;
+    const so = m ? m[4] : qt ? qt[2] : null;
+    if (ma && !kq.some(b => b.ma === ma)) kq.push({ ma, so: so ? +so.replace(',', '.') : null });
   }
   return kq;
+}
+
+/**
+ * Mọi biển báo của một nút OpenStreetMap: traffic_sign (áp dụng cả hai chiều, trừ khi direction=forward / backward),
+ * traffic_sign:forward / :backward (theo chiều vẽ của con đường chứa nút), highway=stop / give_way có direction.
+ * @returns [{ ma, so, chieu: 'forward' | 'backward' | null }]
+ */
+export function docBienTuThe(t) {
+  const kq = [];
+  const chieuNut = /^(forward|backward)$/.test(t.direction || '') ? t.direction : null;
+  const them = (s, chieu) => {
+    for (const b of docBienBaoChiTiet(s)) {
+      if (b.ma === 'R420' && t.city_limit === 'end') b.ma = 'R421';
+      if (!kq.some(x => x.ma === b.ma && x.chieu === chieu)) kq.push({ ...b, chieu });
+    }
+  };
+  if (t.traffic_sign) them(t.traffic_sign, chieuNut);
+  if (t['traffic_sign:forward']) them(t['traffic_sign:forward'], 'forward');
+  if (t['traffic_sign:backward']) them(t['traffic_sign:backward'], 'backward');
+  // nút dừng / nhường đường trên đường nhỏ: chỉ lấy khi có chiều (không có chiều thì không biết áp dụng cho ai)
+  if (!kq.length && chieuNut && (t.highway === 'stop' || t.highway === 'give_way')) them(t.highway, chieuNut);
+  return kq;
+}
+
+/** Tên ảnh biển trên bản đồ: biển ghi số dùng "bs-<kiểu>-<số>" (bieu-tuong.js). */
+export function bieuTuongBien(ma, so) {
+  const b = BIEN_VN[ma];
+  return b.so ? `bs-${b.so}-${so}` : b.icon;
 }
 
 /** Mã các biển báo Việt Nam trong thẻ traffic_sign ("VN:P.130;VN:P.131a" → ['P130', 'P131A']), chỉ lấy biển đã biết. */

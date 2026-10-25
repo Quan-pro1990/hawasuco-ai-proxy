@@ -7,7 +7,7 @@
  */
 import { CAU_HINH } from './cau-hinh.js';
 import { khoangCach, chieuLenDoan, phuongVi, lechGoc } from './hinh-hoc.js';
-import { docBienBaoChiTiet, soTuThe, BIEN_VN, chieuMotChieu } from './luat-duong.js';
+import { docBienTuThe, soTuThe, BIEN_VN, chieuMotChieu } from './luat-duong.js';
 import { docPhiOsm } from './phi-cao-toc.js';
 
 const LOAI_DUONG = 'motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street|service|road|' +
@@ -86,7 +86,7 @@ const LOAI_CAMERA = ['camera', 'cameraden', 'cameratb', 'cameragiamsat', 'kiemtr
 export const CO_O = 0.1;
 export const LOP_NHO = ['dentinhieu', 'vachqua'];
 /** Phiên bản cách đọc điểm (tăng khi đọc thêm loại điểm / biển báo mới): ô lưu bằng bản cũ hơn được tải lại ở nền. */
-export const PHIEN_BAN_DIEM = 2;
+export const PHIEN_BAN_DIEM = 3;
 
 /** Ô đã lưu cần tải lại: quá chu kỳ cập nhật, hoặc đọc bằng phiên bản cũ. */
 export function oCanLamMoi(o, bayGio, chuKy) {
@@ -127,7 +127,9 @@ const TRUY_VAN_DIEM = {
   thuphi: ['nut', q => `node${q}[barrier=toll_booth];`],
   gogiam: ['nut', q => `node${q}[traffic_calming~"^(yes|bump|hump|table|cushion|rumble_strip|dip)$"];`],
   nguyhiem: ['nut', q => `node${q}[hazard];`],
-  bienbao: ['nut', q => `node${q}[traffic_sign~"^VN:"];`],
+  // biển báo: traffic_sign (VN:… hoặc kiểu quốc tế), biển theo chiều (:forward / :backward), nút dừng / nhường đường có chiều
+  bienbao: ['nut', q => `node${q}[traffic_sign];node${q}["traffic_sign:forward"];node${q}["traffic_sign:backward"];` +
+    `node${q}[highway~"^(stop|give_way)$"][direction~"^(forward|backward)$"];`],
   truonghoc: ['vung', q => `nwr${q}[amenity~"^(school|kindergarten)$"];`],
   tramdung: ['vung', q => `nwr${q}[highway~"^(rest_area|services)$"];`],
   ham: ['duong', q => `way${q}[tunnel~"^(yes|building_passage)$"][highway~"^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|motorway_link|trunk_link|primary_link)$"];`],
@@ -196,15 +198,18 @@ export function docDiemOverpass(ds) {
       }
       continue;
     }
-    if (e.type === 'node' && t.traffic_sign) {
+    if (e.type === 'node') {
       // biển báo Việt Nam (đường cấm, cấm vượt, cấm dừng / đỗ, biển nguy hiểm, STOP…): mỗi biển trên nút là một điểm;
-      // biển ghi số (tốc độ, tải trọng, chiều cao) lấy số trong [ ] của traffic_sign hoặc thẻ maxspeed / maxweight / maxheight
-      for (const { ma, so } of docBienBaoChiTiet(t.traffic_sign)) {
+      // biển ghi số (tốc độ, tải trọng, chiều cao) lấy số trong [ ] của traffic_sign hoặc thẻ maxspeed / maxweight / maxheight;
+      // biển theo chiều (chieu) chỉ báo cho xe đi đúng chiều đó của con đường chứa nút (canh-bao.js)
+      for (const { ma, so, chieu } of docBienTuThe(t)) {
         const b = BIEN_VN[ma];
         const giaTri = b.so ? so || soTuThe(b.so, t) : null;
         if (b.so && !giaTri) continue;
-        them(`osm${e.id}-${ma}`, b.loai, [e.lon, e.lat], t, giaTri ? { bien: ma, so: giaTri } : { bien: ma });
+        const khac = { bien: ma, ...(giaTri ? { so: giaTri } : {}), ...(chieu ? { chieu } : {}) };
+        them(`osm${e.id}-${ma}${chieu ? '-' + chieu[0] : ''}`, b.loai, [e.lon, e.lat], t, khac);
       }
+      if (t.highway === 'stop' || t.highway === 'give_way') continue;
     }
     if (e.type === 'node' && kq.has('osm' + e.id)) continue;      // đã có loại chi tiết hơn từ quan hệ enforcement
     const loai = phanLoaiDiem(t);

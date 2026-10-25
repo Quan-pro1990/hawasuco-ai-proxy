@@ -7,7 +7,7 @@ import { CAU_HINH } from './cau-hinh.js';
 import { caiDat, doc, ghi } from './kho.js';
 import { lechGoc, khungBao } from './hinh-hoc.js';
 import { svgBieuTuongBanDo, svgBienBao, svgBienVN, svgDiemBanDo, SVG_MUI_TEN_TUYEN, SVG_CO_DICH, taiAnh, icon } from './bieu-tuong.js';
-import { BIEN_VN } from './luat-duong.js';
+import { BIEN_VN, bieuTuongBien } from './luat-duong.js';
 import { LOAI_BAO_CAO } from './loai-bao-cao.js';
 import { LOAI_CANH_BAO, BIEN_RE } from './loai-canh-bao.js';
 import { DANH_MUC } from './dia-diem.js';
@@ -175,7 +175,7 @@ export class BanDo {
     });
     them({
       id: 'bao-cao', type: 'symbol', source: 'bao-cao', minzoom: 9,
-      layout: { 'icon-image': ['concat', 'bc-', ['get', 'loai']], 'icon-size': ['interpolate', ['linear'], ['zoom'], 9, 0.55, 15, 1.05], 'icon-allow-overlap': true }
+      layout: { 'icon-image': ['get', 'anh'], 'icon-size': ['interpolate', ['linear'], ['zoom'], 9, 0.55, 15, 1.05], 'icon-allow-overlap': true }
     });
     them({
       id: 'ket-qua', type: 'symbol', source: 'ket-qua',
@@ -257,21 +257,36 @@ export class BanDo {
     this.datNguon('da-di', RONG);
   }
 
-  datBaoCao(ds) {
-    this.datNguon('bao-cao', { type: 'FeatureCollection', features: ds.map(b => diem([b.lng, b.lat], { id: b.id, loai: b.loai })) });
+  /** Báo cáo giao thông; báo cáo biển báo vẽ bằng hình biển thật. */
+  async datBaoCao(ds) {
+    const phien = this.phienBc = (this.phienBc || 0) + 1;
+    const anh = b => {
+      const v = b.loai === 'bienbao' && LOAI_BAO_CAO.bienbao.phu[b.phu];
+      return v ? 'cb-' + bieuTuongBien(v.bien, v.so) : 'bc-' + b.loai;
+    };
+    const cho = this.damBaoAnhBien(ds.map(anh));
+    if (cho) { await cho; if (phien !== this.phienBc) return; }
+    this.datNguon('bao-cao', { type: 'FeatureCollection', features: ds.map(b => diem([b.lng, b.lat], { id: b.id, loai: b.loai, anh: anh(b) })) });
+  }
+
+  /**
+   * Tạo ảnh còn thiếu cho biển ghi số ("cb-bs-tocdo-50"…) trước khi vẽ (MapLibre bỏ qua biểu tượng thiếu ảnh).
+   * @returns Promise khi phải tạo ảnh, null khi đã đủ ảnh (vẽ được ngay)
+   */
+  damBaoAnhBien(dsAnh) {
+    const thieu = [...new Set(dsAnh)].filter(k => k.startsWith('cb-bs-') && !this.anhBienSo.has(k));
+    if (!thieu.length) return null;
+    return Promise.all(thieu.map(async k => {
+      try { this.anhBienSo.set(k, await taiAnh(svgBienVN(k.slice(3)))); } catch (e) { /* bỏ biển này */ }
+    })).then(() => {
+      for (const k of thieu) if (this.anhBienSo.has(k) && this.map.getStyle() && !this.map.hasImage(k)) this.map.addImage(k, this.anhBienSo.get(k), { pixelRatio: 2 });
+    });
   }
 
   async datDiemCanhBao(ds) {
-    // biển ghi số chưa có ảnh: tạo ảnh trước rồi mới vẽ (MapLibre bỏ qua biểu tượng thiếu ảnh)
     const phien = this.phienCb = (this.phienCb || 0) + 1;
-    const thieu = [...new Set(ds.map(d => 'cb-' + d.icon))].filter(k => k.startsWith('cb-bs-') && !this.anhBienSo.has(k));
-    if (thieu.length) {
-      await Promise.all(thieu.map(async k => {
-        try { this.anhBienSo.set(k, await taiAnh(svgBienVN(k.slice(3)))); } catch (e) { /* bỏ biển này */ }
-      }));
-      if (phien !== this.phienCb) return;            // đã có danh sách mới hơn
-      for (const k of thieu) if (this.anhBienSo.has(k) && this.map.getStyle() && !this.map.hasImage(k)) this.map.addImage(k, this.anhBienSo.get(k), { pixelRatio: 2 });
-    }
+    const cho = this.damBaoAnhBien(ds.map(d => 'cb-' + d.icon));
+    if (cho) { await cho; if (phien !== this.phienCb) return; }     // đã có danh sách mới hơn
     this.datNguon('canh-bao', { type: 'FeatureCollection', features: ds.map(d => diem(d.viTri, { id: d.id, icon: d.icon, nho: d.nho })) });
   }
 

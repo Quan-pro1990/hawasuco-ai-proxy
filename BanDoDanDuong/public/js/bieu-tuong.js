@@ -242,7 +242,10 @@ Object.assign(BIEN_CAM, {
   camxedap: ['#fff', '#d32f2f', NET('xedap', 7, 7.5, 0.75) + GACH],
   camdibo: ['#fff', '#d32f2f', NET('dibo', 7, 7, 0.75) + GACH],
   camcoi: ['#fff', '#d32f2f', '<path d="M9 13.6v4.8h3.2l6.6 4.2V9.4l-6.6 4.2z" fill="#1f2937"/><path d="M21 13.2q1.6 2.8 0 5.6" stroke="#1f2937" stroke-width="1.4" fill="none"/>' + GACH],
-  hetcam: ['#fff', '#1f2937', '<path d="M7.6 20.6l13-13M9.6 22.6l13-13M11.6 24.6l13-13M5.8 18.2l12.4-12.4" stroke="#1f2937" stroke-width="1"/>']
+  hetcam: ['#fff', '#1f2937', '<path d="M7.6 20.6l13-13M9.6 22.6l13-13M11.6 24.6l13-13M5.8 18.2l12.4-12.4" stroke="#1f2937" stroke-width="1"/>'],
+  // R.303 nơi giao nhau chạy theo vòng xuyến: nền xanh, ba mũi tên trắng chạy vòng
+  vongxuyen: ['#1565c0', '#ffffff', '<g fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M11.4 13.2a5.4 5.4 0 0 1 6.8-2.6"/><path d="M21.4 14.4a5.4 5.4 0 0 1-2.2 6.6"/><path d="M14.6 21.6a5.4 5.4 0 0 1-4.4-5.2"/></g>' +
+    '<path d="M18.2 8.6l1.8 2.6-3 .9zM20.6 22.4l-3.1.4.9-2.9zM8.6 15.8l2.8-1.4.3 3.1z" fill="#fff"/>']
 });
 
 // ------------------------------------------------------------------ biển báo nguy hiểm, STOP, biển ghi số
@@ -267,6 +270,16 @@ const KY_NGUY_HIEM = {
   'w-treem': NET('dibo', 8.6, 13.4, 0.46, '#111', 3.4) + NET('dibo', 14.2, 14.4, 0.42, '#111', 3.6),
   'w-congtruong': '<circle cx="14.2" cy="13.6" r="1.5" fill="#111"/><path d="M14 15.6l-1.6 3.9 2.2 1.4M14 15.6l2.6 2.4 2-1.1M12.4 19.5l-1.6 4.6M14.6 20.9l.9 3.2M17.4 17.4l3 4" fill="none" stroke="#111" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M17.6 25.2q2.6-3.4 5 0z" fill="#111"/>',
   'w-cham': '<path d="M16 13v7.2" stroke="#111" stroke-width="2.8" stroke-linecap="round"/><circle cx="16" cy="23.4" r="1.6" fill="#111"/>',
+  'w-haichieu': '<path d="M13 25v-9.5M19 13v9.5" stroke="#111" stroke-width="1.9" stroke-linecap="round"/><path d="M10.8 16.4L13 13l2.2 3.4zM16.8 21.6L19 25l2.2-3.4z" fill="#111"/>',
+  'w-vongxuyen': '<g fill="none" stroke="#111" stroke-width="1.7" stroke-linecap="round"><path d="M13.2 17a3.6 3.6 0 0 1 4.8-2"/><path d="M19.6 17.8a3.6 3.6 0 0 1-1.6 4.4"/><path d="M14.8 22.6a3.6 3.6 0 0 1-2.4-3.4"/></g>' +
+    '<path d="M18 13.4l1.4 2-2.3.6zM18.8 23.6l-2.3.1.8-2.1zM11.2 18.8l2.1-.9.1 2.3z" fill="#111"/>',
+  'w-tron': '<path d="M12.6 17.6h6.8l-.8-2.6h-5.2z" fill="#111"/><path d="M12 20.4q1.2-1.4 0-2.8M16 24.6q1.4-1.6 0-3.2M20 20.4q1.2-1.4 0-2.8" fill="none" stroke="#111" stroke-width="1.3" stroke-linecap="round"/>',
+  'w-xedap': W_NET('xedap'),
+  'w-dalo': '<path d="M9.8 25l5.4-10.6 2 3.2V25z" fill="#111"/><circle cx="19.4" cy="21.6" r="1.6" fill="#111"/><circle cx="21.6" cy="24.4" r="1.1" fill="#111"/><circle cx="18.6" cy="17.6" r="1" fill="#111"/>',
+  'w-ham': '<path d="M10.6 25v-4.6a5.4 5.4 0 0 1 10.8 0V25z" fill="#111"/><path d="M13.6 25v-3.6a2.4 2.4 0 0 1 4.8 0V25z" fill="#ffd400"/>',
+  'w-untac': XE_HOI(9.7, '#111') + XE_HOI(16.3, '#111') + '<path d="M13.4 16.4v-2.2l.8-1.8h3.6l.8 1.8v2.2z" fill="#111"/>',
+  'w-tainan': W_NET('tainan'),
+  'w-chuongngai': '<rect x="10.4" y="16.4" width="11.2" height="4.4" fill="#fff" stroke="#111" stroke-width="1"/><path d="M12 16.4l-1.6 4.4M15.2 16.4l-1.6 4.4M18.4 16.4l-1.6 4.4M21.6 16.4l-1.6 4.4" stroke="#d32f2f" stroke-width="1.6"/><path d="M12 20.8v4M20 20.8v4" stroke="#111" stroke-width="1.4"/>',
   'w-dicham': '<text x="16" y="20.4" font-family="Arial,Helvetica,sans-serif" font-size="4.6" font-weight="700" text-anchor="middle" fill="#111">ĐI</text><text x="16" y="25" font-family="Arial,Helvetica,sans-serif" font-size="4.6" font-weight="700" text-anchor="middle" fill="#111">CHẬM</text>'
 };
 
@@ -278,6 +291,14 @@ function svgBienNguyHiem(ten) {
 /** W.208 Giao nhau với đường ưu tiên: tam giác ngược nền trắng viền đỏ. */
 const SVG_NHUONG = '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 32 32">' +
   '<path d="M2.6 4.4h26.8L16 28.4z" fill="#fff" stroke="#d32f2f" stroke-width="3.4" stroke-linejoin="round"/></svg>';
+
+/** R.420 / R.421 bắt đầu / hết khu đông dân cư: biển chữ nhật xanh, hình nhà trắng (hết: gạch chéo đỏ). */
+function svgKhuDanCu(het) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 32 32">` +
+    `<rect x="3" y="6" width="26" height="20" rx="2.4" fill="#1565c0" stroke="#fff" stroke-width="1.4"/>` +
+    `<path d="M6.5 22.5v-6l4-3.4 4 3.4v6zM15.5 22.5v-8l4.5-3.8 4.5 3.8v8z" fill="#fff"/><path d="M5 22.8h22" stroke="#fff" stroke-width="1.2"/>` +
+    (het ? '<path d="M6 25L26 7" stroke="#d32f2f" stroke-width="2.6" stroke-linecap="round"/>' : '') + '</svg>';
+}
 
 /** R.122 Dừng lại: bát giác đỏ chữ STOP. */
 const SVG_STOP = '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 32 32">' +
@@ -312,6 +333,7 @@ export function svgBienVN(ten) {
   if (ten in KY_NGUY_HIEM) return svgBienNguyHiem(ten);
   if (ten === 'nhuong') return SVG_NHUONG;
   if (ten === 'stop') return SVG_STOP;
+  if (ten === 'kdc-vao' || ten === 'kdc-ra') return svgKhuDanCu(ten === 'kdc-ra');
   return null;
 }
 

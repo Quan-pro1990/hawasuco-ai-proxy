@@ -27,6 +27,7 @@ import { docLienKet } from './lien-ket.js';
 import { THONG_SO, PhienElm, DocXe, CongBle, CongGoc } from './obd.js';
 import { LOAI_BAO_CAO, kiemTraMayChu, dungMayChu, diaChiApi, taiBaoCao, guiBaoCao, xacNhan, xoaBaoCao, baoCaoHienTai, baoCaoCuaToi } from './bao-cao.js';
 import { DANH_MUC, layDanhMuc, timQuanh, timDocTuyen } from './dia-diem.js';
+import { bieuTuongBien } from './luat-duong.js';
 import { GhiHanhTrinh, danhSachHanhTrinh, xoaHanhTrinh, tongKet, xuatGpx, svgBieuDoTocDo } from './hanh-trinh.js';
 import { CameraHanhTrinh, hoTroCamera, danhSachDoan, doiKhoaDoan, xoaDoan, layDoan, TuDongGhi, CHAT_LUONG } from './camera-hanh-trinh.js';
 import { laAppGoc, cheDoXe, cauHinhGoc, guiGoc } from './cau-noi.js';
@@ -1414,11 +1415,14 @@ function moBaoCao(viTriRieng) {
 async function guiBc(loai, phu) {
   const kieu = LOAI_BAO_CAO[loai];
   if (kieu.phu && !phu) {
-    // camera: hỏi loại camera trước khi gửi
-    return hienTamPhu(`<div class="dd-dau"><div class="tieu-de-tam">${icon(kieu.icon)}Loại camera</div>
+    // camera, biển báo: hỏi loại trước khi gửi (biển báo hiện hình biển thật)
+    const hinh = v => v.bien ? `<span class="dt-icon bien">${svgBienVN(bieuTuongBien(v.bien, v.so))}</span>`
+      : `<span class="dt-icon tron" style="background:${LOAI_CANH_BAO[v.canhBao].mau}">${icon(LOAI_CANH_BAO[v.canhBao].icon)}</span>`;
+    return hienTamPhu(`<div class="dd-dau"><div class="tieu-de-tam">${icon(kieu.icon)}${esc(kieu.tieuDePhu || 'Loại camera')}</div>
         <button class="nut-icon" data-hd="bao-cao-lai" aria-label="Quay lại">${icon('quaylai')}</button></div>
       <div class="ds-lua-chon">${Object.entries(kieu.phu).map(([k, v]) =>
-        `<button class="dong-ds" data-hd="gui-bc" data-loai="${loai}" data-phu="${k}"><span class="dt-icon tron" style="background:${LOAI_CANH_BAO[v.canhBao].mau}">${icon(LOAI_CANH_BAO[v.canhBao].icon)}</span><span class="dong-ds-chu"><b>${esc(v.ten)}</b></span></button>`).join('')}</div>`);
+        `<button class="dong-ds" data-hd="gui-bc" data-loai="${loai}" data-phu="${k}">${hinh(v)}<span class="dong-ds-chu"><b>${esc(v.ten)}</b></span></button>`).join('')}</div>
+      ${loai === 'bienbao' ? `<p class="ghi-chu">Biển được ghi theo hướng bạn đang đi và hiện cho mọi người dùng HawaMap; khi biển không còn, chạm vào biển trên bản đồ → "Không còn".</p>` : ''}`);
   }
   const p = st.viTriBaoCao || (st.viTri ? st.viTri.viTri : banDo.tam());
   try {
@@ -1436,10 +1440,11 @@ function moPopupBaoCao(id, p) {
   const b = baoCaoHienTai().find(x => x.id === id);
   if (!b) return;
   const k = LOAI_BAO_CAO[b.loai];
+  const bien = b.loai === 'bienbao' && k.phu[b.phu];
   if (popupBc) popupBc.remove();
   popupBc = new maplibregl.Popup({ offset: 18, maxWidth: '280px', className: 'popup-bc' })
     .setLngLat(p)
-    .setHTML(`<div class="pbc"><div class="pbc-dau"><span style="background:${k.mau}">${icon(k.icon)}</span><div><b>${esc(k.phu && k.phu[b.phu] ? k.phu[b.phu].ten : k.ten)}</b>
+    .setHTML(`<div class="pbc"><div class="pbc-dau">${bien ? `<span class="bien">${svgBienVN(bieuTuongBien(bien.bien, bien.so))}</span>` : `<span style="background:${k.mau}">${icon(k.icon)}</span>`}<div><b>${esc(k.phu && k.phu[b.phu] ? k.phu[b.phu].ten : k.ten)}</b>
       <small>Báo cáo ${thoiGianTruoc(b.taoLuc)}${b.conTon ? ` · ${b.conTon} người xác nhận` : ''}</small></div></div>
       ${b.ghiChu ? `<p>${esc(b.ghiChu)}</p>` : ''}
       <div class="pbc-nut">${b.cuaToi ? `<button class="nut vien" data-hd="xoa-bc" data-id="${esc(id)}">Xoá báo cáo</button>`
@@ -1762,6 +1767,8 @@ async function trangDuLieu() {
   const bat = (k, ten) => `<label class="cd-dong"><span>${esc(ten)}</span><span class="cong-tac"><input type="checkbox" data-cd="${k}" data-kieu="bat"${caiDat[k] ? ' checked' : ''}><span></span></span></label>`;
   moTrang('Dữ liệu giao thông', `<div class="nhom"><h4>Dữ liệu trong máy</h4>
       <div class="cd-dong"><span>Camera, biển báo, trạm thu phí… (khu vực ~11 km)</span><b>${tt.soO} khu vực · ${(tt.soDiem || 0).toLocaleString('vi-VN')} điểm</b></div>
+      <div class="cd-dong"><span>Biển báo giao thông (OpenStreetMap)</span><b>${(tt.soBien || 0).toLocaleString('vi-VN')} biển</b></div>
+      <div class="cd-dong"><span>Biển báo cộng đồng báo (quanh đây)</span><b>${baoCaoHienTai().filter(b => b.loai === 'bienbao').length.toLocaleString('vi-VN')} biển</b></div>
       <div class="cd-dong"><span>Cập nhật mới nhất</span><b>${tt.moiNhat ? ngayGio(tt.moiNhat) : 'chưa có'}</b></div>
       <div class="cd-dong"><span>Cũ nhất</span><b>${tt.cuNhat ? ngayGio(tt.cuNhat) : '—'}</b></div>
       <div class="cd-dong"><span>Bảng phí trạm thu phí</span><b>${phi.soTram ? `${phi.soTram} trạm${phi.capNhat ? ' · ' + esc(phi.capNhat) : ''}` : 'chưa có'}</b></div>
@@ -1775,7 +1782,8 @@ async function trangDuLieu() {
       <div class="hang-nut"><button class="nut vien" data-hd="lam-moi-ban-do">${icon('capnhat')}Tải lại bản đồ nền mới nhất</button></div></div>
     <div class="nhom"><h4>Tự động cập nhật</h4>${bat('tuCapNhatDuLieu', 'Tự cập nhật dữ liệu giao thông mỗi tuần')}
       ${bat('capNhatChiWifi', 'Chỉ tự cập nhật khi dùng Wi-Fi')}${bat('capNhatOffline', 'Tự cập nhật vùng bản đồ offline mỗi tuần')}</div>
-    <p class="ghi-chu">Nguồn: đường, biển báo, camera, trạm thu phí lấy từ OpenStreetMap (cộng đồng cập nhật hằng ngày); bản đồ nền
+    <p class="ghi-chu">Nguồn: đường, biển báo, camera, trạm thu phí lấy từ OpenStreetMap (cộng đồng cập nhật hằng ngày; bấm "Cập nhật ngay" để lấy bản mới trong ngày)
+    và biển báo người dùng HawaMap báo (Báo cáo → Biển báo); bản đồ nền
     (kể cả tên đường, địa danh trên bản đồ vệ tinh) do OpenFreeMap dựng lại từ OpenStreetMap mỗi tuần, ứng dụng tự theo phiên bản mới nhất,
     ô đã lưu quá 7 ngày được tải lại; tìm đường dùng dữ liệu mới nhất của máy chủ OSRM;
     báo cáo kẹt xe, tai nạn là thời gian thực. ${dungMayChu() ? 'Máy chủ HawaMap lưu sẵn dữ liệu và tự cập nhật mỗi tuần cho mọi máy.' : 'Chưa kết nối máy chủ HawaMap: dữ liệu được tải thẳng từ OpenStreetMap.'}

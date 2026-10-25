@@ -49,6 +49,7 @@ export async function taiBaoCao(khung) {
 
 export async function guiBaoCao({ loai, phu, viTri, huong, ghiChu }) {
   if (!LOAI_BAO_CAO[loai]) throw new Error('Loại báo cáo không hợp lệ');
+  if (LOAI_BAO_CAO[loai].batBuocPhu && !(LOAI_BAO_CAO[loai].phu[phu])) throw new Error('Chưa chọn loại ' + LOAI_BAO_CAO[loai].ten.toLowerCase());
   const than = { loai, lng: viTri[0], lat: viTri[1], huong: huong == null ? null : Math.round(huong), ghiChu: ghiChu || '', thietBi: maThietBi };
   if (phu && LOAI_BAO_CAO[loai].phu && LOAI_BAO_CAO[loai].phu[phu]) than.phu = phu;
   let bc;
