@@ -161,6 +161,14 @@ từ một nơi. Biểu tượng mũi tên rẽ của hai ứng dụng được 
 
 ### Build Android (Android Auto)
 
+**Cách nhanh nhất — không cần cài gì:** mỗi lần mã ứng dụng thay đổi, GitHub Actions tự build tệp APK
+(`.github/workflows/build-apk.yml`). Vào tab **Actions** của kho → **Build APK HawaMap** → lần chạy mới nhất → mục
+**Artifacts** → tải **HawaMap-apk**. Cài lên điện thoại và bật Android Auto (kể cả không dây) theo
+[`android/HUONG_DAN_CAI_APK.md`](android/HUONG_DAN_CAI_APK.md). Bản APK ký bằng khoá thử cố định `android/app/khoa-ky/`
+(không bí mật) để các bản sau cài đè được; đưa lên Google Play thì dùng khoá riêng.
+
+**Tự build trên máy:**
+
 1. Cài [Android Studio](https://developer.android.com/studio), mở thư mục `android/` (hoặc dòng lệnh: `cd android && ./gradlew assembleDebug`).
    Mỗi lần build, trang web trong `public/` được chép tự động vào ứng dụng.
 2. Thử trên máy tính bằng **Desktop Head Unit**: cài "Android Auto Desktop Head Unit Emulator" trong SDK Manager; trên điện thoại
@@ -243,7 +251,7 @@ BanDoDanDuong/
 │     ├─ hinh-hoc.js         tính khoảng cách, phương vị, bắt điểm lên tuyến…
 │     ├─ dinh-dang.js        định dạng quãng đường, thời gian kiểu Việt Nam
 │     └─ cau-noi.js          cầu nối với ứng dụng gốc Android / iOS (chế độ màn hình xe)
-├─ android/                  ứng dụng Android + Android Auto (Kotlin, Gradle)
+├─ android/                  ứng dụng Android + Android Auto (Kotlin, Gradle); HUONG_DAN_CAI_APK.md: cài APK, Android Auto không dây
 │  └─ app/src/main/java/vn/hawasuco/hawamap/
 │     ├─ MainActivity.kt     màn hình điện thoại (WebView chạy trang HawaMap)
 │     ├─ DanDuongService.kt  dịch vụ chạy nền khi dẫn đường
