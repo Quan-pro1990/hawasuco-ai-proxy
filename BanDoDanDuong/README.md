@@ -12,7 +12,7 @@ tốc độ / camera giám sát, báo cáo giao thông của cộng đồng, cam
 
 | Nhóm | Chức năng |
 |---|---|
-| **Bản đồ** | Bản đồ vector xoay / nghiêng 3D, nhà 3D; 4 kiểu: Tiêu chuẩn, Giao thông, **Vệ tinh lai kiểu Google Maps** (ảnh vệ tinh phủ đường giao thông, tên đường, số nhà, địa danh, địa điểm bằng tiếng Việt, chữ trắng viền tối), Ban đêm (tự chuyển theo giờ mặt trời lặn / mọc); tên địa danh tiếng Việt; hiện Quần đảo Hoàng Sa, Trường Sa (Việt Nam); lưu ô bản đồ đã xem để dùng khi mất mạng |
+| **Bản đồ** | Bản đồ vector xoay / nghiêng 3D, nhà 3D; **giao diện và màu bản đồ giống Google Maps** — 4 loại: **Mặc định** (nền sáng, cao tốc vàng cam, quốc lộ vàng, đường nhỏ trắng viền xám, hồ xanh, công viên xanh lá, bệnh viện hồng; địa điểm có biểu tượng tròn màu theo nhóm: ăn uống cam, mua sắm xanh dương, y tế đỏ, khách sạn hồng…), **Vệ tinh** (ảnh vệ tinh phủ đường, tên đường, số nhà, địa danh tiếng Việt), **Địa hình** (thêm bóng đồi núi), **Ban đêm** (nền xanh than như chế độ ban đêm của Google, tự chuyển theo giờ mặt trời lặn / mọc); bảng chọn lớp bản đồ có ảnh xem trước và ô Chi tiết bản đồ (giao thông, camera / biển báo, nhà 3D…); cả 4 loại vẽ từ cùng dữ liệu OpenStreetMap mới nhất (OpenFreeMap dựng lại mỗi tuần); tên địa danh tiếng Việt; hiện Quần đảo Hoàng Sa, Trường Sa (Việt Nam); lưu ô bản đồ đã xem để dùng khi mất mạng |
 | **Dữ liệu & cập nhật** | Bản đồ nền luôn theo phiên bản dữ liệu mới nhất của máy chủ bản đồ (OpenFreeMap cập nhật hằng tuần), ô đã lưu quá 7 ngày tự tải lại; dữ liệu camera, biển báo, trạm thu phí lưu trong máy theo khu vực ~11 km và **tự cập nhật mỗi tuần** (máy chủ HawaMap cũng tự cập nhật mỗi tuần cho mọi máy); bảng phí trạm thu phí tải lại mỗi tuần; tuỳ chọn chỉ cập nhật qua Wi-Fi; trang **Cập nhật dữ liệu** xem ngày cập nhật, cập nhật ngay, xem **ngày dữ liệu bản đồ nền** và **tải lại bản đồ nền mới nhất** |
 | **Bản đồ offline** | Tải vùng đang xem (3 mức chi tiết, báo trước số ô / dung lượng, tối đa 8.000 ô) gồm cả style, phông chữ tiếng Việt, biểu tượng; danh sách vùng đã tải, tải lại, xoá; tự cập nhật mỗi tuần (vùng quá 7 ngày hoặc máy chủ đổi phiên bản ô) |
 | **Tìm kiếm** | Gợi ý khi đang gõ, **tìm bằng giọng nói tiếng Việt** (trình duyệt Chrome / Edge / Safari; ứng dụng Android dùng hộp nghe giọng nói của máy), nhập toạ độ; dán / chia sẻ liên kết Google Maps, Apple Maps, `geo:` (kể cả liên kết rút gọn `maps.app.goo.gl`) để mở địa điểm hoặc chỉ đường; tìm nhanh quanh đây: cây xăng, bãi đỗ xe, ATM, cà phê, nhà hàng, bệnh viện, nhà thuốc, khách sạn, sửa xe, rửa xe, trạm sạc, nhà vệ sinh; nhấn giữ bản đồ để chọn vị trí bất kỳ; lịch sử tìm kiếm |
@@ -196,7 +196,7 @@ từ một nơi. Biểu tượng mũi tên rẽ của hai ứng dụng được 
 
 | Việc | Mặc định (miễn phí, không cần khoá) | Đổi ở |
 |---|---|---|
-| Nền bản đồ | OpenFreeMap, CARTO, Esri World Imagery (ảnh vệ tinh; chữ, đường phủ lên lấy từ OpenFreeMap — `ve-tinh.js`) | `public/js/cau-hinh.js` |
+| Nền bản đồ | OpenFreeMap (kiểu Liberty, tô lại màu như Google Maps — `kieu-google.js`), Esri World Imagery (ảnh vệ tinh — `ve-tinh.js`), Esri World Hillshade (bóng đồi núi kiểu Địa hình) | `public/js/cau-hinh.js` |
 | Chỉ đường | OSRM (router.project-osrm.org, routing.openstreetmap.de) | `cau-hinh.js` |
 | Tìm kiếm | Photon (gợi ý), Nominatim (tìm đầy đủ, địa chỉ theo toạ độ) | `cau-hinh.js` |
 | Giới hạn tốc độ, camera, biển báo, trạm thu phí, địa điểm quanh đây | Overpass API (máy chủ HawaMap lưu đệm theo khu vực, tự cập nhật mỗi tuần) | `cau-hinh.js` |
@@ -228,6 +228,7 @@ BanDoDanDuong/
 │     ├─ cau-hinh.js         địa chỉ dịch vụ bản đồ, kiểu bản đồ
 │     ├─ ban-do.js           bản đồ: lớp tuyến / báo cáo / cảnh báo, chấm vị trí, camera bám xe
 │     ├─ ve-tinh.js          bản đồ vệ tinh lai: ảnh vệ tinh + đường, tên đường, địa danh tiếng Việt
+│     ├─ kieu-google.js      màu bản đồ như Google Maps (Mặc định, Ban đêm, Địa hình), biểu tượng địa điểm theo nhóm
 │     ├─ tim-kiem.js         tìm địa điểm, địa chỉ theo toạ độ (Photon, Nominatim, VietMap)
 │     ├─ chi-duong.js        tìm đường (OSRM, VietMap), câu chỉ dẫn tiếng Việt
 │     ├─ dan-duong.js        bộ máy dẫn đường: bám tuyến, câu nhắc, đi sai đường, đến nơi

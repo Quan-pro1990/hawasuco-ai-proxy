@@ -5,6 +5,8 @@
  */
 
 const NHAN_VE_TINH = 'https://server.arcgisonline.com/ArcGIS/rest/services';
+// Kiểu Liberty của OpenFreeMap: dữ liệu OpenStreetMap dựng lại mỗi tuần; mọi kiểu bản đồ dưới đây tô lại từ kiểu này
+const OPENFREEMAP = 'https://tiles.openfreemap.org/styles/liberty';
 
 export const CAU_HINH = {
   tenUngDung: 'HawaMap',
@@ -15,18 +17,23 @@ export const CAU_HINH = {
   // Khung lãnh thổ Việt Nam (kể cả Hoàng Sa, Trường Sa) để giới hạn tìm kiếm
   khungVietNam: [102.1, 6.5, 117.5, 23.45],
 
+  // bienDoi: cách tô lại kiểu gốc — google / googleToi / diaHinh (kieu-google.js: màu như Google Maps), veTinh (ve-tinh.js)
   kieuBanDo: {
-    tieuchuan: { ten: 'Tiêu chuẩn', mau: '#e8eef3', style: 'https://tiles.openfreemap.org/styles/liberty' },
-    giaothong: { ten: 'Giao thông', mau: '#f4efe6', style: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json' },
-    // Vệ tinh lai: ảnh vệ tinh (anhVeTinh) + đường, tên đường, địa danh tiếng Việt lấy từ kiểu "Tiêu chuẩn" (xem ve-tinh.js)
-    vetinh: { ten: 'Vệ tinh', mau: '#3b4a3a', style: 'https://tiles.openfreemap.org/styles/liberty', lai: true },
-    bandem: { ten: 'Ban đêm', mau: '#1f2633', toi: true, style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json' }
+    tieuchuan: { ten: 'Mặc định', style: OPENFREEMAP, bienDoi: 'google' },
+    vetinh: { ten: 'Vệ tinh', style: OPENFREEMAP, bienDoi: 'veTinh' },
+    diahinh: { ten: 'Địa hình', style: OPENFREEMAP, bienDoi: 'diaHinh' },
+    bandem: { ten: 'Ban đêm', toi: true, style: OPENFREEMAP, bienDoi: 'googleToi' }
   },
 
   // Ảnh vệ tinh cho kiểu "Vệ tinh" (Esri World Imagery, ảnh Maxar / Earthstar Geographics)
   anhVeTinh: {
     tiles: [NHAN_VE_TINH + '/World_Imagery/MapServer/tile/{z}/{y}/{x}'], maxzoom: 19,
     ghiNguon: '© Esri, Maxar, Earthstar Geographics'
+  },
+  // Bóng đồi núi cho kiểu "Địa hình" (Esri World Hillshade)
+  bongDiaHinh: {
+    tiles: [NHAN_VE_TINH + '/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}'], maxzoom: 16,
+    ghiNguon: '© Esri, USGS, NASA'
   },
 
   dichVu: {

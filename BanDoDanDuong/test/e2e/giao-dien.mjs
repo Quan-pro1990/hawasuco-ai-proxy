@@ -290,7 +290,22 @@ try {
   await page.click('[data-hd="trang-da-luu"]');
   kiem((await page.innerText('#than-trang')).includes('Nhà hát Lớn Hà Nội'), 'trang địa điểm đã lưu');
   await page.click('[data-hd="dong-trang"]');
+  kiem(await page.evaluate(() => window.hawamap.banDo.map.getPaintProperty('nen', 'background-color')) === '#f4f3f0' &&
+    JSON.stringify(await page.evaluate(() => window.hawamap.banDo.map.getLayoutProperty('poi_r1', 'icon-image'))).includes('gm-anuong'),
+    'bản đồ mặc định tô màu như Google Maps, biểu tượng địa điểm màu theo nhóm');
   await page.click('[data-hd="lop-ban-do"]');
+  const tenKieu = await page.$$eval('.luoi-kieu button', ds => ds.map(b => b.textContent.trim()));
+  kiem(tenKieu.join(',') === 'Mặc định,Vệ tinh,Địa hình,Ban đêm' && await page.locator('.luoi-kieu .anh-kieu svg').count() === 4,
+    'bảng loại bản đồ có ảnh xem trước (' + tenKieu.join(', ') + ')');
+  await chup(page, '13c-lop-ban-do');
+  const nha3D = await page.evaluate(() => window.hawamap.caiDat.nha3D);
+  await page.click('.o-ct:has(input[data-cd="nha3D"])');
+  kiem(await page.evaluate(() => window.hawamap.caiDat.nha3D) === !nha3D, 'ô "Nhà 3D" trong Chi tiết bản đồ bật / tắt được');
+  await page.click('.o-ct:has(input[data-cd="nha3D"])');
+  await page.click('[data-hd="doi-kieu"][data-k="diahinh"]');
+  await page.waitForFunction(() => !!window.hawamap.banDo.map.getLayer('dia-hinh'), null, { timeout: 10000 }).catch(() => {});
+  kiem(await page.evaluate(() => { const m = window.hawamap.banDo.map, ids = m.getStyle().layers.map(l => l.id); return ids.indexOf('dia-hinh') === ids.indexOf('water') - 1 && !!m.getLayer('tuyen'); }),
+    'kiểu Địa hình: bóng đồi núi dưới mặt nước, giữ các lớp riêng');
   await page.click('[data-hd="doi-kieu"][data-k="bandem"]');
   await page.waitForFunction(() => document.documentElement.dataset.giaoDien === 'toi', null, { timeout: 10000 });
   await page.waitForTimeout(1500);

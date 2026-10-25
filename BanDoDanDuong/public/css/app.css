@@ -103,6 +103,7 @@ a { color: var(--chinh); }
 .nut-noi.lon { width: 54px; height: 54px; }
 .nut-noi.lon .ic { width: 26px; height: 26px; }
 .nut-noi.chinh { background: var(--chinh); color: #fff; }
+.nut-noi.lon.chinh { border-radius: 16px; }              /* nút chỉ đường vuông bo góc như Google Maps */
 .nut-noi.do { color: var(--do); }
 .nut-noi:active { transform: scale(.94); }
 #nut-vi-tri[data-td="bac"], #nut-vi-tri[data-td="huong"] { color: var(--chinh); }
@@ -301,12 +302,23 @@ body:not(.xe) .the-canh-bao.dd { display: none !important; }
 .luoi-bao-cao span, .luoi-danh-muc span { width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; }
 .luoi-bao-cao span .ic { width: 28px; height: 28px; }
 .luoi-danh-muc span { width: 46px; height: 46px; }
-.luoi-kieu { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 4px 0 10px; }
-.luoi-kieu button { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 13px; }
-.luoi-kieu span { width: 64px; height: 64px; border-radius: 14px; border: 3px solid transparent; box-shadow: inset 0 0 0 1px rgba(0,0,0,.08);
-  background-image: linear-gradient(135deg, transparent 45%, rgba(255,255,255,.55) 46%, rgba(255,255,255,.55) 54%, transparent 55%), linear-gradient(45deg, transparent 60%, rgba(255,193,7,.6) 61%, rgba(255,193,7,.6) 67%, transparent 68%); }
-.luoi-kieu .chon span { border-color: var(--chinh); }
+.luoi-kieu { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 4px 0 12px; }
+.luoi-kieu button { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 13px; color: var(--chu); }
+.anh-kieu { width: 66px; height: 66px; border-radius: 12px; border: 2.5px solid transparent; overflow: hidden; display: block;
+  box-shadow: 0 0 0 1px var(--vien); background: #cfe3d4; }
+.anh-kieu svg { width: 100%; height: 100%; display: block; }
+.luoi-kieu .chon .anh-kieu { border-color: var(--chinh); box-shadow: none; }
 .luoi-kieu .chon { color: var(--chinh); font-weight: 600; }
+.tieu-de-nho { font-weight: 600; font-size: 15px; margin: 4px 0 8px; padding-top: 12px; border-top: 1px solid var(--vien); }
+.luoi-chi-tiet { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px 8px; padding-bottom: 8px; }
+.o-ct { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 12.5px; text-align: center; line-height: 1.25; cursor: pointer; }
+.o-ct input { position: absolute; opacity: 0; pointer-events: none; }
+.anh-ct { width: 54px; height: 54px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+  border: 2px solid var(--vien); color: var(--mo); background: var(--mat); transition: border-color .15s, color .15s, background .15s; }
+.anh-ct .ic { width: 26px; height: 26px; }
+.o-ct input:checked + .anh-ct { border-color: var(--chinh); color: var(--chinh); background: var(--chinh-nhat); }
+.o-ct input:checked ~ span:last-child { color: var(--chinh); font-weight: 600; }
+.o-ct input:focus-visible + .anh-ct { outline: 2px solid var(--chinh); outline-offset: 2px; }
 .ds-cong-tac { display: flex; flex-direction: column; gap: 4px; border-top: 1px solid var(--vien); padding-top: 6px; }
 
 /* công tắc bật / tắt */

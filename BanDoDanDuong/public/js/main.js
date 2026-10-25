@@ -7,7 +7,7 @@ import {
 import { khoangCach, catTuyen, diemTaiS, tichLuy } from './hinh-hoc.js';
 import { quangDuong, thoiGian, gioDen, ngayGio, thoiGianTruoc, tocDoKmh, kichThuoc, esc } from './dinh-dang.js';
 import { doc, ghi } from './kho.js';
-import { icon, muiTenRe, muiTenLan, svgBienCam, svgBienVN } from './bieu-tuong.js';
+import { icon, muiTenRe, muiTenLan, svgBienCam, svgBienVN, XEM_TRUOC_KIEU } from './bieu-tuong.js';
 import { BanDo, layKieuBanDo } from './ban-do.js';
 import { $, $$, chenBieuTuong, thongBao, hopThoai, hoiXacNhan, TamDuoi, moTrang, dongTrang, taiXuong } from './giao-dien.js';
 import { goiY, timDayDu, layToaDo, diaChiTuToaDo, khuVucTuToaDo } from './tim-kiem.js';
@@ -1453,16 +1453,20 @@ function kieuMongMuon() {
   return caiDat.kieuBanDo;
 }
 
+/** Bảng chọn lớp bản đồ kiểu Google Maps: loại bản đồ (ảnh xem trước) và chi tiết bản đồ (ô bật / tắt). */
 function moLopBanDo() {
   const kieu = { ...CAU_HINH.kieuBanDo };
-  if (caiDat.styleVietmap) kieu.vietmap = { ten: 'VietMap', mau: '#cfe3d4' };
-  const bat = (k, ten) => `<label class="cong-tac"><input type="checkbox" data-cd="${k}" data-kieu="bat"${caiDat[k] ? ' checked' : ''}><span></span>${ten}</label>`;
-  hienTamPhu(`<div class="dd-dau"><div class="tieu-de-tam">${icon('lop')}Kiểu bản đồ</div>
+  if (caiDat.styleVietmap) kieu.vietmap = { ten: 'VietMap' };
+  const chiTiet = (k, ten, ic) => `<label class="o-ct"><input type="checkbox" data-cd="${k}" data-kieu="bat"${caiDat[k] ? ' checked' : ''}>` +
+    `<span class="anh-ct">${icon(ic)}</span><span>${esc(ten)}</span></label>`;
+  hienTamPhu(`<div class="dd-dau"><div class="tieu-de-tam">Loại bản đồ</div>
       <button class="nut-icon" data-hd="dong-tam" aria-label="Đóng">${icon('dong')}</button></div>
     <div class="luoi-kieu">${Object.entries(kieu).map(([k, v]) =>
-      `<button class="${caiDat.kieuBanDo === k ? 'chon' : ''}" data-hd="doi-kieu" data-k="${k}"><span style="background:${v.mau}"></span>${esc(v.ten)}</button>`).join('')}</div>
-    <div class="ds-cong-tac">${bat('tuDongBanDem', 'Tự chuyển bản đồ ban đêm (khi mặt trời lặn)')}${bat('nha3D', 'Nhà 3D')}${bat('dd3D', 'Bản đồ nghiêng 3D khi dẫn đường')}
-      ${bat('hienBaoCao', 'Báo cáo giao thông')}${bat('hienDiemCanhBao', 'Điểm cảnh báo (camera, biển báo, đèn tín hiệu…)')}</div>`);
+      `<button class="${caiDat.kieuBanDo === k ? 'chon' : ''}" data-hd="doi-kieu" data-k="${k}" aria-pressed="${caiDat.kieuBanDo === k}">` +
+      `<span class="anh-kieu">${XEM_TRUOC_KIEU[k] || ''}</span>${esc(v.ten)}</button>`).join('')}</div>
+    <div class="tieu-de-nho">Chi tiết bản đồ</div>
+    <div class="luoi-chi-tiet">${chiTiet('hienBaoCao', 'Báo cáo giao thông', 'ketxe')}${chiTiet('hienDiemCanhBao', 'Camera, biển báo', 'cameratocdo')}
+      ${chiTiet('nha3D', 'Nhà 3D', 'nha')}${chiTiet('dd3D', 'Nghiêng 3D khi dẫn đường', 'chiduong')}${chiTiet('tuDongBanDem', 'Tự chuyển ban đêm', 'dongho')}</div>`);
 }
 
 // ================================================================== trang: cài đặt
@@ -1766,7 +1770,8 @@ async function trangDuLieu() {
     <div class="nhom"><h4>Bản đồ nền</h4>
       <div class="cd-dong"><span>Kiểu bản đồ</span><b>${esc(kieu.ten)}</b></div>
       <div class="cd-dong"><span>Dữ liệu đường, tên đường, địa điểm</span><b id="ngay-ban-do">${ngayNen ? 'OpenStreetMap ngày ' + ngayNen.toLocaleDateString('vi-VN') : 'bản mới nhất của máy chủ bản đồ'}</b></div>
-      ${kieu.lai ? `<div class="cd-dong"><span>Ảnh vệ tinh</span><b>${esc(CAU_HINH.anhVeTinh.ghiNguon.replace(/^©\s*/, ''))}</b></div>` : ''}
+      ${kieu.bienDoi === 'veTinh' ? `<div class="cd-dong"><span>Ảnh vệ tinh</span><b>${esc(CAU_HINH.anhVeTinh.ghiNguon.replace(/^©\s*/, ''))}</b></div>` : ''}
+      ${kieu.bienDoi === 'diaHinh' ? `<div class="cd-dong"><span>Bóng đồi núi</span><b>${esc(CAU_HINH.bongDiaHinh.ghiNguon.replace(/^©\s*/, ''))}</b></div>` : ''}
       <div class="hang-nut"><button class="nut vien" data-hd="lam-moi-ban-do">${icon('capnhat')}Tải lại bản đồ nền mới nhất</button></div></div>
     <div class="nhom"><h4>Tự động cập nhật</h4>${bat('tuCapNhatDuLieu', 'Tự cập nhật dữ liệu giao thông mỗi tuần')}
       ${bat('capNhatChiWifi', 'Chỉ tự cập nhật khi dùng Wi-Fi')}${bat('capNhatOffline', 'Tự cập nhật vùng bản đồ offline mỗi tuần')}</div>

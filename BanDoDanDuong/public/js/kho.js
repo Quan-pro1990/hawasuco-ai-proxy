@@ -44,6 +44,8 @@ export const CAI_DAT_MAC_DINH = {
 };
 
 export const caiDat = Object.assign({}, CAI_DAT_MAC_DINH, chuyenCaiDatCu(doc('caidat', {})));
+// kiểu "Giao thông" (CARTO) đã bỏ ở bản 1.2.6: dùng kiểu Mặc định
+if (caiDat.kieuBanDo === 'giaothong') caiDat.kieuBanDo = 'tieuchuan';
 
 /** Bản 1.0 bật / tắt từng nhóm cảnh báo; nay mỗi loại có mức riêng. */
 function chuyenCaiDatCu(cu) {

@@ -103,7 +103,14 @@ const P = {
   camdochan: '<circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8M10 7.5v9M14 7.5v9"/>',
   camvuot: '<circle cx="12" cy="12" r="9"/><path d="M6.3 15.5v-2.8l.9-2.2h3l.9 2.2v2.8zM12.9 15.5v-2.8l.9-2.2h3l.9 2.2v2.8z"/>',
   hetcamvuot: '<circle cx="12" cy="12" r="9"/><path d="M6.3 15.5v-2.8l.9-2.2h3l.9 2.2v2.8zM12.9 15.5v-2.8l.9-2.2h3l.9 2.2v2.8zM6 18L18 6"/>',
-  khudancu: '<path d="M2.5 20.5h19M4 20.5V12l4.5-4 4.5 4v8.5M13 20.5v-6l3.75-3.5 3.75 3.5v6M7 20.5v-4h3v4"/>'
+  khudancu: '<path d="M2.5 20.5h19M4 20.5V12l4.5-4 4.5 4v8.5M13 20.5v-6l3.75-3.5 3.75 3.5v6M7 20.5v-4h3v4"/>',
+  // nhóm địa điểm trên bản đồ (kieu-google.js)
+  muasam: '<path d="M5 8.5h14l-1.1 12H6.1z"/><path d="M9 8.5V7a3 3 0 0 1 6 0v1.5"/>',
+  cay: '<path d="M12 21.5v-6"/><path d="M12 15.5c-3.6 0-6-2.3-6-5.3C6 7 8.6 4 12 3c3.4 1 6 4 6 7.2 0 3-2.4 5.3-6 5.3z"/>',
+  xebuyt: '<rect x="5" y="3.5" width="14" height="14.5" rx="2.5"/><path d="M5 11h14M8 21v-3M16 21v-3"/><circle cx="8.5" cy="14.6" r=".8" fill="currentColor"/><circle cx="15.5" cy="14.6" r=".8" fill="currentColor"/>',
+  maybay: '<path d="M12 2.8c.8 0 1.4.7 1.4 1.5v4.9l7 4.1v2l-7-2.1v4.4l2 1.5v1.6L12 19.8l-3.4.9v-1.6l2-1.5v-4.4l-7 2.1v-2l7-4.1V4.3c0-.8.6-1.5 1.4-1.5z"/>',
+  tongiao: '<path d="M12 2.5l2.2 3H9.8zM6.5 9h11l-1.8 2.2H8.3zM8 11.2V20h8v-8.8M4.5 20.5h15M11 20.5v-4.5h2v4.5"/>',
+  giaitri: '<path d="M12 3.5l2.5 5.2 5.7.8-4.1 4 1 5.7L12 16.5l-5.1 2.7 1-5.7-4.1-4 5.7-.8z"/>'
 };
 
 /** Mũi tên trên biển cấm rẽ / chỉ được rẽ (vẽ trong khung 24×24). */
@@ -183,6 +190,13 @@ export function svgBieuTuongBanDo(ten, mau) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 32 32" color="#fff">` +
     `<circle cx="16" cy="16" r="13.5" fill="${mau}" stroke="#fff" stroke-width="2.5"/>` +
     `<g transform="translate(6.4 6.4) scale(0.8)" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${P[ten] || P.ghim}</g></svg>`;
+}
+
+/** Điểm địa điểm trên bản đồ kiểu Google Maps: hình tròn nhỏ màu theo nhóm, viền trắng, biểu tượng trắng (40×40, hiển thị 20×20). */
+export function svgDiemBanDo(ten, mau) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 20 20">` +
+    `<circle cx="10" cy="10" r="8.6" fill="${mau}" stroke="#fff" stroke-width="1.4"/>` +
+    `<g transform="translate(4.6 4.6) scale(0.45)" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">${P[ten] || P.ghim}</g></svg>`;
 }
 
 /** Biểu tượng biển báo trên bản đồ: biển cấm (nền trắng viền đỏ, gạch chéo) hoặc biển hiệu lệnh (nền xanh). */
@@ -302,6 +316,22 @@ export function svgBienVN(ten) {
 }
 
 export function laBienVN(ten) { return svgBienVN(ten) != null; }
+
+/** Ảnh xem trước từng loại bản đồ trong bảng chọn lớp (vẽ tay, 64×64). */
+const KHUNG_XT = n => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" aria-hidden="true">${n}</svg>`;
+export const XEM_TRUOC_KIEU = {
+  tieuchuan: KHUNG_XT('<rect width="64" height="64" fill="#f4f3f0"/><path d="M0 0h26v22H0z" fill="#c4e7c0"/><path d="M40 34c8-4 20-2 24 4v26H34c-4-10-2-24 6-30z" fill="#9dd0f2"/>' +
+    '<path d="M0 30h64M30 0v64" stroke="#d2d5da" stroke-width="7"/><path d="M0 30h64M30 0v64" stroke="#fff" stroke-width="5"/>' +
+    '<path d="M-4 56L68 14" stroke="#df9f2c" stroke-width="8"/><path d="M-4 56L68 14" stroke="#fbc54e" stroke-width="6"/>'),
+  vetinh: KHUNG_XT('<rect width="64" height="64" fill="#4d5a3c"/><path d="M0 0h30v26H0z" fill="#3c4a2f"/><path d="M38 36c8-4 20-2 26 4v24H34c-4-10-2-22 4-28z" fill="#1f3446"/>' +
+    '<path d="M8 40h14v10H8zM40 6h16v12H40z" fill="#8b8676"/><path d="M0 30h64M30 0v64" stroke="rgba(255,255,255,.75)" stroke-width="3"/>' +
+    '<path d="M-4 56L68 14" stroke="rgba(255,196,64,.9)" stroke-width="4"/>'),
+  diahinh: KHUNG_XT('<rect width="64" height="64" fill="#eef0e6"/><path d="M0 46c10-14 18-30 30-30s20 18 34 22v26H0z" fill="#dfe3d2"/>' +
+    '<path d="M18 46c6-10 9-18 14-18s9 8 14 16" fill="none" stroke="#c7ccb9" stroke-width="1.4"/><path d="M8 50c8-12 14-24 22-26M40 22c6 4 12 10 18 14" fill="none" stroke="#c7ccb9" stroke-width="1.4"/>' +
+    '<path d="M30 16c-6 0-12 14-20 28l12 2c4-10 6-22 8-30z" fill="#cfd4c2"/><path d="M0 58h64" stroke="#fff" stroke-width="5"/><path d="M-4 30L68 8" stroke="#fbc54e" stroke-width="5"/>'),
+  bandem: KHUNG_XT('<rect width="64" height="64" fill="#242f3e"/><path d="M0 0h26v22H0z" fill="#263c3f"/><path d="M40 34c8-4 20-2 24 4v26H34c-4-10-2-24 6-30z" fill="#17263c"/>' +
+    '<path d="M0 30h64M30 0v64" stroke="#3e4756" stroke-width="5"/><path d="M-4 56L68 14" stroke="#8a7650" stroke-width="6"/>')
+};
 
 /** Cờ ca-rô trong vòng tròn trắng: điểm đến khi dẫn đường. */
 export const SVG_CO_DICH = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" width="36" height="36">' +

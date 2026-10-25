@@ -6,12 +6,16 @@
 import { CAU_HINH } from './cau-hinh.js';
 import { caiDat, doc, ghi } from './kho.js';
 import { lechGoc, khungBao } from './hinh-hoc.js';
-import { svgBieuTuongBanDo, svgBienBao, svgBienVN, SVG_MUI_TEN_TUYEN, SVG_CO_DICH, taiAnh, icon } from './bieu-tuong.js';
+import { svgBieuTuongBanDo, svgBienBao, svgBienVN, svgDiemBanDo, SVG_MUI_TEN_TUYEN, SVG_CO_DICH, taiAnh, icon } from './bieu-tuong.js';
 import { BIEN_VN } from './luat-duong.js';
 import { LOAI_BAO_CAO } from './loai-bao-cao.js';
 import { LOAI_CANH_BAO, BIEN_RE } from './loai-canh-bao.js';
 import { DANH_MUC } from './dia-diem.js';
 import { veTinhLai } from './ve-tinh.js';
+import { BIEN_DOI, NHOM_DIEM, ANH_DIEM } from './kieu-google.js';
+
+/** Hàm tô lại kiểu bản đồ theo tên "bienDoi" trong cau-hinh.js. */
+const BIEN_DOI_KIEU = { ...BIEN_DOI, veTinh: veTinhLai };
 
 const RONG = { type: 'FeatureCollection', features: [] };
 /** [viền, lõi] của đường tuyến: xanh dương khi xem lộ trình, xanh lá khi dẫn đường. */
@@ -51,7 +55,7 @@ export class BanDo {
     const k = layKieuBanDo(this.kieu);
     this.map = new maplibregl.Map({
       container: idKhung,
-      style: k.lai ? undefined : k.style,
+      style: k.bienDoi ? undefined : k.style,
       center: cu ? cu.c : CAU_HINH.viTriMacDinh.tam,
       zoom: cu ? cu.z : CAU_HINH.viTriMacDinh.zoom,
       attributionControl: { compact: true },
@@ -62,7 +66,7 @@ export class BanDo {
         'NavigationControl.ZoomIn': 'Phóng to', 'NavigationControl.ZoomOut': 'Thu nhỏ'
       }
     });
-    if (k.lai) this.napKieu(k);
+    if (k.bienDoi) this.napKieu(k);
     this.map.on('style.load', () => this.sauKhiTaiStyle());
     this.map.on('moveend', () => {
       const c = this.map.getCenter();
@@ -94,9 +98,10 @@ export class BanDo {
   /** Nạp lại kiểu đang dùng (lấy bản mới nhất từ máy chủ bản đồ). */
   taiLaiKieu() { this.napKieu(layKieuBanDo(this.kieu)); }
 
-  /** Kiểu "lai" (vệ tinh) tải kiểu vector rồi biến thành ảnh vệ tinh + lớp chữ (ve-tinh.js). */
+  /** Kiểu có "bienDoi": tải kiểu gốc rồi tô lại (màu Google Maps, ảnh vệ tinh…) trước khi vẽ. */
   napKieu(k) {
-    this.map.setStyle(k.style, k.lai ? { diff: false, transformStyle: veTinhLai } : { diff: false });
+    const bd = k.bienDoi && BIEN_DOI_KIEU[k.bienDoi];
+    this.map.setStyle(k.style, bd ? { diff: false, transformStyle: bd } : { diff: false });
   }
 
   laKieuToi() { return !!layKieuBanDo(this.kieu).toi; }
@@ -127,6 +132,8 @@ export class BanDo {
       if (svg) ds['cb-' + ten] = svg;
     }
     for (const d of DANH_MUC) ds['dm-' + d.id] = svgBieuTuongBanDo(d.icon, d.mau);
+    // biểu tượng địa điểm của bản đồ nền (kieu-google.js): tròn nhỏ màu theo nhóm như Google Maps
+    for (const [nhom, [ten, mau]] of Object.entries(NHOM_DIEM)) ds[ANH_DIEM(nhom)] = svgDiemBanDo(ten, mau);
     ds['dm-ghim'] = svgBieuTuongBanDo('ghim', '#e53935');
     const kq = {};
     await Promise.all(Object.entries(ds).map(async ([k, svg]) => { kq[k] = await taiAnh(svg); }));

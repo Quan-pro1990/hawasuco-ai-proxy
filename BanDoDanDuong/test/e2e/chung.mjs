@@ -29,6 +29,8 @@ const style = (toi, vector = false) => ({
     { id: 'duong-vien', type: 'line', source: 'duong', paint: { 'line-color': toi ? '#39414f' : '#cfd5dc', 'line-width': 16 } },
     { id: 'duong', type: 'line', source: 'duong', paint: { 'line-color': toi ? '#4a5262' : '#ffffff', 'line-width': 12 } },
     ...(vector ? [
+      { id: 'water', type: 'fill', source: 'nen', 'source-layer': 'water', paint: { 'fill-color': '#9ebdff' } },
+      { id: 'poi_r1', type: 'symbol', source: 'nen', 'source-layer': 'poi', layout: { 'text-field': ['get', 'name'], 'icon-image': ['get', 'class'], 'text-anchor': 'top', 'text-font': ['Noto Sans Italic'] }, paint: { 'text-color': '#666' } },
       { id: 'road_primary', type: 'line', source: 'nen', 'source-layer': 'transportation', paint: { 'line-color': '#fc8', 'line-width': 3 } },
       { id: 'highway-name-major', type: 'symbol', source: 'nen', 'source-layer': 'transportation_name', layout: { 'text-field': ['get', 'name'], 'text-font': ['Noto Sans Regular'] }, paint: { 'text-color': '#666' } }
     ] : [])

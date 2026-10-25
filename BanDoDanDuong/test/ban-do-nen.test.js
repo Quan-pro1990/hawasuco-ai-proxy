@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { veTinhLai } from '../public/js/ve-tinh.js';
+import { BIEN_DOI, BANG_SANG, BANG_TOI, NHOM_DIEM, BIEU_TUONG_DIEM } from '../public/js/kieu-google.js';
 import { CAU_HINH } from '../public/js/cau-hinh.js';
 import { BIEN_VN, docBienBaoChiTiet, soTuThe, chuBien } from '../public/js/luat-duong.js';
 import { svgBienVN, laBienVN } from '../public/js/bieu-tuong.js';
@@ -43,7 +44,7 @@ test('bản đồ vệ tinh lai: ảnh vệ tinh dưới cùng, bỏ nền, tô 
   assert.equal(lop('highway-shield').paint['text-color'], '#333', 'chữ trên khiên số đường giữ nguyên');
   assert.deepEqual(lop('boundary_2').paint['line-dasharray'], [2, 1]);
   assert.equal(kieu.layers.length, 12, 'không sửa kiểu gốc');
-  assert.equal(CAU_HINH.kieuBanDo.vetinh.lai, true);
+  assert.equal(CAU_HINH.kieuBanDo.vetinh.bienDoi, 'veTinh');
 });
 
 test('đọc biển báo Việt Nam kèm số ghi trên biển', () => {
@@ -85,4 +86,97 @@ test('ô dữ liệu đọc bằng phiên bản cũ được tải lại để c
   nguon.lamMoiNen = () => {};
   await nguon.layNhieu(['2859_1110'], ['chinh'], bayGio);
   assert.ok(nguon.choLamMoi.has('2859_1110:chinh'), 'ô cũ chưa có phiên bản được xếp tải lại');
+});
+
+/** Kiểu thu nhỏ có đủ các nhóm lớp như Liberty của OpenFreeMap. */
+function kieuMau() {
+  const nguon = 'openmaptiles';
+  const ten = { 'text-field': ['coalesce', ['get', 'name_en'], ['get', 'name']] };
+  return {
+    version: 8, glyphs: 'https://x/fonts/{fontstack}/{range}.pbf', sprite: 'https://x/sprites/ofm',
+    sources: { openmaptiles: { type: 'vector', url: 'https://x/planet' }, ne2_shaded: { type: 'raster', tiles: ['https://x/{z}/{x}/{y}.png'] } },
+    layers: [
+      { id: 'background', type: 'background', paint: { 'background-color': '#f8f4f0' } },
+      { id: 'natural_earth', type: 'raster', source: 'ne2_shaded' },
+      { id: 'park', type: 'fill', source: nguon, 'source-layer': 'park', paint: { 'fill-color': '#d8e8c8' } },
+      { id: 'park_outline', type: 'line', source: nguon, 'source-layer': 'park' },
+      { id: 'landuse_hospital', type: 'fill', source: nguon, 'source-layer': 'landuse', paint: { 'fill-color': '#fde' } },
+      { id: 'water', type: 'fill', source: nguon, 'source-layer': 'water', paint: { 'fill-color': 'rgb(158,189,255)' } },
+      { id: 'road_area_pattern', type: 'fill', source: nguon, 'source-layer': 'transportation', paint: { 'fill-pattern': 'pedestrian_polygon' } },
+      { id: 'road_trunk_primary_casing', type: 'line', source: nguon, 'source-layer': 'transportation', paint: { 'line-color': '#e9ac77', 'line-width': 4 } },
+      { id: 'road_trunk_primary', type: 'line', source: nguon, 'source-layer': 'transportation', paint: { 'line-color': '#fea', 'line-width': 3 } },
+      { id: 'road_minor', type: 'line', source: nguon, 'source-layer': 'transportation', paint: { 'line-color': '#fff', 'line-width': 2 } },
+      { id: 'road_major_rail', type: 'line', source: nguon, 'source-layer': 'transportation', paint: { 'line-color': '#bbb' } },
+      { id: 'building', type: 'fill', source: nguon, 'source-layer': 'building', paint: { 'fill-color': 'hsl(35,8%,85%)' } },
+      { id: 'building-3d', type: 'fill-extrusion', source: nguon, 'source-layer': 'building', paint: { 'fill-extrusion-color': 'hsl(35,8%,85%)', 'fill-extrusion-height': ['get', 'render_height'] } },
+      { id: 'boundary_2', type: 'line', source: nguon, 'source-layer': 'boundary', paint: { 'line-color': '#666' } },
+      { id: 'water_name_point_label', type: 'symbol', source: nguon, 'source-layer': 'water_name', layout: ten, paint: { 'text-color': '#495e91' } },
+      { id: 'poi_r1', type: 'symbol', source: nguon, 'source-layer': 'poi', layout: { ...ten, 'icon-image': ['get', 'class'], 'text-anchor': 'top', 'text-offset': [0, 0.6] }, paint: { 'text-color': '#666' } },
+      { id: 'highway-name-major', type: 'symbol', source: nguon, 'source-layer': 'transportation_name', layout: ten, paint: { 'text-color': '#666' } },
+      { id: 'highway-shield-non-us', type: 'symbol', source: nguon, 'source-layer': 'transportation_name', layout: { 'text-field': '{ref}', 'icon-image': 'road_4' }, paint: {} },
+      { id: 'label_city', type: 'symbol', source: nguon, 'source-layer': 'place', layout: { ...ten, 'icon-image': 'circle_11_black', 'text-anchor': 'bottom' }, paint: { 'text-color': '#000' } },
+      { id: 'label_other', type: 'symbol', source: nguon, 'source-layer': 'place', layout: { ...ten, 'text-transform': 'uppercase', 'text-font': ['Noto Sans Italic'] }, paint: { 'text-color': '#333' } }
+    ]
+  };
+}
+
+test('bản đồ kiểu Google Maps: tô lại nền, nước, đường, chữ, biểu tượng địa điểm; giữ nguyên dữ liệu', () => {
+  const goc = kieuMau();
+  const ra = BIEN_DOI.google(null, goc);
+  const lop = id => ra.layers.find(l => l.id === id);
+  assert.deepEqual(ra.layers.map(l => l.id).filter(id => !lop(id)), []);
+  for (const id of ['natural_earth', 'park_outline', 'road_area_pattern']) assert.equal(lop(id), undefined, id + ' phải bỏ');
+  assert.deepEqual(Object.keys(ra.sources), ['openmaptiles'], 'bỏ nguồn không dùng');
+  assert.equal(lop('background').paint['background-color'], BANG_SANG.dat);
+  assert.equal(lop('water').paint['fill-color'], BANG_SANG.nuoc);
+  assert.equal(lop('park').paint['fill-color'], BANG_SANG.congVien);
+  assert.equal(lop('landuse_hospital').paint['fill-color'], BANG_SANG.benhVien);
+  // đường: màu theo cấp đường (cao tốc vàng cam, quốc lộ vàng, đường nhỏ trắng viền xám), độ rộng giữ nguyên
+  const mau = lop('road_trunk_primary').paint['line-color'];
+  assert.equal(mau[0], 'match');
+  assert.equal(mau[mau.indexOf('motorway') + 1], BANG_SANG.caoToc);
+  assert.equal(mau[mau.indexOf('trunk') + 1], BANG_SANG.quocLo);
+  assert.equal(lop('road_trunk_primary').paint['line-width'], 3);
+  const vien = lop('road_trunk_primary_casing').paint['line-color'];
+  assert.equal(vien[vien.indexOf('trunk') + 1], BANG_SANG.quocLoVien);
+  assert.equal(lop('road_major_rail').paint['line-color'], BANG_SANG.duongSat);
+  assert.equal(lop('building-3d').paint['fill-extrusion-color'], BANG_SANG.nha3D);
+  assert.deepEqual(lop('building-3d').paint['fill-extrusion-height'], ['get', 'render_height']);
+  // địa điểm: biểu tượng tròn màu theo nhóm, chữ cạnh biểu tượng, màu chữ theo nhóm
+  const poi = lop('poi_r1');
+  assert.equal(poi.layout['icon-image'], BIEU_TUONG_DIEM);
+  assert.deepEqual(poi.layout['text-variable-anchor'], ['left', 'right']);
+  assert.equal(poi.layout['text-anchor'], undefined);
+  assert.equal(poi.layout['text-offset'], undefined);
+  const mauPoi = poi.paint['text-color'];
+  assert.equal(mauPoi[mauPoi.findIndex(x => Array.isArray(x) && x.includes('restaurant')) + 1], NHOM_DIEM.anuong[1]);
+  assert.equal(mauPoi[mauPoi.length - 1], NHOM_DIEM.dichvu[1]);
+  assert.equal(lop('highway-name-major').paint['text-color'], BANG_SANG.chuDuong);
+  assert.equal(lop('highway-shield-non-us').layout['icon-image'], 'road_4', 'biển số đường giữ nguyên');
+  assert.equal(lop('label_city').layout['icon-image'], undefined, 'bỏ chấm tròn cạnh tên thành phố');
+  assert.equal(lop('label_city').paint['text-color'], BANG_SANG.chuThanhPho);
+  assert.equal(lop('label_other').layout['text-transform'], 'none');
+  assert.equal(lop('water_name_point_label').paint['text-color'], BANG_SANG.chuNuoc);
+  assert.equal(ra.glyphs, goc.glyphs);
+  assert.equal(ra.sprite, goc.sprite);
+  assert.equal(goc.layers[0].paint['background-color'], '#f8f4f0', 'không sửa kiểu gốc');
+
+  // ban đêm: cùng lớp, bảng màu tối; địa hình: thêm bóng đồi núi ngay dưới mặt nước
+  const dem = BIEN_DOI.googleToi(null, kieuMau());
+  assert.equal(dem.layers.find(l => l.id === 'background').paint['background-color'], BANG_TOI.dat);
+  assert.deepEqual(dem.layers.map(l => l.id), ra.layers.map(l => l.id));
+  const dh = BIEN_DOI.diaHinh(null, kieuMau());
+  const ids = dh.layers.map(l => l.id);
+  assert.equal(ids.indexOf('dia-hinh'), ids.indexOf('water') - 1);
+  assert.deepEqual(dh.sources['dia-hinh'].tiles, CAU_HINH.bongDiaHinh.tiles);
+  for (const k of ['tieuchuan', 'diahinh', 'bandem']) assert.ok(BIEN_DOI[CAU_HINH.kieuBanDo[k].bienDoi], k);
+  assert.equal(CAU_HINH.kieuBanDo.bandem.toi, true);
+});
+
+test('mọi nhóm địa điểm có biểu tượng', async () => {
+  const { coBieuTuong } = await import('../public/js/bieu-tuong.js');
+  for (const [nhom, [ten]] of Object.entries(NHOM_DIEM)) assert.ok(coBieuTuong(ten), `${nhom}: thiếu biểu tượng ${ten}`);
+  // vệ tinh dùng cùng biểu tượng địa điểm
+  const vt = veTinhLai(null, kieuMau());
+  assert.equal(vt.layers.find(l => l.id === 'poi_r1').layout['icon-image'], BIEU_TUONG_DIEM);
 });

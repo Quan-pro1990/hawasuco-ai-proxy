@@ -2,11 +2,12 @@
  * Bản đồ vệ tinh lai (giống chế độ "Vệ tinh" của Google Maps): ảnh vệ tinh ở dưới, phủ lên trên đường giao thông
  * bán trong suốt, ranh giới, tên đường, số nhà, địa danh, địa điểm (kèm biểu tượng) bằng tiếng Việt.
  *
- * Phần chữ và đường lấy từ kiểu bản đồ "Tiêu chuẩn" (OpenFreeMap, dữ liệu OpenStreetMap cập nhật hằng tuần):
+ * Phần chữ và đường lấy từ kiểu bản đồ "Mặc định" (OpenFreeMap, dữ liệu OpenStreetMap cập nhật hằng tuần):
  * MapLibre tải kiểu đó rồi gọi veTinhLai() (tuỳ chọn transformStyle) để bỏ phần nền, tô lại đường và chữ cho hợp
  * với nền ảnh. Nhờ vậy lớp chữ luôn theo phiên bản dữ liệu mới nhất, cùng phông chữ, biểu tượng với bản đồ thường.
  */
 import { CAU_HINH } from './cau-hinh.js';
+import { boCucDiem } from './kieu-google.js';
 
 /** Màu đường trên nền ảnh: cao tốc vàng cam, quốc lộ / đường chính vàng nhạt, còn lại trắng mờ. */
 const MAU_DUONG = ['match', ['get', 'class'],
@@ -24,7 +25,8 @@ function chuTrenAnh(l) {
   if (!lay['text-field'] || (lay['icon-image'] && (lay['icon-text-fit'] || /shield/.test(l.id)))) return l;
   const nuoc = /^(water_name|waterway)$/.test(l['source-layer'] || '');
   const paint = { ...(l.paint || {}), 'text-color': nuoc ? '#b5dcff' : '#ffffff', 'text-halo-color': 'rgba(0, 0, 0, 0.8)', 'text-halo-width': 1.4, 'text-halo-blur': 0.4 };
-  return { ...l, paint };
+  // địa điểm: biểu tượng tròn màu theo nhóm như bản đồ thường (kieu-google.js)
+  return { ...l, paint, ...(l['source-layer'] === 'poi' ? { layout: boCucDiem(lay) } : {}) };
 }
 
 function duongTrenAnh(l) {
