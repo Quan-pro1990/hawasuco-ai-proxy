@@ -500,7 +500,8 @@ svg.br-icon { stroke-width: 2.4; }
 .thanh-chon > span { color: var(--mo); text-align: center; }
 .thanh-chon > div { display: flex; gap: 10px; }
 .thanh-chon .nut { flex: 1; }
-body.chon-ban-do #lop-chinh, body.chon-ban-do #khung-lt, body.chon-ban-do .tam-duoi { visibility: hidden; }
+/* lớp của trang khác tên lớp của khung (.chon-ban-do): trùng tên thì pointer-events: none áp lên cả trang, bản đồ không kéo được */
+body.dang-chon-bd #lop-chinh, body.dang-chon-bd #khung-lt, body.dang-chon-bd .tam-duoi { visibility: hidden; }
 
 /* ---------------------------------------------------------------- màn hình đầy đủ: tìm kiếm, trang */
 .man-day { position: fixed; inset: 0; z-index: 50; background: var(--mat); display: flex; flex-direction: column; animation: mo-trang .18s ease; }

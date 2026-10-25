@@ -268,7 +268,7 @@ Bấm **Start**, gõ `powershell`, chuột phải **Windows PowerShell** → **R
 thư mục bộ cài cho đúng):
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File C:\hawamap-may-chu-1.2.0\trien-khai\iis\go-cai-dat-iis.ps1
+powershell -ExecutionPolicy Bypass -File C:\hawamap-may-chu-1.2.1\trien-khai\iis\go-cai-dat-iis.ps1
 ```
 
 Lệnh này xoá site, app pool và luật tường lửa của HawaMap; giữ lại `C:\inetpub\hawamap` và `C:\HawaMapData` (xoá tay nếu

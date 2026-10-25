@@ -57,6 +57,31 @@ try {
   kiem(await page.locator('.cham-vi-tri').count() === 1, 'hiện chấm vị trí của tôi');
   await chup(page, '01-man-hinh-chinh');
 
+  // chọn vị trí trên bản đồ: kéo bản đồ cho ghim ở giữa trỏ vào chỗ cần chọn
+  await page.click('#nut-vi-tri');                         // đang bám theo vị trí: vào chế độ chọn thì phải thôi bám
+  await page.click('.o-tim');
+  await page.waitForSelector('[data-hd="chon-tren-ban-do"]');
+  await page.click('[data-hd="chon-tren-ban-do"]');
+  await page.waitForSelector('#chon-ban-do:not([hidden])');
+  const tamBd = () => page.evaluate(() => { const c = window.hawamap.banDo.map.getCenter(); return [c.lng, c.lat]; });
+  const tamTruoc = await tamBd();
+  await page.mouse.move(206, 360);
+  await page.mouse.down();
+  for (let i = 1; i <= 12; i++) { await page.mouse.move(206 - i * 12, 360 - i * 8); await page.waitForTimeout(16); }
+  await page.mouse.up();
+  await page.waitForTimeout(600);
+  const tamSau = await tamBd();
+  const doiM = Math.hypot((tamSau[0] - tamTruoc[0]) * 104000, (tamSau[1] - tamTruoc[1]) * 111000);
+  kiem(doiM > 50 && await page.evaluate(() => window.hawamap.banDo.theoDoi) === 'khong',
+    `chọn trên bản đồ: kéo được bản đồ (dời ${Math.round(doiM)} m) và không bị kéo về vị trí GPS`);
+  await chup(page, '02b-chon-tren-ban-do');
+  await page.click('[data-hd="xac-nhan-chon-bd"]');
+  await page.waitForSelector('#tam-duoi:not([hidden]) .dd-ten h2');
+  const viTriChon = await page.evaluate(() => window.hawamap.st.diaDiem && window.hawamap.st.diaDiem.viTri);
+  kiem(viTriChon && Math.abs(viTriChon[0] - tamSau[0]) < 1e-6 && Math.abs(viTriChon[1] - tamSau[1]) < 1e-6, 'chọn đúng điểm dưới ghim sau khi kéo');
+  await page.click('#tam-duoi [data-hd="dong-tam"]').catch(() => {});
+  await page.waitForTimeout(400);
+
   await page.click('.o-tim');
   await page.waitForSelector('#man-tim:not([hidden]) .luoi-danh-muc');
   await chup(page, '02a-tim-kiem-trong');

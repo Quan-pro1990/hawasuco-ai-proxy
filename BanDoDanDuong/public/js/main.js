@@ -555,13 +555,16 @@ function noiTim() {
 function batChonTrenBanDo(mucDich) {
   dongTimKiem();
   st.chonBd = mucDich;
-  document.body.classList.add('chon-ban-do');
+  // ghim nằm giữa màn hình: bản đồ phải đứng yên chỗ người dùng kéo tới, không tự chạy theo vị trí GPS
+  banDo.datTheoDoi('khong');
+  capNhatNutViTri();
+  document.body.classList.add('dang-chon-bd');
   $('#chon-ban-do').hidden = false;
 }
 
 function tatChonTrenBanDo() {
   st.chonBd = null;
-  document.body.classList.remove('chon-ban-do');
+  document.body.classList.remove('dang-chon-bd');
   $('#chon-ban-do').hidden = true;
 }
 
