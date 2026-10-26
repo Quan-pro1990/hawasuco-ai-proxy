@@ -5,7 +5,7 @@
 //   RA              thư mục ảnh chụp màn hình            MAY_CHU_NHAP  địa chỉ gõ ở màn hình kết nối (10.0.2.2:18443)
 //   MA_CHUNG_CHI    mã nhận dạng chứng chỉ mong đợi      APK_MOI       bản app "mới hơn" để thử báo cập nhật
 //   THU_MUC_MAY_CHU thư mục chứa QuanLyTaiSan.exe đang chạy (chép APK_MOI vào đó)
-const { _android } = require('playwright-core');
+const { _android, chromium } = require('playwright-core');
 const fs = require('node:fs'), path = require('node:path'), { execFileSync } = require('node:child_process');
 
 const RA = process.env.RA || 'ra';
@@ -43,6 +43,26 @@ async function choTrang(fn, arg, ms = 20000) {
   }
 }
 
+/** Trang web trong WebView của app (qua cổng gỡ lỗi WebView — chỉ bản gỡ lỗi mới mở). */
+async function layTrang() {
+  for (let lan = 0; lan < 2; lan++) {
+    try {
+      const wv = await dev.webView({ pkg: GOI }, { timeout: 20000 });
+      return await wv.page();
+    } catch (e) {
+      console.log('--  webView() chưa thấy WebView (' + String(e.message).split('\n')[0] + ')');
+    }
+  }
+  // dự phòng: nối thẳng ổ cắm gỡ lỗi của WebView bằng adb forward + giao thức DevTools
+  const pid = (await dev.shell(`pidof ${GOI}`)).toString().trim().split(/\s+/)[0];
+  execFileSync('adb', ['forward', 'tcp:9333', 'localabstract:webview_devtools_remote_' + pid]);
+  const b = await chromium.connectOverCDP('http://127.0.0.1:9333');
+  const ds = b.contexts().flatMap(c => c.pages());
+  if (!ds.length) throw new Error('Không thấy trang trong WebView (pid ' + pid + ')');
+  console.log('--  đã nối WebView qua adb forward (pid ' + pid + ')');
+  return ds[0];
+}
+
 (async () => {
   fs.mkdirSync(RA, { recursive: true });
   [dev] = await _android.devices();
@@ -67,8 +87,7 @@ async function choTrang(fn, arg, ms = 20000) {
   });
 
   await buoc('trang web trong app (https, chứng chỉ đã ghim)', async () => {
-    const wv = await dev.webView({ pkg: GOI }, { timeout: 40000 });
-    page = await wv.page();
+    page = await layTrang();
     await page.waitForSelector('#ten', { timeout: 40000 });
     kiem(await page.evaluate(() => location.href).then(u => u.startsWith('https://10.0.2.2:18443/')), 'trang mở qua https://10.0.2.2:18443/');
     const pb = await page.evaluate(() => window.QuanLyTaiSanApp ? window.QuanLyTaiSanApp.phienBan() + ' / ' + window.QuanLyTaiSanApp.maChungChi() : '');
