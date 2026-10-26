@@ -31,6 +31,17 @@ async function buoc(ten, fn) {
   }
 }
 const back = () => dev.shell('input keyevent 4');
+// uiautomator so khớp biểu thức chính quy với CẢ chuỗi (kể cả xuống dòng): "có chứa s"
+const chua = s => new RegExp('[\\s\\S]*' + s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[\\s\\S]*');
+// chờ điều kiện trong trang (page.waitForFunction bị CSP của trang chặn vì dùng eval)
+async function choTrang(fn, arg, ms = 20000) {
+  const t0 = Date.now();
+  for (;;) {
+    if (await page.evaluate(fn, arg)) return;
+    if (Date.now() - t0 > ms) throw new Error('Hết giờ chờ điều kiện trong trang: ' + fn);
+    await ngu(300);
+  }
+}
 
 (async () => {
   fs.mkdirSync(RA, { recursive: true });
@@ -67,7 +78,8 @@ const back = () => dev.shell('input keyevent 4');
     await page.fill('#mk', 'matkhau123');
     await page.click('button[type=submit]');
     await page.waitForSelector('.o-so', { timeout: 30000 });
-    await ngu(1000);
+    await choTrang(() => !document.querySelector('.dangtai'), null, 15000).catch(() => null);
+    await ngu(2500);
     await chup('tong-quan');
   });
 
@@ -78,11 +90,11 @@ const back = () => dev.shell('input keyevent 4');
     await ngu(5000);
     await chup('quet-camera');
     // cảnh ảo của máy ảo có dán tem QR MB-00002 trên tường (không bắt buộc đọc được)
-    const docDuoc = await dev.wait({ text: /MB-00002/ }, { timeout: 15000 }).then(() => true, () => false);
+    const docDuoc = await dev.wait({ text: chua('MB-00002') }, { timeout: 15000 }).then(() => true, () => false);
     console.log(docDuoc ? 'OK  camera máy ảo đọc được tem QR MB-00002 trong cảnh ảo' : '--  camera máy ảo chưa đọc được tem trong cảnh ảo (bỏ qua)');
     // như ZXing vừa đọc được tem MB-00001: app chuyển mã cho trang, trang ghi kiểm kê rồi báo lại màn hình quét
     await page.evaluate(() => window.ungDungQuet(location.origin + '/t/MB-00001'));
-    await dev.wait({ text: /Đã kiểm kê MB-00001/ }, { timeout: 20000 });
+    await dev.wait({ text: chua('Đã kiểm kê MB-00001') }, { timeout: 20000 });
     kiem(true, 'màn hình quét hiện kết quả máy chủ: Đã kiểm kê MB-00001');
     await chup('quet-ket-qua');
     await back();
@@ -100,7 +112,7 @@ const back = () => dev.shell('input keyevent 4');
     await page.click('[data-gps]');
     await ngu(1500);
     try { execFileSync('adb', ['emu', 'geo', 'fix', '105.4701', '9.7845']); } catch (e) { /* bỏ qua */ }
-    await page.waitForFunction(() => /^9\.78\d*, 105\.47/.test(document.querySelector('[data-f="toaDo"]').value), null, { timeout: 25000 });
+    await choTrang(() => /^9\.78\d*, 105\.47/.test(document.querySelector('[data-f="toaDo"]').value), null, 25000);
     kiem(true, 'app lấy GPS: ' + await page.$eval('[data-f="toaDo"]', i => i.value));
   });
 
@@ -108,7 +120,7 @@ const back = () => dev.shell('input keyevent 4');
     await page.evaluate(() => { location.hash = '#/ds'; });
     await page.waitForSelector('[data-xuat]', { timeout: 15000 });
     await page.click('[data-xuat]');
-    await dev.wait({ text: /\.xlsx$/ }, { timeout: 30000 });
+    await dev.wait({ text: chua('.xlsx') }, { timeout: 30000 });
     await dev.wait({ text: 'Mở (Excel, WPS Office…)' }, { timeout: 5000 });
     kiem(true, 'tải xong file Excel, hỏi Mở / Chia sẻ / Lưu');
     await chup('tai-excel');
@@ -123,7 +135,7 @@ const back = () => dev.shell('input keyevent 4');
     await page.click('[data-dx]');
     await page.waitForSelector('.hop');
     await back();
-    await page.waitForSelector('.hop', { state: 'detached', timeout: 5000 });
+    await choTrang(() => !document.querySelector('.hop'), null, 5000);
     kiem(await page.evaluate(() => location.hash) === '#/khac', 'Back đóng hộp thoại Đăng xuất, vẫn ở trang Thêm');
   });
 

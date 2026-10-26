@@ -598,7 +598,7 @@ public class MainActivity extends Activity {
         TextView noiDung = chu("Máy chủ " + KetNoi.diaChiNgan(e.diaChi) + " dùng chứng chỉ chưa được xác thực (chứng chỉ tự ký của máy chủ " +
                                "chưa có tên miền, hoặc tên không khớp địa chỉ).\n\nChứng chỉ cấp cho: " + ten + "\nHết hạn: " + han +
                                "\n\nMã nhận dạng chứng chỉ:", 15, 0xFF1F2937, false);
-        TextView ma = chu(KetNoi.maNhanDang(vt), 22, MAU_CHINH_DAM, true);
+        TextView ma = chu(KetNoi.maNhanDang(vt), 18, MAU_CHINH_DAM, true);
         ma.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         ma.setGravity(Gravity.CENTER);
         ma.setPadding(0, dp(8), 0, dp(8));
