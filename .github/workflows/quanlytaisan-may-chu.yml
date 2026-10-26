@@ -44,7 +44,7 @@ jobs:
             "kiem ke: $($kk.dot.ten) $($kk.dot.daKiem)/$($kk.dot.tong)"
             $dc = Invoke-RestMethod "$g/api/dieuchuyen" -Method Post -Headers $h -ContentType 'application/json' -Body "{`"taiSan`":[$($ts.id)],`"donVi`":2}"
             "dieu chuyen: $($dc.so) -> $($dc.tenDenDonVi)"
-            foreach ($x in @(@('xuat/taisan', '{}'), @('xuat/dieuchuyen', "{`"so`":`"$($dc.so)`"}"), @('xuat/donvi', '{}'), @('kiemke/' + $kk.dot.id + '/xuat', '{}'), @('xuat/mau', $null))) {
+            foreach ($x in @(@('xuat/taisan', '{}'), @('xuat/dieuchuyen', "{`"so`":`"$($dc.so)`"}"), @('xuat/donvi', '{}'), @(('kiemke/' + $kk.dot.id + '/xuat'), '{}'), @('xuat/mau', $null))) {
               $lk = if ($x[1]) { Invoke-RestMethod "$g/api/$($x[0])" -Method Post -Headers $h -ContentType 'application/json' -Body $x[1] } else { Invoke-RestMethod "$g/api/$($x[0])" -Headers $h }
               $f = Invoke-WebRequest "$g/$($lk.link)" -UseBasicParsing
               "Excel $($x[0]): $($lk.ten) $($f.RawContentLength) byte"
