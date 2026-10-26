@@ -15,6 +15,12 @@ của phần mềm trong app, thêm những việc trình duyệt trên điện 
 
 Đăng nhập, phân quyền, dữ liệu đều ở máy chủ: app chỉ nhớ địa chỉ máy chủ (và phiên đăng nhập như trình duyệt).
 
+| Kết nối máy chủ | Mã nhận dạng chứng chỉ tự ký | Quét kiểm kê | Tải Excel | Cập nhật |
+|---|---|---|---|---|
+| ![](../anh-man-hinh/app-ket-noi.jpg) | ![](../anh-man-hinh/app-chung-chi.jpg) | ![](../anh-man-hinh/app-quet-kiem-ke.jpg) | ![](../anh-man-hinh/app-tai-excel.jpg) | ![](../anh-man-hinh/app-cap-nhat.jpg) |
+
+(Chụp trên máy ảo Android 14 trong GitHub Actions.)
+
 ## Cài lên điện thoại
 
 File cài: `QuanLyTaiSan-DienThoai.apk` (cạnh `QuanLyTaiSan.exe`). Gói máy chủ (`dist/quanlytaisan-may-chu-*.zip`) có sẵn

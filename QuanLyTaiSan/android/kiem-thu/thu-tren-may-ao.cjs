@@ -98,9 +98,10 @@ async function choTrang(fn, arg, ms = 20000) {
     kiem(true, 'màn hình quét hiện kết quả máy chủ: Đã kiểm kê MB-00001');
     await chup('quet-ket-qua');
     await back();
-    await dev.wait({ text: 'Xong', clazz: 'android.widget.Button' }, { state: 'gone', timeout: 10000 });
+    await ngu(2000);
+    const conCamera = await dev.wait({ text: 'Xong', clazz: 'android.widget.Button' }, { timeout: 1500 }).then(() => true, () => false);
     const n = await page.$$eval('[data-vuaquet] li', a => a.length);
-    kiem(n >= 1, 'Back đóng camera, trang hiện danh sách vừa quét (' + n + ')');
+    kiem(!conCamera && n >= 1, 'Back đóng camera, trang hiện danh sách vừa quét (' + n + ')');
     await ngu(500);
     await chup('sau-quet');
   });

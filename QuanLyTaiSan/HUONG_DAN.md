@@ -104,6 +104,13 @@ mở đúng các trang như trên trình duyệt (cùng tài khoản, cùng dữ
 - Ghi **vị trí GPS** của tài sản, **chụp ảnh** tài sản, **in tem** qua máy in Wi-Fi (hoặc lưu PDF).
 - Máy chủ có bản app mới → mở app là được hỏi **Cập nhật**.
 
+| Kết nối máy chủ | Mã nhận dạng chứng chỉ | Quét kiểm kê bằng camera của app | Tải Excel |
+|---|---|---|---|
+| ![](anh-man-hinh/app-ket-noi.jpg) | ![](anh-man-hinh/app-chung-chi.jpg) | ![](anh-man-hinh/app-quet-kiem-ke.jpg) | ![](anh-man-hinh/app-tai-excel.jpg) |
+
+(Ảnh chụp app chạy trên máy ảo Android 14 trong kiểm thử tự động; camera máy ảo là cảnh giả lập.)
+Thêm: [danh sách vừa quét sau khi bấm Xong](anh-man-hinh/app-sau-quet.jpg) · [hỏi cập nhật app](anh-man-hinh/app-cap-nhat.jpg)
+
 **Cài app**: trên điện thoại mở địa chỉ máy chủ bằng Chrome → trang đăng nhập có **Tải app** (hoặc vào thẳng
 `<địa chỉ máy chủ>/tai-app`); quản trị trên máy tính vào **Cài đặt** có mã QR tải app để nhân viên quét. Android hỏi cho phép
 cài ứng dụng không rõ nguồn → cho phép.
