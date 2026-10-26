@@ -13,7 +13,8 @@ if (-not (Test-Path $csc)) { $csc = Join-Path $env:WINDIR 'Microsoft.NET\Framewo
 if (-not (Test-Path $csc)) { throw 'Khong tim thay csc.exe cua .NET Framework 4' }
 
 $icon = Join-Path $src 'app.ico'
-$out = if ($Out) { $Out } else { Join-Path $root 'QuanLyTaiSan.exe' }
+# chu y: PowerShell khong phan biet hoa thuong - bien nay phai khac ten tham so `$Out
+$tepRa = if ($Out) { $Out } else { Join-Path $root 'QuanLyTaiSan.exe' }
 $files = @(Get-ChildItem $src -Filter *.cs | ForEach-Object { $_.FullName })
 $refs = @('System.dll', 'System.Core.dll', 'System.Xml.dll', 'System.Xml.Linq.dll', 'System.IO.Compression.dll',
           'System.IO.Compression.FileSystem.dll', 'System.Web.Extensions.dll') | ForEach-Object { "/r:$_" }
@@ -21,9 +22,9 @@ $refs = @('System.dll', 'System.Core.dll', 'System.Xml.dll', 'System.Xml.Linq.dl
 $res = @()
 foreach ($f in Get-ChildItem (Join-Path $root 'web') -File) { $res += "/resource:$($f.FullName),QuanLyTaiSan.web.$($f.Name)" }
 
-& $csc /nologo /target:exe /optimize+ /codepage:65001 /warn:4 "/out:$out" "/win32icon:$icon" $res $refs $files
+& $csc /nologo /target:exe /optimize+ /codepage:65001 /warn:4 "/out:$tepRa" "/win32icon:$icon" $res $refs $files
 if ($LASTEXITCODE -ne 0) { throw 'Bien dich that bai' }
-"Da tao: $out"
+"Da tao: $tepRa"
 
 if (-not $Out) {
     # Goi may chu: CAI-DAT-MAY-CHU.bat, HUONG-DAN-CAI-DAT.html, QuanLyTaiSan.exe, trien-khai\ (tep nam ngay goc tep zip)

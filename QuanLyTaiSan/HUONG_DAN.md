@@ -197,4 +197,6 @@ Mỗi ngày tự giữ 1 bản `taisan.xml` trong `SaoLuu` (90 ngày). **Hãy sa
   đóng gói và cài thử trình cài đặt trên Windows Server + IIS thật (tên miền, HTTPS, không tên miền, sao lưu, gỡ cài đặt).
 - Sửa giao diện không cần biên dịch lại: đặt biến môi trường `QLTS_WEB` = đường dẫn thư mục `web` rồi chạy `QuanLyTaiSan.exe`.
 - `web\jsQR.js` là thư viện đọc QR mã nguồn mở (giấy phép Apache 2.0, `web\jsQR-LICENSE.txt`); phần còn lại viết riêng cho phần mềm.
-- File `QuanLyTaiSan.exe` trong thư mục này được biên dịch sẵn bằng Mono; nếu chạy trên Windows báo lỗi, chạy `build.bat` để biên dịch lại.
+- File `QuanLyTaiSan.exe` trong thư mục này được biên dịch trên Linux bằng Mono **theo thư viện tham chiếu .NET Framework 4.5**
+  (`build.sh` tự tải gói NuGet `Microsoft.NETFramework.ReferenceAssemblies.net45`), nên chạy đúng trên .NET Framework của Windows;
+  GitHub Actions chạy thử chính file này trên Windows mỗi lần đẩy mã. Muốn tự biên dịch trên Windows: `build.bat`.

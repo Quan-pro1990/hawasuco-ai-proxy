@@ -16,6 +16,49 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Chạy thử QuanLyTaiSan.exe có sẵn trong repo (biên dịch trên Linux) trên .NET Framework của Windows
+        shell: powershell
+        run: |
+          $d = "$env:RUNNER_TEMP\exe-repo"
+          New-Item -ItemType Directory -Force "$d\DuLieu" | Out-Null
+          Copy-Item QuanLyTaiSan\QuanLyTaiSan.exe "$d\QuanLyTaiSan.exe"
+          $env:QLTS_DULIEU = "$d\DuLieu"
+          $env:QLTS_MATKHAU = 'matkhau123'
+          $p = Start-Process "$d\QuanLyTaiSan.exe" -ArgumentList '--dat-quan-tri', 'admin' -Wait -PassThru -NoNewWindow
+          if ($p.ExitCode -ne 0) { throw "dat-quan-tri: $($p.ExitCode)" }
+          Remove-Item Env:\QLTS_MATKHAU
+          # chay nhu duoi HttpPlatformHandler (nghe 127.0.0.1:<HTTP_PLATFORM_PORT>)
+          $env:HTTP_PLATFORM_PORT = '18111'
+          $sv = Start-Process "$d\QuanLyTaiSan.exe" -PassThru
+          Start-Sleep -Seconds 3
+          $g = 'http://127.0.0.1:18111'
+          try {
+            $tt = Invoke-RestMethod "$g/api/trang-thai"
+            "trang-thai: $($tt | ConvertTo-Json -Compress)"
+            $dn = Invoke-RestMethod "$g/api/dangnhap" -Method Post -ContentType 'application/json' -Body '{"ten":"admin","matKhau":"matkhau123"}'
+            $h = @{ Authorization = "Bearer $($dn.token)" }
+            $ts = Invoke-RestMethod "$g/api/taisan" -Method Post -Headers $h -ContentType 'application/json' -Body '{"ten":"May bom thu","loai":1,"donVi":1}'
+            "tai san: $($ts.ma)"
+            $k = Invoke-RestMethod "$g/api/tim?ma=$($ts.ma)" -Headers $h
+            $kk = Invoke-RestMethod "$g/api/taisan/$($ts.id)/kiemke" -Method Post -Headers $h -ContentType 'application/json' -Body '{}'
+            "kiem ke: $($kk.dot.ten) $($kk.dot.daKiem)/$($kk.dot.tong)"
+            $dc = Invoke-RestMethod "$g/api/dieuchuyen" -Method Post -Headers $h -ContentType 'application/json' -Body "{`"taiSan`":[$($ts.id)],`"donVi`":2}"
+            "dieu chuyen: $($dc.so) -> $($dc.tenDenDonVi)"
+            foreach ($x in @(@('xuat/taisan', '{}'), @('xuat/dieuchuyen', "{`"so`":`"$($dc.so)`"}"), @('xuat/donvi', '{}'), @('kiemke/' + $kk.dot.id + '/xuat', '{}'), @('xuat/mau', $null))) {
+              $lk = if ($x[1]) { Invoke-RestMethod "$g/api/$($x[0])" -Method Post -Headers $h -ContentType 'application/json' -Body $x[1] } else { Invoke-RestMethod "$g/api/$($x[0])" -Headers $h }
+              $f = Invoke-WebRequest "$g/$($lk.link)" -UseBasicParsing
+              "Excel $($x[0]): $($lk.ten) $($f.RawContentLength) byte"
+            }
+            Invoke-RestMethod "$g/api/thongke" -Headers $h | Out-Null
+            Invoke-RestMethod "$g/api/hoatdong" -Headers $h | Out-Null
+            $trang = Invoke-WebRequest "$g/" -UseBasicParsing
+            if ($trang.Content -notmatch 'app\.js') { throw 'trang chu sai' }
+          } finally {
+            Stop-Process $sv -ErrorAction SilentlyContinue
+            Get-ChildItem "$d\DuLieu\NhatKy" -ErrorAction SilentlyContinue | ForEach-Object { Get-Content $_.FullName -Encoding UTF8 -Tail 20 }
+            Get-Content "$d\DuLieu\loi-khoi-dong.txt" -ErrorAction SilentlyContinue
+          }
+
       - name: Biên dịch + đóng gói (build.ps1)
         shell: powershell
         run: |
