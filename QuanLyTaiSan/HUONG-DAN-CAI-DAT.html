@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hướng dẫn dựng máy chủ Quản lý tài sản cho người mới</title>
+<style>
+:root { --nen: #ffffff; --chu: #1d2733; --phu: #5b6775; --vien: #d9e0e7; --ma: #f2f5f8; --nhan: #0b63c5; }
+@media (prefers-color-scheme: dark) { :root { --nen: #141a21; --chu: #e4e9ee; --phu: #9aa6b2; --vien: #2c3743; --ma: #1e2630; --nhan: #6cb2ff; } }
+body { margin: 0; background: var(--nen); color: var(--chu); font: 16px/1.6 "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; }
+main { max-width: 860px; margin: 0 auto; padding: 24px 16px 64px; }
+h1 { font-size: 1.9em; line-height: 1.25; margin: .2em 0 .6em; }
+h2 { font-size: 1.4em; margin: 2em 0 .6em; padding-top: .6em; border-top: 1px solid var(--vien); }
+h3 { font-size: 1.15em; margin: 1.6em 0 .4em; }
+a { color: var(--nhan); }
+code { background: var(--ma); border-radius: 4px; padding: .1em .35em; font: .92em Consolas, "Cascadia Mono", monospace; overflow-wrap: anywhere; }
+pre { background: var(--ma); border: 1px solid var(--vien); border-radius: 8px; padding: 12px 14px; overflow-x: auto; }
+pre code { background: none; padding: 0; overflow-wrap: normal; }
+blockquote { margin: 1em 0; padding: .6em 1em; border-left: 4px solid var(--nhan); background: var(--ma); border-radius: 0 8px 8px 0; }
+blockquote p { margin: 0; }
+.bang { overflow-x: auto; margin: 1em 0; }
+table { border-collapse: collapse; min-width: 100%; }
+th, td { border: 1px solid var(--vien); padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: var(--ma); }
+li { margin: .25em 0; }
+hr { border: 0; border-top: 1px solid var(--vien); margin: 2em 0; }
+</style>
+</head>
+<body>
+<main>
+<h1 id="hướng-dẫn-dựng-máy-chủ-quản-lý-tài-sản-cho-người-mới">Hướng dẫn dựng máy chủ Quản lý tài sản cho người mới</h1>
+<p>Làm xong hướng dẫn này, phần mềm <strong>Quản lý tài sản</strong> chạy trên máy chủ của công ty tại <code>https://&lt;tên-miền-của-bạn&gt;</code>: máy tính và điện thoại mở bằng trình duyệt, quét tem QR xem thông tin và ảnh tài sản, kiểm kê, điều chuyển; dữ liệu nằm trên máy chủ, tự sao lưu mỗi ngày; máy chủ tự chạy lại khi máy khởi động.</p>
+<p>Cách dựng <strong>giống hệt máy chủ bản đồ HawaMap</strong>: cùng IIS, cùng hai module URL Rewrite và HttpPlatformHandler, cùng trình cài nhấp đúp <code>CAI-DAT-MAY-CHU.bat</code>, cùng cách bật HTTPS miễn phí bằng win-acme. Máy chủ đã chạy HawaMap thì cài thêm Quản lý tài sản lên chính máy đó, chỉ cần một tên miền khác (bước 4).</p>
+<blockquote><p>Không cần biết lập trình. Lần đầu mất khoảng 1 giờ, phần lớn là chờ tải phần mềm và chờ tên miền có hiệu lực. Cứ làm lần lượt từng bước; chữ trong khung xám như <code>mstsc</code> là thứ bạn gõ hoặc thấy trên màn hình.</p></blockquote>
+<h2 id="mục-lục">Mục lục</h2>
+<ol>
+<li><a href="#1-chuẩn-bị">Chuẩn bị</a></li>
+<li><a href="#2-đăng-nhập-vào-máy-chủ">Đăng nhập vào máy chủ</a></li>
+<li><a href="#3-mở-cổng-80-và-443">Mở cổng 80 và 443</a></li>
+<li><a href="#4-trỏ-tên-miền-về-máy-chủ">Trỏ tên miền về máy chủ</a></li>
+<li><a href="#5-đưa-gói-cài-đặt-lên-máy-chủ">Đưa gói cài đặt lên máy chủ</a></li>
+<li><a href="#6-chạy-trình-cài-đặt">Chạy trình cài đặt</a></li>
+<li><a href="#7-kiểm-tra-máy-chủ">Kiểm tra máy chủ</a></li>
+<li><a href="#8-bật-https-miễn-phí">Bật HTTPS miễn phí</a></li>
+<li><a href="#9-bắt-đầu-dùng-phần-mềm">Bắt đầu dùng phần mềm</a></li>
+<li><a href="#10-dùng-trên-điện-thoại">Dùng trên điện thoại</a></li>
+<li><a href="#11-vận-hành-hằng-ngày">Vận hành hằng ngày</a></li>
+<li><a href="#12-gặp-lỗi">Gặp lỗi</a></li>
+<li><a href="#13-phụ-lục">Phụ lục</a></li>
+</ol>
+<h2 id="1-chuẩn-bị">1. Chuẩn bị</h2>
+<h3 id="máy-chủ">Máy chủ</h3>
+<p>Một máy Windows chạy suốt ngày đêm. Có thể là:</p>
+<ul>
+<li><strong>Máy chủ đang chạy HawaMap</strong> hoặc phần mềm Thất thoát nước — dùng chung được, không ảnh hưởng nhau;</li>
+<li>một <strong>VPS Windows</strong> thuê của nhà cung cấp (chọn gói Windows Server có IP công khai; nhà cung cấp gửi <strong>địa chỉ IP</strong>, <strong>tên đăng nhập</strong> — thường là <code>Administrator</code> — và <strong>mật khẩu</strong>);</li>
+<li>máy chủ đặt tại công ty: cần IP tĩnh của nhà mạng và mở cổng (NAT / port forwarding) 80, 443 trên modem về máy đó.</li>
+</ul>
+<div class="bang"><table>
+<thead><tr><th>Thành phần</th><th>Tối thiểu</th><th>Nên dùng</th></tr></thead>
+<tbody>
+<tr><td>Hệ điều hành</td><td>Windows Server 2016</td><td>Windows Server 2022 hoặc 2019</td></tr>
+<tr><td>CPU</td><td>1 nhân</td><td>2 nhân</td></tr>
+<tr><td>RAM</td><td>2 GB</td><td>4 GB</td></tr>
+<tr><td>Ổ đĩa còn trống</td><td>10 GB</td><td>40 GB (ảnh tài sản khoảng 0,3 MB / ảnh; 10.000 ảnh ≈ 3 GB)</td></tr>
+<tr><td>Mạng</td><td>IP công khai cố định, mở được cổng 80 và 443</td><td>như tối thiểu</td></tr>
+</tbody></table></div>
+<p>Phần mềm nhẹ: một tệp chương trình <code>QuanLyTaiSan.exe</code> (khoảng 1,5 MB) chạy trên .NET Framework có sẵn trong Windows, không cần cơ sở dữ liệu riêng.</p>
+<h3 id="tên-miền">Tên miền</h3>
+<p>Cần tên miền để bật HTTPS thật: điện thoại chỉ cho trang web mở <strong>camera quét QR</strong> và lấy GPS khi chạy HTTPS. Cách dễ nhất là dùng <strong>tên miền con</strong> của tên miền công ty, ví dụ <code>taisan.congty.vn</code> — không tốn tiền, chỉ cần người quản lý tên miền thêm một bản ghi (bước 4). Máy chủ đã có HawaMap ở <code>bando.congty.vn</code> thì thêm <code>taisan.congty.vn</code> trỏ cùng IP.</p>
+<p>Chưa có tên miền vẫn cài và dùng được bằng địa chỉ IP với chứng chỉ tự ký (trình duyệt cảnh báo lần đầu) — xem <a href="#phụ-lục-c-chưa-có-tên-miền-dùng-ip-và-chứng-chỉ-tự-ký">Phụ lục C</a>.</p>
+<p>Trong hướng dẫn này lấy ví dụ tên miền <code>taisan.congty.vn</code> và IP máy chủ <code>203.0.113.10</code>; thay bằng của bạn.</p>
+<h3 id="gói-cài-đặt">Gói cài đặt</h3>
+<p>Tệp <code>quanlytaisan-may-chu-&lt;phiên bản&gt;.zip</code> (khoảng 1 MB). Nhận từ người phát triển, hoặc tự tạo từ mã nguồn (xem <a href="#phụ-lục-a-tạo-gói-cài-đặt-từ-mã-nguồn">Phụ lục A</a>). Trong gói có sẵn hướng dẫn này (<code>HUONG-DAN-CAI-DAT.html</code>).</p>
+<h3 id="máy-tính-của-bạn">Máy tính của bạn</h3>
+<p>Để điều khiển máy chủ từ xa. Windows có sẵn <strong>Remote Desktop Connection</strong>; máy Mac cài ứng dụng <strong>Windows App</strong> (tên cũ: Microsoft Remote Desktop) từ App Store.</p>
+<h3 id="vài-từ-cần-biết">Vài từ cần biết</h3>
+<div class="bang"><table>
+<thead><tr><th>Từ</th><th>Nghĩa</th></tr></thead>
+<tbody>
+<tr><td>VPS / máy chủ</td><td>Máy tính chạy suốt ngày đêm trong trung tâm dữ liệu (hoặc phòng máy công ty), bạn điều khiển từ xa</td></tr>
+<tr><td>IP công khai</td><td>Địa chỉ số của máy chủ trên Internet, ví dụ <code>203.0.113.10</code></td></tr>
+<tr><td>Tên miền</td><td>Địa chỉ dễ nhớ thay cho IP, ví dụ <code>taisan.congty.vn</code></td></tr>
+<tr><td>Bản ghi A (DNS)</td><td>Dòng cấu hình của tên miền, nghĩa là &quot;tên miền này ở IP này&quot;</td></tr>
+<tr><td>Remote Desktop</td><td>Cách mở màn hình máy chủ ngay trên máy tính của bạn</td></tr>
+<tr><td>IIS</td><td>Phần mềm máy chủ web có sẵn trong Windows</td></tr>
+<tr><td>URL Rewrite, HttpPlatformHandler</td><td>Hai module miễn phí của Microsoft cho IIS (HawaMap cũng dùng); HttpPlatformHandler giúp IIS tự chạy và trông chừng <code>QuanLyTaiSan.exe</code></td></tr>
+<tr><td>HTTPS / chứng chỉ</td><td>Kết nối mã hoá, có hình ổ khoá trên trình duyệt; chứng chỉ Let's Encrypt miễn phí</td></tr>
+<tr><td>Administrator</td><td>Tài khoản quản trị của Windows, có quyền cài phần mềm</td></tr>
+<tr><td>Tài khoản quản trị phần mềm</td><td>Tài khoản đăng nhập vào chính phần mềm Quản lý tài sản (khác tài khoản Windows), toàn quyền: danh mục, tài khoản nhân viên, cài đặt</td></tr>
+</tbody></table></div>
+<h2 id="2-đăng-nhập-vào-máy-chủ">2. Đăng nhập vào máy chủ</h2>
+<ol>
+<li>Trên máy của bạn: bấm <strong>Start</strong>, gõ <code>mstsc</code> rồi nhấn Enter — cửa sổ <strong>Remote Desktop Connection</strong> hiện ra.</li>
+<li>Ô <strong>Computer</strong>: gõ IP máy chủ, ví dụ <code>203.0.113.10</code>, bấm <strong>Connect</strong>.</li>
+<li>Nhập tên đăng nhập <code>Administrator</code> và mật khẩu, bấm <strong>OK</strong>.</li>
+<li>Hiện câu &quot;The identity of the remote computer cannot be verified&quot;: tích <strong>Don't ask me again</strong> rồi bấm <strong>Yes</strong>.</li>
+<li>Màn hình máy chủ hiện ra trong cửa sổ. Từ đây, mọi việc làm trong cửa sổ này, trừ khi hướng dẫn ghi &quot;trên máy của bạn&quot;.</li>
+</ol>
+<p>Nên làm ngay: đổi mật khẩu Administrator nếu nhà cung cấp gửi qua email (nhấn <code>Ctrl + Alt + End</code> trong cửa sổ Remote Desktop → <strong>Change a password</strong>), và chạy <strong>Windows Update</strong> cho đủ bản vá.</p>
+<h2 id="3-mở-cổng-80-và-443">3. Mở cổng 80 và 443</h2>
+<p>Người dùng vào trang web qua cổng <strong>80</strong> (http) và <strong>443</strong> (https). Có hai lớp tường lửa:</p>
+<ul>
+<li><strong>Tường lửa Windows</strong> trên máy chủ: trình cài đặt tự mở, không cần làm gì.</li>
+<li><strong>Tường lửa của nhà cung cấp</strong> (thường gọi là Firewall, Security Group, Network Security Group trong trang quản lý VPS) hoặc <strong>modem / router</strong> của công ty: thêm hai luật cho phép kết nối vào (Inbound) qua TCP cổng <code>80</code> và <code>443</code> từ mọi nơi (<code>0.0.0.0/0</code>); máy chủ ở công ty thì chuyển (NAT) hai cổng này về IP nội bộ của máy chủ. Giữ luật cổng <code>3389</code> (Remote Desktop), tốt nhất chỉ cho phép từ IP của bạn.</li>
+</ul>
+<p>Máy chủ đã chạy HawaMap thì hai cổng này đã mở sẵn.</p>
+<h2 id="4-trỏ-tên-miền-về-máy-chủ">4. Trỏ tên miền về máy chủ</h2>
+<p>Làm trên máy của bạn, ở trang quản lý tên miền (nơi mua tên miền, hoặc nhờ người quản lý tên miền công ty):</p>
+<ol>
+<li>Đăng nhập, mở mục <strong>Quản lý DNS</strong> (DNS records, Zone editor…).</li>
+<li>Thêm một bản ghi như bảng dưới.</li>
+<li>Lưu lại. Thường mất 5 – 30 phút để có hiệu lực, đôi khi lâu hơn.</li>
+</ol>
+<div class="bang"><table>
+<thead><tr><th>Loại</th><th>Tên (Host)</th><th>Giá trị (Value / Points to)</th><th>TTL</th></tr></thead>
+<tbody>
+<tr><td>A</td><td><code>taisan</code></td><td><code>203.0.113.10</code></td><td>để mặc định, hoặc 300</td></tr>
+</tbody></table></div>
+<p>Kiểm tra: trên máy của bạn bấm <strong>Start</strong>, gõ <code>cmd</code>, Enter, rồi gõ <code>nslookup taisan.congty.vn</code>. Thấy dòng <code>Address: 203.0.113.10</code> (đúng IP máy chủ) là xong.</p>
+<blockquote><p>Dùng chung máy chủ với HawaMap: giữ nguyên bản ghi của HawaMap (vd. <code>bando</code>), thêm bản ghi <code>taisan</code> trỏ <strong>cùng IP</strong>. IIS phân biệt hai trang theo tên miền. Tên miền dùng Cloudflare: để biểu tượng đám mây <strong>màu xám</strong> (DNS only) cho bản ghi này, ít nhất cho tới khi xong bước 8.</p></blockquote>
+<h2 id="5-đưa-gói-cài-đặt-lên-máy-chủ">5. Đưa gói cài đặt lên máy chủ</h2>
+<ol>
+<li>Trên máy của bạn: chuột phải tệp <code>quanlytaisan-may-chu-&lt;phiên bản&gt;.zip</code> → <strong>Copy</strong>.</li>
+<li>Trong cửa sổ Remote Desktop: mở <strong>File Explorer</strong> → <strong>This PC</strong> → ổ <strong>C:</strong> → chuột phải vào chỗ trống → <strong>Paste</strong>. (Không dán được thì gửi tệp qua email / Google Drive rồi tải về bằng trình duyệt trên máy chủ.)</li>
+<li>Tệp tải về từ Internet: chuột phải tệp zip → <strong>Properties</strong> → tích <strong>Unblock</strong> (nếu có) → <strong>OK</strong>. Bước này tránh các cảnh báo bảo mật khi chạy trình cài.</li>
+<li>Chuột phải tệp zip → <strong>Extract All…</strong> → <strong>Extract</strong>. Bạn có thư mục <code>C:\quanlytaisan-may-chu-&lt;phiên bản&gt;</code> với các tệp <code>CAI-DAT-MAY-CHU.bat</code>, <code>HUONG-DAN-CAI-DAT.html</code>, <code>QuanLyTaiSan.exe</code> và thư mục <code>trien-khai</code>.</li>
+</ol>
+<p>Thư mục này chỉ là bộ cài: trình cài đặt chép chương trình sang <code>C:\inetpub\QuanLyTaiSan</code>. Giữ lại tệp zip để cài lại khi cần.</p>
+<h2 id="6-chạy-trình-cài-đặt">6. Chạy trình cài đặt</h2>
+<p>Mở thư mục vừa giải nén và <strong>nhấp đúp <code>CAI-DAT-MAY-CHU.bat</code></strong>. Windows có thể hỏi vài câu trước khi chạy:</p>
+<div class="bang"><table>
+<thead><tr><th>Windows hiện</th><th>Bấm</th></tr></thead>
+<tbody>
+<tr><td>&quot;Windows protected your PC&quot;</td><td><strong>More info</strong> → <strong>Run anyway</strong></td></tr>
+<tr><td>&quot;Open File - Security Warning&quot;</td><td><strong>Run</strong></td></tr>
+<tr><td>&quot;Do you want to allow this app to make changes to your device?&quot;</td><td><strong>Yes</strong></td></tr>
+</tbody></table></div>
+<p>Cửa sổ cài đặt hiện ra và làm 5 bước. Câu hỏi có gợi ý <code>(C/k)</code> thì nhấn Enter là <strong>Có</strong>; gõ <code>k</code> rồi Enter là <strong>Không</strong>. Câu hỏi có giá trị trong <code>[ngoặc vuông]</code>: nhấn Enter để dùng giá trị đó.</p>
+<div class="bang"><table>
+<thead><tr><th>Bước</th><th>Cửa sổ cài đặt hỏi / báo</th><th>Bạn làm</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><code>Dang bat IIS, lan dau co the mat vai phut...</code></td><td>Chờ. Nếu báo cần khởi động lại: khởi động lại máy chủ rồi nhấp đúp <code>CAI-DAT-MAY-CHU.bat</code> lần nữa</td></tr>
+<tr><td>2</td><td><code>.NET Framework 4.x</code></td><td>Windows Server 2016 trở lên có sẵn — không phải làm gì. Máy cũ hơn: trình duyệt mở trang tải .NET Framework 4.8, cài xong nhấn Enter</td></tr>
+<tr><td>3</td><td><code>Chua cai URL Rewrite 2.1.</code> rồi <code>Cai xong nhan Enter de kiem tra lai</code></td><td>Trình duyệt mở trang tải. Bấm liên kết bản <strong>x64</strong> (English), chạy tệp <code>.msi</code> vừa tải, tích đồng ý, bấm <strong>Install</strong>, <strong>Finish</strong>. Quay lại cửa sổ cài đặt, nhấn Enter</td></tr>
+<tr><td>3</td><td><code>Chua cai HttpPlatformHandler 1.2.</code></td><td>Làm giống như trên: tải bản <strong>x64</strong>, cài, quay lại nhấn Enter</td></tr>
+<tr><td>4</td><td><code>Ten mien</code></td><td>Gõ tên miền, ví dụ <code>taisan.congty.vn</code>, nhấn Enter. Chưa có tên miền: nhấn Enter luôn rồi trả lời thêm câu hỏi về cổng và chứng chỉ tự ký (<a href="#phụ-lục-c-chưa-có-tên-miền-dùng-ip-và-chứng-chỉ-tự-ký">Phụ lục C</a>)</td></tr>
+<tr><td>5</td><td><code>Ten dang nhap [admin]</code> (chỉ hỏi lần đầu)</td><td>Tên tài khoản quản trị <strong>của phần mềm</strong>: nhấn Enter để dùng <code>admin</code>, hoặc gõ tên khác</td></tr>
+<tr><td>5</td><td><code>Mat khau (it nhat 6 ky tu...)</code> và <code>Nhap lai mat khau</code></td><td>Gõ mật khẩu (chữ không hiện khi gõ — bình thường), Enter; gõ lại lần nữa. Ghi lại cẩn thận</td></tr>
+<tr><td>sau</td><td><code>Dat lich sao luu thu muc du lieu moi ngay luc 23:30? (C/k)</code></td><td>Nhấn Enter: mỗi đêm chép toàn bộ dữ liệu sang <code>D:\SaoLuu\QuanLyTaiSan</code> (máy không có ổ D: thì <code>C:\SaoLuu\QuanLyTaiSan</code>)</td></tr>
+<tr><td>cuối</td><td><code>Mo http://... ngay bay gio? (C/k)</code></td><td>Nhấn Enter để mở thử trang</td></tr>
+</tbody></table></div>
+<p>Máy nào đã có sẵn IIS, URL Rewrite, HttpPlatformHandler (ví dụ máy đã cài HawaMap) thì trình cài bỏ qua các câu tương ứng.</p>
+<p>Cài thành công khi thấy chữ <strong>Xong.</strong> màu xanh lá và bảng tóm tắt giống thế này:</p>
+<pre><code>Xong.
+  Trang web      : http://taisan.congty.vn  (HTTPS: https://taisan.congty.vn - chua bat)
+  Du lieu        : C:\QuanLyTaiSanData  (taisan.xml, LichSu, Anh, taikhoan.xml; tu sao luu taisan.xml moi ngay trong SaoLuu)
+  Nhat ky        : C:\inetpub\QuanLyTaiSan\logs , C:\QuanLyTaiSanData\NhatKy</code></pre>
+<p>Thấy dòng màu đỏ bắt đầu bằng <code>[LOI]</code>: đọc nội dung dòng đó và xem <a href="#12-gặp-lỗi">mục 12</a>. Sửa xong thì nhấp đúp <code>CAI-DAT-MAY-CHU.bat</code> lại — chạy lại bao nhiêu lần cũng được, các câu trả lời cũ được nhớ (chỉ cần nhấn Enter), mật khẩu quản trị không bị hỏi lại.</p>
+<p>Trình cài đã: bật IIS, chép chương trình vào <code>C:\inetpub\QuanLyTaiSan</code>, tạo thư mục dữ liệu <code>C:\QuanLyTaiSanData</code> (chỉ quản trị máy và IIS đọc được — trong đó có tài khoản, ảnh tài sản), tạo tài khoản quản trị của phần mềm, tạo site <strong>QuanLyTaiSan</strong> trong IIS, mở tường lửa Windows và đặt lịch sao lưu. Từ giờ IIS tự chạy phần mềm mỗi khi máy khởi động, tự bật lại nếu phần mềm gặp lỗi.</p>
+<blockquote><p>Trình duyệt trên Windows Server không mở được trang tải (Internet Explorer báo chặn nội dung): mở <strong>Server Manager</strong> → <strong>Local Server</strong> → <strong>IE Enhanced Security Configuration</strong> → chọn <strong>Off</strong> cho Administrators; hoặc tải tệp trên máy của bạn rồi copy sang máy chủ như ở bước 5.</p></blockquote>
+<h2 id="7-kiểm-tra-máy-chủ">7. Kiểm tra máy chủ</h2>
+<ol>
+<li>Trên máy chủ, mở trình duyệt vào <code>http://taisan.congty.vn/api/trang-thai</code>. Thấy dòng bắt đầu bằng <code>{&quot;ok&quot;:true,&quot;ten&quot;:&quot;QuanLyTaiSan&quot;</code> là phần mềm đang chạy.</li>
+<li>Trên điện thoại, <strong>tắt Wi-Fi</strong> (dùng 4G cho chắc là đi từ Internet vào), mở <code>http://taisan.congty.vn</code>. Thấy trang đăng nhập Quản lý tài sản có logo công ty là được.</li>
+<li>Điện thoại không mở được: xem lại tường lửa của nhà cung cấp / modem (<a href="#3-mở-cổng-80-và-443">bước 3</a>) và bản ghi A (<a href="#4-trỏ-tên-miền-về-máy-chủ">bước 4</a>).</li>
+</ol>
+<p>Lúc này trang còn chạy <code>http://</code> nên điện thoại chưa mở được camera quét QR trong trang. Bước tiếp theo bật HTTPS.</p>
+<h2 id="8-bật-https-miễn-phí">8. Bật HTTPS miễn phí</h2>
+<p>Dùng <strong>win-acme</strong> để xin chứng chỉ miễn phí của Let's Encrypt (máy đã cài HawaMap thì đã có sẵn <code>C:\win-acme</code>, bỏ qua bước 1, 2). Cần có: tên miền đã trỏ đúng (bước 4) và từ điện thoại mở được <code>http://taisan.congty.vn</code> (bước 7).</p>
+<ol>
+<li>Trên máy chủ, mở trang <code>https://www.win-acme.com</code> → <strong>Download</strong> → tải bản <strong>x64</strong> (tệp zip có chữ <code>x64</code> trong tên).</li>
+<li>Giải nén vào thư mục <code>C:\win-acme</code>. Để cố định thư mục này: win-acme tự gia hạn chứng chỉ từ đây.</li>
+<li>Trong <code>C:\win-acme</code>: chuột phải <code>wacs.exe</code> → <strong>Run as administrator</strong>.</li>
+<li>Trả lời các câu hỏi (chữ có thể hơi khác tuỳ phiên bản, cứ chọn mặc định): gõ <code>N</code> (Create certificate, default settings) → chọn site <strong>QuanLyTaiSan</strong> (gõ số đứng trước tên site) → nhấn Enter để chọn mọi tên miền của site → nhập email của bạn (Let's Encrypt báo khi có vấn đề) → gõ <code>y</code> để đồng ý điều khoản.</li>
+<li>Thấy thông báo đã tạo chứng chỉ và đã thêm binding https là xong. win-acme tạo sẵn tác vụ tự gia hạn: chứng chỉ có hạn 90 ngày và được gia hạn tự động trước khi hết hạn.</li>
+<li><strong>Nhấp đúp <code>CAI-DAT-MAY-CHU.bat</code> lần nữa</strong>, nhấn Enter ở mọi câu hỏi. Trình cài thấy site đã có HTTPS nên bật tự chuyển <code>http://</code> sang <code>https://</code> và mở cổng 443 trên tường lửa Windows. Bảng tóm tắt không còn chữ <code>chua bat</code>.</li>
+<li>Mở <code>https://taisan.congty.vn</code> trên điện thoại: có hình ổ khoá cạnh địa chỉ là thành công.</li>
+</ol>
+<p>win-acme báo lỗi xác minh (validation): kiểm tra lại bản ghi A, cổng 80 từ Internet vào (bước 3, bước 7) và Cloudflare (đám mây màu xám). Quản lý tài sản trả được tệp xác minh của Let's Encrypt cho cả hai cách xác minh <code>http-01</code> của win-acme (lưu tệp vào thư mục site, hoặc phục vụ từ bộ nhớ).</p>
+<p>Đã mua chứng chỉ của nhà cung cấp khác: xem <a href="#phụ-lục-b-tuỳ-chọn-nâng-cao">Phụ lục B</a>.</p>
+<h2 id="9-bắt-đầu-dùng-phần-mềm">9. Bắt đầu dùng phần mềm</h2>
+<p>Trên máy tính, mở <code>https://taisan.congty.vn</code>, đăng nhập bằng tài khoản quản trị vừa tạo ở bước 6, rồi:</p>
+<ol>
+<li><strong>Cài đặt</strong> → tên công ty, địa danh, người lập biểu, kế toán trưởng, giám đốc (in trên sổ, biên bản kiểm kê, biên bản giao nhận). Ô <strong>Địa chỉ in trong mã QR</strong>: gõ <code>https://taisan.congty.vn</code> — đây là địa chỉ điện thoại mở khi quét tem; <strong>đặt trước khi in tem</strong>.</li>
+<li><strong>Danh mục</strong> → kiểm tra loại tài sản, các đội cấp nước và phòng ban (có sẵn danh mục mẫu của ngành nước).</li>
+<li><strong>Nhập từ Excel</strong> → đưa sổ tài sản cố định đang dùng vào; hoặc <strong>Thêm tài sản</strong> từng cái.</li>
+<li><strong>Tài khoản</strong> → tạo tài khoản cho nhân viên: *Chỉ xem*, *Nhân viên kiểm tra* (quét tem kiểm tra, kiểm kê, báo hỏng), *Cán bộ quản lý tài sản* (thêm, sửa, điều chuyển, in tem…); có thể giới hạn tài khoản theo 1 đội / phòng ban.</li>
+<li><strong>In tem QR</strong> → in tem dán lên tài sản.</li>
+</ol>
+<p>Hướng dẫn sử dụng chi tiết từng chức năng: tệp <code>HUONG_DAN.md</code> trong mã nguồn phần mềm.</p>
+<h2 id="10-dùng-trên-điện-thoại">10. Dùng trên điện thoại</h2>
+<ul>
+<li><strong>Android (Chrome):</strong> mở <code>https://taisan.congty.vn</code> → đăng nhập → menu ba chấm → <strong>Thêm vào màn hình chính</strong> (hoặc <strong>Cài đặt ứng dụng</strong>). Lần đầu quét QR, cho phép trình duyệt dùng <strong>camera</strong>.</li>
+<li><strong>iPhone (Safari):</strong> mở trang → nút <strong>Chia sẻ</strong> → <strong>Thêm vào MH chính</strong>.</li>
+<li>Quét tem bằng nút tròn <strong>Quét QR</strong> ở giữa thanh dưới; hoặc dùng <strong>ứng dụng Camera</strong> có sẵn của điện thoại — tem chứa địa chỉ trang tài sản nên mở thẳng trong trình duyệt. Mỗi lần quét (tài khoản Nhân viên kiểm tra trở lên) là ghi nhận tài sản đã kiểm kê năm nay.</li>
+<li>Điện thoại cần vào được Internet (4G hoặc Wi-Fi). Máy chủ đặt trong mạng nội bộ công ty mà không mở ra Internet thì điện thoại phải nối Wi-Fi công ty.</li>
+</ul>
+<h2 id="11-vận-hành-hằng-ngày">11. Vận hành hằng ngày</h2>
+<h3 id="máy-chủ-tự-làm">Máy chủ tự làm</h3>
+<ul>
+<li>Tự chạy khi máy chủ khởi động lại, tự bật lại khi phần mềm gặp lỗi.</li>
+<li>Mỗi ngày giữ một bản sao <code>taisan.xml</code> trong <code>C:\QuanLyTaiSanData\SaoLuu</code> (giữ 90 ngày); mỗi đêm sao lưu cả thư mục dữ liệu sang ổ khác (nếu đã đồng ý đặt lịch ở bước 6).</li>
+<li>Chứng chỉ HTTPS tự gia hạn (win-acme).</li>
+</ul>
+<h3 id="cập-nhật-phiên-bản-mới">Cập nhật phiên bản mới</h3>
+<ol>
+<li>Nhận tệp zip mới, giải nén như bước 5.</li>
+<li>Nhấp đúp <code>CAI-DAT-MAY-CHU.bat</code> trong thư mục mới, nhấn Enter ở mọi câu hỏi.</li>
+</ol>
+<p>Dữ liệu trong <code>C:\QuanLyTaiSanData</code> và tài khoản được giữ nguyên. Máy tính, điện thoại tự nhận bản mới khi mở lại trang.</p>
+<h3 id="sao-lưu">Sao lưu</h3>
+<p>Chỉ cần sao lưu thư mục <code>C:\QuanLyTaiSanData</code>:</p>
+<div class="bang"><table>
+<thead><tr><th>Tệp / thư mục</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td><code>taisan.xml</code></td><td>danh mục, tài sản, kiểm kê các năm, cài đặt</td></tr>
+<tr><td><code>LichSu\</code></td><td>lịch sử kiểm tra, bảo dưỡng, điều chuyển (phiếu), kiểm kê — mỗi tháng 1 tệp</td></tr>
+<tr><td><code>Anh\</code></td><td>ảnh tài sản (mỗi tài sản 1 thư mục)</td></tr>
+<tr><td><code>taikhoan.xml</code></td><td>tài khoản người dùng (mật khẩu đã băm)</td></tr>
+<tr><td><code>SaoLuu\</code></td><td>bản sao <code>taisan.xml</code> mỗi ngày</td></tr>
+<tr><td><code>cai-dat-may-chu.json</code></td><td>câu trả lời của trình cài đặt</td></tr>
+</tbody></table></div>
+<p>Đặt / đổi lịch sao lưu mỗi đêm: nhấp đúp <code>trien-khai\SAO-LUU-DAT-LICH.bat</code> (chọn thư mục đích, giờ chạy). Nên chép tiếp thư mục sao lưu ra nơi khác định kỳ (ổ cứng ngoài, Google Drive…). Khôi phục: cài lại theo bước 5, 6 rồi chép thư mục dữ liệu về chỗ cũ (dừng site <strong>QuanLyTaiSan</strong> trong IIS Manager trước khi chép, chép xong bật lại).</p>
+<h3 id="quên-mật-khẩu-quản-trị">Quên mật khẩu quản trị</h3>
+<p>Nhấp đúp <code>trien-khai\DAT-LAI-MAT-KHAU-QUAN-TRI.bat</code> (trong thư mục bộ cài trên máy chủ), nhập tên tài khoản quản trị và mật khẩu mới. Mật khẩu của nhân viên thì quản trị đặt lại trong trang <strong>Tài khoản</strong> của phần mềm.</p>
+<h3 id="xem-nhật-ký-khi-có-lỗi">Xem nhật ký khi có lỗi</h3>
+<ul>
+<li>Nhật ký phần mềm: <code>C:\QuanLyTaiSanData\NhatKy</code> (đăng nhập, thay đổi quan trọng, lỗi) và <code>C:\QuanLyTaiSanData\loi-khoi-dong.txt</code>.</li>
+<li>Đầu ra của chương trình: <code>C:\inetpub\QuanLyTaiSan\logs</code>.</li>
+<li>Lỗi khởi động của IIS: <strong>Event Viewer</strong> → <strong>Windows Logs</strong> → <strong>Application</strong>.</li>
+</ul>
+<h3 id="gỡ-cài-đặt">Gỡ cài đặt</h3>
+<p>Nhấp đúp <code>trien-khai\GO-CAI-DAT.bat</code>, gõ <code>Y</code>. Lệnh này xoá site, app pool và luật tường lửa của Quản lý tài sản; giữ lại <code>C:\inetpub\QuanLyTaiSan</code>, thư mục dữ liệu <code>C:\QuanLyTaiSanData</code> và lịch sao lưu (xoá tay nếu không cần nữa).</p>
+<h2 id="12-gặp-lỗi">12. Gặp lỗi</h2>
+<div class="bang"><table>
+<thead><tr><th>Hiện tượng</th><th>Cách xử lý</th></tr></thead>
+<tbody>
+<tr><td>Nhấp đúp <code>CAI-DAT-MAY-CHU.bat</code>, cửa sổ hiện rồi tắt ngay</td><td>Chuột phải tệp → <strong>Run as administrator</strong>. Kiểm tra đã <strong>Extract All</strong> (không chạy thẳng bên trong tệp zip)</td></tr>
+<tr><td><code>[LOI] Thieu thu muc trien-khai</code></td><td>Đang chạy bên trong tệp zip: giải nén trước (bước 5)</td></tr>
+<tr><td>Không mở được trang tải module</td><td>Tắt IE Enhanced Security Configuration (xem cuối bước 6) hoặc tải trên máy của bạn rồi copy sang</td></tr>
+<tr><td><code>[LOI] Ten mien ... dang gan cho site ...</code></td><td>Tên miền đã dùng cho trang khác (vd. HawaMap): dùng tên miền khác cho Quản lý tài sản</td></tr>
+<tr><td>Trang báo <code>HTTP Error 500.19</code></td><td>Thiếu URL Rewrite hoặc HttpPlatformHandler: cài bản x64 rồi chạy lại trình cài đặt</td></tr>
+<tr><td>Trang báo <code>HTTP Error 502.3</code> hoặc <code>502.5</code></td><td>Phần mềm không khởi động được: xem <code>C:\QuanLyTaiSanData\loi-khoi-dong.txt</code> và <code>C:\inetpub\QuanLyTaiSan\logs</code>. Thường do thiếu quyền ghi thư mục dữ liệu: chạy lại trình cài đặt (cấp lại quyền)</td></tr>
+<tr><td>Bảng tóm tắt báo site chưa chạy được, cổng 80 đang bị dùng</td><td>Không có tên miền thì dừng <strong>Default Web Site</strong> (trình cài hỏi ở bước 4) hoặc chọn cổng khác. Phần mềm khác chiếm cổng: chạy <code>netstat -ano</code> trong <code>cmd</code> để tìm</td></tr>
+<tr><td>Vào bằng IP thấy trang chào mừng của IIS hoặc trang HawaMap</td><td>Bình thường khi đã cài với tên miền: hãy vào bằng tên miền</td></tr>
+<tr><td>Trên máy chủ mở được, máy khác hoặc điện thoại không mở được</td><td>Tường lửa của nhà cung cấp / modem (bước 3); bản ghi A chưa đúng hoặc chưa có hiệu lực (bước 4, <code>nslookup</code>)</td></tr>
+<tr><td>win-acme báo lỗi xác minh</td><td>Bản ghi A, cổng 80 từ Internet vào, Cloudflare đang bật proxy (xem bước 8)</td></tr>
+<tr><td>Trang Quét QR báo không mở được camera</td><td>Phải mở bằng <code>https://</code>; cho phép quyền camera cho trình duyệt trong cài đặt điện thoại. Tạm thời: bấm <strong>Chụp ảnh mã QR</strong>, hoặc quét tem bằng ứng dụng Camera của điện thoại</td></tr>
+<tr><td>Tem in ra mở sai địa chỉ (localhost, IP cũ…)</td><td><strong>Cài đặt</strong> → <strong>Địa chỉ in trong mã QR</strong> chưa đặt hoặc sai: sửa rồi in lại tem (tem đã dán vẫn dùng được nếu địa chỉ cũ còn vào được)</td></tr>
+<tr><td>Quên mật khẩu quản trị</td><td><code>trien-khai\DAT-LAI-MAT-KHAU-QUAN-TRI.bat</code> (mục 11)</td></tr>
+<tr><td>Muốn đổi sang tên miền khác</td><td>Trỏ tên miền mới (bước 4), chạy lại trình cài đặt và nhập tên miền mới, xin chứng chỉ cho tên miền mới (bước 8), sửa <strong>Địa chỉ in trong mã QR</strong></td></tr>
+</tbody></table></div>
+<h2 id="13-phụ-lục">13. Phụ lục</h2>
+<h3 id="phụ-lục-a-tạo-gói-cài-đặt-từ-mã-nguồn">Phụ lục A: Tạo gói cài đặt từ mã nguồn</h3>
+<p>Trên máy Windows có mã nguồn (thư mục <code>QuanLyTaiSan</code>): nhấp đúp <code>build.bat</code>. Trình biên dịch C# có sẵn trong Windows (.NET Framework 4) tạo <code>QuanLyTaiSan.exe</code>, rồi đóng gói thành thư mục <code>dist\quanlytaisan-may-chu</code> và tệp <code>dist\quanlytaisan-may-chu-&lt;phiên bản&gt;.zip</code>. Không cần cài Visual Studio.</p>
+<p>Trên Linux / macOS (để phát triển): <code>./build.sh</code> (cần Mono và Node.js 18+); lệnh này tạo lại cả <code>HUONG-DAN-CAI-DAT.html</code> từ tệp hướng dẫn này.</p>
+<p>Gói gồm: <code>CAI-DAT-MAY-CHU.bat</code>, <code>HUONG-DAN-CAI-DAT.html</code>, <code>QuanLyTaiSan.exe</code> (giao diện web nhúng sẵn bên trong) và thư mục <code>trien-khai</code> (script cài IIS, tiện ích đặt lại mật khẩu, sao lưu, gỡ cài đặt). Thư mục mã nguồn có cùng bố cục, nên nhấp đúp <code>CAI-DAT-MAY-CHU.bat</code> ngay trong thư mục mã nguồn (sau khi build) cũng cài được.</p>
+<h3 id="phụ-lục-b-tuỳ-chọn-nâng-cao">Phụ lục B: Tuỳ chọn nâng cao</h3>
+<p>Trình cài nhấp đúp gọi script <code>trien-khai\iis\cai-dat-iis.ps1</code>. Người đã quen có thể chạy thẳng script này trong PowerShell <strong>Run as administrator</strong> (đứng trong thư mục bộ cài) để chọn thêm tuỳ chọn:</p>
+<div class="bang"><table>
+<thead><tr><th>Tham số</th><th>Mặc định</th><th>Ý nghĩa</th></tr></thead>
+<tbody>
+<tr><td><code>-TenMien</code></td><td>(trống)</td><td>tên miền của site</td></tr>
+<tr><td><code>-ThuMuc</code></td><td><code>C:\inetpub\QuanLyTaiSan</code></td><td>nơi đặt chương trình</td></tr>
+<tr><td><code>-ThuMucDuLieu</code></td><td><code>C:\QuanLyTaiSanData</code></td><td>nơi lưu dữ liệu (tài sản, ảnh, lịch sử, tài khoản)</td></tr>
+<tr><td><code>-CongHttp</code> / <code>-CongHttps</code></td><td><code>80</code> / <code>443</code></td><td>cổng của site</td></tr>
+<tr><td><code>-VanTayChungChi</code></td><td>(trống)</td><td>vân tay (thumbprint) chứng chỉ HTTPS đã nhập vào máy</td></tr>
+<tr><td><code>-TuKy</code></td><td>tắt</td><td>chưa có tên miền: tạo chứng chỉ tự ký, gắn vào cổng <code>-CongHttps</code></td></tr>
+<tr><td><code>-TenSite</code></td><td><code>QuanLyTaiSan</code></td><td>tên site và app pool trong IIS</td></tr>
+</tbody></table></div>
+<p>Dùng chứng chỉ đã mua (tệp <code>.pfx</code>): nhấp đúp tệp → chọn <strong>Local Machine</strong> → để Windows tự chọn kho (hoặc chọn <strong>Personal</strong>) → xong. Lấy vân tay rồi chạy lại script:</p>
+<pre><code>Get-ChildItem Cert:\LocalMachine\My | Format-List Subject, Thumbprint, NotAfter
+powershell -ExecutionPolicy Bypass -File .\trien-khai\iis\cai-dat-iis.ps1 -TenMien taisan.congty.vn -VanTayChungChi &lt;Thumbprint&gt;</code></pre>
+<p>Chạy thử trên một máy tính bất kỳ, không cần IIS: nhấp đúp <code>QuanLyTaiSan.exe</code> → trình duyệt mở <code>http://localhost:18090</code> (dữ liệu nằm trong thư mục <code>DuLieu</code> cạnh tệp <code>.exe</code>).</p>
+<h3 id="phụ-lục-c-chưa-có-tên-miền-dùng-ip-và-chứng-chỉ-tự-ký">Phụ lục C: Chưa có tên miền: dùng IP và chứng chỉ tự ký</h3>
+<p>Ở bước 4 của trình cài, để trống tên miền. Trình cài hỏi thêm:</p>
+<div class="bang"><table>
+<thead><tr><th>Cửa sổ cài đặt hỏi</th><th>Bạn làm</th></tr></thead>
+<tbody>
+<tr><td><code>Dung site &quot;Default Web Site&quot; de nhuong cong 80 ...? (C/k)</code></td><td>Nhấn Enter (trang chào mừng mặc định của IIS không cần nữa)</td></tr>
+<tr><td><code>Cong http cho Quan ly tai san [80]</code></td><td>Nhấn Enter. Cổng 80 đã dùng cho trang khác (vd. HawaMap chưa có tên miền) thì trình cài gợi ý <code>8080</code></td></tr>
+<tr><td><code>Tao chung chi tu ky de dung https://&lt;IP may chu&gt;? (C/k)</code></td><td>Nhấn Enter: có HTTPS để điện thoại mở được camera quét QR</td></tr>
+<tr><td><code>Cong https [443]</code></td><td>Nhấn Enter (cổng 443 đã dùng thì trình cài gợi ý <code>8443</code>)</td></tr>
+</tbody></table></div>
+<p>Người dùng vào bằng <code>https://203.0.113.10</code> (thêm <code>:8443</code> nếu dùng cổng khác). Lần đầu trình duyệt báo &quot;Kết nối không riêng tư&quot; vì chứng chỉ tự ký: bấm <strong>Nâng cao</strong> → <strong>Tiếp tục truy cập</strong> (iPhone: <strong>Hiển thị chi tiết</strong> → <strong>truy cập trang web này</strong>). Bảng tóm tắt cuối trình cài in <strong>mã nhận dạng</strong> chứng chỉ: bấm biểu tượng cảnh báo trên thanh địa chỉ → xem chứng chỉ để so (khác mã thì đừng đăng nhập — có thể bị chặn giữa đường). Nhớ mở cổng http / https đã chọn ở tường lửa nhà cung cấp / modem (bước 3) và đặt <strong>Địa chỉ in trong mã QR</strong> = <code>https://203.0.113.10</code> (bước 9).</p>
+<p>Khi có tên miền: tạo bản ghi A, chạy lại <code>CAI-DAT-MAY-CHU.bat</code>, nhập tên miền, rồi bật HTTPS (bước 8). Tem đã in theo IP vẫn dùng được nếu còn giữ IP đó; in tem mới theo tên miền cho chắc.</p>
+<h3 id="phụ-lục-d-dùng-chung-máy-chủ-với-hawamap-và-phần-mềm-thất-thoát-nước">Phụ lục D: Dùng chung máy chủ với HawaMap và phần mềm Thất thoát nước</h3>
+<ul>
+<li><strong>HawaMap</strong> (site <code>HawaMap</code>, cổng 80 / 443 với tên miền riêng) và <strong>Quản lý tài sản</strong> (site <code>QuanLyTaiSan</code>) chạy cạnh nhau, cùng dùng URL Rewrite và HttpPlatformHandler; IIS chọn trang theo tên miền. Mỗi phần mềm một thư mục dữ liệu (<code>C:\HawaMapData</code>, <code>C:\QuanLyTaiSanData</code>), cài / cập nhật / gỡ riêng.</li>
+<li>Cả hai đều chưa có tên miền: chỉ một trang được giữ cổng 80 — trình cài Quản lý tài sản tự gợi ý cổng <code>8080</code>.</li>
+<li><strong>Thất thoát nước</strong> (site HTTPS cổng 8080 của gói <code>CaiDat-IIS.bat</code>): trình cài Quản lý tài sản kiểm tra cổng trước khi dùng — cổng nào đã có trang khác hoặc chương trình khác dùng thì báo và gợi ý cổng trống, không đụng site Thất thoát nước.</li>
+</ul>
+<h3 id="phụ-lục-e-nâng-cấp-từ-gói-cài-cũ-quanlytaisan-goicaidat-iis">Phụ lục E: Nâng cấp từ gói cài cũ (QuanLyTaiSan-GoiCaiDat-IIS)</h3>
+<p>Máy đã cài bằng gói cũ (<code>CaiDat-IIS.bat</code>, HTTPS cổng 8080, cần ASP.NET Core Hosting Bundle): chỉ cần giải nén gói mới và nhấp đúp <code>CAI-DAT-MAY-CHU.bat</code>. Trình cài dùng lại site <strong>QuanLyTaiSan</strong>, thư mục chương trình, thư mục dữ liệu và chứng chỉ tự ký cũ, chuyển sang chạy bằng HttpPlatformHandler như HawaMap. Không có tên miền thì nhấn Enter ở câu hỏi cổng https để giữ cổng 8080 cũ — địa chỉ và tem đã in vẫn dùng được. ASP.NET Core Hosting Bundle không cần nữa (gỡ hay giữ đều được).</p>
+<p>Gói cũ cài thành <strong>ứng dụng con</strong> (vd. <code>https://&lt;máy chủ&gt;:8080/taisan/</code> dưới site Thất thoát nước): trình cài gỡ ứng dụng con đó và tạo site riêng (bảng tóm tắt in địa chỉ mới). Sửa <strong>Cài đặt → Địa chỉ in trong mã QR</strong> theo địa chỉ mới và in lại tem đã dán theo địa chỉ cũ.</p>
+</main>
+</body>
+</html>

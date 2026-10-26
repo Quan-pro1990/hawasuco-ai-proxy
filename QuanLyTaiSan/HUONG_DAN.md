@@ -14,10 +14,12 @@ Thêm: [đăng nhập](anh-man-hinh/dien-thoai-dang-nhap.png) · [theo đơn v�
 
 | Tệp | Dùng để |
 |---|---|
-| `QuanLyTaiSan.exe` | chạy thử trên 1 máy tính (nhấp đúp) |
-| `QuanLyTaiSan-GoiCaiDat-IIS\` (và file `.zip` cùng tên) | **gói cài lên máy chủ IIS**: chép sang máy chủ, chạy `CaiDat-IIS.bat` — hướng dẫn chi tiết trong gói: [`HUONG_DAN_CAI_DAT.html`](iis/HUONG_DAN_CAI_DAT.html) |
-| `src\`, `web\`, `iis\` | mã nguồn: máy chủ C#, giao diện web, script cài IIS |
-| `build.bat` | biên dịch lại trên Windows (tạo `QuanLyTaiSan.exe`, thư mục và file zip gói cài) |
+| `QuanLyTaiSan.exe` | chương trình (giao diện web nhúng sẵn); nhấp đúp để chạy thử trên 1 máy tính |
+| `dist\quanlytaisan-may-chu-<phiên bản>.zip` | **gói cài máy chủ** (giống gói máy chủ HawaMap): chép lên máy chủ Windows → Extract All → nhấp đúp `CAI-DAT-MAY-CHU.bat` |
+| `CAI-DAT-MAY-CHU.bat`, `trien-khai\` | trình cài đặt máy chủ IIS (hỏi - đáp), script IIS, đặt lại mật khẩu quản trị, sao lưu, gỡ cài đặt |
+| `HUONG-DAN-CAI-DAT.html` (từ [`trien-khai/HUONG_DAN_MAY_CHU.md`](trien-khai/HUONG_DAN_MAY_CHU.md)) | hướng dẫn dựng máy chủ từng bước cho người mới |
+| `src\`, `web\`, `tools\` | mã nguồn: máy chủ C#, giao diện web, công cụ đóng gói |
+| `build.bat` | biên dịch lại trên Windows và tạo gói cài máy chủ trong `dist\` |
 
 Cần .NET Framework 4.5 trở lên (có sẵn trong Windows 10/11, Windows Server 2016 trở lên).
 
@@ -30,14 +32,20 @@ Cần .NET Framework 4.5 trở lên (có sẵn trong Windows 10/11, Windows Serv
 Chạy thử chỉ dùng trên chính máy đó. Để điện thoại quét được bằng camera trong trang web phải cài lên máy chủ IIS (có https).
 (`QuanLyTaiSan.exe --lan` cho máy khác trong mạng nội bộ vào bằng http để xem thử — không mã hoá, camera trong trang không chạy.)
 
-## Cài lên máy chủ IIS (dùng thật)
+## Cài lên máy chủ (dùng thật) — giống máy chủ HawaMap
 
-Chép thư mục `QuanLyTaiSan-GoiCaiDat-IIS` (hoặc file zip, giải nén) sang máy chủ đang chạy phần mềm Thất thoát nước, nhấp đúp `CaiDat-IIS.bat`.
-Cổng 8080 đã có site Thất thoát nước thì phần mềm được cài thành **ứng dụng con** `https://<máy chủ>:8080/taisan/` (dùng chung chứng chỉ).
-Script hỏi tài khoản quản trị, in ra địa chỉ. Hướng dẫn từng bước (cài IIS, Hosting Bundle, chứng chỉ, mở cổng, sao lưu, cập nhật, xử lý lỗi):
-`HUONG_DAN_CAI_DAT.html` trong gói.
+Cùng cách dựng với máy chủ bản đồ HawaMap: IIS + URL Rewrite + HttpPlatformHandler, tên miền riêng (vd `taisan.congty.vn`),
+HTTPS miễn phí bằng win-acme (Let's Encrypt). Máy chủ đã chạy HawaMap thì cài thêm lên chính máy đó.
 
-Sau khi cài, đăng nhập quản trị → **Cài đặt** → *Địa chỉ in trong mã QR* = địa chỉ điện thoại dùng để vào, vd `https://tenmien.vn:8080/taisan`.
+1. Chép `dist\quanlytaisan-may-chu-<phiên bản>.zip` lên máy chủ Windows → chuột phải → **Extract All**.
+2. Nhấp đúp **`CAI-DAT-MAY-CHU.bat`** → trả lời từng câu (bật IIS, kiểm tra 2 module, tên miền, tài khoản quản trị của
+   phần mềm, lịch sao lưu). Chạy lại tệp này để cập nhật phiên bản mới — dữ liệu giữ nguyên.
+3. Bật HTTPS bằng win-acme rồi chạy lại `CAI-DAT-MAY-CHU.bat` (tự chuyển http → https).
+4. Đăng nhập quản trị → **Cài đặt** → *Địa chỉ in trong mã QR* = `https://taisan.congty.vn` (trước khi in tem).
+
+Từng bước chi tiết cho người mới (thuê VPS, Remote Desktop, trỏ tên miền, mở cổng, HTTPS, sao lưu, quên mật khẩu, xử lý
+lỗi, chưa có tên miền, dùng chung máy chủ với HawaMap / Thất thoát nước): [`HUONG-DAN-CAI-DAT.html`](HUONG-DAN-CAI-DAT.html)
+trong gói (bản Markdown: [`trien-khai/HUONG_DAN_MAY_CHU.md`](trien-khai/HUONG_DAN_MAY_CHU.md)).
 
 ## Bắt đầu sử dụng
 
@@ -182,8 +190,11 @@ Mỗi ngày tự giữ 1 bản `taisan.xml` trong `SaoLuu` (90 ngày). **Hãy sa
 
 ## Biên dịch lại (khi sửa mã nguồn)
 
-- Windows: chạy `build.bat` (dùng trình biên dịch C# có sẵn trong Windows, không cần Visual Studio). Mã nguồn viết theo C# 5 để dịch được bằng csc.exe này.
-- Linux / macOS (để phát triển): `./build.sh` (cần Mono). Chạy thử: `mono QuanLyTaiSan.exe`.
+- Windows: chạy `build.bat` (dùng trình biên dịch C# có sẵn trong Windows, không cần Visual Studio) → `QuanLyTaiSan.exe` và gói
+  `dist\quanlytaisan-may-chu-<phiên bản>.zip`. Mã nguồn viết theo C# 5 để dịch được bằng csc.exe này.
+- Linux / macOS (để phát triển): `./build.sh` (cần Mono, Node.js 18+; tạo lại cả `HUONG-DAN-CAI-DAT.html`). Chạy thử: `mono QuanLyTaiSan.exe`.
+- Mỗi lần đẩy mã lên GitHub, GitHub Actions (`.github/workflows/quanlytaisan-may-chu.yml`) biên dịch bằng csc của Windows,
+  đóng gói và cài thử trình cài đặt trên Windows Server + IIS thật (tên miền, HTTPS, không tên miền, sao lưu, gỡ cài đặt).
 - Sửa giao diện không cần biên dịch lại: đặt biến môi trường `QLTS_WEB` = đường dẫn thư mục `web` rồi chạy `QuanLyTaiSan.exe`.
 - `web\jsQR.js` là thư viện đọc QR mã nguồn mở (giấy phép Apache 2.0, `web\jsQR-LICENSE.txt`); phần còn lại viết riêng cho phần mềm.
 - File `QuanLyTaiSan.exe` trong thư mục này được biên dịch sẵn bằng Mono; nếu chạy trên Windows báo lỗi, chạy `build.bat` để biên dịch lại.

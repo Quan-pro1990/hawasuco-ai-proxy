@@ -1,0 +1,164 @@
+# Phần mềm Quản lý tài sản (thư mục QuanLyTaiSan): biên dịch bằng csc có sẵn trong Windows (build.ps1, C# 5), đóng gói máy
+# chủ kiểu HawaMap, rồi cài thử bộ cài trien-khai\iis trên IIS thật (Windows Server của GitHub):
+#   1) tên miền, HTTP cổng 80   2) giả lập win-acme gắn HTTPS → chạy lại: tự chuyển http → https, tệp xác minh Let's Encrypt
+#   3) không tên miền: HTTP 8080 + chứng chỉ tự ký HTTPS 8443   4) trình cài hỏi - đáp (câu trả lời qua stdin) + lịch sao lưu
+#   5) gỡ cài đặt (giữ dữ liệu). Dữ liệu tạo ở bước 1 phải còn nguyên qua mọi lần cài lại.
+name: Quản lý tài sản - build và cài thử IIS
+
+on:
+  push:
+    paths: ['QuanLyTaiSan/**', '.github/workflows/quanlytaisan-may-chu.yml']
+  workflow_dispatch:
+
+jobs:
+  iis:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Biên dịch + đóng gói (build.ps1)
+        shell: powershell
+        run: |
+          & .\QuanLyTaiSan\build.ps1
+          if (-not $?) { throw 'build loi' }
+          Get-ChildItem QuanLyTaiSan\dist -Recurse -File | Select-Object FullName, Length | Format-Table -AutoSize
+
+      - name: Bật IIS, cài URL Rewrite + HttpPlatformHandler
+        shell: powershell
+        run: |
+          Install-WindowsFeature -Name Web-Server, Web-Static-Content, Web-Default-Doc, Web-Http-Errors, Web-Http-Logging, Web-Filtering, Web-AppInit, Web-Mgmt-Console | Out-Null
+          choco install urlrewrite httpplatformhandler -y --no-progress
+          if ($LASTEXITCODE -ne 0) { throw "choco: $LASTEXITCODE" }
+          $x = [xml](Get-Content "$env:windir\System32\inetsrv\config\applicationHost.config")
+          $m = @($x.configuration.'system.webServer'.globalModules.add | ForEach-Object { $_.name })
+          "Module: $($m -join ', ')"
+          if ($m -notcontains 'RewriteModule' -or $m -notcontains 'httpPlatformHandler') { throw 'thieu module' }
+          Get-Website | Format-Table Name, State, PhysicalPath -AutoSize
+          exit 0
+
+      - name: Giải nén gói, tạo trước tài khoản quản trị (CI không gõ được mật khẩu)
+        shell: powershell
+        run: |
+          $zip = Get-ChildItem QuanLyTaiSan\dist\quanlytaisan-may-chu-*.zip | Select-Object -First 1
+          "Goi: $($zip.Name) $($zip.Length) byte"
+          Expand-Archive $zip.FullName C:\goi
+          Get-ChildItem C:\goi -Recurse -File | Select-Object FullName | Format-Table -AutoSize
+          New-Item -ItemType Directory -Force C:\QuanLyTaiSanData | Out-Null
+          $env:QLTS_DULIEU = 'C:\QuanLyTaiSanData'
+          $env:QLTS_MATKHAU = 'matkhau123'
+          $p = Start-Process C:\goi\QuanLyTaiSan.exe -ArgumentList '--dat-quan-tri', 'admin' -Wait -PassThru -NoNewWindow
+          if ($p.ExitCode -ne 0) { throw "dat-quan-tri: $($p.ExitCode)" }
+          Add-Content "$env:windir\System32\drivers\etc\hosts" "`r`n127.0.0.1 taisan.local"
+          '{"ten":"admin","matKhau":"matkhau123"}' | Set-Content C:\dangnhap.json -Encoding ASCII
+
+      - name: 1) Cài với tên miền taisan.local (HTTP cổng 80)
+        shell: powershell
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File C:\goi\trien-khai\iis\cai-dat-iis.ps1 -TenMien taisan.local
+          if ($LASTEXITCODE -ne 0) { throw "cai dat loi $LASTEXITCODE" }
+          Get-WebBinding | Format-Table protocol, bindingInformation, ItemXPath -AutoSize
+          $tt = Invoke-RestMethod http://taisan.local/api/trang-thai
+          $tt | ConvertTo-Json -Compress
+          if (-not $tt.ok -or $tt.ten -ne 'QuanLyTaiSan' -or $tt.phienBanPhanMem -ne '1.1.0') { throw 'trang-thai sai' }
+          $dn = Invoke-RestMethod http://taisan.local/api/dangnhap -Method Post -ContentType 'application/json' -Body (Get-Content -Raw C:\dangnhap.json)
+          $h = @{ Authorization = "Bearer $($dn.token)" }
+          $ts = Invoke-RestMethod http://taisan.local/api/taisan -Method Post -Headers $h -ContentType 'application/json' -Body '{"ten":"May bom thu CI","loai":1,"donVi":1}'
+          "Tao tai san: $($ts.ma) $($ts.ten)"
+          $ts.ma | Set-Content C:\ma.txt
+          $trang = Invoke-WebRequest http://taisan.local/ -UseBasicParsing
+          if ($trang.Content -notmatch 'app\.js') { throw 'trang chu sai' }
+          $r = curl.exe -s -o NUL -w "%{http_code} %{redirect_url}" "http://taisan.local/t/$($ts.ma)"
+          "Tem QR /t/$($ts.ma) -> $r"
+          if ($r -notmatch "^302 .*#/ma/$($ts.ma)$") { throw 'chuyen huong tem sai' }
+          # IP that qua URL Rewrite (X-Forwarded-For) ghi vao nhat ky khi dang nhap sai
+          '{"ten":"admin","matKhau":"sai-mat-khau"}' | Set-Content C:\sai.json -Encoding ASCII
+          curl.exe -s -o NUL -H "Content-Type: application/json" --data-binary "@C:\sai.json" http://taisan.local/api/dangnhap
+          Get-Content C:\QuanLyTaiSanData\NhatKy\* -Encoding UTF8 | Select-String 'sai' | Select-Object -Last 2
+          icacls C:\QuanLyTaiSanData
+          Get-ChildItem C:\inetpub\QuanLyTaiSan -Recurse | Select-Object FullName | Format-Table -AutoSize
+
+      - name: 2) Giả lập win-acme gắn HTTPS cho tên miền, chạy lại trình cài → tự chuyển http sang https
+        shell: powershell
+        run: |
+          $cc = New-SelfSignedCertificate -DnsName taisan.local -CertStoreLocation Cert:\LocalMachine\My
+          New-WebBinding -Name QuanLyTaiSan -Protocol https -Port 443 -HostHeader taisan.local -SslFlags 1
+          (Get-WebBinding -Name QuanLyTaiSan -Protocol https -HostHeader taisan.local).AddSslCertificate($cc.Thumbprint, 'My')
+          # win-acme (cach luu tep vao thu muc site) ghi tep xac minh vao .well-known\acme-challenge
+          New-Item -ItemType Directory -Force C:\inetpub\QuanLyTaiSan\.well-known\acme-challenge | Out-Null
+          Set-Content C:\inetpub\QuanLyTaiSan\.well-known\acme-challenge\AbCdEfGhIjKlMnOpQrSt_123-xyz 'ma-xac-minh-ci' -Encoding ASCII -NoNewline
+          powershell -NoProfile -ExecutionPolicy Bypass -File C:\goi\trien-khai\iis\cai-dat-iis.ps1 -TenMien taisan.local
+          if ($LASTEXITCODE -ne 0) { throw "cai dat loi $LASTEXITCODE" }
+          $r = curl.exe -s -o NUL -w "%{http_code} %{redirect_url}" http://taisan.local/ds
+          "http -> $r"
+          if ($r -ne '301 https://taisan.local/ds') { throw 'chua chuyen http sang https' }
+          $acme = curl.exe -s http://taisan.local/.well-known/acme-challenge/AbCdEfGhIjKlMnOpQrSt_123-xyz
+          "acme: $acme"
+          if ($acme -ne 'ma-xac-minh-ci') { throw 'tep xac minh Let''s Encrypt khong tra duoc qua http' }
+          $tt = curl.exe -sk https://taisan.local/api/trang-thai
+          "https: $tt"
+          if ($tt -notmatch '"ok":true') { throw 'https loi' }
+          $dn = curl.exe -sk -H "Content-Type: application/json" --data-binary "@C:\dangnhap.json" https://taisan.local/api/dangnhap | ConvertFrom-Json
+          $ds = curl.exe -sk -H "Authorization: Bearer $($dn.token)" "https://taisan.local/api/tim?ma=$(Get-Content C:\ma.txt)" | ConvertFrom-Json
+          "Tai san con nguyen: $($ds.ma) id=$($ds.id)"
+          if (-not $ds.id) { throw 'mat du lieu' }
+
+      - name: 3) Không tên miền - HTTP 8080 + chứng chỉ tự ký HTTPS 8443 (Default Web Site giữ cổng 80)
+        shell: powershell
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File C:\goi\trien-khai\iis\cai-dat-iis.ps1 -CongHttp 8080 -TuKy -CongHttps 8443
+          if ($LASTEXITCODE -ne 0) { throw "cai dat loi $LASTEXITCODE" }
+          Get-WebBinding | Format-Table protocol, bindingInformation, ItemXPath -AutoSize
+          $a = curl.exe -s http://127.0.0.1:8080/api/trang-thai
+          $b = curl.exe -sk https://127.0.0.1:8443/api/trang-thai
+          "http 8080: $a"
+          "https 8443: $b"
+          if ($a -notmatch '"ok":true' -or $b -notmatch '"ok":true') { throw 'khong ten mien loi' }
+          if (Get-WebBinding -Name QuanLyTaiSan -HostHeader taisan.local) { throw 'con binding ten mien cu' }
+          $dn = curl.exe -sk -H "Content-Type: application/json" --data-binary "@C:\dangnhap.json" https://127.0.0.1:8443/api/dangnhap | ConvertFrom-Json
+          if (-not $dn.token) { throw 'dang nhap loi' }
+          Get-ChildItem Cert:\LocalMachine\My | Where-Object { $_.FriendlyName -eq 'Quan ly tai san (IIS)' } | Format-List Subject, Thumbprint, NotAfter
+
+      - name: 4) Trình cài hỏi - đáp (CAI-DAT-MAY-CHU) với câu trả lời qua stdin, đặt lịch sao lưu
+        shell: powershell
+        run: |
+          # ten mien: Enter (khong co) | dung Default Web Site: k | cong http [8080]: Enter | tu ky: Enter | cong https [8443]: Enter
+          # | dat lich sao luu: c | mo trang: k
+          $traLoi = "`r`nk`r`n`r`n`r`n`r`nc`r`nk`r`n"
+          $traLoi | powershell -NoProfile -ExecutionPolicy Bypass -File C:\goi\trien-khai\iis\cai-dat-nhanh.ps1
+          if ($LASTEXITCODE -ne 0) { throw "cai dat nhanh loi $LASTEXITCODE" }
+          Get-Content C:\QuanLyTaiSanData\cai-dat-may-chu.json
+          $a = curl.exe -s http://127.0.0.1:8080/api/trang-thai
+          if ($a -notmatch '"ok":true') { throw 'sau cai nhanh loi' }
+          Get-ScheduledTask -TaskName 'QuanLyTaiSan - Sao luu du lieu' | Format-List TaskName, State
+          for ($i = 0; $i -lt 30; $i++) {
+            $t = @(Get-ChildItem 'D:\SaoLuu\QuanLyTaiSan\HienTai\taisan.xml', 'C:\SaoLuu\QuanLyTaiSan\HienTai\taisan.xml' -ErrorAction SilentlyContinue)
+            if ($t.Count) { break }
+            Start-Sleep -Seconds 2
+          }
+          if (-not $t.Count) { throw 'sao luu chua chay' }
+          "Sao luu: $($t[0].FullName)"
+
+      - name: 5) Gỡ cài đặt (giữ dữ liệu)
+        shell: powershell
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File C:\goi\trien-khai\iis\go-cai-dat-iis.ps1
+          if ($LASTEXITCODE -ne 0) { throw "go loi $LASTEXITCODE" }
+          Import-Module WebAdministration
+          if (Test-Path IIS:\Sites\QuanLyTaiSan) { throw 'site con' }
+          if (-not (Test-Path C:\QuanLyTaiSanData\taisan.xml)) { throw 'mat du lieu' }
+          'Go xong, du lieu con nguyen.'
+
+      - name: Nhật ký khi lỗi
+        if: failure()
+        shell: powershell
+        run: |
+          Get-ChildItem C:\QuanLyTaiSanData\NhatKy -ErrorAction SilentlyContinue | ForEach-Object { Get-Content $_.FullName -Encoding UTF8 -Tail 40 }
+          Get-Content C:\QuanLyTaiSanData\loi-khoi-dong.txt -ErrorAction SilentlyContinue
+          Get-ChildItem C:\inetpub\QuanLyTaiSan\logs -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName; Get-Content $_.FullName -Tail 40 }
+          Get-WinEvent -LogName Application -MaxEvents 30 -ErrorAction SilentlyContinue | Where-Object { $_.ProviderName -match 'IIS|HttpPlatform|W3SVC|WAS' } | Format-List TimeCreated, ProviderName, Message
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: quanlytaisan-may-chu
+          path: QuanLyTaiSan/dist/*.zip

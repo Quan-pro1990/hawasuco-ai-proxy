@@ -9,23 +9,25 @@ Công ty TNHH MTV Cấp nước Hậu Giang (HAWASUCO). Phiên bản 1.0 — 10/
   ghi kết quả kiểm tra, báo hỏng, chụp ảnh tại chỗ (kèm toạ độ GPS).
 - Cán bộ quản lý tài sản theo dõi trên máy tính: danh sách, tình trạng, giá trị (nguyên giá, khấu hao tạm tính), hạn bảo dưỡng,
   **kiểm kê mỗi năm 1 lần bằng quét QR** (quét tem là ghi nhận đã kiểm kê) thay cho đối chiếu giấy, xuất biên bản Excel.
-- Dùng chung hạ tầng đang có: **máy chủ IIS cổng 8080** của phần mềm Quản lý thất thoát nước, không cần mua thêm phần mềm / CSDL.
+- Dựng máy chủ **giống máy chủ bản đồ HawaMap**: IIS + URL Rewrite + HttpPlatformHandler, tên miền riêng, HTTPS miễn phí bằng
+  win-acme; cài chung được lên máy đang chạy HawaMap / Thất thoát nước, không cần mua thêm phần mềm / CSDL.
 
 ## 2. Kiến trúc
 
 ```
  Điện thoại (Chrome / Safari)  ──┐                 ┌───────────────────── Máy chủ Windows (IIS) ──────────────────────┐
    • trang Quét QR (camera)      │                 │                                                                   │
-   • ứng dụng Camera quét tem ───┼── HTTPS 8080 ──>│ IIS + ASP.NET Core Module ──> QuanLyTaiSan.exe (127.0.0.1:cổng)   │
- Máy tính (trình duyệt)        ──┘   /taisan/...   │      (cùng cổng với site       • trang web nhúng trong .exe       │
-   • quản lý, in tem, Excel                        │       Thất thoát nước)         • API JSON /api/...                │
+   • ứng dụng Camera quét tem ───┼── HTTPS 443 ───>│ IIS + HttpPlatformHandler ──> QuanLyTaiSan.exe (127.0.0.1:cổng)   │
+ Máy tính (trình duyệt)        ──┘ taisan.congty.vn│  (site QuanLyTaiSan, cạnh      • trang web nhúng trong .exe       │
+   • quản lý, in tem, Excel                        │   site HawaMap)                • API JSON /api/...                │
                                                    │                                • dữ liệu C:\QuanLyTaiSanData       │
                                                    └───────────────────────────────────────────────────────────────────┘
 ```
 
 | Thành phần | Lựa chọn | Lý do |
 |---|---|---|
-| Máy chủ | 1 file `QuanLyTaiSan.exe` (C#, .NET Framework 4.x), IIS chạy qua ASP.NET Core Module (out-of-process) | Giống hệt cách triển khai `ThatThoatNuoc.exe` đang chạy; biên dịch bằng `csc.exe` có sẵn trong Windows, không cần Visual Studio |
+| Máy chủ | 1 file `QuanLyTaiSan.exe` (C#, .NET Framework 4.x); IIS tự chạy và giám sát qua HttpPlatformHandler (biến `HTTP_PLATFORM_PORT`); vẫn chạy được dưới ASP.NET Core Module của gói cài cũ | Cùng cách dựng với máy chủ HawaMap (cùng 2 module IIS, cùng trình cài `CAI-DAT-MAY-CHU.bat`); biên dịch bằng `csc.exe` có sẵn trong Windows, không cần Visual Studio |
+| Cài đặt | Gói zip `quanlytaisan-may-chu-<phiên bản>`: `CAI-DAT-MAY-CHU.bat` → `trien-khai\iis\cai-dat-nhanh.ps1` (hỏi - đáp, nhớ câu trả lời) → `cai-dat-iis.ps1` (site theo tên miền cổng 80 / 443, nhận chứng chỉ win-acme, chuyển http → https; chưa có tên miền: cổng trống + chứng chỉ tự ký) | Người mới tự dựng được; chạy lại để cập nhật, dữ liệu giữ nguyên; kiểm thử trên IIS thật bằng GitHub Actions |
 | Giao diện | Trang web 1 trang (HTML/CSS/JS thuần) nhúng trong .exe, dùng chung cho máy tính và điện thoại; cài được lên màn hình chính (PWA) | Không phải cài app; 1 giao diện cho mọi thiết bị; cập nhật chỉ cần thay file .exe |
 | Đọc QR | `BarcodeDetector` của trình duyệt (Chrome Android), dự phòng `jsQR.js` (Apache-2.0, đi kèm) cho iPhone / trình duyệt khác; thêm nút "Chụp ảnh mã QR" và ô gõ mã | Camera trong trang web cần **https** — vì vậy chạy sau IIS |
 | Tạo QR | `maqr.js` viết riêng (chuẩn ISO/IEC 18004, phiên bản 1–40, mức sửa lỗi L/M/Q/H), vẽ SVG sắc nét khi in | Không phụ thuộc thư viện; đã kiểm bằng 2 bộ đọc độc lập (zxing, jsQR) ở mọi phiên bản |
@@ -39,7 +41,7 @@ Chạy thử không cần IIS: nhấp đúp `QuanLyTaiSan.exe` → mở `http://
 **Mã tài sản**: `<tiền tố loại>-<5 chữ số>`, vd `MB-00012` (máy bơm), `DH-00003` (thuỷ lượng kế), `VA-00150` (van).
 Phần mềm tự cấp mã kế tiếp theo loại; có thể ghi mã sẵn có (vd số hiệu trong sổ kế toán). Chỉ dùng chữ không dấu, số, `-` `.` `_`.
 
-**Nội dung QR** = địa chỉ web: `https://<máy chủ>:8080/taisan/t/MB-00012`
+**Nội dung QR** = địa chỉ web: `https://taisan.congty.vn/t/MB-00012` (phần trước `/t/` lấy từ Cài đặt → Địa chỉ in trong mã QR)
 
 - Quét bằng **ứng dụng Camera bất kỳ** → trình duyệt mở thẳng trang tài sản (đăng nhập nếu chưa).
 - Quét trong trang **Quét QR** của phần mềm → phần mềm lấy phần mã sau `/t/` → kể cả khi đổi tên miền / địa chỉ máy chủ,
@@ -175,8 +177,11 @@ C:\QuanLyTaiSanData\
   máy chủ chỉ lưu mã băm SHA-256 của token. Khoá / đổi mật khẩu tài khoản là đăng xuất ngay mọi thiết bị.
 - Ảnh chỉ tải được khi đã đăng nhập (không có đường dẫn công khai); kiểm tra định dạng JPEG, giới hạn 8 MB/ảnh, ảnh trả về kèm
   `Content-Security-Policy: sandbox`. Trang web có CSP chặn script lạ, chống nhúng khung.
-- Thư mục dữ liệu chỉ app pool IIS được ghi. Lịch sử chỉ ghi thêm. Nhật ký máy chủ ghi đăng nhập sai, xoá, nhập Excel.
-- Chỉ IIS gọi được `QuanLyTaiSan.exe` (nghe 127.0.0.1, kiểm tra mã `MS-ASPNETCORE-TOKEN`).
+- Thư mục dữ liệu chỉ quản trị máy, SYSTEM và app pool IIS vào được (bộ cài bỏ thừa kế quyền). Lịch sử chỉ ghi thêm. Nhật ký
+  máy chủ ghi đăng nhập sai (kèm IP thật do URL Rewrite đặt vào `X-Forwarded-For`), xoá, nhập Excel.
+- `QuanLyTaiSan.exe` chỉ nghe 127.0.0.1 (chỉ IIS chuyển yêu cầu tới; gói cũ dùng ASP.NET Core Module thì kiểm thêm mã
+  `MS-ASPNETCORE-TOKEN`). IIS không phục vụ tệp nào trong thư mục site (mọi yêu cầu qua chương trình), trừ tệp xác minh
+  Let's Encrypt trong `.well-known/acme-challenge` do chương trình trả.
 
 ## 10. Giới hạn và hướng phát triển
 

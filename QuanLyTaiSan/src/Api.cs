@@ -18,7 +18,7 @@ namespace QuanLyTaiSan
         {
             string d = ctx.Duong.Substring(4).TrimEnd('/');
             string m = ctx.PhuongThuc == "HEAD" ? "GET" : ctx.PhuongThuc;
-            if (d == "/ping") return TraLoi.Json(Ping(dv));
+            if (d == "/ping" || d == "/trang-thai") return TraLoi.Json(Ping(dv));
             if (d == "/dangnhap" && m == "POST") return DangNhap(dv, ctx);
             if (d.StartsWith("/tai/") && m == "GET")
             {
@@ -179,7 +179,7 @@ namespace QuanLyTaiSan
             lock (dv.Khoa)
                 return new O
                 {
-                    { "ungDung", "QuanLyTaiSan" }, { "phienBanPhanMem", UngDung.PhienBan }, { "congTy", dv.Dl.CaiDat.TenCongTy },
+                    { "ok", true }, { "ten", "QuanLyTaiSan" }, { "ungDung", "QuanLyTaiSan" }, { "phienBanPhanMem", UngDung.PhienBan }, { "congTy", dv.Dl.CaiDat.TenCongTy },
                     { "coTaiKhoan", dv.CoTaiKhoan }
                 };
         }

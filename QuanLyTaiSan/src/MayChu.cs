@@ -11,8 +11,9 @@ using System.Threading;
 namespace QuanLyTaiSan
 {
     /// <summary>
-    /// Máy chủ HTTP của QuanLyTaiSan.exe. Dưới IIS (ASP.NET Core Module V2, out-of-process): IIS nhận HTTPS rồi chuyển yêu cầu
-    /// dạng HTTP tới 127.0.0.1:ASPNETCORE_PORT. Chạy riêng (nhấp đúp file .exe): nghe 127.0.0.1:18090 để dùng thử trên máy này.
+    /// Máy chủ HTTP của QuanLyTaiSan.exe. Dưới IIS (HttpPlatformHandler, hoặc ASP.NET Core Module V2 của gói cài cũ): IIS nhận
+    /// HTTP / HTTPS rồi chuyển yêu cầu dạng HTTP tới 127.0.0.1:&lt;cổng IIS giao&gt;. Chạy riêng (nhấp đúp file .exe): nghe
+    /// 127.0.0.1:18090 để dùng thử trên máy này.
     /// </summary>
     static class MayChu
     {
@@ -21,10 +22,13 @@ namespace QuanLyTaiSan
         static DichVu dv;
         static string tokenIis = "";
         static string duongUngDung = "";
+        static bool quaIisChay;   // chỉ nghe 127.0.0.1, mọi yêu cầu do IIS chuyển tới: tin X-Forwarded-For (IP thật của người dùng)
+        static readonly System.Text.RegularExpressions.Regex MaXacMinh = new System.Text.RegularExpressions.Regex(@"^[A-Za-z0-9_-]{16,128}$");
 
         public static void Chay(DichVu dichVu, IPAddress diaChi, int cong, bool quaIis)
         {
             dv = dichVu;
+            quaIisChay = quaIis;
             if (quaIis)
             {
                 tokenIis = Environment.GetEnvironmentVariable("ASPNETCORE_TOKEN") ?? "";
@@ -149,6 +153,14 @@ namespace QuanLyTaiSan
             string d = ctx.Duong;
             if (d.StartsWith("/api/", StringComparison.OrdinalIgnoreCase)) return Api.XuLy(dv, ctx);
             if (ctx.PhuongThuc != "GET" && ctx.PhuongThuc != "HEAD") return TraLoi.Loi(405, "Phương thức không hỗ trợ.");
+            // Let's Encrypt (win-acme) xác minh tên miền qua http: tệp do win-acme ghi vào thư mục site (thư mục chứa file .exe)
+            if (d.StartsWith("/.well-known/acme-challenge/", StringComparison.Ordinal))
+            {
+                string ma = d.Substring("/.well-known/acme-challenge/".Length);
+                string tep = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".well-known", "acme-challenge", ma);
+                if (!MaXacMinh.IsMatch(ma) || !File.Exists(tep)) return TraLoi.Loi(404, "Không có tệp xác minh này.");
+                return new TraLoi { Status = 200, Than = File.ReadAllBytes(tep), Loai = "text/plain" };
+            }
             // Địa chỉ in trong mã QR: …/t/MÃ → mở trang tài sản (camera điện thoại quét là vào thẳng)
             if (d.StartsWith("/t/", StringComparison.OrdinalIgnoreCase))
             {
@@ -285,10 +297,13 @@ namespace QuanLyTaiSan
             return d;
         }
 
-        /// <summary>IIS nối địa chỉ thật của điện thoại vào cuối X-Forwarded-For (dạng ip:cổng).</summary>
+        /// <summary>
+        /// IP thật của người dùng: luật URL Rewrite trong web.config đặt X-Forwarded-For = địa chỉ máy gọi tới IIS (HttpPlatformHandler);
+        /// ASP.NET Core Module nối "ip:cổng" vào cuối header.
+        /// </summary>
         static string IpThat(string xff)
         {
-            if (string.IsNullOrEmpty(xff) || tokenIis.Length == 0) return null;
+            if (string.IsNullOrEmpty(xff) || !quaIisChay) return null;
             string s = xff.Split(',').Last().Trim();
             if (s.StartsWith("["))
             {

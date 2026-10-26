@@ -13,3 +13,6 @@ Thumbs.db
 
 # Du lieu chay thu cua phan mem Quan ly tai san (tai khoan, anh, so lieu that)
 QuanLyTaiSan/DuLieu/
+
+# Thu muc tam khi dong goi may chu Quan ly tai san (giu tep zip trong dist/)
+QuanLyTaiSan/dist/quanlytaisan-may-chu/

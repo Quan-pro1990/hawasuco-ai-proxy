@@ -14,14 +14,16 @@ namespace QuanLyTaiSan
     ///   --cong 18090                  đổi cổng khi chạy thử
     ///   --lan                         cho máy khác trong mạng nội bộ vào (http, không mã hoá — chỉ để dùng thử)
     ///   --dat-quan-tri &lt;tên&gt;          tạo / đặt lại tài khoản quản trị (mật khẩu trong biến QLTS_MATKHAU) — script cài IIS dùng
-    /// Dưới IIS (có biến ASPNETCORE_PORT): chế độ máy chủ, dữ liệu ở thư mục trong biến QLTS_DULIEU.
+    /// Dưới IIS: chế độ máy chủ, dữ liệu ở thư mục trong biến QLTS_DULIEU. IIS chạy file .exe qua HttpPlatformHandler
+    /// (biến HTTP_PLATFORM_PORT — cách bộ cài trien-khai\iis dùng, giống máy chủ HawaMap) hoặc ASP.NET Core Module V2
+    /// (biến ASPNETCORE_PORT — gói cài cũ).
     /// </summary>
     static class Program
     {
         static int Main(string[] args)
         {
             ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
-            bool quaIis = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ASPNETCORE_PORT"));
+            bool quaIis = CongIis() != null;
             string thuMuc = ThuMucDuLieu(quaIis || args.Contains("--dat-quan-tri"));
             DichVu dv;
             try
@@ -64,12 +66,23 @@ namespace QuanLyTaiSan
             if (quaIis)
             {
                 int congIis;
-                if (!int.TryParse(Environment.GetEnvironmentVariable("ASPNETCORE_PORT"), out congIis)) return 2;
+                if (!int.TryParse(CongIis(), out congIis)) return 2;
                 try { MayChu.Chay(dv, IPAddress.Loopback, congIis, true); }
                 catch (Exception ex) { GhiLoiKhoiDong(thuMuc, ex); return 5; }
                 return 0;
             }
             return ChayThu(dv, args);
+        }
+
+        /// <summary>Cổng nội bộ IIS giao cho file .exe (null: không chạy dưới IIS).</summary>
+        static string CongIis()
+        {
+            foreach (string bien in new[] { "HTTP_PLATFORM_PORT", "ASPNETCORE_PORT" })
+            {
+                string v = Environment.GetEnvironmentVariable(bien);
+                if (!string.IsNullOrEmpty(v)) return v;
+            }
+            return null;
         }
 
         public static string ThuMucDuLieu(bool mayChu)
