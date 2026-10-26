@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chỉnh ảnh AI — Hướng dẫn</title>
+<style>
+  :root {
+    --chu: #1f2937; --mo: #5b6472; --vien: #e3e6eb; --nen: #ffffff; --nen2: #f5f6f9;
+    --nhan: #6a4be6; --nhan-nhat: #efeaff; --cam: #e8693a; --cam-nhat: #fff1ea; --xanh: #1f8a5b; --xanh-nhat: #e9f6ef;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { margin: 0; background: var(--nen); color: var(--chu); font: 15px/1.6 "Segoe UI", Inter, "Noto Sans", Arial, sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 32px 24px 64px; }
+  h1, h2, h3 { line-height: 1.25; color: #111827; }
+  h2 { font-size: 22px; margin: 40px 0 12px; padding-top: 8px; border-top: 2px solid var(--vien); }
+  h2 .so { display: inline-block; min-width: 34px; height: 34px; line-height: 34px; text-align: center; border-radius: 10px; margin-right: 10px;
+           background: var(--nhan); color: #fff; font-size: 17px; vertical-align: 2px; }
+  h3 { font-size: 17px; margin: 24px 0 8px; }
+  p { margin: 8px 0; }
+  a { color: var(--nhan); }
+  code, .tep { font-family: Consolas, "JetBrains Mono", monospace; font-size: 13.5px; background: var(--nen2); border: 1px solid var(--vien);
+               padding: 1px 5px; border-radius: 5px; word-break: break-all; }
+  kbd { font-family: inherit; font-size: 13px; font-weight: 600; background: #fff; border: 1px solid #c9ced6; border-bottom-width: 2px;
+        border-radius: 5px; padding: 1px 6px; white-space: nowrap; }
+  b.nut { font-weight: 600; background: var(--nhan-nhat); color: #3f2a9e; padding: 0 6px; border-radius: 5px; white-space: nowrap; }
+
+  .bia { display: flex; gap: 20px; align-items: center; padding: 8px 0 20px; }
+  .bia img { width: 76px; height: 76px; }
+  .bia h1 { font-size: 32px; margin: 0; }
+  .bia .phu { color: var(--mo); margin: 4px 0 0; font-size: 16px; }
+  .gioi-thieu { font-size: 16px; }
+
+  figure { margin: 16px 0 20px; break-inside: avoid; page-break-inside: avoid; }
+  figure img { display: block; max-width: 100%; border-radius: 8px; border: 1px solid var(--vien); margin: 0 auto; }
+  figure.nho img { max-width: 360px; }
+  figure.vua img { max-width: 600px; }
+  figcaption { color: var(--mo); font-size: 13.5px; text-align: center; margin-top: 6px; }
+  .hai-anh { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .hai-anh figure { margin: 0; }
+
+  ol.buoc { counter-reset: b; list-style: none; padding: 0; margin: 12px 0; }
+  ol.buoc > li { counter-increment: b; position: relative; padding: 2px 0 10px 44px; break-inside: avoid; }
+  ol.buoc > li::before { content: counter(b); position: absolute; left: 0; top: 0; width: 30px; height: 30px; border-radius: 50%;
+                         background: var(--cam); color: #fff; font-weight: 700; text-align: center; line-height: 30px; }
+
+  table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; font-size: 14px; break-inside: auto; }
+  th, td { text-align: left; vertical-align: top; padding: 7px 10px; border-bottom: 1px solid var(--vien); }
+  th { background: var(--nen2); font-weight: 600; }
+  tr { break-inside: avoid; }
+  td.so { width: 34px; }
+  .cham { display: inline-block; width: 24px; height: 24px; line-height: 24px; border-radius: 50%; background: #ff6b4a; color: #fff;
+          font-weight: 700; font-size: 13px; text-align: center; }
+  .nhom td { background: var(--nhan-nhat); font-weight: 600; color: #3f2a9e; }
+
+  .hop { border-radius: 10px; padding: 12px 16px; margin: 14px 0; break-inside: avoid; }
+  .hop.meo { background: var(--xanh-nhat); border-left: 4px solid var(--xanh); }
+  .hop.chu-y { background: var(--cam-nhat); border-left: 4px solid var(--cam); }
+  .hop.ghi { background: var(--nen2); border-left: 4px solid #9aa3b0; }
+  .hop > b:first-child { display: block; margin-bottom: 2px; }
+
+  .muc-luc { columns: 2; column-gap: 32px; padding: 14px 20px; background: var(--nen2); border-radius: 10px; margin: 18px 0; }
+  .muc-luc ol { margin: 0; padding-left: 22px; }
+  .muc-luc li { break-inside: avoid; }
+  .muc-luc a { color: var(--chu); text-decoration: none; }
+
+  .cong-thuc { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .cong-thuc > div { border: 1px solid var(--vien); border-radius: 10px; padding: 10px 14px; break-inside: avoid; }
+  .cong-thuc h4 { margin: 0 0 4px; font-size: 15px; }
+  .cong-thuc p { margin: 0; font-size: 14px; color: #374151; }
+
+  footer { margin-top: 48px; padding-top: 12px; border-top: 1px solid var(--vien); color: var(--mo); font-size: 13px; }
+
+  @media (max-width: 640px) {
+    .hai-anh, .cong-thuc { grid-template-columns: 1fr; }
+    .muc-luc { columns: 1; }
+    .bia h1 { font-size: 26px; }
+  }
+  @page { size: A4; margin: 14mm 14mm 16mm; }
+  @media print {
+    body { font-size: 12.5px; }
+    main { max-width: none; padding: 0; }
+    h2 { break-after: avoid; page-break-after: avoid; }
+    h3 { break-after: avoid; }
+    .moi-trang { break-before: page; page-break-before: always; border-top: none; }
+    figure img { max-height: 112mm; width: auto; }
+    figure.ca-trang img { max-height: none; width: 100%; }
+    .hai-anh figure img { max-height: 62mm; }
+    tr.nhom { break-after: avoid; page-break-after: avoid; }
+    .hai-anh figure.nho img { max-height: 150mm; }
+    footer { break-inside: avoid; page-break-inside: avoid; }
+    a { color: inherit; text-decoration: none; }
+  }
+</style>
+</head>
+<body>
+<main>
+
+<header class="bia">
+  <img src="anh/logo.png" alt="">
+  <div>
+    <h1>Chỉnh ảnh AI</h1>
+    <p class="phu">Hướng dẫn cài đặt và chỉnh sửa ảnh · phiên bản 1.0.0</p>
+  </div>
+</header>
+
+<p class="gioi-thieu">Chỉnh ảnh AI chỉnh ảnh như thợ hậu kỳ chỉ với <b>một cú nhấp</b>. Mở ảnh là phần mềm tự phân tích rồi chỉnh ngay:
+phơi sáng, cân bằng trắng, cứu vùng cháy sáng, mở vùng tối, khử sương mù, giảm nhiễu, làm nét, làm mịn da chân dung.
+Bấm <b class="nut">Lưu ảnh</b> là xong. Ảnh gốc không bao giờ bị ghi đè. Phần mềm chạy trên máy, không cần mạng.</p>
+
+<figure class="ca-trang">
+  <img src="anh/truoc_sau.jpg" alt="Sáu ví dụ trước và sau khi chỉnh">
+  <figcaption>Ảnh trước và sau khi bấm một lần, không chỉnh tay.</figcaption>
+</figure>
+
+<nav class="muc-luc">
+  <ol>
+    <li><a href="#chuan-bi">Chuẩn bị</a></li>
+    <li><a href="#cai-dat">Cài đặt</a></li>
+    <li><a href="#ba-buoc">Chỉnh ảnh trong 3 bước</a></li>
+    <li><a href="#giao-dien">Làm quen giao diện</a></li>
+    <li><a href="#mo-anh">Các cách mở ảnh</a></li>
+    <li><a href="#so-sanh">So sánh trước / sau</a></li>
+    <li><a href="#phong-cach">Phong cách và cường độ</a></li>
+    <li><a href="#tinh-chinh">Tinh chỉnh từng thanh</a></li>
+    <li><a href="#luu-anh">Lưu ảnh</a></li>
+    <li><a href="#ai">AI Claude (không bắt buộc)</a></li>
+    <li><a href="#hang-loat">Chỉnh hàng loạt</a></li>
+    <li><a href="#meo">Mẹo chỉnh theo loại ảnh</a></li>
+    <li><a href="#phim-tat">Phím tắt</a></li>
+    <li><a href="#hoi-dap">Câu hỏi thường gặp</a></li>
+    <li><a href="#go">Gỡ cài đặt</a></li>
+  </ol>
+</nav>
+
+<h2 id="chuan-bi"><span class="so">1</span>Chuẩn bị</h2>
+<ul>
+  <li><b>Máy tính Windows 10 hoặc Windows 11.</b> Phần mềm dùng .NET Framework 4.8 — có sẵn trong Windows 11 và Windows 10 bản 1903 trở lên.
+    Bộ cài tự kiểm tra; nếu thiếu sẽ chỉ đường tới trang tải của Microsoft.</li>
+  <li><b>Bộ nhớ:</b> 4&nbsp;GB RAM là dùng được; ảnh rất lớn (24 megapixel trở lên) nên có 8&nbsp;GB.</li>
+  <li><b>Không cần Internet</b>, trừ khi bật AI Claude (mục 10).</li>
+  <li><b>Tệp cài đặt</b> (chọn một):
+    <ul>
+      <li><span class="tep">ChinhAnhAI-1.0.0-CaiDat.exe</span> — bộ cài, khuyên dùng.</li>
+      <li><span class="tep">ChinhAnhAI-1.0.0-DiDong.zip</span> — bản chạy ngay không cần cài (để trong USB, máy công ty…).</li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="cai-dat"><span class="so">2</span>Cài đặt</h2>
+<h3>Cách 1 — Bộ cài (khuyên dùng)</h3>
+<ol class="buoc">
+  <li>Nhấp đúp tệp <span class="tep">ChinhAnhAI-1.0.0-CaiDat.exe</span>.</li>
+  <li>Nếu Windows hiện màn hình xanh <i>“Windows protected your PC”</i> (SmartScreen): bấm <b class="nut">More info</b> rồi <b class="nut">Run anyway</b>.
+    Thông báo này xuất hiện vì phần mềm chưa có chữ ký số, không phải vì có lỗi.</li>
+  <li>Trang chào: bấm <b class="nut">Tiến&nbsp;&gt;</b>.</li>
+  <li>Chọn thành phần: nên để nguyên cả ba ô — lối tắt trên màn hình, mục <i>Chỉnh bằng Chỉnh ảnh AI</i> trong menu chuột phải, và <i>Gửi tới</i>
+    (để chỉnh nhiều ảnh một lúc). Bấm <b class="nut">Tiến&nbsp;&gt;</b>.</li>
+  <li>Thư mục cài: để mặc định <span class="tep">C:\Users\&lt;tên bạn&gt;\AppData\Local\Programs\ChinhAnhAI</span>. Phần mềm cài cho tài khoản
+    Windows của bạn nên không cần quyền quản trị (Administrator). Bấm <b class="nut">Cài đặt</b>.</li>
+  <li>Bấm <b class="nut">Hoàn thành</b>. Để tick <i>Mở Chỉnh ảnh AI ngay</i> thì phần mềm mở luôn.</li>
+</ol>
+<div class="hai-anh">
+  <figure><img src="anh/bo_cai_1.jpg" alt="Trang chào của bộ cài"><figcaption>Bước 3 — trang chào</figcaption></figure>
+  <figure><img src="anh/bo_cai_2.jpg" alt="Chọn thành phần cài đặt"><figcaption>Bước 4 — chọn thành phần</figcaption></figure>
+  <figure><img src="anh/bo_cai_3.jpg" alt="Chọn thư mục cài"><figcaption>Bước 5 — thư mục cài (trên máy bạn là C:\Users\…)</figcaption></figure>
+  <figure><img src="anh/bo_cai_4.jpg" alt="Cài xong"><figcaption>Bước 6 — cài xong</figcaption></figure>
+</div>
+<p>Cài xong, máy có:</p>
+<ul>
+  <li>Biểu tượng <b>Chỉnh ảnh AI</b> trên màn hình và trong menu Start (thư mục <i>Chỉnh ảnh AI</i> có thêm <i>Hướng dẫn sử dụng</i> và <i>Gỡ Chỉnh ảnh AI</i>).</li>
+  <li>Chuột phải một ảnh trong thư mục → <b>Chỉnh bằng Chỉnh ảnh AI</b>.</li>
+  <li>Chọn nhiều ảnh → chuột phải → <b>Gửi tới (Send to) → Chỉnh ảnh AI</b>.</li>
+  <li>Chuột phải ảnh → <b>Mở bằng (Open with)</b> → <i>Chọn ứng dụng khác</i> → Chỉnh ảnh AI.</li>
+</ul>
+<div class="hop ghi"><b>Windows 11</b>Menu chuột phải gọn của Windows 11 ẩn các mục của phần mềm khác: bấm <b>Hiện thêm tùy chọn (Show more options)</b>
+  ở cuối menu, hoặc giữ <kbd>Shift</kbd> khi bấm chuột phải.</div>
+<p><b>Cập nhật phiên bản mới:</b> đóng Chỉnh ảnh AI, chạy bộ cài mới — cài đè lên bản cũ. Cài đặt và API key được giữ nguyên.</p>
+
+<h3>Cách 2 — Bản di động (không cài)</h3>
+<ol class="buoc">
+  <li>Chuột phải tệp <span class="tep">ChinhAnhAI-1.0.0-DiDong.zip</span> → <b>Extract All…</b> (Giải nén tất cả) vào thư mục bất kỳ, vd <span class="tep">D:\ChinhAnhAI</span>.</li>
+  <li>Nhấp đúp <span class="tep">ChinhAnhAI.exe</span> (SmartScreen: <b class="nut">More info</b> → <b class="nut">Run anyway</b>).</li>
+  <li>Muốn có lối tắt: trong phần mềm vào <b class="nut">Cài đặt</b> → <b>Lối tắt trên màn hình</b> và <b>Thêm vào menu chuột phải “Gửi tới”</b>.</li>
+</ol>
+<p>Bản di động không thêm mục <i>Chỉnh bằng Chỉnh ảnh AI</i> vào menu chuột phải; mọi chức năng khác giống bản cài.</p>
+
+<h2 id="ba-buoc"><span class="so">3</span>Chỉnh ảnh trong 3 bước</h2>
+<ol class="buoc">
+  <li><b>Mở ảnh:</b> bấm <b class="nut">Mở ảnh</b> (<kbd>Ctrl</kbd>+<kbd>O</kbd>), kéo thả ảnh vào cửa sổ, hoặc chuột phải ảnh → <i>Chỉnh bằng Chỉnh ảnh AI</i>.</li>
+  <li><b>Chờ vài giây:</b> phần mềm tự phân tích và chỉnh ngay (vạch tím – cam chạy ở mép trên là đang xử lý). Thanh trạng thái dưới cùng cho biết
+    phần mềm nhận ra gì, vd <i>“Chân dung · hơi tối (+1.2 EV) · nhiễu thấp · 1 khuôn mặt”</i>.</li>
+  <li><b>Lưu:</b> bấm <b class="nut">Lưu ảnh</b> (<kbd>Ctrl</kbd>+<kbd>S</kbd>). Ảnh mới nằm cạnh ảnh gốc, tên thêm <span class="tep">_AI</span>
+    (vd <span class="tep">IMG_0412_AI.jpg</span>). Bấm <b>Mở thư mục</b> ở góc dưới bên phải để xem.</li>
+</ol>
+<div class="hop meo"><b>Mẹo</b>Nhấn giữ chuột trên ảnh để xem lại ảnh gốc, thả ra để xem ảnh đã chỉnh. Nếu thấy chỉnh hơi “quá tay”, kéo thanh
+  <b>Cường độ chỉnh</b> xuống 60–80%.</div>
+
+<h2 id="giao-dien" class="moi-trang"><span class="so">4</span>Làm quen giao diện</h2>
+<figure class="ca-trang">
+  <img src="anh/giao_dien.jpg" alt="Cửa sổ chính có đánh số các phần">
+  <figcaption>Cửa sổ chính. Ảnh chụp minh hoạ; trên máy bạn khung cửa sổ theo giao diện Windows.</figcaption>
+</figure>
+<table>
+  <tr><th></th><th>Phần</th><th>Dùng để</th></tr>
+  <tr><td class="so"><span class="cham">1</span></td><td>Mở ảnh</td><td>Chọn một hoặc nhiều ảnh (chọn nhiều thì phần mềm hỏi có chỉnh hàng loạt không).</td></tr>
+  <tr><td class="so"><span class="cham">2</span></td><td>Chỉnh tự động</td><td>Chỉnh lại theo phong cách bạn chọn gần nhất (ban đầu là <i>Tự động</i>), cường độ 100%, bỏ các chỉnh tay. Nếu đã bật AI Claude thì nhờ AI chỉnh. Phím <kbd>A</kbd>.</td></tr>
+  <tr><td class="so"><span class="cham">3</span></td><td>Lưu ảnh / Lưu thành…</td><td>Lưu ngay với tên <span class="tep">_AI</span>; <i>Lưu thành…</i> để tự chọn tên, nơi lưu, định dạng.</td></tr>
+  <tr><td class="so"><span class="cham">4</span></td><td>So sánh trước / sau</td><td>Chia đôi ảnh: bên trái ảnh gốc, bên phải ảnh đã chỉnh. Phím <kbd>C</kbd>.</td></tr>
+  <tr><td class="so"><span class="cham">5</span></td><td>‹ ›</td><td>Mở ảnh trước / sau trong cùng thư mục — chỉnh lần lượt cả thư mục rất nhanh. Phím <kbd>←</kbd> <kbd>→</kbd>.</td></tr>
+  <tr><td class="so"><span class="cham">6</span></td><td>Chỉnh hàng loạt…</td><td>Chỉnh nhiều ảnh một lúc (mục 11). <kbd>Ctrl</kbd>+<kbd>B</kbd>.</td></tr>
+  <tr><td class="so"><span class="cham">7</span></td><td>Cài đặt</td><td>API key AI Claude, nơi lưu, tên tệp, chất lượng, cỡ ảnh lưu, lối tắt.</td></tr>
+  <tr><td class="so"><span class="cham">8</span></td><td>Khung ảnh</td><td>Nhấn giữ chuột để xem ảnh gốc. Kéo thả ảnh vào đây để mở.</td></tr>
+  <tr><td class="so"><span class="cham">9</span></td><td>Phong cách</td><td>Mỗi ô là chính ảnh của bạn theo một kiểu — bấm để chọn (mục 7).</td></tr>
+  <tr><td class="so"><span class="cham">10</span></td><td>Cường độ chỉnh</td><td>0% = ảnh gốc, 100% = mức phần mềm chọn, tới 150% = đậm hơn.</td></tr>
+  <tr><td class="so"><span class="cham">11</span></td><td>AI Claude</td><td>Bật / tắt AI, ô ghi yêu cầu bằng lời, nút <i>Nhờ AI chỉnh ảnh này</i> (mục 10).</td></tr>
+  <tr><td class="so"><span class="cham">12</span></td><td>Tinh chỉnh +</td><td>Mở 21 thanh chỉnh chi tiết như Lightroom (mục 8).</td></tr>
+  <tr><td class="so"><span class="cham">13</span></td><td>Thanh trạng thái</td><td>Tên và cỡ ảnh, cảnh phần mềm nhận ra; lưu xong hiện đường dẫn và nút <i>Mở thư mục</i>.</td></tr>
+</table>
+
+<h2 id="mo-anh"><span class="so">5</span>Các cách mở ảnh</h2>
+<ul>
+  <li>Nút <b class="nut">Mở ảnh</b> hoặc <kbd>Ctrl</kbd>+<kbd>O</kbd>.</li>
+  <li>Kéo thả ảnh (hoặc cả thư mục) từ File Explorer vào cửa sổ.</li>
+  <li>Chuột phải ảnh → <b>Chỉnh bằng Chỉnh ảnh AI</b> (bản cài), hoặc <b>Mở bằng → Chọn ứng dụng khác → Chỉnh ảnh AI</b>.</li>
+  <li>Chọn nhiều ảnh → chuột phải → <b>Gửi tới → Chỉnh ảnh AI</b>: phần mềm hỏi chỉnh hàng loạt tất cả hay chỉ mở ảnh đầu tiên.</li>
+  <li>Đang mở một ảnh: <b class="nut">‹</b> <b class="nut">›</b> hoặc <kbd>←</kbd> <kbd>→</kbd> sang ảnh khác cùng thư mục.</li>
+</ul>
+<p><b>Định dạng mở được:</b> JPG, PNG, BMP, TIFF, GIF. Ảnh chụp dọc bằng điện thoại tự xoay đúng chiều.
+  <b>Chưa mở được</b> ảnh RAW (.CR2, .NEF, .ARW…) và HEIC của iPhone — xem mục 14.</p>
+
+<h2 id="so-sanh"><span class="so">6</span>So sánh trước / sau</h2>
+<ul>
+  <li><b>Nhấn giữ chuột</b> trên ảnh (hoặc giữ phím <kbd>Space</kbd>) để xem ảnh gốc; thả ra để xem ảnh đã chỉnh.</li>
+  <li><b class="nut">So sánh trước / sau</b> (phím <kbd>C</kbd>): một vạch chia đôi ảnh — bên trái <i>TRƯỚC</i>, bên phải <i>SAU</i>.
+    Kéo chuột trên ảnh để dời vạch. Bấm lại nút để tắt.</li>
+</ul>
+<figure>
+  <img src="anh/so_sanh.jpg" alt="Chế độ so sánh có vạch chia">
+  <figcaption>Chế độ so sánh: ảnh mờ sương trước (trái) và sau khi khử sương (phải).</figcaption>
+</figure>
+
+<h2 id="phong-cach"><span class="so">7</span>Phong cách và cường độ</h2>
+<p>Các ô phong cách bên phải hiện sẵn ảnh của bạn theo từng kiểu. Bấm một ô để chọn; ô đang chọn có viền tím.</p>
+<figure>
+  <img src="anh/phong_cach.jpg" alt="Một ảnh theo 9 phong cách và ảnh gốc">
+  <figcaption>Cùng một ảnh theo các phong cách.</figcaption>
+</figure>
+<table>
+  <tr><th>Phong cách</th><th>Hợp với</th></tr>
+  <tr><td><b>Tự động</b> (mặc định)</td><td>Mọi ảnh. Phần mềm tự chọn theo cảnh: có khuôn mặt → kiểu Chân dung; trời, cây cỏ → kiểu Phong cảnh; còn lại → chỉnh tự nhiên, tươi hơn một chút.</td></tr>
+  <tr><td>Tự nhiên</td><td>Chỉ sửa lỗi kỹ thuật (sáng, màu, cháy, nhiễu), không thêm “gu”. Ảnh tài liệu, sản phẩm, ảnh cần trung thực.</td></tr>
+  <tr><td>Sống động</td><td>Màu tươi, rõ nét: ảnh du lịch, sự kiện, đăng mạng xã hội.</td></tr>
+  <tr><td>Chân dung</td><td>Da mịn tự nhiên, tông ấm, nền dịu, viền tối nhẹ hướng mắt vào người.</td></tr>
+  <tr><td>Phong cảnh</td><td>Trời xanh trong, cây tươi, khử sương mù, chi tiết rõ.</td></tr>
+  <tr><td>Sáng trong</td><td>Sáng, nhẹ, trong trẻo (kiểu ảnh Hàn Quốc): cà phê, thời trang, ảnh đời thường.</td></tr>
+  <tr><td>Ấm áp</td><td>Nắng vàng, hoài niệm: hoàng hôn, gia đình, kỷ niệm.</td></tr>
+  <tr><td>Điện ảnh</td><td>Vùng tối xanh ngọc, vùng sáng cam, tương phản kiểu phim: đường phố, ảnh nghệ thuật.</td></tr>
+  <tr><td>Đen trắng</td><td>Đen trắng tương phản, cổ điển: chân dung, kiến trúc.</td></tr>
+  <tr><td>Ảnh gốc</td><td>Bỏ mọi chỉnh sửa (để so sánh hoặc làm lại từ đầu).</td></tr>
+  <tr><td>AI Claude</td><td>Thông số do AI chọn sau khi xem ảnh (mục 10).</td></tr>
+</table>
+<p><b>Cường độ chỉnh</b> nhân mọi chỉnh sửa của phong cách: 0% là ảnh gốc, 100% là mức phần mềm chọn, tối đa 150%. Nhấp đúp thanh để về 100%.
+Phong cách và cường độ vừa chọn được nhớ cho những ảnh mở sau.</p>
+
+<h2 id="tinh-chinh" class="moi-trang"><span class="so">8</span>Tinh chỉnh từng thanh</h2>
+<p>Bấm <b class="nut">TINH CHỈNH +</b> ở cột phải để mở 21 thanh. Các thanh hiện sẵn giá trị phần mềm (hoặc AI) đã chọn — bạn chỉ cần kéo thêm chỗ chưa ưng.</p>
+<div class="hai-anh" style="grid-template-columns: 300px 1fr; align-items: start;">
+  <figure class="nho"><img src="anh/tinh_chinh.jpg" alt="Các thanh tinh chỉnh"><figcaption>Các thanh tinh chỉnh</figcaption></figure>
+  <div>
+    <ul>
+      <li><b>Kéo</b> thanh để chỉnh; ảnh cập nhật ngay.</li>
+      <li><b>Nhấp đúp</b> một thanh để trả về giá trị tự động.</li>
+      <li>Giữ <kbd>Shift</kbd> khi kéo để chỉnh mịn; hoặc bấm vào thanh rồi dùng <kbd>←</kbd> <kbd>→</kbd> (giữ <kbd>Shift</kbd>: bước ×10).</li>
+      <li><b class="nut">Bỏ các chỉnh tay</b> xoá mọi thanh bạn đã kéo, giữ phong cách.</li>
+      <li>Đổi cường độ thì giữ phần chỉnh tay; <b>đổi phong cách thì phần chỉnh tay bị bỏ</b> — chọn phong cách trước, tinh chỉnh sau.</li>
+    </ul>
+    <div class="hop ghi"><b>Làm nét và giảm nhiễu</b>Bản xem trước là ảnh thu nhỏ, nên hai thanh này nhìn nhẹ hơn thực tế.
+      Kiểm tra ảnh đã lưu ở cỡ 100% nếu cần chính xác.</div>
+  </div>
+</div>
+<table class="bang-thanh">
+  <thead><tr><th>Thanh</th><th>Tác dụng</th><th>Dùng khi</th></tr></thead>
+  <tr class="nhom"><td colspan="3">Ánh sáng</td></tr>
+  <tr><td>Phơi sáng</td><td>Sáng / tối toàn ảnh, đơn vị EV (+1 = sáng gấp đôi).</td><td>Ảnh tối hoặc quá sáng.</td></tr>
+  <tr><td>Tương phản</td><td>Khác biệt giữa vùng sáng và tối.</td><td>Ảnh “nhạt” (+), ảnh gắt (−).</td></tr>
+  <tr><td>Vùng sáng</td><td>Chỉ các vùng sáng; kéo âm để lấy lại chi tiết.</td><td>Trời trắng bệch, áo trắng cháy.</td></tr>
+  <tr><td>Vùng tối</td><td>Chỉ các vùng tối; kéo dương để thấy rõ chỗ tối.</td><td>Ngược sáng, mặt người bị tối.</td></tr>
+  <tr><td>Điểm trắng</td><td>Độ sáng của chỗ sáng nhất.</td><td>Nền trắng bị xám (+).</td></tr>
+  <tr><td>Điểm đen</td><td>Độ đậm của chỗ tối nhất; kéo âm cho đen sâu.</td><td>Ảnh bạc, mờ (−).</td></tr>
+  <tr class="nhom"><td colspan="3">Màu sắc</td></tr>
+  <tr><td>Nhiệt độ màu</td><td>+ ấm (vàng), − lạnh (xanh).</td><td>Đèn vàng trong nhà (−), bóng râm xanh (+).</td></tr>
+  <tr><td>Sắc độ (tint)</td><td>+ hồng tím, − xanh lá.</td><td>Ảnh ám xanh lá do đèn huỳnh quang (+).</td></tr>
+  <tr><td>Sống động</td><td>Tăng màu nhạt nhiều, màu đã đậm ít, giữ màu da.</td><td>Muốn màu tươi mà da vẫn tự nhiên.</td></tr>
+  <tr><td>Bão hòa</td><td>Tăng / giảm đều mọi màu.</td><td>Giảm màu kiểu phim (−). Tránh kéo quá +20.</td></tr>
+  <tr class="nhom"><td colspan="3">Chi tiết</td></tr>
+  <tr><td>Rõ nét (clarity)</td><td>Tương phản chi tiết, kết cấu; âm để mềm ảnh.</td><td>Phong cảnh, kiến trúc (+); da mặt (0 hoặc −).</td></tr>
+  <tr><td>Khử sương mù</td><td>Xoá lớp sương, khói, kính mờ; âm để thêm sương.</td><td>Ảnh xa, trời mù, chụp qua kính.</td></tr>
+  <tr><td>Làm nét</td><td>Làm sắc cạnh, có ngưỡng để không làm nổi nhiễu.</td><td>Ảnh hơi mềm; 30–50 là thường dùng.</td></tr>
+  <tr><td>Giảm nhiễu</td><td>Làm sạch hạt sạn (độ sáng và màu).</td><td>Ảnh đêm, ảnh tối được kéo sáng.</td></tr>
+  <tr><td>Làm mịn da</td><td>Mịn da, giữ mắt, môi, tóc; chỉ áp quanh khuôn mặt tìm được.</td><td>Chân dung; 15–35 là tự nhiên.</td></tr>
+  <tr class="nhom"><td colspan="3">Hiệu ứng</td></tr>
+  <tr><td>Viền tối</td><td>Âm: tối bốn góc, hướng mắt vào giữa; dương: sáng góc.</td><td>Chân dung, ảnh nghệ thuật (−10 … −25).</td></tr>
+  <tr><td>Làm phai (film)</td><td>Nâng điểm đen, màu đen bạc kiểu phim.</td><td>Ảnh hoài niệm.</td></tr>
+  <tr><td>Màu vùng tối — sắc / mức</td><td>Tô một màu vào vùng tối (sắc độ 0–360°).</td><td>Kiểu điện ảnh: xanh ngọc ~190°.</td></tr>
+  <tr><td>Màu vùng sáng — sắc / mức</td><td>Tô một màu vào vùng sáng.</td><td>Nắng ấm: cam ~35–45°.</td></tr>
+  <tr><td>Ảnh đen trắng</td><td>Chuyển đen trắng (ô tick dưới các thanh).</td><td>Dùng kèm Tương phản, Rõ nét.</td></tr>
+</table>
+
+<h2 id="luu-anh"><span class="so">9</span>Lưu ảnh</h2>
+<ul>
+  <li><b class="nut">Lưu ảnh</b> (<kbd>Ctrl</kbd>+<kbd>S</kbd>): lưu ngay cạnh ảnh gốc, tên thêm <span class="tep">_AI</span>. Nếu tên đã có, phần mềm thêm số
+    <span class="tep">(2)</span>, <span class="tep">(3)</span>… — không ghi đè ảnh đã lưu. Phần mềm <b>không bao giờ ghi đè ảnh gốc</b>, kể cả khi dùng <i>Lưu thành…</i>.</li>
+  <li><b class="nut">Lưu thành…</b> (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd>): tự chọn tên, thư mục và định dạng (JPEG, PNG, TIFF).</li>
+  <li>Ảnh JPEG lưu ra giữ thông tin EXIF của ảnh gốc: máy chụp, ngày giờ, vị trí GPS. Ảnh xuất ở <b>cỡ thật</b> của ảnh gốc
+    (ảnh 24 megapixel mất vài giây).</li>
+  <li>Đổi cách lưu trong <b class="nut">Cài đặt</b> → <i>Lưu ảnh</i>: thư mục lưu riêng, chữ thêm vào tên tệp, chất lượng JPEG (mặc định 95),
+    và <b>cỡ ảnh lưu</b> — chọn <i>Cạnh dài 2048 điểm</i> cho ảnh đăng Facebook, Zalo: nhẹ, tải nhanh mà vẫn nét.</li>
+</ul>
+
+<h2 id="ai"><span class="so">10</span>AI Claude (không bắt buộc)</h2>
+<p>Không có AI, phần mềm vẫn tự chỉnh bằng phân tích ảnh trên máy: đo độ sáng, tìm điểm trung tính để cân màu, đo nhiễu, nhận diện khuôn mặt
+(để đo sáng theo mặt như thợ ảnh), nhận diện trời, cây cỏ, sương mù, ngược sáng, cảnh đêm.</p>
+<p>Bật <b>AI Claude</b> thì AI của Anthropic xem ảnh và chọn thông số như một thợ hậu kỳ: phân biệt được hoàng hôn với ảnh ám màu,
+cảnh đêm có chủ ý với ảnh thiếu sáng, biết món ăn, sản phẩm, chân dung… và làm theo yêu cầu bằng lời của bạn.</p>
+<h3>Bật AI Claude</h3>
+<ol class="buoc">
+  <li>Tạo API key tại <a href="https://console.anthropic.com/settings/keys">console.anthropic.com/settings/keys</a>
+    (cần đăng ký và nạp tiền vào tài khoản Anthropic).</li>
+  <li>Trong phần mềm: <b class="nut">Cài đặt</b> → dán key vào ô <i>API key</i> → bấm <b class="nut">Kiểm tra key</b> (không tốn phí) — thấy
+    <i>“Key dùng được…”</i> là được.</li>
+  <li>Tick <i>Dùng AI Claude khi bấm Chỉnh tự động và khi mở ảnh</i> → <b class="nut">Lưu cài đặt</b>.</li>
+</ol>
+<figure class="vua">
+  <img src="anh/cai_dat.jpg" alt="Cửa sổ Cài đặt">
+  <figcaption>Cửa sổ Cài đặt: phần AI Claude ở trên, cách lưu ảnh ở dưới.</figcaption>
+</figure>
+<h3>Dùng AI</h3>
+<ul>
+  <li>Mở ảnh hoặc bấm <b class="nut">Chỉnh tự động</b>: AI chỉnh, thường mất 10–30 giây. Trong lúc chờ bạn đã thấy bản chỉnh trên máy.</li>
+  <li>Bất cứ lúc nào: bấm <b class="nut">Nhờ AI chỉnh ảnh này</b> hoặc ô <b>AI Claude</b> trong lưới phong cách.</li>
+  <li>AI làm trên nền phong cách đang chọn. Dòng chữ dưới nút cho biết AI thấy gì và đã chỉnh gì.</li>
+  <li>Ô <b>Yêu cầu thêm cho AI</b> nhận mong muốn bằng lời, ví dụ:
+    <i>“tông ấm kiểu phim, da sáng hồng”</i>, <i>“giữ không khí u buồn của trời mưa”</i>, <i>“nền trắng tinh cho ảnh sản phẩm”</i>.</li>
+  <li>Kết quả AI vẫn tinh chỉnh tay được như mọi phong cách khác.</li>
+</ul>
+<div class="hop chu-y"><b>Chi phí và riêng tư</b>Mỗi lần nhờ AI tốn phí API của Anthropic — ước chừng 0,03–0,07&nbsp;USD mỗi ảnh với model mặc định
+  <i>claude-opus-5-5</i>; chọn <i>claude-sonnet-5-5</i> hoặc <i>claude-haiku-5-5</i> trong Cài đặt để rẻ hơn (xem giá chính xác trên trang Anthropic).
+  Ảnh gửi đi chỉ là bản thu nhỏ 1280 điểm; ảnh gốc cỡ thật và việc chỉnh điểm ảnh vẫn ở trên máy bạn. API key được mã hoá theo tài khoản Windows.</div>
+<p>Nếu AI lỗi (mất mạng, key sai, hết hạn mức…), phần mềm giữ nguyên bản chỉnh trên máy và báo lỗi màu đỏ ở khung AI.</p>
+
+<h2 id="hang-loat"><span class="so">11</span>Chỉnh hàng loạt</h2>
+<p>Bấm <b class="nut">Chỉnh hàng loạt…</b> (<kbd>Ctrl</kbd>+<kbd>B</kbd>), hoặc chọn nhiều ảnh trong thư mục → chuột phải → <b>Gửi tới → Chỉnh ảnh AI</b>.</p>
+<ol class="buoc">
+  <li>Thêm ảnh: <b class="nut">Thêm ảnh…</b>, <b class="nut">Thêm thư mục…</b> (lấy cả thư mục con) hoặc kéo thả vào danh sách.
+    Chọn dòng rồi bấm <kbd>Delete</kbd> để bỏ bớt.</li>
+  <li>Chọn phong cách, cường độ, và có nhờ AI chỉnh từng ảnh hay không.</li>
+  <li><b>Lưu vào:</b> để trống thì mỗi ảnh lưu vào thư mục con <span class="tep">Da chinh AI</span> ngay cạnh nó; hoặc chọn một thư mục chung.</li>
+  <li>Bấm <b class="nut">Bắt đầu chỉnh</b>. Cột <i>Trạng thái</i> báo từng ảnh; xong bấm <b>Mở thư mục kết quả</b>. Bấm <b class="nut">Dừng</b> để dừng giữa chừng.</li>
+</ol>
+<figure class="vua">
+  <img src="anh/hang_loat.jpg" alt="Cửa sổ chỉnh hàng loạt">
+  <figcaption>Chỉnh xong 4 ảnh.</figcaption>
+</figure>
+<p>Mỗi ảnh được phân tích và chỉnh <b>riêng</b> — ảnh tối được kéo sáng, ảnh ám màu được cân màu — chứ không áp một bộ thông số cho tất cả.</p>
+
+<h2 id="meo"><span class="so">12</span>Mẹo chỉnh theo loại ảnh</h2>
+<p>Bắt đầu từ phong cách gợi ý, xem kết quả, rồi chỉ kéo thêm các thanh dưới đây nếu cần.</p>
+<div class="cong-thuc">
+  <div><h4>Chân dung</h4><p>Phong cách <b>Chân dung</b>. Da mịn quá: <i>Làm mịn da</i> 15–25. Mặt còn tối: <i>Vùng tối</i> +20. Tránh <i>Rõ nét</i> dương cao.</p></div>
+  <div><h4>Ngược sáng</h4><p>Mặt tối, nền trời sáng: <i>Vùng tối</i> +30 … +50, <i>Vùng sáng</i> −30 … −60. Nếu thấy “giả”, giảm <i>Rõ nét</i>.</p></div>
+  <div><h4>Phong cảnh, du lịch</h4><p><b>Phong cảnh</b> hoặc <b>Sống động</b>. Trời nhạt: <i>Vùng sáng</i> −30, <i>Khử sương mù</i> +10 … +20.</p></div>
+  <div><h4>Trong nhà đèn vàng</h4><p><i>Nhiệt độ màu</i> −10 … −25 cho bớt vàng, nên còn chút ấm cho tự nhiên.</p></div>
+  <div><h4>Ảnh đêm</h4><p><b>Tự động</b> giữ đêm vẫn là đêm. Ảnh sạn: <i>Giảm nhiễu</i> 40–60. Đừng kéo <i>Phơi sáng</i> quá +1.</p></div>
+  <div><h4>Món ăn</h4><p><b>Sống động</b> hoặc <b>Ấm áp</b>; <i>Nhiệt độ màu</i> +5 … +10, <i>Rõ nét</i> +10 cho món ăn “ngon mắt”.</p></div>
+  <div><h4>Sản phẩm, tài liệu nền trắng</h4><p><b>Tự nhiên</b>; <i>Điểm trắng</i> +20 … +40 cho nền trắng tinh; chỉnh <i>Nhiệt độ</i>, <i>Sắc độ</i> tới khi nền hết ám màu.</p></div>
+  <div><h4>Ảnh cũ, bạc màu, ảnh scan</h4><p><b>Tự động</b>; <i>Điểm đen</i> −30 … −60 cho đậm lại, <i>Sống động</i> +20.</p></div>
+</div>
+
+<h2 id="phim-tat"><span class="so">13</span>Phím tắt</h2>
+<table>
+  <tr><th>Phím</th><th>Việc</th></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>O</kbd></td><td>Mở ảnh</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td><td>Lưu ảnh (tên <span class="tep">_AI</span>, cạnh ảnh gốc)</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></td><td>Lưu thành…</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>B</kbd></td><td>Chỉnh hàng loạt</td></tr>
+  <tr><td><kbd>A</kbd></td><td>Chỉnh tự động</td></tr>
+  <tr><td><kbd>C</kbd></td><td>Bật / tắt so sánh trước / sau</td></tr>
+  <tr><td>Giữ <kbd>Space</kbd> hoặc nhấn giữ chuột trên ảnh</td><td>Xem ảnh gốc</td></tr>
+  <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>Ảnh trước / sau trong thư mục (khi không chọn thanh chỉnh nào)</td></tr>
+  <tr><td>Nhấp đúp thanh chỉnh</td><td>Trả thanh về giá trị tự động</td></tr>
+</table>
+
+<h2 id="hoi-dap"><span class="so">14</span>Câu hỏi thường gặp</h2>
+<h3>Windows báo “Windows protected your PC” khi mở bộ cài?</h3>
+<p>Phần mềm chưa có chữ ký số nên SmartScreen cảnh báo. Bấm <b>More info</b> → <b>Run anyway</b>.</p>
+<h3>Không thấy “Chỉnh bằng Chỉnh ảnh AI” khi chuột phải?</h3>
+<p>Trên Windows 11 bấm <b>Hiện thêm tùy chọn</b> hoặc giữ <kbd>Shift</kbd> khi chuột phải. Mục này chỉ có ở bản cài và chỉ hiện khi chọn một ảnh;
+  chọn nhiều ảnh thì dùng <b>Gửi tới</b>.</p>
+<h3>Ảnh chỉnh xong đậm quá / chưa hợp ý?</h3>
+<p>Kéo <b>Cường độ chỉnh</b> xuống 60–80%, hoặc chọn phong cách <b>Tự nhiên</b>. Muốn làm lại từ đầu: bấm ô <b>Ảnh gốc</b> rồi chọn lại phong cách.</p>
+<h3>Mở ảnh iPhone (.HEIC) không được?</h3>
+<p>Phiên bản này chưa đọc HEIC và RAW. Trên iPhone: <b>Cài đặt → Camera → Định dạng → Tương thích nhất</b> để từ nay chụp JPEG; ảnh đã chụp thì
+  chuyển sang JPEG trước bằng ứng dụng bạn quen dùng.</p>
+<h3>Ảnh gốc có bị thay đổi không?</h3>
+<p>Không. Phần mềm chỉ đọc ảnh gốc và luôn lưu ra tệp mới.</p>
+<h3>Ảnh đã lưu nằm ở đâu?</h3>
+<p>Cùng thư mục với ảnh gốc, tên thêm <span class="tep">_AI</span> (chỉnh hàng loạt: thư mục con <span class="tep">Da chinh AI</span>), trừ khi bạn đổi
+  trong Cài đặt. Sau khi lưu, bấm <b>Mở thư mục</b> ở góc dưới.</p>
+<h3>Máy chậm với ảnh lớn?</h3>
+<p>Khi kéo thanh, phần mềm chỉ dựng bản xem trước nên vẫn nhanh; lúc lưu mới xử lý ảnh cỡ thật (vài giây với ảnh 24 megapixel).
+  Chọn <b>Cỡ ảnh lưu</b> nhỏ hơn trong Cài đặt nếu không cần ảnh cỡ gốc.</p>
+<h3>AI báo lỗi?</h3>
+<p><i>API key không đúng</i>: kiểm tra lại key (nút <b>Kiểm tra key</b>). <i>Vượt giới hạn / quá tải</i>: đợi vài phút. <i>Không kết nối được</i>: kiểm tra
+  Internet. Trong mọi trường hợp bạn vẫn dùng được bản chỉnh trên máy.</p>
+<h3>Bộ cài báo thiếu .NET Framework?</h3>
+<p>Bấm <b>Yes</b> để mở trang tải .NET Framework 4.8 của Microsoft, cài xong chạy lại bộ cài. (Hiếm gặp: Windows 10 bản 1903 trở lên và
+  Windows 11 đều có sẵn.)</p>
+
+<h2 id="go"><span class="so">15</span>Gỡ cài đặt</h2>
+<ul>
+  <li><b>Settings → Apps → Installed apps</b> (Cài đặt → Ứng dụng) → <b>Chỉnh ảnh AI</b> → <b>Uninstall</b>; hoặc menu Start → <i>Chỉnh ảnh AI</i> → <i>Gỡ Chỉnh ảnh AI</i>.</li>
+  <li>Bộ gỡ xoá phần mềm, lối tắt và các mục menu chuột phải, rồi hỏi có xoá luôn cài đặt (API key, thư mục lưu…) không.
+    <b>Ảnh bạn đã chỉnh không bị xoá.</b></li>
+  <li>Bản di động: chỉ cần xoá thư mục đã giải nén (và lối tắt nếu đã tạo).</li>
+</ul>
+
+<footer>
+  Chỉnh ảnh AI 1.0.0. Bộ nhận diện khuôn mặt dùng tệp <i>haarcascade_frontalface_default.xml</i> của OpenCV theo giấy phép Intel
+  (xem tệp <span class="tep">GIAY_PHEP_BEN_THU_BA.txt</span> đi kèm phần mềm). AI Claude là dịch vụ của Anthropic; dùng theo điều khoản của Anthropic.
+</footer>
+
+</main>
+</body>
+</html>

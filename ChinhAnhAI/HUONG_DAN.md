@@ -8,13 +8,19 @@ Muốn AI "nhìn" ảnh để hiểu cảnh (hoàng hôn, món ăn, chân dung�
 
 ## Cài đặt
 
-- **Cách 1 (khuyên dùng):** nhấp đúp `CaiDat.bat`. Phần mềm được biên dịch lại từ mã nguồn, chép vào
-  `%LOCALAPPDATA%\Programs\ChinhAnhAI` và tạo lối tắt **Chỉnh ảnh AI** trên màn hình, trong menu Start và trong menu
-  chuột phải **Gửi tới (Send to)**. Không cần quyền Administrator.
-- **Cách 2:** chạy thẳng `ChinhAnhAI.exe` trong thư mục này (không cần cài).
-- Gỡ: nhấp đúp `GoCaiDat.bat` (ảnh đã chỉnh của bạn không bị xoá).
+Tệp cài sẵn trong thư mục `PhatHanh\`, kèm **`HUONG_DAN.pdf`** — hướng dẫn đầy đủ có ảnh chụp màn hình
+(cài đặt, phong cách, tinh chỉnh từng thanh, AI Claude, chỉnh hàng loạt, mẹo theo loại ảnh, hỏi đáp).
+
+- **Cách 1 (khuyên dùng):** chạy `PhatHanh\ChinhAnhAI-1.0.0-CaiDat.exe` → Tiến → Tiến → Cài đặt → Hoàn thành.
+  Cài cho tài khoản Windows hiện tại vào `%LOCALAPPDATA%\Programs\ChinhAnhAI`, không cần quyền Administrator. Có lối tắt trên
+  màn hình và menu Start, mục **Chỉnh bằng Chỉnh ảnh AI** khi chuột phải một ảnh (Windows 11: *Hiện thêm tùy chọn*),
+  **Gửi tới → Chỉnh ảnh AI** cho nhiều ảnh, và gỡ được trong Settings → Apps.
+- **Cách 2 — bản di động:** giải nén `PhatHanh\ChinhAnhAI-1.0.0-DiDong.zip`, nhấp đúp `ChinhAnhAI.exe`.
+- **Cách 3 — từ mã nguồn:** nhấp đúp `CaiDat.bat` (biên dịch lại bằng `csc.exe` có sẵn của Windows rồi cài, tạo lối tắt);
+  gỡ bằng `GoCaiDat.bat`.
 
 Windows SmartScreen có thể hỏi lần đầu vì phần mềm không có chữ ký số: bấm **More info → Run anyway**.
+Mã SHA-256 của các tệp phát hành nằm trong `PhatHanh\SHA256SUMS.txt`.
 
 ## Dùng hằng ngày (1 chạm)
 
@@ -126,3 +132,18 @@ Sửa mã trong `src\` rồi nhấp đúp `build.bat` → tạo lại `ChinhAnhA
 
 Tệp `src\haarcascade_frontalface_default.xml` (bộ phân loại khuôn mặt) thuộc OpenCV, dùng theo giấy phép Intel
 — xem `GIAY_PHEP_BEN_THU_BA.txt`.
+
+## Đóng gói bản phát hành
+
+`DongGoi\dong_goi.sh` tạo lại toàn bộ `PhatHanh\` (bộ cài, bản di động, PDF, SHA256SUMS). Cần `ChinhAnhAI.exe` đã biên dịch
+(`build.bat`), NSIS 3 (`makensis`), `zip`, `sha256sum` — chạy được trên Linux hoặc WSL; có Node + Playwright thì PDF được in lại
+từ `DongGoi\HuongDan\huong_dan.html` (không có thì mở tệp HTML đó bằng Chrome / Edge → Ctrl+P → Lưu dưới dạng PDF).
+Đổi phiên bản: sửa `UngDung.PhienBan` trong `src\ThongSo.cs` (số phiên bản trong `.exe` và bộ cài lấy theo đó).
+
+| Tệp | Nội dung |
+|---|---|
+| `DongGoi\ChinhAnhAI.nsi` | Kịch bản bộ cài NSIS (cài theo người dùng, lối tắt, menu chuột phải, gỡ cài đặt) |
+| `DongGoi\HuongDan\` | Hướng dẫn HTML và ảnh minh hoạ, nguồn của `HUONG_DAN.pdf` |
+| `DongGoi\tao_pdf.js` | In hướng dẫn ra PDF khổ A4 có số trang |
+| `DongGoi\DOC_TRUOC.txt` | Ghi chú ngắn đặt trong bản di động |
+

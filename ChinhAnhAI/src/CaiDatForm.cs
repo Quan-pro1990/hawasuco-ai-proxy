@@ -122,6 +122,7 @@ namespace ChinhAnhAI
             Button ok = Ui.TaoNut("Lưu cài đặt", Ui.Nhan, (s, e) => Luu());
             duoi.Controls.Add(huy);
             duoi.Controls.Add(ok);
+            duoi.Controls.Add(new Label { Text = UngDung.Ten + " " + UngDung.PhienBan, AutoSize = true, ForeColor = Ui.ChuMo, Font = Ui.Nho, Margin = Ui.Pad(0, 8, 150, 0) });
             AcceptButton = ok;
             CancelButton = huy;
 

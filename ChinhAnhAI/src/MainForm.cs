@@ -622,7 +622,13 @@ namespace ChinhAnhAI
                 FilterIndex = Path.GetExtension(macDinh) == ".png" ? 2 : (Path.GetExtension(macDinh) == ".tif" ? 3 : 1),
             })
             {
-                if (f.ShowDialog(this) == DialogResult.OK) LuuAnh(f.FileName);
+                if (f.ShowDialog(this) != DialogResult.OK) return;
+                if (string.Equals(Path.GetFullPath(f.FileName), Path.GetFullPath(goc.DuongDan), StringComparison.OrdinalIgnoreCase))
+                {
+                    MessageBox.Show(this, "Không lưu đè lên ảnh gốc. Hãy chọn tên khác.", UngDung.Ten, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+                LuuAnh(f.FileName);
             }
         }
 

@@ -1,0 +1,14 @@
+﻿CHỈNH ẢNH AI — BẢN DI ĐỘNG (KHÔNG CẦN CÀI)
+
+1. Nhấp đúp ChinhAnhAI.exe để mở phần mềm.
+   Nếu Windows báo "Windows protected your PC": bấm More info → Run anyway
+   (phần mềm chưa có chữ ký số).
+2. Mở ảnh (hoặc kéo thả ảnh vào cửa sổ) → phần mềm tự chỉnh → bấm Lưu ảnh.
+   Ảnh mới nằm cạnh ảnh gốc, tên thêm _AI. Ảnh gốc không bị thay đổi.
+3. Muốn có biểu tượng trên màn hình / menu chuột phải "Gửi tới":
+   trong phần mềm vào Cài đặt → Lối tắt trên màn hình / Thêm vào menu chuột phải "Gửi tới".
+
+Hướng dẫn đầy đủ (cài đặt, phong cách, tinh chỉnh, AI Claude, chỉnh hàng loạt,
+mẹo theo loại ảnh, hỏi đáp): mở HUONG_DAN.pdf.
+
+Yêu cầu: Windows 10 / 11 (có sẵn .NET Framework 4.8).
