@@ -207,7 +207,10 @@ final class KetNoi {
         if (!ds.contains(s)) ds.add(s);
     }
 
-    /** Thử lần lượt các địa chỉ; trả máy chủ đầu tiên trả lời đúng api/ping. Gặp chứng chỉ chưa tin: ném LoiChungChi. */
+    /**
+     * Thử lần lượt các địa chỉ; trả máy chủ đầu tiên trả lời đúng api/ping. Gặp chứng chỉ chưa tin của một máy chủ Quản lý
+     * tài sản: ném LoiChungChi (hỏi người dùng); chứng chỉ chưa tin của trang khác cùng IP (vd HawaMap): thử địa chỉ tiếp.
+     */
     static MayChu tim(String nhap, String vanTay) throws IOException {
         List<String> ds = diaChiThu(nhap);
         if (ds.isEmpty()) throw new IOException("Địa chỉ không hợp lệ.");
@@ -216,6 +219,12 @@ final class KetNoi {
             try {
                 return ping(dc, vanTay);
             } catch (LoiChungChi e) {
+                try {
+                    ping(dc, KetNoi.vanTay(e.chungChi));   // chỉ gọi api/ping (không gửi gì riêng tư) để biết có đúng máy chủ không
+                } catch (IOException khac) {
+                    if (loiDau == null) loiDau = khac;
+                    continue;
+                }
                 throw e;
             } catch (LoiMayKhongToi e) {
                 throw e;

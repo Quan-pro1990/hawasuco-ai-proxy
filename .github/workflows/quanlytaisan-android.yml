@@ -81,7 +81,9 @@ jobs:
           ZX=$HOME/.cache/quanlytaisan/zxing-core-3.5.3.jar
           javac -d /tmp/tem -cp "$ZX" QuanLyTaiSan/android/kiem-thu/TaoTemQR.java
           java -cp "/tmp/tem:$ZX" vn.com.hawasuco.taisan.TaoTemQR 'https://10.0.2.2:18443/t/MB-00002' "$PWD/ra/tem-qr.png"
-          cd QuanLyTaiSan/android/kiem-thu && npm install --no-save --no-audit --no-fund playwright-core@1.49.1 > /dev/null
+          cd QuanLyTaiSan/android/kiem-thu
+          npm install --no-save --no-audit --no-fund playwright-core@1.49.1 > /dev/null
+          npx --no-install playwright-core install android   # driver điều khiển giao diện Android (uiautomator)
 
       - name: Bật KVM cho máy ảo
         run: |
