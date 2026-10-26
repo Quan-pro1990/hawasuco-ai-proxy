@@ -102,7 +102,7 @@ jobs:
           Get-WebBinding | Format-Table protocol, bindingInformation, ItemXPath -AutoSize
           $tt = Invoke-RestMethod http://taisan.local/api/trang-thai
           $tt | ConvertTo-Json -Compress
-          if (-not $tt.ok -or $tt.ten -ne 'QuanLyTaiSan' -or $tt.phienBanPhanMem -ne '1.1.0') { throw 'trang-thai sai' }
+          if (-not $tt.ok -or $tt.ten -ne 'QuanLyTaiSan' -or $tt.phienBanPhanMem -ne '1.2.0') { throw 'trang-thai sai' }
           $dn = Invoke-RestMethod http://taisan.local/api/dangnhap -Method Post -ContentType 'application/json' -Body (Get-Content -Raw C:\dangnhap.json)
           $h = @{ Authorization = "Bearer $($dn.token)" }
           $ts = Invoke-RestMethod http://taisan.local/api/taisan -Method Post -Headers $h -ContentType 'application/json' -Body '{"ten":"May bom thu CI","loai":1,"donVi":1}'

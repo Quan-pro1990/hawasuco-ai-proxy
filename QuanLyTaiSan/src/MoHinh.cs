@@ -10,7 +10,7 @@ namespace QuanLyTaiSan
     public static class UngDung
     {
         public const string Ten = "Quản lý tài sản";
-        public const string PhienBan = "1.1.0";
+        public const string PhienBan = "1.2.0";
     }
 
     /// <summary>Quyền tăng dần: mỗi vai trò làm được mọi việc của vai trò thấp hơn.</summary>
