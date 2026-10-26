@@ -200,8 +200,8 @@ if (Test-Path "IIS:\Sites\$TenSite") {
 try { Set-ItemProperty "IIS:\Sites\$TenSite" -Name applicationDefaults.preloadEnabled -Value $true } catch { CanhBao 'Khong bat duoc preloadEnabled: chuong trinh se chay khi co yeu cau dau tien.' }
 
 function GanChungChi([string]$tenMienGan, [string]$vanTay) {
-  # binding https cua ten mien cu (doi ten mien): go di, gan lai cho ten mien moi
-  foreach ($b in @(Get-WebBinding -Name $TenSite -Protocol https -Port $CongHttps -ErrorAction SilentlyContinue)) {
+  # binding https khac cua site (ten mien cu, cong cu, chung chi tu ky cu): go di, chi giu 1 binding https dang dung
+  foreach ($b in @(Get-WebBinding -Name $TenSite -Protocol https -ErrorAction SilentlyContinue)) {
     if ($b.bindingInformation -ne "*:${CongHttps}:$tenMienGan") {
       try { $b.RemoveSslCertificate() } catch { }
       $p = $b.bindingInformation.Split(':')
