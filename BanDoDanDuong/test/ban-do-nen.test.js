@@ -185,9 +185,12 @@ test('bản đồ VietMap chính thức: chỉ khi có khoá VietMap Maps API c�
   assert.equal(kieuVietmap('vietmap', ''), null);
   assert.equal(kieuVietmap('tieuchuan', 'abc'), null);
   const k = kieuVietmap('vietmap', 'khoa của tôi');
-  assert.equal(k.style, 'https://maps.vietmap.vn/maps/styles/tm/style.json?apikey=khoa%20c%E1%BB%A7a%20t%C3%B4i');
+  // đường dẫn trong tài liệu SDK của VietMap trước, đường dẫn theo mã kiểu làm dự phòng
+  assert.equal(k.style, 'https://maps.vietmap.vn/api/maps/light/styles.json?apikey=khoa%20c%E1%BB%A7a%20t%C3%B4i');
+  assert.deepEqual(k.styleDuPhong, ['https://maps.vietmap.vn/maps/styles/tm/style.json?apikey=khoa%20c%E1%BB%A7a%20t%C3%B4i']);
   assert.equal(k.vietmap, true);
   assert.equal(kieuVietmap('vietmapdem', 'x').toi, true);
-  assert.match(kieuVietmap('vietmapvetinh', 'x').style, /\/styles\/hm\//);
+  assert.match(kieuVietmap('vietmapdem', 'x').style, /\/api\/maps\/dark\/styles\.json/);
+  assert.match(kieuVietmap('vietmapvetinh', 'x').styleDuPhong[0], /\/styles\/hm\//);
   assert.deepEqual(Object.keys(KIEU_VIETMAP), ['vietmap', 'vietmapdem', 'vietmapvetinh']);
 });

@@ -32,7 +32,7 @@ import { taoKhoGiaoThong } from './kho-giao-thong.js';
 
 const THU_MUC = path.dirname(fileURLToPath(import.meta.url));
 const THU_MUC_WEB = path.join(THU_MUC, 'public');
-const PHIEN_BAN = '1.2.9';
+const PHIEN_BAN = '1.2.10';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8',

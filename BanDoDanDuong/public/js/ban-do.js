@@ -78,6 +78,8 @@ export class BanDo {
       const loi = e && e.error, st = loi && loi.status;
       if (layKieuBanDo(this.kieu).vietmap && !this.map.isStyleLoaded() && this.loiKieuDaBao !== this.kieu &&
         (st === 401 || st === 403 || /style/i.test((loi && loi.url) || ''))) {
+        // còn đường dẫn dự phòng (VietMap có hai dạng đường dẫn style): thử tiếp trước khi báo lỗi
+        if (this.styleCho && this.styleCho.length) { this.map.setStyle(this.styleCho.shift(), { diff: false }); return; }
         this.loiKieuDaBao = this.kieu;
         if (this.cb.loiKieu) this.cb.loiKieu(this.kieu, st);
       }
@@ -110,6 +112,7 @@ export class BanDo {
   /** Kiểu có "bienDoi": tải kiểu gốc rồi tô lại (màu Google Maps, ảnh vệ tinh…) trước khi vẽ. */
   napKieu(k) {
     this.loiKieuDaBao = null;
+    this.styleCho = [...(k.styleDuPhong || [])];
     const bd = k.bienDoi && BIEN_DOI_KIEU[k.bienDoi];
     this.map.setStyle(k.style, bd ? { diff: false, transformStyle: bd } : { diff: false });
   }

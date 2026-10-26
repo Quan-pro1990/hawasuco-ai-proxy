@@ -63,10 +63,14 @@ export async function giaLapMang(ctx) {
     const url = route.request().url();
     if (/openfreemap\.org\/styles/.test(url)) return json(route, style(false, true));
     if (/voyager-gl-style/.test(url)) return json(route, style(false));
-    // VietMap Maps API: khoá "sai" bị từ chối như máy chủ thật
-    const vm = /maps\.vietmap\.vn\/maps\/styles\/(tm|dm|hm)\/style\.json\?apikey=([^&]+)/.exec(url);
-    if (vm) return vm[2] === 'sai' ? route.fulfill({ status: 403, contentType: 'application/json', body: '{"message":"Invalid apikey"}', headers: { 'Access-Control-Allow-Origin': '*' } })
-      : json(route, style(vm[1] === 'dm'));
+    // VietMap Maps API (hai dạng đường dẫn style): khoá "sai" bị từ chối như máy chủ thật;
+    // khoá "cu" chỉ dùng được đường dẫn theo mã kiểu (thử đường dẫn dự phòng)
+    const vm = /maps\.vietmap\.vn\/(?:api\/maps\/(light|dark|hybrid)\/styles|maps\/styles\/(tm|dm|hm)\/style)\.json\?apikey=([^&]+)/.exec(url);
+    if (vm) {
+      const tuChoi = vm[3] === 'sai' || (vm[3] === 'cu' && vm[1]);
+      return tuChoi ? route.fulfill({ status: vm[3] === 'sai' ? 403 : 404, contentType: 'application/json', body: '{"message":"Invalid apikey"}', headers: { 'Access-Control-Allow-Origin': '*' } })
+        : json(route, style(vm[1] === 'dark' || vm[2] === 'dm'));
+    }
     if (/openfreemap\.org\/(planet|fonts)\/.*\.pbf$/.test(url)) return route.fulfill({ status: 200, contentType: 'application/x-protobuf', body: Buffer.alloc(0), headers: { 'Access-Control-Allow-Origin': '*' } });
     if (/dark-matter-gl-style/.test(url)) return json(route, style(true));
     if (/router\.project-osrm\.org|routing\.openstreetmap\.de/.test(url)) return json(route, mau.tuyenOsrm());

@@ -388,12 +388,18 @@ try {
   await page.click('[data-hd="lop-ban-do"]');
   const tenKieuVm = await page.$$eval('.luoi-kieu button', ds => ds.map(b => b.textContent.trim()));
   kiem(['VietMap', 'VietMap tối', 'VietMap vệ tinh'].every(t => tenKieuVm.includes(t)), 'có khoá VietMap: bảng loại bản đồ thêm bản đồ VietMap (' + tenKieuVm.join(', ') + ')');
-  const yeuCauVm = page.waitForRequest(r => /maps\.vietmap\.vn\/maps\/styles\/tm\/style\.json\?apikey=khoa-thu/.test(r.url()), { timeout: 10000 }).catch(() => null);
+  const yeuCauVm = page.waitForRequest(r => /maps\.vietmap\.vn\/api\/maps\/light\/styles\.json\?apikey=khoa-thu/.test(r.url()), { timeout: 10000 }).catch(() => null);
   await page.click('[data-hd="doi-kieu"][data-k="vietmap"]');
-  kiem(!!(await yeuCauVm), 'chọn VietMap: tải kiểu bản đồ chính thức của VietMap Maps API bằng khoá của người dùng');
+  kiem(!!(await yeuCauVm), 'chọn VietMap: tải kiểu bản đồ chính thức (đường dẫn trong tài liệu SDK VietMap) bằng khoá của người dùng');
   await page.waitForFunction(() => window.hawamap.banDo.map.isStyleLoaded() && !!window.hawamap.banDo.map.getLayer('tuyen'), null, { timeout: 10000 }).catch(() => {});
   kiem(await page.evaluate(() => window.hawamap.banDo.kieu === 'vietmap' && !!window.hawamap.banDo.map.getLayer('tuyen')), 'bản đồ VietMap hiện, giữ các lớp riêng');
   await page.click('#tam-duoi [data-hd="dong-tam"]').catch(() => {});
+  // đường dẫn thứ nhất không dùng được với khoá này: tự thử đường dẫn dự phòng, không báo lỗi
+  const yeuCauDuPhong = page.waitForRequest(r => /maps\.vietmap\.vn\/maps\/styles\/tm\/style\.json\?apikey=cu/.test(r.url()), { timeout: 10000 }).catch(() => null);
+  await datKhoa('cu');
+  kiem(!!(await yeuCauDuPhong), 'đường dẫn style thứ nhất lỗi: tự thử đường dẫn dự phòng của VietMap');
+  await page.waitForFunction(() => window.hawamap.banDo.map.isStyleLoaded() && !!window.hawamap.banDo.map.getLayer('tuyen'), null, { timeout: 10000 }).catch(() => {});
+  kiem(await page.evaluate(() => window.hawamap.banDo.kieu === 'vietmap' && window.hawamap.caiDat.kieuBanDo === 'vietmap'), 'đường dẫn dự phòng tải được: vẫn dùng bản đồ VietMap');
   // khoá bị từ chối: báo rõ, quay về bản đồ mặc định
   await datKhoa('sai');
   await page.waitForFunction(() => /Khoá VietMap Maps API không dùng được/.test(document.querySelector('#thong-bao').textContent), null, { timeout: 10000 }).catch(() => {});
