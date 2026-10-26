@@ -2,6 +2,7 @@
 
 Mỗi tài sản dán 1 tem QR. Quét tem bằng điện thoại → thấy ngay thông tin, ảnh, thông số kỹ thuật, lịch sử kiểm tra / sửa chữa;
 ghi kiểm tra, báo hỏng, bảo dưỡng, chụp ảnh tại chỗ; **mỗi năm kiểm kê 1 lần — quét tem là ghi nhận đã kiểm kê**; in tem, nhập / xuất Excel.
+Điện thoại dùng trình duyệt, hoặc **app Android "Quản lý tài sản"** kết nối máy chủ (quét tem bằng camera của app — xem mục [App Android](#app-android)).
 Thiết kế chi tiết: [THIET_KE.md](THIET_KE.md).
 
 | Điện thoại: quét tem → đã ghi nhận kiểm kê | Quét liên tục (kiểm kê) | Máy tính: trang tài sản |
@@ -15,10 +16,12 @@ Thêm: [đăng nhập](anh-man-hinh/dien-thoai-dang-nhap.png) · [theo đơn v�
 | Tệp | Dùng để |
 |---|---|
 | `QuanLyTaiSan.exe` | chương trình (giao diện web nhúng sẵn); nhấp đúp để chạy thử trên 1 máy tính |
+| `QuanLyTaiSan-DienThoai.apk` | **app Android** kết nối máy chủ; bộ cài chép lên máy chủ, điện thoại tải ở `<địa chỉ máy chủ>/tai-app` |
 | `dist\quanlytaisan-may-chu-<phiên bản>.zip` | **gói cài máy chủ** (giống gói máy chủ HawaMap): chép lên máy chủ Windows → Extract All → nhấp đúp `CAI-DAT-MAY-CHU.bat` |
 | `CAI-DAT-MAY-CHU.bat`, `trien-khai\` | trình cài đặt máy chủ IIS (hỏi - đáp), script IIS, đặt lại mật khẩu quản trị, sao lưu, gỡ cài đặt |
 | `HUONG-DAN-CAI-DAT.html` (từ [`trien-khai/HUONG_DAN_MAY_CHU.md`](trien-khai/HUONG_DAN_MAY_CHU.md)) | hướng dẫn dựng máy chủ từng bước cho người mới |
 | `src\`, `web\`, `tools\` | mã nguồn: máy chủ C#, giao diện web, công cụ đóng gói |
+| `android\` | mã nguồn app Android ([`android/README.md`](android/README.md)) |
 | `build.bat` | biên dịch lại trên Windows và tạo gói cài máy chủ trong `dist\` |
 
 Cần .NET Framework 4.5 trở lên (có sẵn trong Windows 10/11, Windows Server 2016 trở lên).
@@ -30,7 +33,8 @@ Cần .NET Framework 4.5 trở lên (có sẵn trong Windows 10/11, Windows Serv
 3. Đóng cửa sổ đen là dừng phần mềm.
 
 Chạy thử chỉ dùng trên chính máy đó. Để điện thoại quét được bằng camera trong trang web phải cài lên máy chủ IIS (có https).
-(`QuanLyTaiSan.exe --lan` cho máy khác trong mạng nội bộ vào bằng http để xem thử — không mã hoá, camera trong trang không chạy.)
+(`QuanLyTaiSan.exe --lan` cho máy khác trong mạng nội bộ vào bằng http để xem thử — không mã hoá, camera trong trang không chạy;
+app Android vẫn quét được vì dùng camera của app.)
 
 ## Cài lên máy chủ (dùng thật) — giống máy chủ HawaMap
 
@@ -87,6 +91,31 @@ Mở địa chỉ máy chủ bằng Chrome (iPhone: Safari), đăng nhập, menu
 - Hoặc dùng **ứng dụng Camera** có sẵn của điện thoại quét tem: tem chứa địa chỉ trang tài sản nên mở thẳng trong trình duyệt
   (cũng ghi nhận kiểm kê như khi quét trong phần mềm).
 - Lần đầu trình duyệt hỏi quyền **Camera** (và **Vị trí** khi ghi GPS): chọn *Cho phép*.
+
+## App Android
+
+App **"Quản lý tài sản"** (`QuanLyTaiSan-DienThoai.apk`, icon logo công ty có huy hiệu mã QR) kết nối máy chủ của công ty và
+mở đúng các trang như trên trình duyệt (cùng tài khoản, cùng dữ liệu), thêm:
+
+- **Quét tem bằng camera của app**: nhanh, chạy cả khi máy chủ chưa có https (`http://IP:8080`), có đèn. Ở *Kiểm kê* và
+  *Điều chuyển*, camera mở toàn màn hình và **ở lại để quét tem tiếp** — mỗi tem hiện kết quả ngay (*Đã kiểm kê MB-00012 · 35 / 120*,
+  *Đã thêm…*, lỗi màu đỏ) và rung báo; bấm **Xong** (hoặc Back) để về danh sách vừa quét / danh sách điều chuyển.
+- **Xuất Excel, tải ảnh**: app hỏi **Mở** (Excel, WPS Office…), **Chia sẻ** (Zalo, email…) hoặc **Lưu vào máy**.
+- Ghi **vị trí GPS** của tài sản, **chụp ảnh** tài sản, **in tem** qua máy in Wi-Fi (hoặc lưu PDF).
+- Máy chủ có bản app mới → mở app là được hỏi **Cập nhật**.
+
+**Cài app**: trên điện thoại mở địa chỉ máy chủ bằng Chrome → trang đăng nhập có **Tải app** (hoặc vào thẳng
+`<địa chỉ máy chủ>/tai-app`); quản trị trên máy tính vào **Cài đặt** có mã QR tải app để nhân viên quét. Android hỏi cho phép
+cài ứng dụng không rõ nguồn → cho phép.
+
+**Lần đầu mở app**: nhập địa chỉ máy chủ (vd `taisan.congty.vn`; máy chủ chưa có tên miền gõ IP, vd `192.168.1.10` — app tự thử
+cổng 8443 / 8080), hoặc bấm **Quét tem QR để lấy địa chỉ** rồi quét tem dán trên một tài sản bất kỳ, hoặc trên Chrome bấm
+**Mở bằng app** (app điền sẵn địa chỉ). Máy chủ chưa có tên miền dùng chứng chỉ tự ký: app hiện **mã nhận dạng chứng chỉ**
+(vd `3A1B-9C2D-4E5F-6071`) — so với mã quản trị cung cấp (bộ cài máy chủ in ra ở bước cuối) rồi bấm **Tin cậy**; từ đó app không
+hỏi lại. Đăng nhập như trên trình duyệt. Đổi máy chủ: **Thêm → App điện thoại → Đổi máy chủ**.
+
+Quyền app xin: Camera (quét tem, chụp ảnh), Vị trí (ghi GPS), cài bản cập nhật. Mã nguồn, cách build lại:
+[`android/README.md`](android/README.md).
 
 ## Trang tài sản
 
@@ -196,6 +225,9 @@ Mỗi ngày tự giữ 1 bản `taisan.xml` trong `SaoLuu` (90 ngày). **Hãy sa
 - Mỗi lần đẩy mã lên GitHub, GitHub Actions (`.github/workflows/quanlytaisan-may-chu.yml`) biên dịch bằng csc của Windows,
   đóng gói và cài thử trình cài đặt trên Windows Server + IIS thật (tên miền, HTTPS, không tên miền, sao lưu, gỡ cài đặt).
 - Sửa giao diện không cần biên dịch lại: đặt biến môi trường `QLTS_WEB` = đường dẫn thư mục `web` rồi chạy `QuanLyTaiSan.exe`.
+- App Android: `android\build-apk.sh` (Linux, không cần Gradle) hoặc Android Studio → `QuanLyTaiSan-DienThoai.apk`; chạy lại
+  `build.sh` / `build.bat` để đóng gói máy chủ kèm app mới. GitHub Actions (`.github/workflows/quanlytaisan-android.yml`) build và
+  chạy thử app trên máy ảo Android 14. Chi tiết: [`android/README.md`](android/README.md).
 - `web\jsQR.js` là thư viện đọc QR mã nguồn mở (giấy phép Apache 2.0, `web\jsQR-LICENSE.txt`); phần còn lại viết riêng cho phần mềm.
 - File `QuanLyTaiSan.exe` trong thư mục này được biên dịch trên Linux bằng Mono **theo thư viện tham chiếu .NET Framework 4.5**
   (`build.sh` tự tải gói NuGet `Microsoft.NETFramework.ReferenceAssemblies.net45`), nên chạy đúng trên .NET Framework của Windows;

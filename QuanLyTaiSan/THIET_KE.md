@@ -15,11 +15,15 @@ Công ty TNHH MTV Cấp nước Hậu Giang (HAWASUCO). Phiên bản 1.0 — 10/
 ## 2. Kiến trúc
 
 ```
- Điện thoại (Chrome / Safari)  ──┐                 ┌───────────────────── Máy chủ Windows (IIS) ──────────────────────┐
+ App Android "Quản lý tài sản" ──┐                 ┌───────────────────── Máy chủ Windows (IIS) ──────────────────────┐
+   • WebView mở trang của máy chủ│                 │                                                                   │
+   • camera của app quét tem     │                 │                                                                   │
+ Điện thoại (Chrome / Safari)  ──┤                 │                                                                   │
    • trang Quét QR (camera)      │                 │                                                                   │
    • ứng dụng Camera quét tem ───┼── HTTPS 443 ───>│ IIS + HttpPlatformHandler ──> QuanLyTaiSan.exe (127.0.0.1:cổng)   │
  Máy tính (trình duyệt)        ──┘ taisan.congty.vn│  (site QuanLyTaiSan, cạnh      • trang web nhúng trong .exe       │
    • quản lý, in tem, Excel                        │   site HawaMap)                • API JSON /api/...                │
+                                                   │                                • /tai-app: QuanLyTaiSan-DienThoai.apk│
                                                    │                                • dữ liệu C:\QuanLyTaiSanData       │
                                                    └───────────────────────────────────────────────────────────────────┘
 ```
@@ -29,7 +33,8 @@ Công ty TNHH MTV Cấp nước Hậu Giang (HAWASUCO). Phiên bản 1.0 — 10/
 | Máy chủ | 1 file `QuanLyTaiSan.exe` (C#, .NET Framework 4.x); IIS tự chạy và giám sát qua HttpPlatformHandler (biến `HTTP_PLATFORM_PORT`); vẫn chạy được dưới ASP.NET Core Module của gói cài cũ | Cùng cách dựng với máy chủ HawaMap (cùng 2 module IIS, cùng trình cài `CAI-DAT-MAY-CHU.bat`); biên dịch bằng `csc.exe` có sẵn trong Windows, không cần Visual Studio |
 | Cài đặt | Gói zip `quanlytaisan-may-chu-<phiên bản>`: `CAI-DAT-MAY-CHU.bat` → `trien-khai\iis\cai-dat-nhanh.ps1` (hỏi - đáp, nhớ câu trả lời) → `cai-dat-iis.ps1` (site theo tên miền cổng 80 / 443, nhận chứng chỉ win-acme, chuyển http → https; chưa có tên miền: cổng trống + chứng chỉ tự ký) | Người mới tự dựng được; chạy lại để cập nhật, dữ liệu giữ nguyên; kiểm thử trên IIS thật bằng GitHub Actions |
 | Giao diện | Trang web 1 trang (HTML/CSS/JS thuần) nhúng trong .exe, dùng chung cho máy tính và điện thoại; cài được lên màn hình chính (PWA) | Không phải cài app; 1 giao diện cho mọi thiết bị; cập nhật chỉ cần thay file .exe |
-| Đọc QR | `BarcodeDetector` của trình duyệt (Chrome Android), dự phòng `jsQR.js` (Apache-2.0, đi kèm) cho iPhone / trình duyệt khác; thêm nút "Chụp ảnh mã QR" và ô gõ mã | Camera trong trang web cần **https** — vì vậy chạy sau IIS |
+| Đọc QR | `BarcodeDetector` của trình duyệt (Chrome Android), dự phòng `jsQR.js` (Apache-2.0, đi kèm) cho iPhone / trình duyệt khác; thêm nút "Chụp ảnh mã QR" và ô gõ mã. Trong app Android: camera của app + ZXing | Camera trong trang web cần **https** — vì vậy chạy sau IIS; app Android quét được cả khi http |
+| App Android | `android/`: Java, không AndroidX, WebView mở trang của máy chủ + cầu nối `window.QuanLyTaiSanApp` (quét QR, tải / chia sẻ file, in, GPS, cập nhật); APK đặt cạnh .exe, tải ở `/tai-app` | Dùng lại toàn bộ giao diện web (1 bộ mã); thêm đúng phần trình duyệt không làm được; cập nhật app từ chính máy chủ |
 | Tạo QR | `maqr.js` viết riêng (chuẩn ISO/IEC 18004, phiên bản 1–40, mức sửa lỗi L/M/Q/H), vẽ SVG sắc nét khi in | Không phụ thuộc thư viện; đã kiểm bằng 2 bộ đọc độc lập (zxing, jsQR) ở mọi phiên bản |
 | Lưu trữ | XML + tệp ghi thêm (không cần SQL Server) | Đủ cho vài chục nghìn tài sản; sao lưu = chép thư mục; cùng cách với phần mềm thất thoát nước |
 | Excel | Tự đọc / ghi .xlsx (mã đã dùng trong phần mềm thất thoát nước) | Không cần cài Excel trên máy chủ |
@@ -119,6 +124,7 @@ C:\QuanLyTaiSanData\
 | Tài sản | tìm (không dấu cũng được), lọc loại / đơn vị / cả khối / tình trạng / đến hạn bảo dưỡng / lâu chưa kiểm tra / chưa có ảnh, sắp xếp; chọn nhiều → in tem, xuất Excel. Tài khoản 1 đơn vị: mở ra là lọc sẵn đơn vị mình |
 | **Theo đơn vị** | chia theo khối (Các đội cấp nước / Khối văn phòng), mỗi đội / phòng ban 1 thẻ: số tài sản, nguyên giá, còn lại, loại chính, việc cần xử lý (hỏng, đến hạn bảo dưỡng, lâu chưa kiểm tra, chưa có ảnh); nút danh sách, in tem, sổ Excel của đơn vị / của khối / cả công ty |
 | **Quét QR** | camera sau, khung ngắm, đèn pin (nếu máy hỗ trợ), rung khi đọc được; chụp ảnh mã QR; gõ mã. Mã chưa có → khai báo mới với mã đó. Quét = **ghi nhận kiểm kê năm nay** rồi mở trang tài sản; chế độ **quét liên tục**: ở lại camera, mỗi tem quét hiện vào danh sách "Vừa quét" (bấm để ghi tình trạng) |
+| **App Android** | màn hình kết nối (gõ địa chỉ — tự thử https / http, cổng 8443 / 8080; hoặc quét tem lấy địa chỉ; hỏi mã nhận dạng chứng chỉ tự ký); trang web của máy chủ; camera quét toàn màn hình của app (khung ngắm, đèn; quét liên tục hiện kết quả từng tem do trang báo về, rung); tải file → Mở / Chia sẻ / Lưu; hỏi cập nhật khi máy chủ có bản app mới |
 | **Trang tài sản** | ảnh lớn + dải ảnh (xem toàn màn hình, vuốt qua lại), mã, tình trạng, tên, loại, đơn vị, vị trí; nút Kiểm tra · Chụp ảnh · Bảo dưỡng / sửa · Sửa · Điều chuyển · In tem · Thanh lý; thông tin chung, thông số kỹ thuật, giá trị & bảo dưỡng, tem QR, **lịch sử dạng dòng thời gian** có ảnh và vị trí; ô kiểm kê năm nay (vừa ghi nhận / đã kiểm lúc… / chưa kiểm — nút Xác nhận, Ghi tình trạng kiểm kê) |
 | Thêm / sửa | đủ các trường, thông số kỹ thuật theo loại + thêm tuỳ ý, lấy toạ độ GPS hiện tại, chụp ảnh ngay khi khai báo |
 | Kiểm kê | mở thẳng kiểm kê năm nay (chưa bắt đầu: hướng dẫn + nút Bắt đầu, các năm trước); tiến độ theo khối → đơn vị, tab Chưa kiểm / Đã kiểm / Ngoài sổ, chọn năm, nút **Quét kiểm kê** (quét liên tục), xuất biên bản, kết thúc / mở lại |
@@ -170,6 +176,7 @@ C:\QuanLyTaiSanData\
 | `POST xuat/taisan`, `GET xuat/mau`, `POST nhap?thu=1` | Excel: trả liên kết tải file (hết hạn sau 10 phút); nhập có chế độ xem trước |
 | `GET/POST/DELETE taikhoan` | quản lý tài khoản |
 | `GET /t/<mã>` (ngoài /api) | địa chỉ trong tem: chuyển tới trang tài sản |
+| `GET /tai-app` (ngoài /api), `GET ping` → `app: {phienBan, ma, kichThuoc}` | tải app Android `QuanLyTaiSan-DienThoai.apk` (đặt cạnh .exe); phiên bản đọc từ AndroidManifest trong APK để app hỏi cập nhật |
 
 ## 9. Bảo mật
 
@@ -179,6 +186,10 @@ C:\QuanLyTaiSanData\
   `Content-Security-Policy: sandbox`. Trang web có CSP chặn script lạ, chống nhúng khung.
 - Thư mục dữ liệu chỉ quản trị máy, SYSTEM và app pool IIS vào được (bộ cài bỏ thừa kế quyền). Lịch sử chỉ ghi thêm. Nhật ký
   máy chủ ghi đăng nhập sai (kèm IP thật do URL Rewrite đặt vào `X-Forwarded-For`), xoá, nhập Excel.
+- App Android chỉ mở trang của máy chủ đã kết nối (trang khác mở bằng trình duyệt), cầu nối chỉ tải file của chính máy chủ đó.
+  Máy chủ chưa có tên miền (chứng chỉ tự ký): app hiện mã nhận dạng (16 ký tự đầu SHA-256 của chứng chỉ, giống bộ cài in ra),
+  người dùng đồng ý thì ghim **đúng chứng chỉ đó** (SHA-256 đủ 64 ký tự) cho cả WebView và kết nối của app; chứng chỉ đổi → app
+  chặn và hỏi lại. Tin thêm chứng chỉ gốc công ty tự cài lên điện thoại. Bật gỡ lỗi WebView chỉ ở bản gỡ lỗi.
 - `QuanLyTaiSan.exe` chỉ nghe 127.0.0.1 (chỉ IIS chuyển yêu cầu tới; gói cũ dùng ASP.NET Core Module thì kiểm thêm mã
   `MS-ASPNETCORE-TOKEN`). IIS không phục vụ tệp nào trong thư mục site (mọi yêu cầu qua chương trình), trừ tệp xác minh
   Let's Encrypt trong `.well-known/acme-challenge` do chương trình trả.
@@ -187,6 +198,6 @@ C:\QuanLyTaiSanData\
 
 - Dữ liệu XML phù hợp tới khoảng vài chục nghìn tài sản. Nếu sau này quản lý cả **đồng hồ nước khách hàng** (hàng trăm nghìn) nên chuyển
   phần lưu trữ sang SQL Server — giao diện và API giữ nguyên.
-- Chưa làm: dùng khi mất mạng (lưu tạm trên điện thoại rồi gửi sau), app Android riêng (có thể bọc trang web như app Thất thoát nước),
+- Chưa làm: dùng khi mất mạng (lưu tạm trên điện thoại rồi gửi sau), app iPhone (hiện dùng Safari),
   bản đồ GIS toàn mạng lưới (đã có toạ độ từng tài sản, có thể vẽ lên bản đồ), gắn tài sản thuỷ lượng kế với số liệu thất thoát nước,
   nhắc bảo dưỡng qua Zalo / email, đính kèm hồ sơ PDF (hợp đồng, biên bản bàn giao, bản vẽ), xuất theo mẫu sổ TSCĐ của phần mềm kế toán.

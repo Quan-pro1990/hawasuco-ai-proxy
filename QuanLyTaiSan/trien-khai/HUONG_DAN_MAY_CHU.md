@@ -61,7 +61,7 @@ Trong hướng dẫn này lấy ví dụ tên miền `taisan.congty.vn` và IP m
 
 ### Gói cài đặt
 
-Tệp `quanlytaisan-may-chu-<phiên bản>.zip` (khoảng 1 MB). Nhận từ người phát triển, hoặc tự tạo từ mã nguồn (xem
+Tệp `quanlytaisan-may-chu-<phiên bản>.zip` (khoảng 1,5 MB, có sẵn app Android cho điện thoại). Nhận từ người phát triển, hoặc tự tạo từ mã nguồn (xem
 [Phụ lục A](#phụ-lục-a-tạo-gói-cài-đặt-từ-mã-nguồn)). Trong gói có sẵn hướng dẫn này (`HUONG-DAN-CAI-DAT.html`).
 
 ### Máy tính của bạn
@@ -234,7 +234,14 @@ Hướng dẫn sử dụng chi tiết từng chức năng: tệp `HUONG_DAN.md` 
 
 ## 10. Dùng trên điện thoại
 
-- **Android (Chrome):** mở `https://taisan.congty.vn` → đăng nhập → menu ba chấm → **Thêm vào màn hình chính** (hoặc
+- **Android — app "Quản lý tài sản" (nên dùng):** trình cài đặt đã chép app lên máy chủ. Trên điện thoại mở
+  `https://taisan.congty.vn` bằng Chrome → trang đăng nhập có **Tải app** (hoặc mở thẳng `https://taisan.congty.vn/tai-app`;
+  quản trị trên máy tính vào **Cài đặt** có mã QR tải app cho nhân viên quét). Cài app (Android hỏi cho phép cài ứng dụng
+  không rõ nguồn → cho phép), mở app, nhập `taisan.congty.vn` → **Kết nối** → đăng nhập. App quét tem bằng camera của app —
+  chạy được cả khi máy chủ chưa có HTTPS — quét liên tục khi kiểm kê / điều chuyển, mở / chia sẻ file Excel bằng Zalo, email.
+  Máy chủ dùng chứng chỉ tự ký ([Phụ lục C](#phụ-lục-c-chưa-có-tên-miền-dùng-ip-và-chứng-chỉ-tự-ký)): app hiện **mã nhận
+  dạng chứng chỉ** — trùng với mã trong bảng tóm tắt cuối trình cài thì bấm **Tin cậy**.
+- **Android (Chrome, không cài app):** mở `https://taisan.congty.vn` → đăng nhập → menu ba chấm → **Thêm vào màn hình chính** (hoặc
   **Cài đặt ứng dụng**). Lần đầu quét QR, cho phép trình duyệt dùng **camera**.
 - **iPhone (Safari):** mở trang → nút **Chia sẻ** → **Thêm vào MH chính**.
 - Quét tem bằng nút tròn **Quét QR** ở giữa thanh dưới; hoặc dùng **ứng dụng Camera** có sẵn của điện thoại — tem chứa
@@ -258,6 +265,7 @@ Hướng dẫn sử dụng chi tiết từng chức năng: tệp `HUONG_DAN.md` 
 2. Nhấp đúp `CAI-DAT-MAY-CHU.bat` trong thư mục mới, nhấn Enter ở mọi câu hỏi.
 
 Dữ liệu trong `C:\QuanLyTaiSanData` và tài khoản được giữ nguyên. Máy tính, điện thoại tự nhận bản mới khi mở lại trang.
+Gói mới có app Android phiên bản mới hơn thì điện thoại mở app sẽ được hỏi **Cập nhật** (tải bản mới từ máy chủ).
 
 ### Sao lưu
 
@@ -306,7 +314,10 @@ Nhấp đúp `trien-khai\GO-CAI-DAT.bat`, gõ `Y`. Lệnh này xoá site, app po
 | Vào bằng IP thấy trang chào mừng của IIS hoặc trang HawaMap | Bình thường khi đã cài với tên miền: hãy vào bằng tên miền |
 | Trên máy chủ mở được, máy khác hoặc điện thoại không mở được | Tường lửa của nhà cung cấp / modem (bước 3); bản ghi A chưa đúng hoặc chưa có hiệu lực (bước 4, `nslookup`) |
 | win-acme báo lỗi xác minh | Bản ghi A, cổng 80 từ Internet vào, Cloudflare đang bật proxy (xem bước 8) |
-| Trang Quét QR báo không mở được camera | Phải mở bằng `https://`; cho phép quyền camera cho trình duyệt trong cài đặt điện thoại. Tạm thời: bấm **Chụp ảnh mã QR**, hoặc quét tem bằng ứng dụng Camera của điện thoại |
+| Trang Quét QR báo không mở được camera | Phải mở bằng `https://`; cho phép quyền camera cho trình duyệt trong cài đặt điện thoại. Tạm thời: bấm **Chụp ảnh mã QR**, hoặc quét tem bằng ứng dụng Camera của điện thoại. Điện thoại Android: dùng app (quét được cả khi http) |
+| Mở `/tai-app` báo *Máy chủ chưa có app Android* | Gói cài cũ không có `QuanLyTaiSan-DienThoai.apk`: chép tệp này vào thư mục site (`C:\inetpub\QuanLyTaiSan`), hoặc cài lại bằng gói mới |
+| App báo *Chứng chỉ bảo mật của máy chủ đã thay đổi* | Máy chủ vừa cài lại / đổi chứng chỉ: bấm **Kết nối lại**, so mã nhận dạng mới với bảng tóm tắt của trình cài rồi bấm **Tin cậy** |
+| App cập nhật báo *Cần gỡ app cũ* | Bản app mới được build bằng khoá ký khác: gỡ app, tải lại ở `/tai-app` (dữ liệu nằm trên máy chủ, chỉ phải nhập lại địa chỉ, đăng nhập) |
 | Tem in ra mở sai địa chỉ (localhost, IP cũ…) | **Cài đặt** → **Địa chỉ in trong mã QR** chưa đặt hoặc sai: sửa rồi in lại tem (tem đã dán vẫn dùng được nếu địa chỉ cũ còn vào được) |
 | Quên mật khẩu quản trị | `trien-khai\DAT-LAI-MAT-KHAU-QUAN-TRI.bat` (mục 11) |
 | Muốn đổi sang tên miền khác | Trỏ tên miền mới (bước 4), chạy lại trình cài đặt và nhập tên miền mới, xin chứng chỉ cho tên miền mới (bước 8), sửa **Địa chỉ in trong mã QR** |
@@ -322,7 +333,8 @@ Trên máy Windows có mã nguồn (thư mục `QuanLyTaiSan`): nhấp đúp `bu
 Trên Linux / macOS (để phát triển): `./build.sh` (cần Mono và Node.js 18+); lệnh này tạo lại cả `HUONG-DAN-CAI-DAT.html`
 từ tệp hướng dẫn này.
 
-Gói gồm: `CAI-DAT-MAY-CHU.bat`, `HUONG-DAN-CAI-DAT.html`, `QuanLyTaiSan.exe` (giao diện web nhúng sẵn bên trong) và thư
+Gói gồm: `CAI-DAT-MAY-CHU.bat`, `HUONG-DAN-CAI-DAT.html`, `QuanLyTaiSan.exe` (giao diện web nhúng sẵn bên trong),
+`QuanLyTaiSan-DienThoai.apk` (app Android, build riêng trong thư mục `android` — xem `android/README.md`) và thư
 mục `trien-khai` (script cài IIS, tiện ích đặt lại mật khẩu, sao lưu, gỡ cài đặt). Thư mục mã nguồn có cùng bố cục, nên
 nhấp đúp `CAI-DAT-MAY-CHU.bat` ngay trong thư mục mã nguồn (sau khi build) cũng cài được.
 
@@ -365,8 +377,10 @@ Chạy thử trên một máy tính bất kỳ, không cần IIS: nhấp đúp `
 
 Người dùng vào bằng `https://203.0.113.10` (thêm `:8443` nếu dùng cổng khác). Lần đầu trình duyệt báo "Kết nối không riêng
 tư" vì chứng chỉ tự ký: bấm **Nâng cao** → **Tiếp tục truy cập** (iPhone: **Hiển thị chi tiết** → **truy cập trang web
-này**). Bảng tóm tắt cuối trình cài in **mã nhận dạng** chứng chỉ: bấm biểu tượng cảnh báo trên thanh địa chỉ → xem chứng
-chỉ để so (khác mã thì đừng đăng nhập — có thể bị chặn giữa đường). Nhớ mở cổng http / https đã chọn ở tường lửa nhà cung
+này**). Bảng tóm tắt cuối trình cài in **mã nhận dạng** chứng chỉ (vd `3A1B-9C2D-4E5F-6071`): bấm biểu tượng cảnh báo trên
+thanh địa chỉ → xem chứng chỉ để so (khác mã thì đừng đăng nhập — có thể bị chặn giữa đường). **App Android** hỏi đúng mã này
+một lần khi kết nối (gõ `203.0.113.10`, app tự thử cổng 8443 / 8080) rồi ghi nhớ — không báo "không riêng tư" mỗi lần như
+trình duyệt; gửi mã cho nhân viên cùng địa chỉ máy chủ. Nhớ mở cổng http / https đã chọn ở tường lửa nhà cung
 cấp / modem (bước 3) và đặt **Địa chỉ in trong mã QR** = `https://203.0.113.10` (bước 9).
 
 Khi có tên miền: tạo bản ghi A, chạy lại `CAI-DAT-MAY-CHU.bat`, nhập tên miền, rồi bật HTTPS (bước 8). Tem đã in theo IP

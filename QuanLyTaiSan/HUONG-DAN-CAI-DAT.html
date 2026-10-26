@@ -71,7 +71,7 @@ hr { border: 0; border-top: 1px solid var(--vien); margin: 2em 0; }
 <p>Chưa có tên miền vẫn cài và dùng được bằng địa chỉ IP với chứng chỉ tự ký (trình duyệt cảnh báo lần đầu) — xem <a href="#phụ-lục-c-chưa-có-tên-miền-dùng-ip-và-chứng-chỉ-tự-ký">Phụ lục C</a>.</p>
 <p>Trong hướng dẫn này lấy ví dụ tên miền <code>taisan.congty.vn</code> và IP máy chủ <code>203.0.113.10</code>; thay bằng của bạn.</p>
 <h3 id="gói-cài-đặt">Gói cài đặt</h3>
-<p>Tệp <code>quanlytaisan-may-chu-&lt;phiên bản&gt;.zip</code> (khoảng 1 MB). Nhận từ người phát triển, hoặc tự tạo từ mã nguồn (xem <a href="#phụ-lục-a-tạo-gói-cài-đặt-từ-mã-nguồn">Phụ lục A</a>). Trong gói có sẵn hướng dẫn này (<code>HUONG-DAN-CAI-DAT.html</code>).</p>
+<p>Tệp <code>quanlytaisan-may-chu-&lt;phiên bản&gt;.zip</code> (khoảng 1,5 MB, có sẵn app Android cho điện thoại). Nhận từ người phát triển, hoặc tự tạo từ mã nguồn (xem <a href="#phụ-lục-a-tạo-gói-cài-đặt-từ-mã-nguồn">Phụ lục A</a>). Trong gói có sẵn hướng dẫn này (<code>HUONG-DAN-CAI-DAT.html</code>).</p>
 <h3 id="máy-tính-của-bạn">Máy tính của bạn</h3>
 <p>Để điều khiển máy chủ từ xa. Windows có sẵn <strong>Remote Desktop Connection</strong>; máy Mac cài ứng dụng <strong>Windows App</strong> (tên cũ: Microsoft Remote Desktop) từ App Store.</p>
 <h3 id="vài-từ-cần-biết">Vài từ cần biết</h3>
@@ -191,7 +191,8 @@ hr { border: 0; border-top: 1px solid var(--vien); margin: 2em 0; }
 <p>Hướng dẫn sử dụng chi tiết từng chức năng: tệp <code>HUONG_DAN.md</code> trong mã nguồn phần mềm.</p>
 <h2 id="10-dùng-trên-điện-thoại">10. Dùng trên điện thoại</h2>
 <ul>
-<li><strong>Android (Chrome):</strong> mở <code>https://taisan.congty.vn</code> → đăng nhập → menu ba chấm → <strong>Thêm vào màn hình chính</strong> (hoặc <strong>Cài đặt ứng dụng</strong>). Lần đầu quét QR, cho phép trình duyệt dùng <strong>camera</strong>.</li>
+<li><strong>Android — app &quot;Quản lý tài sản&quot; (nên dùng):</strong> trình cài đặt đã chép app lên máy chủ. Trên điện thoại mở <code>https://taisan.congty.vn</code> bằng Chrome → trang đăng nhập có <strong>Tải app</strong> (hoặc mở thẳng <code>https://taisan.congty.vn/tai-app</code>; quản trị trên máy tính vào <strong>Cài đặt</strong> có mã QR tải app cho nhân viên quét). Cài app (Android hỏi cho phép cài ứng dụng không rõ nguồn → cho phép), mở app, nhập <code>taisan.congty.vn</code> → <strong>Kết nối</strong> → đăng nhập. App quét tem bằng camera của app — chạy được cả khi máy chủ chưa có HTTPS — quét liên tục khi kiểm kê / điều chuyển, mở / chia sẻ file Excel bằng Zalo, email. Máy chủ dùng chứng chỉ tự ký (<a href="#phụ-lục-c-chưa-có-tên-miền-dùng-ip-và-chứng-chỉ-tự-ký">Phụ lục C</a>): app hiện <strong>mã nhận dạng chứng chỉ</strong> — trùng với mã trong bảng tóm tắt cuối trình cài thì bấm <strong>Tin cậy</strong>.</li>
+<li><strong>Android (Chrome, không cài app):</strong> mở <code>https://taisan.congty.vn</code> → đăng nhập → menu ba chấm → <strong>Thêm vào màn hình chính</strong> (hoặc <strong>Cài đặt ứng dụng</strong>). Lần đầu quét QR, cho phép trình duyệt dùng <strong>camera</strong>.</li>
 <li><strong>iPhone (Safari):</strong> mở trang → nút <strong>Chia sẻ</strong> → <strong>Thêm vào MH chính</strong>.</li>
 <li>Quét tem bằng nút tròn <strong>Quét QR</strong> ở giữa thanh dưới; hoặc dùng <strong>ứng dụng Camera</strong> có sẵn của điện thoại — tem chứa địa chỉ trang tài sản nên mở thẳng trong trình duyệt. Mỗi lần quét (tài khoản Nhân viên kiểm tra trở lên) là ghi nhận tài sản đã kiểm kê năm nay.</li>
 <li>Điện thoại cần vào được Internet (4G hoặc Wi-Fi). Máy chủ đặt trong mạng nội bộ công ty mà không mở ra Internet thì điện thoại phải nối Wi-Fi công ty.</li>
@@ -208,7 +209,7 @@ hr { border: 0; border-top: 1px solid var(--vien); margin: 2em 0; }
 <li>Nhận tệp zip mới, giải nén như bước 5.</li>
 <li>Nhấp đúp <code>CAI-DAT-MAY-CHU.bat</code> trong thư mục mới, nhấn Enter ở mọi câu hỏi.</li>
 </ol>
-<p>Dữ liệu trong <code>C:\QuanLyTaiSanData</code> và tài khoản được giữ nguyên. Máy tính, điện thoại tự nhận bản mới khi mở lại trang.</p>
+<p>Dữ liệu trong <code>C:\QuanLyTaiSanData</code> và tài khoản được giữ nguyên. Máy tính, điện thoại tự nhận bản mới khi mở lại trang. Gói mới có app Android phiên bản mới hơn thì điện thoại mở app sẽ được hỏi <strong>Cập nhật</strong> (tải bản mới từ máy chủ).</p>
 <h3 id="sao-lưu">Sao lưu</h3>
 <p>Chỉ cần sao lưu thư mục <code>C:\QuanLyTaiSanData</code>:</p>
 <div class="bang"><table>
@@ -246,7 +247,10 @@ hr { border: 0; border-top: 1px solid var(--vien); margin: 2em 0; }
 <tr><td>Vào bằng IP thấy trang chào mừng của IIS hoặc trang HawaMap</td><td>Bình thường khi đã cài với tên miền: hãy vào bằng tên miền</td></tr>
 <tr><td>Trên máy chủ mở được, máy khác hoặc điện thoại không mở được</td><td>Tường lửa của nhà cung cấp / modem (bước 3); bản ghi A chưa đúng hoặc chưa có hiệu lực (bước 4, <code>nslookup</code>)</td></tr>
 <tr><td>win-acme báo lỗi xác minh</td><td>Bản ghi A, cổng 80 từ Internet vào, Cloudflare đang bật proxy (xem bước 8)</td></tr>
-<tr><td>Trang Quét QR báo không mở được camera</td><td>Phải mở bằng <code>https://</code>; cho phép quyền camera cho trình duyệt trong cài đặt điện thoại. Tạm thời: bấm <strong>Chụp ảnh mã QR</strong>, hoặc quét tem bằng ứng dụng Camera của điện thoại</td></tr>
+<tr><td>Trang Quét QR báo không mở được camera</td><td>Phải mở bằng <code>https://</code>; cho phép quyền camera cho trình duyệt trong cài đặt điện thoại. Tạm thời: bấm <strong>Chụp ảnh mã QR</strong>, hoặc quét tem bằng ứng dụng Camera của điện thoại. Điện thoại Android: dùng app (quét được cả khi http)</td></tr>
+<tr><td>Mở <code>/tai-app</code> báo *Máy chủ chưa có app Android*</td><td>Gói cài cũ không có <code>QuanLyTaiSan-DienThoai.apk</code>: chép tệp này vào thư mục site (<code>C:\inetpub\QuanLyTaiSan</code>), hoặc cài lại bằng gói mới</td></tr>
+<tr><td>App báo *Chứng chỉ bảo mật của máy chủ đã thay đổi*</td><td>Máy chủ vừa cài lại / đổi chứng chỉ: bấm <strong>Kết nối lại</strong>, so mã nhận dạng mới với bảng tóm tắt của trình cài rồi bấm <strong>Tin cậy</strong></td></tr>
+<tr><td>App cập nhật báo *Cần gỡ app cũ*</td><td>Bản app mới được build bằng khoá ký khác: gỡ app, tải lại ở <code>/tai-app</code> (dữ liệu nằm trên máy chủ, chỉ phải nhập lại địa chỉ, đăng nhập)</td></tr>
 <tr><td>Tem in ra mở sai địa chỉ (localhost, IP cũ…)</td><td><strong>Cài đặt</strong> → <strong>Địa chỉ in trong mã QR</strong> chưa đặt hoặc sai: sửa rồi in lại tem (tem đã dán vẫn dùng được nếu địa chỉ cũ còn vào được)</td></tr>
 <tr><td>Quên mật khẩu quản trị</td><td><code>trien-khai\DAT-LAI-MAT-KHAU-QUAN-TRI.bat</code> (mục 11)</td></tr>
 <tr><td>Muốn đổi sang tên miền khác</td><td>Trỏ tên miền mới (bước 4), chạy lại trình cài đặt và nhập tên miền mới, xin chứng chỉ cho tên miền mới (bước 8), sửa <strong>Địa chỉ in trong mã QR</strong></td></tr>
@@ -255,7 +259,7 @@ hr { border: 0; border-top: 1px solid var(--vien); margin: 2em 0; }
 <h3 id="phụ-lục-a-tạo-gói-cài-đặt-từ-mã-nguồn">Phụ lục A: Tạo gói cài đặt từ mã nguồn</h3>
 <p>Trên máy Windows có mã nguồn (thư mục <code>QuanLyTaiSan</code>): nhấp đúp <code>build.bat</code>. Trình biên dịch C# có sẵn trong Windows (.NET Framework 4) tạo <code>QuanLyTaiSan.exe</code>, rồi đóng gói thành thư mục <code>dist\quanlytaisan-may-chu</code> và tệp <code>dist\quanlytaisan-may-chu-&lt;phiên bản&gt;.zip</code>. Không cần cài Visual Studio.</p>
 <p>Trên Linux / macOS (để phát triển): <code>./build.sh</code> (cần Mono và Node.js 18+); lệnh này tạo lại cả <code>HUONG-DAN-CAI-DAT.html</code> từ tệp hướng dẫn này.</p>
-<p>Gói gồm: <code>CAI-DAT-MAY-CHU.bat</code>, <code>HUONG-DAN-CAI-DAT.html</code>, <code>QuanLyTaiSan.exe</code> (giao diện web nhúng sẵn bên trong) và thư mục <code>trien-khai</code> (script cài IIS, tiện ích đặt lại mật khẩu, sao lưu, gỡ cài đặt). Thư mục mã nguồn có cùng bố cục, nên nhấp đúp <code>CAI-DAT-MAY-CHU.bat</code> ngay trong thư mục mã nguồn (sau khi build) cũng cài được.</p>
+<p>Gói gồm: <code>CAI-DAT-MAY-CHU.bat</code>, <code>HUONG-DAN-CAI-DAT.html</code>, <code>QuanLyTaiSan.exe</code> (giao diện web nhúng sẵn bên trong), <code>QuanLyTaiSan-DienThoai.apk</code> (app Android, build riêng trong thư mục <code>android</code> — xem <code>android/README.md</code>) và thư mục <code>trien-khai</code> (script cài IIS, tiện ích đặt lại mật khẩu, sao lưu, gỡ cài đặt). Thư mục mã nguồn có cùng bố cục, nên nhấp đúp <code>CAI-DAT-MAY-CHU.bat</code> ngay trong thư mục mã nguồn (sau khi build) cũng cài được.</p>
 <h3 id="phụ-lục-b-tuỳ-chọn-nâng-cao">Phụ lục B: Tuỳ chọn nâng cao</h3>
 <p>Trình cài nhấp đúp gọi script <code>trien-khai\iis\cai-dat-iis.ps1</code>. Người đã quen có thể chạy thẳng script này trong PowerShell <strong>Run as administrator</strong> (đứng trong thư mục bộ cài) để chọn thêm tuỳ chọn:</p>
 <div class="bang"><table>
@@ -283,7 +287,7 @@ powershell -ExecutionPolicy Bypass -File .\trien-khai\iis\cai-dat-iis.ps1 -TenMi
 <tr><td><code>Tao chung chi tu ky de dung https://&lt;IP may chu&gt;? (C/k)</code></td><td>Nhấn Enter: có HTTPS để điện thoại mở được camera quét QR</td></tr>
 <tr><td><code>Cong https [443]</code></td><td>Nhấn Enter (cổng 443 đã dùng thì trình cài gợi ý <code>8443</code>)</td></tr>
 </tbody></table></div>
-<p>Người dùng vào bằng <code>https://203.0.113.10</code> (thêm <code>:8443</code> nếu dùng cổng khác). Lần đầu trình duyệt báo &quot;Kết nối không riêng tư&quot; vì chứng chỉ tự ký: bấm <strong>Nâng cao</strong> → <strong>Tiếp tục truy cập</strong> (iPhone: <strong>Hiển thị chi tiết</strong> → <strong>truy cập trang web này</strong>). Bảng tóm tắt cuối trình cài in <strong>mã nhận dạng</strong> chứng chỉ: bấm biểu tượng cảnh báo trên thanh địa chỉ → xem chứng chỉ để so (khác mã thì đừng đăng nhập — có thể bị chặn giữa đường). Nhớ mở cổng http / https đã chọn ở tường lửa nhà cung cấp / modem (bước 3) và đặt <strong>Địa chỉ in trong mã QR</strong> = <code>https://203.0.113.10</code> (bước 9).</p>
+<p>Người dùng vào bằng <code>https://203.0.113.10</code> (thêm <code>:8443</code> nếu dùng cổng khác). Lần đầu trình duyệt báo &quot;Kết nối không riêng tư&quot; vì chứng chỉ tự ký: bấm <strong>Nâng cao</strong> → <strong>Tiếp tục truy cập</strong> (iPhone: <strong>Hiển thị chi tiết</strong> → <strong>truy cập trang web này</strong>). Bảng tóm tắt cuối trình cài in <strong>mã nhận dạng</strong> chứng chỉ (vd <code>3A1B-9C2D-4E5F-6071</code>): bấm biểu tượng cảnh báo trên thanh địa chỉ → xem chứng chỉ để so (khác mã thì đừng đăng nhập — có thể bị chặn giữa đường). <strong>App Android</strong> hỏi đúng mã này một lần khi kết nối (gõ <code>203.0.113.10</code>, app tự thử cổng 8443 / 8080) rồi ghi nhớ — không báo &quot;không riêng tư&quot; mỗi lần như trình duyệt; gửi mã cho nhân viên cùng địa chỉ máy chủ. Nhớ mở cổng http / https đã chọn ở tường lửa nhà cung cấp / modem (bước 3) và đặt <strong>Địa chỉ in trong mã QR</strong> = <code>https://203.0.113.10</code> (bước 9).</p>
 <p>Khi có tên miền: tạo bản ghi A, chạy lại <code>CAI-DAT-MAY-CHU.bat</code>, nhập tên miền, rồi bật HTTPS (bước 8). Tem đã in theo IP vẫn dùng được nếu còn giữ IP đó; in tem mới theo tên miền cho chắc.</p>
 <h3 id="phụ-lục-d-dùng-chung-máy-chủ-với-hawamap-và-phần-mềm-thất-thoát-nước">Phụ lục D: Dùng chung máy chủ với HawaMap và phần mềm Thất thoát nước</h3>
 <ul>
