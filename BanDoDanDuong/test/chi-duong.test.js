@@ -104,3 +104,29 @@ test('dòng khu vực dưới tên đường: "P. Láng Thượng, Q. Đống Đ
   assert.equal(rutGonKhuVuc({ town: 'Thị trấn Đông Anh', state: 'Tỉnh Bắc Ninh' }), 'TT. Đông Anh, Bắc Ninh');
   assert.equal(rutGonKhuVuc({}), '');
 });
+
+test('timDuong VietMap: tính lại đường gửi kèm hướng xe (heading), máy chủ không nhận thì gọi lại không có hướng', async () => {
+  const { caiDat } = await import('../public/js/kho.js');
+  const cu = caiDat.khoaVietmap, fetchCu = globalThis.fetch;
+  const duong = { distance: 1000, time: 120000, points_encoded: false, points: { coordinates: [[105.85, 21.02], [105.86, 21.03]] },
+    instructions: [{ sign: 0, street_name: 'Hàng Bài', distance: 1000, time: 120000, interval: [0, 1] }, { sign: 4, street_name: '', distance: 0, time: 0, interval: [1, 1] }] };
+  const goi = [];
+  caiDat.khoaVietmap = 'khoa-thu';
+  try {
+    globalThis.fetch = async url => {
+      const u = new URL(url);
+      goi.push(u.searchParams.get('heading'));
+      if (u.searchParams.has('heading') && goi.length === 1) return { ok: false, status: 400, json: async () => ({ message: 'heading not supported' }) };
+      return { ok: true, json: async () => ({ paths: [duong] }) };
+    };
+    const ds = await timDuong({ diem: [[105.85, 21.02], [105.86, 21.03]], phuongTien: 'oto', huongDau: -90, phuongAn: false });
+    assert.equal(ds[0].nguon, 'vietmap');
+    assert.deepEqual(goi, ['270', null], 'gửi heading 270 (chuẩn hoá -90), lỗi thì gọi lại không có heading');
+    goi.length = 0;
+    await timDuong({ diem: [[105.85, 21.02], [105.86, 21.03]], phuongTien: 'oto' });
+    assert.deepEqual(goi, [null], 'lập lộ trình (chưa đi): không gửi hướng');
+  } finally {
+    caiDat.khoaVietmap = cu;
+    globalThis.fetch = fetchCu;
+  }
+});

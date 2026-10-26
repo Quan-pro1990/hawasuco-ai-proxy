@@ -168,6 +168,8 @@ try {
   console.log('Dẫn đường (chạy thử)');
   await page.click('[data-hd="mo-phong"]');
   await page.waitForSelector('#lop-dd:not([hidden]) .br-kc');
+  // ghi lại: gần chỗ rẽ thì bản đồ phẳng (ganRe), khi đó camera hạ độ nghiêng
+  await page.evaluate(() => { window.__ganRe = { bat: false, nghiengNhoNhat: 90 }; setInterval(() => { const b = window.hawamap.banDo; if (b.ganRe) { window.__ganRe.bat = true; window.__ganRe.nghiengNhoNhat = Math.min(window.__ganRe.nghiengNhoNhat, b.map.getPitch()); } }, 100); });
   await page.waitForTimeout(2500);
   const bangRe = await page.innerText('#bang-re');
   kiem(bangRe.includes('Tràng Tiền') && /\b\d+m\b/.test(bangRe), 'bảng chỉ hướng: khoảng cách và tên đường "Tràng Tiền" (' + bangRe.replace(/\s+/g, ' ') + ')');
@@ -223,6 +225,8 @@ try {
   await page.click('[data-hd="mp-he-so"][data-h="4"]');
   await page.waitForSelector('.hop-thoai h3', { timeout: 60000 });
   kiem((await page.innerText('.hop-thoai h3')) === 'Bạn đã đến nơi', 'báo đã đến nơi');
+  const ganRe = await page.evaluate(() => window.__ganRe);
+  kiem(ganRe.bat && ganRe.nghiengNhoNhat < 20, 'gần chỗ rẽ: bản đồ chuyển phẳng cho dễ nhìn (nghiêng nhỏ nhất ' + Math.round(ganRe.nghiengNhoNhat) + '°)');
   await chup(page, '08-den-noi');
   await page.click('.hop-thoai .nut.chinh');
   kiem(await page.evaluate(() => window.hawamap.st.cheDo) === 'chinh', 'quay về màn hình chính sau khi đến nơi');

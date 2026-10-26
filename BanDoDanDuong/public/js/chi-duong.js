@@ -225,10 +225,19 @@ export function canNhac(b) {
 // ------------------------------------------------------------------ VietMap (định dạng giống GraphHopper)
 const XE_VIETMAP = { oto: 'car', xemay: 'motorcycle', dibo: 'foot', xedap: 'bike' };
 
-async function timDuongVietmap({ diem, phuongTien = 'oto', tinHieu }) {
+async function timDuongVietmap({ diem, phuongTien = 'oto', huongDau, tinHieu }) {
   const q = new URLSearchParams({ 'api-version': '1.1', apikey: caiDat.khoaVietmap, vehicle: XE_VIETMAP[phuongTien] || 'car', points_encoded: 'true' });
   diem.forEach(d => q.append('point', d[1] + ',' + d[0]));
-  const r = await fetch(CAU_HINH.dichVu.vietmap.chiDuong + '?' + q, { signal: tinHieu });
+  // tính lại đường khi đang đi: gửi hướng xe tại điểm đầu (heading, kiểu GraphHopper) để tuyến mới không bắt quay đầu;
+  // máy chủ không nhận tham số này thì gọi lại không có hướng
+  const coHuong = (phuongTien === 'oto' || phuongTien === 'xemay') && huongDau != null && isFinite(huongDau);
+  const goi = async huong => {
+    const q2 = new URLSearchParams(q);
+    if (huong) q2.set('heading', String(Math.round(((huongDau % 360) + 360) % 360)));
+    return fetch(CAU_HINH.dichVu.vietmap.chiDuong + '?' + q2, { signal: tinHieu });
+  };
+  let r = await goi(coHuong);
+  if (!r.ok && coHuong) r = await goi(false);
   if (!r.ok) throw new Error('VietMap ' + r.status);
   const d = await r.json();
   if (!d.paths || !d.paths.length) throw new Error(d.messages || d.message || 'VietMap không trả về tuyến đường');

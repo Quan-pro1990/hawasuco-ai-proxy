@@ -44,6 +44,7 @@ export class BanDo {
     this.duLieu = Object.fromEntries(NGUON.map(n => [n, RONG]));
     this.theoDoi = 'khong';         // khong | bac (giữ hướng Bắc) | huong (xoay theo hướng đi, nghiêng 3D)
     this.nghieng = 55;              // độ nghiêng khi xoay theo hướng đi: 55 = 3D, 0 = 2D
+    this.ganRe = false;             // sắp tới chỗ rẽ: bản đồ phẳng, phóng to cho dễ nhìn chỗ rẽ
     this.le = { tren: 90, duoi: 30, trai: 0, phai: 0 };
     this.hienThi = null;
     this.lucZoomTay = 0;
@@ -512,10 +513,11 @@ export class BanDo {
     const h = m.getContainer().clientHeight;
     const tayZoom = Date.now() - this.lucZoomTay < 8000;
     if (tayZoom && !dd) this.zoomBac = m.getZoom();     // chế độ giữ hướng Bắc: nhớ mức zoom người dùng chọn
-    const zMucTieu = tayZoom ? m.getZoom() : dd ? Math.min(17.6, Math.max(15, 18 - this.tocDo * 0.09)) : Math.max(this.zoomBac || 16, 3);
+    const ganRe = dd && this.ganRe;
+    const zMucTieu = tayZoom ? m.getZoom() : dd ? Math.min(17.6, Math.max(ganRe ? 17.2 : 15, 18 - this.tocDo * 0.09)) : Math.max(this.zoomBac || 16, 3);
     const mt = {
       zoom: zMucTieu,
-      pitch: dd ? this.nghieng : 0,
+      pitch: dd && !ganRe ? this.nghieng : 0,
       bearing: dd ? this.hienThi.huong : 0,
       pad: dd ? { top: Math.max(this.le.tren, Math.round(h * 0.42)), bottom: this.le.duoi, left: this.le.trai, right: this.le.phai }
         : { top: this.le.tren, bottom: this.le.duoi, left: this.le.trai, right: this.le.phai }
@@ -533,6 +535,13 @@ export class BanDo {
     return Math.abs(moi.zoom - mt.zoom) < 0.02 && Math.abs(moi.pitch - mt.pitch) < 0.3 && Math.abs(lechGoc(moi.bearing, mt.bearing)) < 0.3 &&
       Math.abs(moi.padding.top - mt.pad.top) < 1 && Math.abs(moi.padding.bottom - mt.pad.bottom) < 1 &&
       Math.abs(moi.padding.left - mt.pad.left) < 1 && Math.abs(moi.padding.right - mt.pad.right) < 1;
+  }
+
+  /** Sắp tới / vừa qua chỗ rẽ (dẫn đường): camera chuyển dần sang phẳng, phóng to; qua khỏi thì nghiêng lại. */
+  datGanRe(bat) {
+    if (this.ganRe === !!bat) return;
+    this.ganRe = !!bat;
+    this.chayKhung();
   }
 
   /** Chế độ bám vị trí: 'khong' | 'bac' | 'huong'. */

@@ -11,7 +11,7 @@ import { icon, muiTenRe, muiTenLan, svgBienCam, svgBienVN, XEM_TRUOC_KIEU } from
 import { BanDo, layKieuBanDo } from './ban-do.js';
 import { $, $$, chenBieuTuong, thongBao, hopThoai, hoiXacNhan, TamDuoi, moTrang, dongTrang, taiXuong } from './giao-dien.js';
 import { goiY, timDayDu, layToaDo, diaChiTuToaDo, khuVucTuToaDo } from './tim-kiem.js';
-import { timDuong, PHUONG_TIEN, tenDuong, thaoTacNgan } from './chi-duong.js';
+import { timDuong, PHUONG_TIEN, tenDuong, thaoTacNgan, canNhac } from './chi-duong.js';
 import { DanDuong } from './dan-duong.js';
 import { NguonViTri } from './vi-tri.js';
 import { MoPhong } from './mo-phong.js';
@@ -1070,6 +1070,9 @@ function capNhatDanDuong(vt) {
     }
   }
   banDo.datDaDi(catTuyen(dd.tuyen.toaDo, dd.tuyen.tichLuy, 0, tt.s));
+  // còn dưới 40 m tới chỗ rẽ thật (không phải "đi tiếp" khi đổi tên đường): bản đồ phẳng cho dễ nhìn, giữ tới khi qua chỗ rẽ 25 m
+  if (tt.ke && canNhac(tt.ke) && tt.kcDenRe < 40) dd.sGanRe = tt.ke.batDau;
+  banDo.datGanRe(caiDat.phangKhiRe !== false && dd.sGanRe != null && tt.s > dd.sGanRe - 40 && tt.s < dd.sGanRe + 25);
   renderBangRe(tt);
   renderThanhDd(tt);
   return tt;
@@ -1522,6 +1525,7 @@ const NHOM_CAI_DAT = [
     { k: 'tranhCaoToc', loai: 'bat', ten: 'Tránh đường cao tốc' },
     { k: 'tranhThuPhi', loai: 'bat', ten: 'Tránh trạm thu phí' },
     { k: 'giuManHinh', loai: 'bat', ten: 'Giữ màn hình luôn sáng khi dẫn đường' },
+    { k: 'phangKhiRe', loai: 'bat', ten: 'Bản đồ phẳng, phóng to khi sắp tới chỗ rẽ' },
     { k: 'tuGhiHanhTrinh', loai: 'bat', ten: 'Tự động ghi lịch sử hành trình' },
     { k: 'tranhKetXe', loai: 'bat', ten: 'Dẫn đường thông minh: tránh kẹt xe, tai nạn, cấm đường theo báo cáo' },
     { k: 'loaiXeThuPhi', loai: 'chon', ten: 'Loại xe tính phí trạm thu phí', so: true, ds: () => LOAI_XE_THU_PHI },

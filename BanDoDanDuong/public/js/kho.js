@@ -34,7 +34,7 @@ export const CAI_DAT_MAC_DINH = {
   loaiXeThuPhi: 1,           // loại xe tính phí trạm thu phí (1–5)
   tuCapNhatDuLieu: true, capNhatChiWifi: true,
   // bản đồ
-  kieuBanDo: 'tieuchuan', tuDongBanDem: true, nha3D: true, dd3D: true, hienBaoCao: true, hienDiemCanhBao: true, capNhatOffline: true,
+  kieuBanDo: 'tieuchuan', tuDongBanDem: true, nha3D: true, dd3D: true, phangKhiRe: true, hienBaoCao: true, hienDiemCanhBao: true, capNhatOffline: true,
   // camera hành trình
   latHud: 'doc',             // HUD kính lái: doc (lật dọc, phản chiếu lên kính) | ngang | khong
   doDaiDoanCamera: 3, soDoanToiDa: 10, camGhiAm: false,
