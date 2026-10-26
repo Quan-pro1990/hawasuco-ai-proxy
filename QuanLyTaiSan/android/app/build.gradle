@@ -1,0 +1,54 @@
+// App Android "Quản lý tài sản" — kết nối máy chủ Quản lý tài sản (IIS), quét tem QR bằng camera của app.
+// Build: Android Studio → Build → Build APK(s), hoặc  gradle :app:assembleRelease
+// (không có Android Studio: ./build-apk.sh trên Linux). Thư viện ngoài duy nhất: ZXing core (đọc mã QR, Apache 2.0).
+// Mỗi lần phát hành: tăng versionCode (1, 2, 3…) và đổi versionName — máy chủ đọc 2 số này trong file APK để báo app cập nhật.
+plugins {
+    id 'com.android.application'
+}
+
+def kyApp = rootProject.file('ky-app/quanlytaisan.jks')
+def matKhauKy = System.getenv('KY_MATKHAU') ?: 'quanlytaisan-hawasuco'
+
+android {
+    namespace 'vn.com.hawasuco.taisan'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'vn.com.hawasuco.taisan'
+        minSdk 21
+        targetSdk 34
+        versionCode 1
+        versionName '1.0.0'
+    }
+
+    signingConfigs {
+        ky {
+            storeFile kyApp
+            storePassword matKhauKy
+            keyAlias 'quanlytaisan'
+            keyPassword matKhauKy
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            // có khoá ky-app/quanlytaisan.jks thì ký bằng khoá đó (cài đè được bản trước), không thì khoá debug
+            signingConfig kyApp.exists() ? signingConfigs.ky : signingConfigs.debug
+        }
+    }
+
+    lint {
+        // app cài trực tiếp từ máy chủ công ty (không qua Google Play): không chặn bản phát hành vì quy định targetSdk của Play
+        checkReleaseBuilds false
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+dependencies {
+    implementation 'com.google.zxing:core:3.5.3'
+}

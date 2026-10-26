@@ -115,6 +115,9 @@ New-Item -ItemType Directory -Force -Path $ThuMuc, $ThuMucDuLieu, $thuMucLog | O
 $cungThuMuc = (Resolve-Path $Goc).Path.TrimEnd('\') -eq (Resolve-Path $ThuMuc).Path.TrimEnd('\')
 if (-not $BoQuaChepTep -and -not $cungThuMuc) {
   try { Copy-Item $exeGoi $ThuMuc -Force } catch { Dung "Khong chep duoc QuanLyTaiSan.exe vao $ThuMuc`: $($_.Exception.Message)" }
+  # app Android: dien thoai tai o <dia chi trang web>/tai-app
+  $apkGoi = Join-Path $Goc 'QuanLyTaiSan-DienThoai.apk'
+  if (Test-Path $apkGoi) { Copy-Item $apkGoi $ThuMuc -Force }
 }
 
 # ------------------------------------------------------------------ 5. web.config
@@ -306,8 +309,11 @@ if ($https) {
 }
 Write-Host "  Du lieu        : $ThuMucDuLieu  (taisan.xml, LichSu, Anh, taikhoan.xml; tu sao luu taisan.xml moi ngay trong SaoLuu)"
 Write-Host "  Nhat ky        : $thuMucLog , $ThuMucDuLieu\NhatKy"
+if (Test-Path (Join-Path $ThuMuc 'QuanLyTaiSan-DienThoai.apk')) {
+  Write-Host "  App Android    : $(if ($https) { $diaChiHttps } else { $diaChi })/tai-app  (mo tren dien thoai de tai app)"
+}
 if ($chungChiTuKy) {
   $sha = [Security.Cryptography.SHA256]::Create().ComputeHash($chungChiTuKy.GetRawCertData())
   $h = ([BitConverter]::ToString($sha) -replace '-', '')
-  Write-Host "  Ma nhan dang chung chi tu ky: $($h.Substring(0,4))-$($h.Substring(4,4))-$($h.Substring(8,4))-$($h.Substring(12,4))"
+  Write-Host "  Ma nhan dang chung chi tu ky: $($h.Substring(0,4))-$($h.Substring(4,4))-$($h.Substring(8,4))-$($h.Substring(12,4))  (app Android hoi ma nay lan dau ket noi)"
 }

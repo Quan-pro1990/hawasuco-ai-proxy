@@ -356,6 +356,9 @@ label.nhan b { color: var(--do); font-weight: 600; }
 .quet-khung .tren button svg { width: 18px; height: 18px; }
 .quet-khung .tren button.bat { background: #fbbf24; color: #1f2937; }
 .quet-khung .thongbao { position: absolute; left: 12px; right: 12px; bottom: 12px; background: rgba(0, 0, 0, .6); color: #fff; padding: 8px 12px; border-radius: 10px; font-size: 14px; text-align: center; }
+.quet-khung.app { aspect-ratio: auto; max-height: none; background: var(--mat); border: 1px dashed var(--vien); display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 22px 16px; }
+.quet-khung.app .nut { font-size: 17px; padding: 12px 22px; }
+.quet-khung.app .thongbao { position: static; background: none; color: var(--mo); padding: 0; }
 .quet-thay { max-width: 640px; margin: 12px auto 0; }
 .kk-dang { max-width: 640px; margin: 0 auto 12px; }
 .phan-doan { display: flex; max-width: 640px; margin: 0 auto 10px; background: var(--vien-nhat); border-radius: 10px; padding: 3px; gap: 3px; }
@@ -439,3 +442,8 @@ table.bang tr.bam:hover td { background: #fafbfc; }
   #intem .to:last-child { page-break-after: auto; break-after: auto; }
   .tem.vien { outline: none; }
 }
+
+/* app Android */
+.dangnhap .tai-app { margin-top: 16px; text-align: center; font-size: 14px; color: var(--mo); }
+.app-dt { max-width: 720px; }
+.app-dt .hang { flex-wrap: wrap; }

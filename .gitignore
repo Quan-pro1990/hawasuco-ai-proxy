@@ -16,3 +16,12 @@ QuanLyTaiSan/DuLieu/
 
 # Thu muc tam khi dong goi may chu Quan ly tai san (giu tep zip trong dist/)
 QuanLyTaiSan/dist/quanlytaisan-may-chu/
+
+# App Android Quan ly tai san: khoa ky app (KHONG dua len GitHub), thu muc build cua Gradle / Android Studio
+QuanLyTaiSan/android/ky-app/
+QuanLyTaiSan/android/.gradle/
+QuanLyTaiSan/android/build/
+QuanLyTaiSan/android/app/build/
+QuanLyTaiSan/android/local.properties
+QuanLyTaiSan/android/.idea/
+QuanLyTaiSan/android/*.iml

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Máy chủ chưa có tên miền chạy HTTP (vd http://192.168.1.10:8080) nên cho phép HTTP không mã hoá.
+     Tin cả chứng chỉ gốc do công ty tự cài lên điện thoại (Cài đặt → Bảo mật → Cài chứng chỉ).
+     Chứng chỉ tự ký của máy chủ (https://IP:8443) được app hỏi người dùng rồi ghim theo vân tay — xem KetNoi.java. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

@@ -176,11 +176,12 @@ namespace QuanLyTaiSan
 
         static O Ping(DichVu dv)
         {
+            O app = AppDienThoai.ThongTin();   // đọc tệp APK ngoài khoá dữ liệu
             lock (dv.Khoa)
                 return new O
                 {
                     { "ok", true }, { "ten", "QuanLyTaiSan" }, { "ungDung", "QuanLyTaiSan" }, { "phienBanPhanMem", UngDung.PhienBan }, { "congTy", dv.Dl.CaiDat.TenCongTy },
-                    { "coTaiKhoan", dv.CoTaiKhoan }
+                    { "coTaiKhoan", dv.CoTaiKhoan }, { "app", app }
                 };
         }
 

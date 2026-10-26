@@ -1,6 +1,6 @@
 /*
  * Đóng gói máy chủ Quản lý tài sản thành một tệp .zip để đưa lên máy chủ Windows (IIS) — cùng kiểu gói máy chủ HawaMap:
- * chương trình QuanLyTaiSan.exe, trình cài đặt nhấp đúp CAI-DAT-MAY-CHU.bat, thư mục trien-khai (script IIS, tiện ích)
+ * chương trình QuanLyTaiSan.exe, app Android QuanLyTaiSan-DienThoai.apk, trình cài đặt nhấp đúp CAI-DAT-MAY-CHU.bat, thư mục trien-khai (script IIS, tiện ích)
  * và hướng dẫn từng bước HUONG-DAN-CAI-DAT.html (chuyển từ trien-khai/HUONG_DAN_MAY_CHU.md).
  *   node tools/dong-goi.mjs              → tạo lại HUONG-DAN-CAI-DAT.html, dist/quanlytaisan-may-chu/ và dist/quanlytaisan-may-chu-<phiên bản>.zip
  *   node tools/dong-goi.mjs --chi-html   → chỉ tạo lại HUONG-DAN-CAI-DAT.html
@@ -15,6 +15,7 @@ import { mdSangHtml } from './md-html.mjs';
 const GOC = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const TEP = ['CAI-DAT-MAY-CHU.bat', 'HUONG-DAN-CAI-DAT.html', 'QuanLyTaiSan.exe'];
 const THU_MUC = ['trien-khai'];
+const TEP_APP = 'QuanLyTaiSan-DienThoai.apk';
 
 /** Phiên bản phần mềm (UngDung.PhienBan trong src/MoHinh.cs). */
 export function phienBan() {
@@ -33,6 +34,8 @@ export function dongGoi(dich = path.join(GOC, 'dist', 'quanlytaisan-may-chu')) {
   fs.rmSync(dich, { recursive: true, force: true });
   fs.mkdirSync(dich, { recursive: true });
   for (const t of TEP) fs.copyFileSync(path.join(GOC, t), path.join(dich, t));
+  // app Android (build riêng bằng android/build-apk.sh hoặc Android Studio): bộ cài chép lên máy chủ, điện thoại tải ở /tai-app
+  if (fs.existsSync(path.join(GOC, TEP_APP))) fs.copyFileSync(path.join(GOC, TEP_APP), path.join(dich, TEP_APP));
   for (const d of THU_MUC) fs.cpSync(path.join(GOC, d), path.join(dich, d), { recursive: true });
   return dich;
 }

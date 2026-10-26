@@ -1,0 +1,130 @@
+# App Android "Quản lý tài sản" (thư mục QuanLyTaiSan/android): build bằng Gradle (cách Android Studio) và bằng build-apk.sh
+# (không cần Gradle), kiểm thử phần đọc mã QR trên máy tính, máy chủ thử (QuanLyTaiSan.exe chạy bằng mono) đọc đúng phiên bản
+# APK, rồi chạy app thật trên máy ảo Android 14: kết nối https chứng chỉ tự ký (hỏi mã nhận dạng, ghim), đăng nhập, quét kiểm
+# kê bằng camera của app, GPS, tải Excel, phím Back, báo cập nhật app. Ảnh chụp màn hình: tab Actions → Artifacts.
+name: Quản lý tài sản - app Android
+
+on:
+  push:
+    paths:
+      - 'QuanLyTaiSan/android/**'
+      - 'QuanLyTaiSan/web/**'
+      - 'QuanLyTaiSan/src/**'
+      - 'QuanLyTaiSan/QuanLyTaiSan.exe'
+      - 'QuanLyTaiSan/QuanLyTaiSan-DienThoai.apk'
+      - '.github/workflows/quanlytaisan-android.yml'
+  workflow_dispatch:
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Kiểm thử đọc mã QR (DocQR + ZXing) trên máy tính
+        run: QuanLyTaiSan/android/kiem-thu/thu-doc-qr.sh
+
+      - name: Build bằng Gradle (giống Android Studio)
+        run: gradle -p QuanLyTaiSan/android :app:assembleRelease --no-daemon --stacktrace
+
+      - name: Build bằng build-apk.sh (không cần Gradle) — bản gỡ lỗi để kiểm thử
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq aapt dalvik-exchange zipalign apksigner imagemagick mono-runtime \
+            libmono-system-core4.0-cil libmono-system-xml-linq4.0-cil libmono-system-io-compression4.0-cil \
+            libmono-system-io-compression-filesystem4.0-cil libmono-system-web-extensions4.0-cil > /dev/null
+          mkdir -p ra
+          GO_LOI=1 QuanLyTaiSan/android/build-apk.sh "$PWD/ra/app-thu.apk"
+          # bản "mới hơn" (cùng khoá ký vừa tạo) để thử app báo cập nhật
+          cp -r QuanLyTaiSan/android /tmp/android-moi
+          sed -i "s/^\( *versionCode\) [0-9]*/\1 99/; s/^\( *versionName\) '.*'/\1 '9.9.9'/" /tmp/android-moi/app/build.gradle
+          GO_LOI=1 /tmp/android-moi/build-apk.sh "$PWD/ra/app-moi.apk"
+          aapt dump badging ra/app-moi.apk | head -1
+
+      - name: Máy chủ thử (mono) — đọc phiên bản APK, dữ liệu thử, HTTPS tự ký
+        run: |
+          mkdir -p /tmp/maychu
+          cp QuanLyTaiSan/QuanLyTaiSan.exe /tmp/maychu/
+          cp QuanLyTaiSan/android/app/build/outputs/apk/release/app-release.apk /tmp/maychu/QuanLyTaiSan-DienThoai.apk
+          export QLTS_DULIEU=/tmp/maychu-dulieu
+          QLTS_MATKHAU=matkhau123 mono /tmp/maychu/QuanLyTaiSan.exe --dat-quan-tri admin
+          nohup mono /tmp/maychu/QuanLyTaiSan.exe --cong 18090 --khong-mo > /tmp/maychu.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf localhost:18090/api/ping > /tmp/ping.json && break; sleep 1; done
+          cat /tmp/ping.json; echo
+          python3 -c "import json; a = json.load(open('/tmp/ping.json'))['app']; assert a and a['ma'] == 1 and a['phienBan'] == '1.0.0', a; print('OK  máy chủ đọc phiên bản APK của Gradle (aapt2):', a)"
+          curl -sf -o /tmp/tai.apk localhost:18090/tai-app && cmp /tmp/tai.apk /tmp/maychu/QuanLyTaiSan-DienThoai.apk && echo 'OK  /tai-app trả đúng tệp APK'
+          TK=$(curl -s -X POST localhost:18090/api/dangnhap -H 'Content-Type: application/json' -d '{"ten":"admin","matKhau":"matkhau123"}' | python3 -c "import sys, json; print(json.load(sys.stdin)['token'])")
+          for t in 'Máy bơm trục ngang trạm 1' 'Máy bơm chìm giếng 2' 'Máy bơm định lượng clo'; do
+            curl -sf -X POST localhost:18090/api/taisan -H "Authorization: Bearer $TK" -H 'Content-Type: application/json' \
+              -d "{\"ten\":\"$t\",\"loai\":1,\"donVi\":1,\"nguyenGia\":120000000,\"viTri\":\"Trạm bơm Vị Thanh\"}" | head -c 80; echo
+          done
+          # APK trên máy chủ = bản đang cài (cùng phiên bản) → app không hỏi cập nhật cho tới bước cuối
+          cp ra/app-thu.apk /tmp/maychu/QuanLyTaiSan-DienThoai.apk
+          # HTTPS chứng chỉ tự ký phía trước, giống máy chủ IIS chưa có tên miền (https://IP:8443)
+          openssl req -x509 -newkey rsa:2048 -nodes -keyout /tmp/khoa.pem -out /tmp/cc.pem -days 30 -subj '/CN=may-chu-thu' 2> /dev/null
+          H=$(openssl x509 -in /tmp/cc.pem -outform der | sha256sum | cut -c1-16 | tr a-f A-F)
+          echo "MA_CHUNG_CHI=${H:0:4}-${H:4:4}-${H:8:4}-${H:12:4}" >> "$GITHUB_ENV"
+          nohup node QuanLyTaiSan/android/kiem-thu/https-thu.cjs /tmp/khoa.pem /tmp/cc.pem 18443 18090 > /tmp/https.log 2>&1 &
+          sleep 1
+          curl -sk https://localhost:18443/api/ping; echo
+          # tem QR dán trên tường cảnh ảo của camera máy ảo
+          ZX=$HOME/.cache/quanlytaisan/zxing-core-3.5.3.jar
+          javac -d /tmp/tem -cp "$ZX" QuanLyTaiSan/android/kiem-thu/TaoTemQR.java
+          java -cp "/tmp/tem:$ZX" vn.com.hawasuco.taisan.TaoTemQR 'https://10.0.2.2:18443/t/MB-00002' "$PWD/ra/tem-qr.png"
+          cd QuanLyTaiSan/android/kiem-thu && npm install --no-save --no-audit --no-fund playwright-core@1.49.1 > /dev/null
+
+      - name: Bật KVM cho máy ảo
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Chạy app trên máy ảo Android 14
+        uses: reactivecircus/android-emulator-runner@v2
+        env:
+          RA: ${{ github.workspace }}/ra
+          APK_MOI: ${{ github.workspace }}/ra/app-moi.apk
+          THU_MUC_MAY_CHU: /tmp/maychu
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back virtualscene -virtualscene-poster wall=${{ github.workspace }}/ra/tem-qr.png
+          script: |
+            adb install -r ra/app-thu.apk
+            node QuanLyTaiSan/android/kiem-thu/thu-tren-may-ao.cjs
+            adb logcat -d -s chromium:E AndroidRuntime:E > ra/logcat.txt || true
+
+      - name: Nhật ký máy chủ thử
+        if: always()
+        run: |
+          tail -40 /tmp/maychu.log || true
+          tail -20 /tmp/https.log || true
+
+      - name: Ảnh chụp màn hình thu nhỏ (base64, để xem nhanh trong nhật ký)
+        if: always()
+        run: |
+          for f in ra/[0-9]*.png; do
+            [ -f "$f" ] || continue
+            convert "$f" -resize 360x -quality 72 /tmp/nho.jpg 2> /dev/null || continue
+            echo "===ANH $(basename "$f" .png) $(base64 -w0 /tmp/nho.jpg)"
+          done
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: app-android
+          path: |
+            ra/
+            QuanLyTaiSan/android/app/build/outputs/apk/release/*.apk

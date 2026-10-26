@@ -27,13 +27,16 @@ if ($LASTEXITCODE -ne 0) { throw 'Bien dich that bai' }
 "Da tao: $tepRa"
 
 if (-not $Out) {
-    # Goi may chu: CAI-DAT-MAY-CHU.bat, HUONG-DAN-CAI-DAT.html, QuanLyTaiSan.exe, trien-khai\ (tep nam ngay goc tep zip)
+    # Goi may chu: CAI-DAT-MAY-CHU.bat, HUONG-DAN-CAI-DAT.html, QuanLyTaiSan.exe, QuanLyTaiSan-DienThoai.apk, trien-khai\ (tep nam ngay goc tep zip)
     $phienBan = [regex]::Match((Get-Content -Raw -Encoding UTF8 (Join-Path $src 'MoHinh.cs')), 'PhienBan\s*=\s*"([^"]+)"').Groups[1].Value
     $dist = Join-Path $root 'dist'
     $goi = Join-Path $dist 'quanlytaisan-may-chu'
     if (Test-Path $goi) { Remove-Item -Recurse -Force $goi }
     New-Item -ItemType Directory -Force $goi | Out-Null
     foreach ($f in 'CAI-DAT-MAY-CHU.bat', 'HUONG-DAN-CAI-DAT.html', 'QuanLyTaiSan.exe') { Copy-Item (Join-Path $root $f) (Join-Path $goi $f) }
+    # app Android (build rieng: android\build-apk.sh hoac Android Studio), bo cai chep len may chu de dien thoai tai o /tai-app
+    $apk = Join-Path $root 'QuanLyTaiSan-DienThoai.apk'
+    if (Test-Path $apk) { Copy-Item $apk (Join-Path $goi 'QuanLyTaiSan-DienThoai.apk') }
     Copy-Item (Join-Path $root 'trien-khai') (Join-Path $goi 'trien-khai') -Recurse
     Get-ChildItem $dist -Filter 'quanlytaisan-may-chu-*.zip' | Remove-Item
     $zip = Join-Path $dist "quanlytaisan-may-chu-$phienBan.zip"

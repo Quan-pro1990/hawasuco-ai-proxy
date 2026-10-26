@@ -113,6 +113,13 @@ jobs:
           $r = curl.exe -s -o NUL -w "%{http_code} %{redirect_url}" "http://taisan.local/t/$($ts.ma)"
           "Tem QR /t/$($ts.ma) -> $r"
           if ($r -notmatch "^302 .*#/ma/$($ts.ma)$") { throw 'chuyen huong tem sai' }
+          # app Android: bo cai chep QuanLyTaiSan-DienThoai.apk vao thu muc site, dien thoai tai o /tai-app
+          if ($tt.app.ma -lt 1) { throw 'trang-thai thieu thong tin app Android' }
+          "App Android tren may chu: phien ban $($tt.app.phienBan), ma $($tt.app.ma)"
+          $apk = curl.exe -s -o C:\tai.apk -w "%{http_code} %{content_type} %{size_download}" http://taisan.local/tai-app
+          "tai-app: $apk"
+          if ($apk -notmatch '^200 application/vnd\.android\.package-archive') { throw 'tai-app loi' }
+          if ((Get-FileHash C:\tai.apk).Hash -ne (Get-FileHash C:\goi\QuanLyTaiSan-DienThoai.apk).Hash) { throw 'tai-app khac tep trong goi' }
           # IP that qua URL Rewrite (X-Forwarded-For) ghi vao nhat ky khi dang nhap sai
           '{"ten":"admin","matKhau":"sai-mat-khau"}' | Set-Content C:\sai.json -Encoding ASCII
           curl.exe -s -o NUL -H "Content-Type: application/json" --data-binary "@C:\sai.json" http://taisan.local/api/dangnhap

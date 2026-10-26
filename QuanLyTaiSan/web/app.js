@@ -8,6 +8,17 @@
   var app = document.getElementById('app');
   var st = { token: doc(KHOA_TOKEN), nguoi: null, dm: null, ping: null, chon: {}, lan: 0, khung: false, camera: null };
   try { st.nguoi = JSON.parse(doc(KHOA_NGUOI) || 'null'); } catch (e) { st.nguoi = null; }
+  // Mở trong app Android "Quản lý tài sản": app gắn sẵn window.QuanLyTaiSanApp (quét QR bằng camera của app, tải file, in, GPS…)
+  var APP = window.QuanLyTaiSanApp || null;
+  function goiApp(ham) {
+    if (!APP || typeof APP[ham] !== 'function') return undefined;
+    try { return APP[ham].apply(APP, Array.prototype.slice.call(arguments, 1)); } catch (e) { return undefined; }
+  }
+  function rung(m) {
+    if (APP) { goiApp('rung', String(m)); return; }
+    if (navigator.vibrate) try { navigator.vibrate(m); } catch (e) { }
+  }
+  function diaChiDayDu(duong) { return new URL(duong, location.href).href; }
   try { st.chon = JSON.parse(sessionStorage.getItem(KHOA_CHON) || '{}') || {}; } catch (e) { st.chon = {}; }
 
   function doc(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -176,7 +187,8 @@
     });
   }
 
-  function taiFile(link) {
+  function taiFile(link, ten) {
+    if (APP) { goiApp('taiVe', diaChiDayDu(link), ten || '', ''); return; }   // app tải rồi hỏi mở / chia sẻ / lưu
     var a = document.createElement('a');
     a.href = link;
     a.rel = 'noopener';
@@ -189,7 +201,7 @@
     var cu = nut.innerHTML;
     nut.disabled = true;
     nut.textContent = 'Đang tạo file…';
-    return api(method, duong, than).then(function (r) { taiFile(r.link); thongBao('Đã tạo ' + r.ten); }, function (e) { thongBao(e.message, true); })
+    return api(method, duong, than).then(function (r) { taiFile(r.link, r.ten); thongBao('Đã tạo ' + r.ten); }, function (e) { thongBao(e.message, true); })
       .then(function () { nut.disabled = false; nut.innerHTML = cu; });
   }
 
@@ -315,6 +327,14 @@
 
   function layViTri() {
     return new Promise(function (ok, loi) {
+      if (APP && typeof APP.layViTri === 'function') {   // app lấy GPS (WebView chỉ cho trang https lấy vị trí)
+        window.ungDungViTri = function (v) {
+          window.ungDungViTri = null;
+          if (v && v.loi) loi(new Error(v.loi)); else ok(v);
+        };
+        goiApp('layViTri');
+        return;
+      }
       if (!navigator.geolocation) { loi(new Error('Thiết bị không lấy được vị trí.')); return; }
       navigator.geolocation.getCurrentPosition(function (p) {
         ok({ viDo: Math.round(p.coords.latitude * 1e6) / 1e6, kinhDo: Math.round(p.coords.longitude * 1e6) / 1e6, saiSo: Math.round(p.coords.accuracy) });
@@ -343,16 +363,18 @@
       '<h1>Quản lý tài sản</h1><div class="congty">' + esc(cty) + '</div>' +
       (/^#\/ma\//.test(location.hash) ? '<div class="tin">Đăng nhập để xem tài sản vừa quét.</div>' : '') +
       (loi ? '<div class="loi">' + esc(loi) + '</div>' : '') +
-      (st.ping && !st.ping.coTaiKhoan ? '<div class="bao">Máy chủ chưa có tài khoản. Hãy chạy CaiDat-IIS.bat trên máy chủ để đặt mật khẩu quản trị.</div>' : '') +
+      (st.ping && !st.ping.coTaiKhoan ? '<div class="bao">Máy chủ chưa có tài khoản. Trên máy chủ, chạy trien-khai\\DAT-LAI-MAT-KHAU-QUAN-TRI.bat để tạo tài khoản quản trị.</div>' : '') +
       '<label class="nhan" for="ten">Tên đăng nhập</label><input id="ten" name="username" autocapitalize="none" autocorrect="off" required>' +
       '<label class="nhan" for="mk">Mật khẩu</label><input id="mk" name="password" type="password" required>' +
-      '<button class="nut chinh" type="submit">Đăng nhập</button></form>';
+      '<button class="nut chinh" type="submit">Đăng nhập</button>' +
+      (!APP && st.ping && st.ping.app && /Android/i.test(navigator.userAgent) ?
+        '<div class="tai-app">Dùng app Android: <a href="tai-app">Tải app</a> · <a href="' + esc(linkMoApp()) + '">Mở bằng app</a></div>' : '') + '</form>';
     var f = app.querySelector('form');
     f.addEventListener('submit', function (e) {
       e.preventDefault();
       var nut = f.querySelector('button');
       nut.disabled = true; nut.textContent = 'Đang đăng nhập…';
-      api('POST', 'dangnhap', { ten: f.ten.value.trim(), matKhau: f.mk.value, thietBi: 'Trình duyệt · ' + navigator.userAgent.slice(0, 90) })
+      api('POST', 'dangnhap', { ten: f.ten.value.trim(), matKhau: f.mk.value, thietBi: (APP ? 'App Android ' + (goiApp('phienBan') || '') : 'Trình duyệt') + ' · ' + navigator.userAgent.slice(0, 90) })
         .then(function (r) {
           st.token = r.token; delete r.token; st.nguoi = r;
           ghi(KHOA_TOKEN, st.token); ghi(KHOA_NGUOI, JSON.stringify(r));
@@ -711,6 +733,7 @@
     if (!c) return;
     st.camera = null;
     c.dung = true;
+    if (c.app) { goiApp('dongQuet'); window.ungDungQuet = window.ungDungDongQuet = null; }
     if (c.stream) c.stream.getTracks().forEach(function (t) { t.stop(); });
     if (c.raf) cancelAnimationFrame(c.raf);
   }
@@ -793,7 +816,8 @@
     var namNay = new Date().getFullYear(), kk = null, daTaiKK = false;
     var vuaQuet = [];
     if (dieuChuyen && !st.dcGio) st.dcGio = [];
-    var coCamera = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) && window.isSecureContext !== false;
+    var quetApp = !!goiApp('coQuet');   // app Android: quét bằng camera của app (chạy cả khi máy chủ dùng http)
+    var coCamera = !quetApp && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) && window.isSecureContext !== false;
     var cheDo = dieuChuyen ? 'dc' : lienTuc ? 'kk' : '';
     nd.innerHTML = '<div class="tieude-trang"><h2>' + (dieuChuyen ? 'Quét để điều chuyển' : lienTuc ? 'Quét kiểm kê' : 'Quét mã QR') + '</h2></div>' +
       (ghiKK ? '<div class="phan-doan">' + [['', '#/quet', 'Từng tài sản'], ['kk', '#/quet?lientuc=1', 'Kiểm kê'], ['dc', '#/quet?dc=1', 'Điều chuyển']].filter(function (x) { return x[0] !== 'dc' || quyen(2); }).map(function (x) {
@@ -870,8 +894,15 @@
       veVuaQuet();
       dangXuLy = false;
       tb.textContent = (x.moi ? 'Đã ghi nhận ' : 'Đã kiểm kê trước đó: ') + t.ma + ' — quét tem tiếp theo';
-      if (navigator.vibrate) try { navigator.vibrate(x.moi ? [50, 60, 50] : 250); } catch (e) { }
+      rung(x.moi ? [50, 60, 50] : 250);
       thongBao(x.moi ? 'Đã kiểm kê ' + t.ma + (x.ngoaiSo ? ' (ngoài sổ)' : '') + ' — ' + x.dot.daKiem + '/' + x.dot.tong : t.ma + ' đã kiểm kê lúc ' + luc(x.luc) + ' (' + x.hoTen + ')');
+      baoApp(x.moi ? 'Đã kiểm kê ' + t.ma + ' · ' + t.ten + (x.ngoaiSo ? ' (ngoài sổ)' : '') + '\n' + x.dot.daKiem + ' / ' + x.dot.tong + ' tài sản' :
+        t.ma + ' · ' + t.ten + '\nđã kiểm kê lúc ' + luc(x.luc) + ' (' + x.hoTen + ')', x.moi ? 'ok' : '');
+    }
+
+    /** Màn hình quét của app đang mở (quét liên tục): báo kết quả từng tem. loai: 'ok' / 'loi' / '' */
+    function baoApp(tin, loai) {
+      if (quetApp && oLai) goiApp('baoQuet', tin, loai || '');
     }
 
     // ---- điều chuyển: danh sách tài sản quét được (giữ trong phiên, sang trang khác quay lại vẫn còn)
@@ -905,19 +936,21 @@
       tb.textContent = CHO;
       var loi = !k.duocSua ? t.ma + ' thuộc ' + t.tenDonVi + ' — tài khoản này không điều chuyển được tài sản của đơn vị khác' :
         t.tinhTrang === 'thanhly' ? t.ma + ' đã thanh lý, không điều chuyển được' : '';
-      if (loi) { thongBao(loi, true); if (navigator.vibrate) try { navigator.vibrate(400); } catch (e) { } return; }
-      if (st.dcGio.some(function (x) { return x.id === t.id; })) { thongBao(t.ma + ' đã có trong danh sách'); return; }
+      if (loi) { thongBao(loi, true); baoApp(loi, 'loi'); rung(400); return; }
+      if (st.dcGio.some(function (x) { return x.id === t.id; })) { thongBao(t.ma + ' đã có trong danh sách'); baoApp(t.ma + ' đã có trong danh sách', ''); return; }
       st.dcGio.unshift(t);
       veGio();
       tb.textContent = 'Đã thêm ' + t.ma + ' — quét tem tiếp theo';
-      if (navigator.vibrate) try { navigator.vibrate([50, 60, 50]); } catch (e) { }
+      rung([50, 60, 50]);
       thongBao('Đã thêm ' + t.ma + ' (' + st.dcGio.length + ' tài sản)');
+      baoApp('Đã thêm ' + t.ma + ' · ' + t.ten + '\nDanh sách: ' + st.dcGio.length + ' tài sản', 'ok');
       ghiKiemKeQuet(t.id).then(null, function () { });   // quét tem = ghi nhận kiểm kê năm nay (lỗi, vd kiểm kê đã kết thúc: bỏ qua)
     }
 
     /** tuTay: gõ mã / chụp ảnh — luôn xử lý, kể cả tem vừa quét. */
     function xuLy(text, tuTay) {
-      if (dangXuLy || !text) return;
+      if (!text) return;
+      if (dangXuLy) { baoApp('Đang xử lý tem trước — quét lại tem này', ''); return; }
       if (!tuTay && document.querySelector('.hop')) return;   // đang mở hộp thoại: tạm không nhận tem
       var bay = Date.now();
       if (!tuTay) {
@@ -927,7 +960,7 @@
       ganDay[text] = bay;
       maDaXong = oLai ? text : '';
       dangXuLy = true;
-      if (navigator.vibrate) try { navigator.vibrate(60); } catch (e) { }
+      rung(60);
       tb.textContent = 'Đang tìm…';
       api('GET', 'tim?ma=' + encodeURIComponent(text)).then(function (k) {
         if (!con(lan)) return;
@@ -945,7 +978,7 @@
             di('/ts/' + k.id);
           }, function (e) {
             if (!con(lan)) return;
-            if (lienTuc) { dangXuLy = false; tb.textContent = e.message; thongBao(e.message, true); return; }
+            if (lienTuc) { dangXuLy = false; tb.textContent = e.message; thongBao(e.message, true); baoApp(e.message, 'loi'); return; }
             nhoKiemKeVuaGhi(k.id, null, e);
             dungCamera();
             di('/ts/' + k.id);
@@ -956,8 +989,9 @@
         kqEl.innerHTML = '<div class="the" style="margin:0 0 12px"><h3>Không có tài sản mã <span class="ma">' + esc(k.ma || text) + '</span></h3>' +
           (k.hopLe ? '<p class="mo">Tem này chưa gắn với tài sản nào (tem in trước), hoặc tài sản đã bị xoá.</p>' + (k.duocTao ? '<a class="nut chinh" href="#/moi?ma=' + encodeURIComponent(k.ma) + '">' + BT.them + 'Khai báo tài sản với mã này</a>' : '') :
             '<p class="mo">Nội dung mã QR không phải tem tài sản: ' + esc(text.slice(0, 120)) + '</p>') + '</div>';
-        if (oLai && navigator.vibrate) try { navigator.vibrate(400); } catch (e) { }
-      }, function (e) { dangXuLy = false; tb.textContent = e.message; });
+        if (oLai) rung(400);
+        baoApp(k.hopLe ? 'Không có tài sản mã ' + (k.ma || text) + ' (tem chưa gắn tài sản)' : 'Mã QR này không phải tem tài sản', 'loi');
+      }, function (e) { dangXuLy = false; tb.textContent = e.message; baoApp(e.message, 'loi'); });
     }
 
     nd.querySelector('[data-nhap]').addEventListener('submit', function (e) {
@@ -977,6 +1011,24 @@
       });
     };
 
+    if (quetApp) {
+      // app Android: camera của app che toàn màn hình; đóng lại (Xong / Back) thì về trang này với danh sách đã quét
+      var khung = nd.querySelector('.quet-khung');
+      khung.className = 'quet-khung app';
+      khung.innerHTML = '<button class="nut chinh" type="button" data-moquet>' + BT.quet + 'Mở camera quét tem</button>' +
+        '<div class="thongbao"></div>';
+      tb = khung.querySelector('.thongbao');
+      tb.textContent = oLai ? 'Quét lần lượt từng tem; quét xong bấm "Xong" để về danh sách bên dưới.' : CHO;
+      var moQuetApp = function () {
+        if (con(lan)) goiApp('moQuet', oLai ? 'lientuc' : 'mot', dieuChuyen ? 'Quét để điều chuyển' : lienTuc ? 'Quét kiểm kê' : 'Quét mã QR', CHO);
+      };
+      khung.querySelector('[data-moquet]').onclick = moQuetApp;
+      window.ungDungQuet = function (text) { if (con(lan)) xuLy(text, true); };
+      window.ungDungDongQuet = function () { if (con(lan)) maDaXong = ''; };
+      st.camera = { dung: false, app: true };
+      setTimeout(moQuetApp, 0);
+      return;
+    }
     if (!coCamera) {
       nd.querySelector('.quet-khung').innerHTML = '<div class="thongbao" style="position:static;margin:40px 16px;background:rgba(255,255,255,.12)">' +
         (window.isSecureContext === false ? 'Trình duyệt chỉ cho mở camera trong trang https. Bấm "Chụp ảnh mã QR" bên dưới, hoặc dùng ứng dụng Camera của điện thoại quét tem (tem mở thẳng trang tài sản).'
@@ -1206,6 +1258,7 @@
     el.querySelector('.trai').onclick = function () { i = (i - 1 + ds.length) % ds.length; hien(); };
     el.querySelector('.phai').onclick = function () { i = (i + 1) % ds.length; hien(); };
     el.querySelector('[data-tai]').onclick = function () {
+      if (APP) { goiApp('taiVe', diaChiDayDu('api/anh/' + t.id + '/' + encodeURIComponent(ds[i])), t.ma + '-' + ds[i] + '.jpg', st.token); return; }
       taiAnh(t.id, ds[i], false).then(function (u) { var a = document.createElement('a'); a.href = u; a.download = t.ma + '-' + ds[i] + '.jpg'; document.body.appendChild(a); a.click(); a.remove(); });
     };
     var x0 = null;
@@ -1802,6 +1855,11 @@
       document.body.classList.add('dang-in');
       var xong = function () { document.body.classList.remove('dang-in'); vung.innerHTML = ''; window.removeEventListener('afterprint', xong); };
       window.addEventListener('afterprint', xong);
+      if (APP && typeof APP.inTrang === 'function') {   // app: dịch vụ in của Android (máy in Wi-Fi, lưu PDF)
+        window.ungDungInXong = function () { window.ungDungInXong = null; xong(); };
+        setTimeout(function () { goiApp('inTrang', 'Tem QR ' + ds.length + ' tem'); }, 60);
+        return;
+      }
       setTimeout(function () { window.print(); setTimeout(function () { if (document.body.classList.contains('dang-in') && !window.matchMedia('print').matches) xong(); }, 1500); }, 60);
     };
 
@@ -2016,7 +2074,7 @@
       o('Địa danh ghi ngày lập biên bản', 'diaDanh') + o('Người lập biểu', 'nguoiLap') + o('Kế toán trưởng', 'keToanTruong') + o('Giám đốc', 'giamDoc') +
       '<label class="nhan">Nhắc tài sản chưa kiểm tra sau (ngày)</label><input data-k="ngayNhacKiemTra" type="number" min="1" max="3650" value="' + c.ngayNhacKiemTra + '">' +
       '<div class="chan" style="position:static"><button class="nut chinh" type="submit">Lưu cài đặt</button></div></form>' +
-      '<p class="mo nho">Phiên bản ' + esc(st.nguoi.phienBanPhanMem) + '. Dữ liệu, ảnh và lịch sử nằm trong thư mục dữ liệu trên máy chủ (mặc định C:\\QuanLyTaiSanData) — sao lưu cả thư mục này định kỳ.</p>';
+      '<p class="mo nho">Phiên bản ' + esc(st.nguoi.phienBanPhanMem) + '. Dữ liệu, ảnh và lịch sử nằm trong thư mục dữ liệu trên máy chủ (mặc định C:\\QuanLyTaiSanData) — sao lưu cả thư mục này định kỳ.</p>' + (APP ? '' : theApp());
     nd.querySelector('form').addEventListener('submit', function (e) {
       e.preventDefault();
       var than = {};
@@ -2026,15 +2084,56 @@
   }
 
   // ------------------------------------------------------------------ menu "Thêm" trên điện thoại
+  /** Mở app Android và chuyển cho app địa chỉ máy chủ này; chưa cài app thì Chrome tải app (/tai-app). */
+  function linkMoApp() {
+    var may = location.origin + location.pathname.replace(/[^/]*$/, '');
+    return 'intent://ketnoi?may=' + encodeURIComponent(may) + '#Intent;scheme=qltaisan;package=vn.com.hawasuco.taisan;S.browser_fallback_url=' +
+      encodeURIComponent(diaChiDayDu('tai-app')) + ';end';
+  }
+
+  /** Thẻ "App điện thoại" ở trang Thêm: trong app — phiên bản, máy chủ, cập nhật, đổi máy chủ; ngoài app — tải app Android. */
+  function theApp() {
+    var a = st.ping && st.ping.app;
+    if (APP) {
+      var ma = +goiApp('maPhienBan') || 0, cc = goiApp('maChungChi') || '';
+      return '<div class="the app-dt"><h3>App điện thoại</h3><p class="mo nho">App phiên bản ' + esc(goiApp('phienBan') || '') + ' · máy chủ ' +
+        esc(goiApp('mayChu') || location.origin) + (cc ? '<br>Mã nhận dạng chứng chỉ máy chủ: <span class="ma">' + esc(cc) + '</span>' : '') + '</p><div class="hang">' +
+        (a && a.ma > ma ? '<button class="nut chinh" type="button" data-capnhat>' + BT.tai + 'Cập nhật app (phiên bản ' + esc(a.phienBan) + ')</button>' : '') +
+        '<button class="nut" type="button" data-doimay>Đổi máy chủ</button></div></div>';
+    }
+    if (!a) return '';
+    var android = /Android/i.test(navigator.userAgent);
+    if (!android && !quyen(3)) return '';
+    var link = diaChiDayDu('tai-app');
+    return '<div class="the app-dt"><h3>App Android</h3><p class="mo nho">App "Quản lý tài sản" phiên bản ' + esc(a.phienBan) + ' (' + (a.kichThuoc / 1048576).toFixed(1) +
+      ' MB): quét tem bằng camera của app (quét liên tục khi kiểm kê, điều chuyển; chạy cả khi máy chủ dùng http), tải và chia sẻ file Excel.</p>' +
+      (android ? '<div class="hang"><a class="nut chinh" href="tai-app">' + BT.tai + 'Tải app Android</a><a class="nut" href="' + esc(linkMoApp()) + '">Mở bằng app</a></div>' :
+        '<div class="qr-nho"><div class="qr">' + MaQR.svg(link, 'M', 2) + '</div><div class="mo nho">Quét mã này bằng camera điện thoại Android để tải app, hoặc gửi đường dẫn cho nhân viên: ' +
+        '<a href="tai-app" style="word-break:break-all">' + esc(link) + '</a></div></div>') + '</div>';
+  }
+
   function trangKhac(nd) {
     var muc = [['donvi', 'Theo đơn vị', 'Tài sản của từng đội cấp nước, phòng ban', 0],
       ['dieuchuyen', 'Điều chuyển', 'Chuyển tài sản giữa đội, phòng ban; biên bản giao nhận', 0], ['hoatdong', 'Hoạt động', 'Kiểm tra, bảo dưỡng, kiểm kê gần đây', 0], ['nhan', 'In tem QR', 'Tem dán tài sản, tem trắng', 0], ['nhap', 'Nhập từ Excel', 'Đưa sổ tài sản vào phần mềm', 2],
       ['danhmuc', 'Danh mục', 'Loại tài sản, đơn vị quản lý', 0], ['taikhoan', 'Tài khoản', 'Đổi mật khẩu' + (quyen(3) ? ', quản lý người dùng' : ''), 0], ['caidat', 'Cài đặt', 'Tên công ty, địa chỉ QR, người ký', 3]];
     nd.innerHTML = '<div class="tieude-trang"><h2>Thêm</h2></div><div class="the menu-khac">' + muc.filter(function (m) { return quyen(m[3]); }).map(function (m) {
       return '<a href="#/' + m[0] + '">' + BT[BT_MENU[m[0]]] + '<div>' + esc(m[1]) + '<small>' + esc(m[2]) + '</small></div></a>';
-    }).join('') + '<a href="#" data-dx>' + BT.dangxuat + '<div>Đăng xuất<small>' + esc(st.nguoi.hoTen || st.nguoi.ten) + ' · ' + esc(st.nguoi.tenVaiTro) + '</small></div></a></div>';
+    }).join('') + '<a href="#" data-dx>' + BT.dangxuat + '<div>Đăng xuất<small>' + esc(st.nguoi.hoTen || st.nguoi.ten) + ' · ' + esc(st.nguoi.tenVaiTro) + '</small></div></a></div>' + theApp();
     nd.querySelector('[data-dx]').onclick = function (e) { e.preventDefault(); dangXuat(); };
+    var b = nd.querySelector('[data-capnhat]');
+    if (b) b.onclick = function () { goiApp('capNhat'); };
+    b = nd.querySelector('[data-doimay]');
+    if (b) b.onclick = function () { goiApp('doiMayChu'); };
   }
+
+  // app Android: phím Back đóng hộp thoại / ảnh đang xem (trả 1); không có thì app lùi trang
+  window.ungDungQuayLai = function () {
+    var x = document.querySelectorAll('.hop, .xem-anh');
+    if (!x.length) return 0;
+    var cuoi = x[x.length - 1], nut = cuoi.querySelector('[data-dong]');
+    if (nut) nut.click(); else cuoi.remove();
+    return 1;
+  };
 
   // ------------------------------------------------------------------ khởi động
   fetch('api/ping', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (p) { st.ping = p; }, function () { }).then(function () {

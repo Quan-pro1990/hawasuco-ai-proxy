@@ -161,6 +161,15 @@ namespace QuanLyTaiSan
                 if (!MaXacMinh.IsMatch(ma) || !File.Exists(tep)) return TraLoi.Loi(404, "Không có tệp xác minh này.");
                 return new TraLoi { Status = 200, Than = File.ReadAllBytes(tep), Loai = "text/plain" };
             }
+            // App Android (QuanLyTaiSan-DienThoai.apk đặt cạnh file .exe): điện thoại tải ở …/tai-app
+            if (d.Equals("/tai-app", StringComparison.OrdinalIgnoreCase) || d.Equals("/tai-app/", StringComparison.OrdinalIgnoreCase))
+            {
+                string apk = AppDienThoai.DuongDan();
+                if (apk == null) return TraLoi.Loi(404, "Máy chủ chưa có app Android (thiếu tệp " + AppDienThoai.TenTep + " cạnh QuanLyTaiSan.exe).");
+                TraLoi tlApk = TraLoi.Tep(File.ReadAllBytes(apk), "application/vnd.android.package-archive", AppDienThoai.TenTep);
+                tlApk.Header["Cache-Control"] = "no-cache";
+                return tlApk;
+            }
             // Địa chỉ in trong mã QR: …/t/MÃ → mở trang tài sản (camera điện thoại quét là vào thẳng)
             if (d.StartsWith("/t/", StringComparison.OrdinalIgnoreCase))
             {
