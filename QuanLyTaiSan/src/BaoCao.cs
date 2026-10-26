@@ -254,6 +254,79 @@ namespace QuanLyTaiSan
             return new KeyValuePair<string, byte[]>(TenTep("Bien ban kiem ke - " + VanBan.BoDauGiuHoa(ten)), so.LuuBytes());
         }
 
+        // ------------------------------------------------------------------ biên bản giao nhận khi điều chuyển
+
+        /// <summary>Biên bản giao nhận tài sản của 1 phiếu điều chuyển (bên giao → bên nhận, danh sách tài sản, chữ ký 2 bên + kế toán).</summary>
+        public static KeyValuePair<string, byte[]> BienBanDieuChuyen(DichVu dv, string soPhieu)
+        {
+            var so = new XSo();
+            lock (dv.Khoa)
+            {
+                DuLieu dl = dv.Dl;
+                List<SuKien> l = dv.Kho.SuKienPhieu(soPhieu);
+                if (l == null) throw new LoiApi(404, "Không có phiếu điều chuyển " + soPhieu + ".");
+                SuKien dau = l[0];
+                DateTime ngay = dau.Luc.Date;
+                XTrang t = so.Them("Biên bản giao nhận");
+                string[] cot = { "STT", "Mã tài sản", "Tên tài sản", "Loại tài sản", "Số seri", "Đơn vị giao", "Vị trí sau khi nhận", "Nguyên giá (đồng)", "Giá trị còn lại (tạm tính)", "Tình trạng" };
+                double[] rong = { 5, 13, 34, 20, 13, 22, 24, 15, 15, 16 };
+                int n = cot.Length;
+                t.GopO(1, 1, 1, 4, dl.CaiDat.TenCongTy, new XKieu { Co = 11, Dam = true, Ngang = "center" });
+                t.GopO(2, 1, 2, 4, "Số: " + dau.Phieu, new XKieu { Co = 11, Ngang = "center" });
+                t.GopO(1, 6, 1, n, "CỘNG HOÀ XÃ HỘI CHỦ NGHĨA VIỆT NAM", GiuaDam);
+                t.GopO(2, 6, 2, n, "Độc lập - Tự do - Hạnh phúc", GiuaDam);
+                t.GopO(4, 1, 4, n, "BIÊN BẢN GIAO NHẬN TÀI SẢN", TieuDe);
+                t.GopO(5, 1, 5, n, "(Điều chuyển tài sản giữa các đơn vị trong công ty)", GiuaNghieng);
+                var tu = l.Select(s => s.TuDonVi).Distinct().Select(x => dl.TenDonVi(x)).ToList();
+                int r = 7;
+                Action<string> dongChu = s => { t.GopO(r, 1, r, n, s, Thuong); r++; };
+                dongChu("Hôm nay, ngày " + ngay.Day + " tháng " + ngay.Month + " năm " + ngay.Year + (dl.CaiDat.DiaDanh.Length > 0 ? ", tại " + dl.CaiDat.DiaDanh : "") + ", chúng tôi gồm:");
+                dongChu("Bên giao: " + string.Join(", ", tu));
+                dongChu("Bên nhận: " + dl.TenDonVi(dau.DenDonVi) + " (" + Khoi.Ten(dl.KhoiCua(dau.DenDonVi)).ToLower(CultureInfo.GetCultureInfo("vi-VN")) + ")");
+                if (dau.NoiDung.Length > 0) dongChu("Căn cứ / lý do: " + dau.NoiDung);
+                dongChu("Đã giao nhận " + l.Count + " tài sản dưới đây (ghi trên phần mềm lúc " + dau.Luc.ToString("HH:mm dd/MM/yyyy", Inv) + ", người lập: " + dau.HoTen + "):");
+                r++;
+                int dauBang = r;
+                for (int c = 0; c < n; c++)
+                {
+                    t.Dat(r, c + 1, cot[c], TieuDeCot);
+                    t.RongCot[c + 1] = rong[c];
+                }
+                t.CaoDong[r] = 33;
+                r++;
+                int dongDau = r, stt = 0;
+                double tongGia = 0, tongCon = 0;
+                foreach (SuKien s in l)
+                {
+                    TaiSan x = dl.Tim(s.TaiSan);
+                    double? con = x == null ? null : TinhToan.GiaTriConLai(dl, x, ngay);
+                    tongGia += x == null ? 0 : x.NguyenGia ?? 0;
+                    tongCon += con ?? 0;
+                    object[] v =
+                    {
+                        ++stt, x == null ? "" : x.Ma, x == null ? "(tài sản đã xoá)" : x.Ten, x == null ? "" : dl.TenLoai(x.LoaiId), x == null ? "" : x.SoSeri,
+                        dl.TenDonVi(s.TuDonVi), s.ViTri ?? (x == null ? "" : x.ViTri), x == null ? "" : So(x.NguyenGia), So(con),
+                        s.TinhTrang != null ? TinhTrang.Ten(s.TinhTrang) : x == null ? "" : TinhTrang.Ten(x.TinhTrang)
+                    };
+                    for (int c = 0; c < n; c++) t.Dat(r, c + 1, v[c], c == 7 || c == 8 ? KhungSo : c == 0 ? KhungGiua : Khung);
+                    r++;
+                }
+                t.GopO(r, 1, r, 7, "CỘNG (" + l.Count + " tài sản)", Nhom.Voi(k => k.Ngang = "center"));
+                t.CongThuc(r, 8, "SUM(H" + dongDau + ":H" + (r - 1) + ")", tongGia, NhomSo);
+                t.CongThuc(r, 9, "SUM(I" + dongDau + ":I" + (r - 1) + ")", tongCon, NhomSo);
+                t.Dat(r, 10, "", Nhom);
+                r += 2;
+                dongChu("Bên nhận đã kiểm tra, nhận đủ các tài sản trên đúng tình trạng ghi trong biên bản và chịu trách nhiệm quản lý, sử dụng từ ngày nhận.");
+                dongChu("Biên bản lập thành 03 bản: bên giao giữ 01 bản, bên nhận giữ 01 bản, phòng Kế toán giữ 01 bản.");
+                r++;
+                ChuKy(t, r, n, dl.CaiDat, new[] { "ĐẠI DIỆN BÊN GIAO", "ĐẠI DIỆN BÊN NHẬN", "KẾ TOÁN TRƯỞNG" }, new[] { "", "", dl.CaiDat.KeToanTruong }, ngay);
+                t.LapTu = dauBang;
+                t.LapDen = dauBang;
+                t.Ngang = true;
+            }
+            return new KeyValuePair<string, byte[]>(TenTep("Bien ban giao nhan - " + soPhieu), so.LuuBytes());
+        }
+
         // ------------------------------------------------------------------ sổ tài sản theo đơn vị (từng đội / phòng ban)
 
         /// <summary>
@@ -384,11 +457,11 @@ namespace QuanLyTaiSan
             t.Ngang = true;
         }
 
-        static void ChuKy(XTrang t, int r, int n, CaiDat cd, string[] chucDanh, string[] ten)
+        static void ChuKy(XTrang t, int r, int n, CaiDat cd, string[] chucDanh, string[] ten, DateTime? ngay = null)
         {
             // 3 khối chữ ký chia đều bề ngang, không chồng cột (trang 12 cột trước đây bị chồng → mất chữ ký thứ 3)
             int w = n / 3;
-            DateTime d = DateTime.Today;
+            DateTime d = ngay ?? DateTime.Today;
             t.GopO(r, 2 * w + 1, r, n, (cd.DiaDanh.Length > 0 ? cd.DiaDanh + ", " : "") + "ngày " + d.Day + " tháng " + d.Month + " năm " + d.Year, GiuaNghieng);
             r++;
             int[] cot = { 1, w + 1, 2 * w + 1 };

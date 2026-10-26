@@ -26,6 +26,9 @@ namespace QuanLyTaiSan
         public DuLieu DuLieu;
         readonly Dictionary<int, List<SuKien>> lichSu = new Dictionary<int, List<SuKien>>();
         readonly List<SuKien> tatCa = new List<SuKien>();
+        readonly Dictionary<string, List<SuKien>> theoPhieu = new Dictionary<string, List<SuKien>>(StringComparer.OrdinalIgnoreCase);
+        readonly Dictionary<int, int> soPhieuNam = new Dictionary<int, int>();   // năm → số phiếu điều chuyển cuối đã cấp
+        static readonly Regex SoPhieuRe = new Regex(@"^DC-(\d{4})-(\d+)$");
 
         public Kho(string thuMuc)
         {
@@ -95,10 +98,34 @@ namespace QuanLyTaiSan
 
         public IList<SuKien> TatCaSuKien { get { return tatCa; } }
 
+        /// <summary>Các sự kiện (mỗi tài sản 1 dòng) của 1 phiếu điều chuyển; null nếu không có.</summary>
+        public List<SuKien> SuKienPhieu(string so)
+        {
+            List<SuKien> l;
+            return so != null && theoPhieu.TryGetValue(so, out l) ? l : null;
+        }
+
+        /// <summary>Các phiếu điều chuyển, mới nhất trước.</summary>
+        public IEnumerable<List<SuKien>> CacPhieu()
+        {
+            return theoPhieu.Values.OrderByDescending(l => l[0].Id);
+        }
+
+        /// <summary>Cấp số phiếu điều chuyển kế tiếp của năm: DC-2026-001, DC-2026-002…</summary>
+        public string CapSoPhieu(int nam)
+        {
+            int n;
+            soPhieuNam.TryGetValue(nam, out n);
+            soPhieuNam[nam] = ++n;
+            return "DC-" + nam.ToString(Inv) + "-" + n.ToString("000", Inv);
+        }
+
         void DocLichSu()
         {
             lichSu.Clear();
             tatCa.Clear();
+            theoPhieu.Clear();
+            soPhieuNam.Clear();
             foreach (DotKiemKe d in DuLieu.KiemKe) d.KetQua.Clear();
             if (!Directory.Exists(ThuMucLichSu)) return;
             foreach (string tep in Directory.GetFiles(ThuMucLichSu, "*.jsonl").OrderBy(f => f, StringComparer.Ordinal))
@@ -131,6 +158,20 @@ namespace QuanLyTaiSan
                 DotKiemKe d = DuLieu.TimDot(s.Dot);
                 if (d != null) d.KetQua[s.TaiSan] = s;
             }
+            if (s.Phieu.Length > 0)
+            {
+                List<SuKien> p;
+                if (!theoPhieu.TryGetValue(s.Phieu, out p))
+                {
+                    p = new List<SuKien>();
+                    theoPhieu[s.Phieu] = p;
+                }
+                p.Add(s);
+                Match m = SoPhieuRe.Match(s.Phieu);
+                int nam, so, cu;
+                if (m.Success && int.TryParse(m.Groups[1].Value, out nam) && int.TryParse(m.Groups[2].Value, out so) &&
+                    (!soPhieuNam.TryGetValue(nam, out cu) || so > cu)) soPhieuNam[nam] = so;
+            }
         }
 
         /// <summary>Ghi thêm 1 sự kiện (cấp mã, ghi file trước rồi mới đưa vào bộ nhớ).</summary>
@@ -155,6 +196,10 @@ namespace QuanLyTaiSan
             if (s.ChiPhi.HasValue) o["cp"] = s.ChiPhi.Value;
             if (s.ViDo.HasValue && s.KinhDo.HasValue) { o["vd"] = s.ViDo.Value; o["kd"] = s.KinhDo.Value; }
             if (s.Dot > 0) o["dot"] = s.Dot;
+            if (s.Phieu.Length > 0) o["phieu"] = s.Phieu;
+            if (s.TuDonVi > 0) o["tu"] = s.TuDonVi;
+            if (s.DenDonVi > 0) o["den"] = s.DenDonVi;
+            if (s.ViTri != null) o["vt"] = s.ViTri;
             if (s.Anh.Count > 0) o["anh"] = s.Anh;
             return o;
         }
@@ -176,6 +221,10 @@ namespace QuanLyTaiSan
                 ViDo = Json.SoThuc(o, "vd"),
                 KinhDo = Json.SoThuc(o, "kd"),
                 Dot = Json.So(o, "dot", 0),
+                Phieu = Json.Chu(o, "phieu") ?? "",
+                TuDonVi = Json.So(o, "tu", 0),
+                DenDonVi = Json.So(o, "den", 0),
+                ViTri = Json.Chu(o, "vt"),
                 Anh = Json.MangChu(o, "anh")
             };
             DateTime luc;

@@ -326,6 +326,11 @@ namespace QuanLyTaiSan
 
         public SuKien GhiSuKien(TaiKhoan tk, int taiSan, YeuCauSuKien y)
         {
+            if (y.Loai == LoaiSuKien.DieuChuyen)
+                return DieuChuyen(tk, new YeuCauDieuChuyen
+                {
+                    TaiSan = new List<int> { taiSan }, DonVi = y.DonVi, ViTri = y.ViTri, NguoiSuDung = y.NguoiSuDung, NoiDung = y.NoiDung, Anh = y.Anh
+                }).SuKien[0];
             if (y.TinhTrang != null && !TinhTrang.HopLe(y.TinhTrang)) throw new LoiApi(400, "Tình trạng không hợp lệ.");
             if (y.ViDo.HasValue != y.KinhDo.HasValue || y.ViDo.HasValue && (Math.Abs(y.ViDo.Value) > 90 || Math.Abs(y.KinhDo.Value) > 180))
                 throw new LoiApi(400, "Toạ độ không hợp lệ.");
@@ -351,19 +356,6 @@ namespace QuanLyTaiSan
                         s.ChiPhi = y.ChiPhi;
                         if (ngay != DateTime.Today) s.ChiTiet = "Ngày thực hiện: " + VanBan.NgayVn(ngay);
                         if (!t.BaoTriCuoi.HasValue || ngay > t.BaoTriCuoi.Value) t.BaoTriCuoi = ngay;
-                        break;
-                    case LoaiSuKien.DieuChuyen:
-                        CanQuyen(tk, VaiTro.CapNhat);
-                        CanDonVi(tk, t.DonViId);
-                        if (Dl.TimDonVi(y.DonVi) == null) throw new LoiApi(400, "Chọn đơn vị nhận.");
-                        string viTri = VanBan.Cat(y.ViTri ?? t.ViTri, 300), nguoi = VanBan.Cat(y.NguoiSuDung ?? t.NguoiSuDung, 120);
-                        Doi(doi, "Đơn vị", Dl.TenDonVi(t.DonViId), Dl.TenDonVi(y.DonVi));
-                        Doi(doi, "Vị trí", t.ViTri, viTri);
-                        Doi(doi, "Người sử dụng", t.NguoiSuDung, nguoi);
-                        if (doi.Count == 0) throw new LoiApi(400, "Đơn vị, vị trí, người sử dụng không đổi.");
-                        t.DonViId = y.DonVi;
-                        t.ViTri = viTri;
-                        t.NguoiSuDung = nguoi;
                         break;
                     case LoaiSuKien.ThanhLy:
                         CanQuyen(tk, VaiTro.CapNhat);
@@ -407,6 +399,85 @@ namespace QuanLyTaiSan
                 LuuDuLieu();
                 Kho.GhiSuKien(s);
                 return s;
+            }
+        }
+
+        // ------------------------------------------------------------------ điều chuyển (1 hoặc nhiều tài sản, chung 1 phiếu)
+
+        public class YeuCauDieuChuyen
+        {
+            public List<int> TaiSan = new List<int>();
+            public int DonVi;
+            public string ViTri, NguoiSuDung;   // null = giữ như cũ của từng tài sản
+            public string NoiDung = "";         // số quyết định, lý do
+            public List<string> Anh = new List<string>();   // chỉ khi chuyển 1 tài sản
+        }
+
+        public class KetQuaDieuChuyen
+        {
+            public string So;
+            public List<SuKien> SuKien = new List<SuKien>();
+        }
+
+        /// <summary>
+        /// Chuyển các tài sản sang đơn vị nhận (đội cấp nước / phòng ban), ghi 1 phiếu điều chuyển (DC-năm-số) để in biên bản giao nhận.
+        /// Tài khoản giới hạn 1 đơn vị chỉ chuyển được tài sản của đơn vị mình (chuyển đi).
+        /// </summary>
+        public KetQuaDieuChuyen DieuChuyen(TaiKhoan tk, YeuCauDieuChuyen y)
+        {
+            CanQuyen(tk, VaiTro.CapNhat);
+            var ids = (y.TaiSan ?? new List<int>()).Distinct().ToList();
+            if (ids.Count == 0) throw new LoiApi(400, "Chưa chọn tài sản nào để điều chuyển.");
+            if (ids.Count > 500) throw new LoiApi(400, "Mỗi lần điều chuyển tối đa 500 tài sản.");
+            var anh = (y.Anh ?? new List<string>()).Distinct().ToList();
+            if (anh.Count > 0 && ids.Count > 1) throw new LoiApi(400, "Ảnh đính kèm chỉ dùng khi điều chuyển 1 tài sản.");
+            if (anh.Count > 20) throw new LoiApi(400, "Tối đa 20 ảnh cho 1 lần ghi.");
+            string noiDung = VanBan.Cat(y.NoiDung, 2000);
+            string viTriMoi = y.ViTri == null ? null : VanBan.Cat(y.ViTri, 300);
+            string nguoiMoi = y.NguoiSuDung == null ? null : VanBan.Cat(y.NguoiSuDung, 120);
+            lock (Khoa)
+            {
+                DonVi den = Dl.TimDonVi(y.DonVi);
+                if (den == null) throw new LoiApi(400, "Chọn đơn vị nhận.");
+                var ds = ids.Select(x => LayTaiSan(x)).ToList();
+                foreach (TaiSan t in ds)
+                {
+                    if (tk.VaiTro != VaiTro.QuanTri && tk.DonVi >= 0 && tk.DonVi != t.DonViId)
+                        throw new LoiApi(403, t.Ma + " thuộc " + Dl.TenDonVi(t.DonViId) + " — tài khoản này chỉ chuyển được tài sản của " + Dl.TenDonVi(tk.DonVi) + ".");
+                    if (t.TinhTrang == TinhTrang.ThanhLy) throw new LoiApi(400, t.Ma + " đã thanh lý, không điều chuyển được.");
+                    if (t.DonViId == den.Id && (viTriMoi == null || viTriMoi == t.ViTri) && (nguoiMoi == null || nguoiMoi == t.NguoiSuDung))
+                        throw new LoiApi(400, ds.Count == 1 ? "Đơn vị, vị trí, người sử dụng không đổi." : t.Ma + " đã thuộc " + den.Ten + " — bỏ tài sản này khỏi danh sách.");
+                }
+                foreach (string a in anh)
+                    if (!Kho.CoAnh(ds[0].Id, a)) throw new LoiApi(400, "Ảnh đính kèm không còn trên máy chủ — hãy chụp lại.");
+                var kq = new KetQuaDieuChuyen { So = Kho.CapSoPhieu(DateTime.Now.Year) };
+                foreach (TaiSan t in ds)
+                {
+                    SuKien s = MoiSuKien(tk, t, LoaiSuKien.DieuChuyen);
+                    s.Phieu = kq.So;
+                    s.TuDonVi = t.DonViId;
+                    s.DenDonVi = den.Id;
+                    s.NoiDung = noiDung;
+                    s.Anh.AddRange(anh);
+                    s.TinhTrang = t.TinhTrang;   // tình trạng lúc giao (in biên bản)
+                    string viTri = viTriMoi ?? t.ViTri, nguoi = nguoiMoi ?? t.NguoiSuDung;
+                    s.ViTri = viTri;
+                    var doi = new List<string>();
+                    Doi(doi, "Đơn vị", Dl.TenDonVi(t.DonViId), den.Ten);
+                    Doi(doi, "Vị trí", t.ViTri, viTri);
+                    Doi(doi, "Người sử dụng", t.NguoiSuDung, nguoi);
+                    s.ChiTiet = string.Join("\n", doi);
+                    t.DonViId = den.Id;
+                    t.ViTri = viTri;
+                    t.NguoiSuDung = nguoi;
+                    t.PhienBan++;
+                    t.DaDoi();
+                    kq.SuKien.Add(s);
+                }
+                LuuDuLieu();
+                foreach (SuKien s in kq.SuKien) Kho.GhiSuKien(s);
+                Ghi("Điều chuyển " + ds.Count + " tài sản sang '" + den.Ten + "' (phiếu " + kq.So + ") bởi '" + tk.Ten + "'");
+                return kq;
             }
         }
 

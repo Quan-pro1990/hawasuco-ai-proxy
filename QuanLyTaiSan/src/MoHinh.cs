@@ -204,6 +204,9 @@ namespace QuanLyTaiSan
         public double? ChiPhi;
         public double? ViDo, KinhDo;
         public int Dot;                 // đợt kiểm kê
+        public string Phieu = "";       // điều chuyển: số phiếu, vd DC-2026-001 (các tài sản chuyển cùng lúc chung 1 phiếu)
+        public int TuDonVi, DenDonVi;   // điều chuyển: đơn vị giao → đơn vị nhận
+        public string ViTri;            // điều chuyển: vị trí sau khi nhận (in biên bản giao nhận)
         public List<string> Anh = new List<string>();
     }
 

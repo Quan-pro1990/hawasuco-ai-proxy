@@ -8,7 +8,7 @@ Thiết kế chi tiết: [THIET_KE.md](THIET_KE.md).
 |---|---|---|
 | ![](anh-man-hinh/dien-thoai-da-kiem-ke.png) | ![](anh-man-hinh/dien-thoai-quet-kiem-ke.png) | ![](anh-man-hinh/trang-tai-san.png) |
 
-Thêm: [đăng nhập](anh-man-hinh/dien-thoai-dang-nhap.png) · [theo đơn vị](anh-man-hinh/theo-don-vi.png) · [tổng quan](anh-man-hinh/tong-quan.png) · [in tem QR](anh-man-hinh/in-tem.png) · [trang tài sản trên điện thoại](anh-man-hinh/dien-thoai-tai-san.png) · [kiểm kê năm](anh-man-hinh/kiem-ke-nam.png)
+Thêm: [đăng nhập](anh-man-hinh/dien-thoai-dang-nhap.png) · [theo đơn vị](anh-man-hinh/theo-don-vi.png) · [tổng quan](anh-man-hinh/tong-quan.png) · [in tem QR](anh-man-hinh/in-tem.png) · [trang tài sản trên điện thoại](anh-man-hinh/dien-thoai-tai-san.png) · [kiểm kê năm](anh-man-hinh/kiem-ke-nam.png) · [điều chuyển trên điện thoại](anh-man-hinh/dien-thoai-dieu-chuyen.png)
 
 ## Thư mục
 
@@ -87,7 +87,7 @@ Mở địa chỉ máy chủ bằng Chrome (iPhone: Safari), đăng nhập, menu
 - **Kiểm tra**: chọn tình trạng (tốt, cần theo dõi, hỏng…), ghi chú, ảnh (có thể đưa vào bộ ảnh), *Ghi vị trí GPS*.
   Báo hỏng = kiểm tra với tình trạng *Hỏng, cần sửa chữa* — hiện ngay ở Tổng quan.
 - **Bảo dưỡng / sửa**: ngày, nội dung, chi phí, tình trạng sau khi làm, ảnh. Hạn bảo dưỡng tự tính lại theo chu kỳ.
-- **Sửa thông tin**, **Điều chuyển** (đơn vị, vị trí, người sử dụng), **Thanh lý** (số quyết định, giá trị thu hồi), **Xoá** (quản trị).
+- **Sửa thông tin**, **Điều chuyển** sang đội / phòng ban khác (xem mục dưới), **Thanh lý** (số quyết định, giá trị thu hồi), **Xoá** (quản trị).
 - **Lịch sử**: mọi lần khai báo, sửa (ghi rõ trường nào đổi từ gì sang gì), kiểm tra, bảo dưỡng, điều chuyển, kiểm kê, thêm ảnh — có ảnh, vị trí.
 - Giá trị còn lại, khấu hao luỹ kế là **tạm tính** theo đường thẳng để tham khảo; số chính thức theo sổ kế toán.
 
@@ -131,7 +131,31 @@ Mỗi tài sản thuộc 1 **đơn vị quản lý**; mỗi đơn vị thuộc 1
   (chọn "Mọi đơn vị" để xem cả công ty); trang Theo đơn vị đánh dấu "Đơn vị của bạn".
 - **Kiểm kê**: tiến độ và biên bản kiểm kê chia theo khối → từng đội / phòng ban; bấm 1 đơn vị trong bảng tiến độ để xem
   tài sản chưa kiểm của đơn vị đó (giao cho tổ kiểm kê của đội).
-- Chuyển tài sản giữa các đơn vị: trang tài sản → **Điều chuyển**.
+- Chuyển tài sản giữa các đơn vị: xem mục **Điều chuyển tài sản** dưới đây.
+
+## Điều chuyển tài sản (làm ngay trên điện thoại)
+
+Chuyển thiết bị từ phòng này sang phòng khác, từ phòng ban về đội cấp nước (hoặc ngược lại) — quyền *Cán bộ quản lý tài sản*.
+
+1. Trang **Quét QR** → chọn **Điều chuyển**. Quét lần lượt tem các tài sản cần chuyển: mỗi tem quét được, máy rung và tài
+   sản hiện vào danh sách **Tài sản sẽ điều chuyển** (bấm × để bỏ một tài sản). Tem không quét được thì gõ mã vào ô dưới.
+2. Bấm **Điều chuyển n tài sản…** → chọn **đội / phòng ban nhận** (danh sách chia nhóm Các đội cấp nước / Khối văn phòng),
+   vị trí mới, người sử dụng mới (để trống = giữ như cũ), số quyết định / lý do → **Điều chuyển**.
+3. Phần mềm ghi 1 **phiếu điều chuyển** (số DC-2026-001, DC-2026-002…) cho cả lần chuyển và đổi đơn vị của các tài sản ngay.
+   Bấm **Biên bản giao nhận** để tải biên bản Excel (bên giao, bên nhận, danh sách tài sản, nguyên giá, giá trị còn lại,
+   tình trạng; chữ ký đại diện bên giao – bên nhận – kế toán trưởng) in ra cho hai bên ký.
+
+| Quét gom tài sản cần chuyển | Đã chuyển — tải biên bản giao nhận |
+|---|---|
+| ![](anh-man-hinh/dien-thoai-dieu-chuyen.png) | ![](anh-man-hinh/dien-thoai-dieu-chuyen-xong.png) |
+
+Cách khác: trên trang 1 tài sản bấm **Điều chuyển** (chụp thêm ảnh được); trên máy tính, trang **Tài sản** đánh dấu chọn
+nhiều tài sản → **Điều chuyển (n)**.
+
+- Trang **Điều chuyển** (menu trái; trên điện thoại: Thêm → Điều chuyển): các phiếu đã lập, lọc theo đơn vị giao hoặc nhận,
+  mở phiếu để xem danh sách tài sản và tải lại biên bản bất cứ lúc nào. Lịch sử từng tài sản cũng có số phiếu và nút tải biên bản.
+- Tài khoản giới hạn 1 đơn vị (vd cán bộ của Đội cấp nước số 2) chỉ chuyển được tài sản **của đơn vị mình** sang đơn vị khác;
+  quét tem tài sản của đơn vị khác sẽ báo không chuyển được. Tài sản đã thanh lý không điều chuyển được.
 
 ## Tổng quan, xuất Excel
 

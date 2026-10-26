@@ -104,6 +104,10 @@ namespace QuanLyTaiSan
                 case "GET /thongke": return TraLoi.Json(ThongKe(dv, tk));
                 case "GET /hoatdong": return TraLoi.Json(HoatDong(dv, ctx));
 
+                case "POST /dieuchuyen": return TraLoi.Json(DieuChuyen(dv, tk, b));
+                case "GET /dieuchuyen": return TraLoi.Json(string.IsNullOrEmpty(ctx.Q("so")) ? DanhSachPhieu(dv, ctx) : ChiTietPhieu(dv, ctx.Q("so")));
+                case "POST /xuat/dieuchuyen": return TraLoi.Json(Link(dv, BaoCao.BienBanDieuChuyen(dv, Json.Chu(b, "so"))));
+
                 case "GET /kiemke": return TraLoi.Json(DanhSachDot(dv));
                 case "POST /kiemke":
                     {
@@ -385,7 +389,7 @@ namespace QuanLyTaiSan
             lock (dv.Khoa)
             {
                 TaiSan t = dv.Dl.TimMa(ma);
-                if (t != null) return new O { { "id", t.Id }, { "ma", t.Ma } };
+                if (t != null) return new O { { "id", t.Id }, { "ma", t.Ma }, { "taiSan", TomTat(dv.Dl, t) }, { "duocSua", dv.DuocSua(tk, t) } };
                 return new O { { "id", 0 }, { "ma", ma }, { "hopLe", MaTaiSan.HopLe(ma) }, { "duocTao", tk.VaiTro >= VaiTro.CapNhat && MaTaiSan.HopLe(ma) } };
             }
         }
@@ -490,7 +494,7 @@ namespace QuanLyTaiSan
             {
                 { "id", s.Id }, { "loai", s.Loai }, { "tenLoai", LoaiSuKien.Ten(s.Loai) }, { "luc", s.Luc }, { "nguoi", s.Nguoi }, { "hoTen", s.HoTen },
                 { "tinhTrang", s.TinhTrang }, { "noiDung", s.NoiDung }, { "chiTiet", s.ChiTiet }, { "chiPhi", s.ChiPhi },
-                { "viDo", s.ViDo }, { "kinhDo", s.KinhDo }, { "anh", s.Anh }, { "dot", s.Dot }, { "taiSan", s.TaiSan }
+                { "viDo", s.ViDo }, { "kinhDo", s.KinhDo }, { "anh", s.Anh }, { "dot", s.Dot }, { "taiSan", s.TaiSan }, { "phieu", s.Phieu }
             };
             if (kemTaiSan)
             {
@@ -677,6 +681,63 @@ namespace QuanLyTaiSan
                     { "trang", trang }, { "conNua", ds.Count > 50 },
                     { "ds", ds.Take(50).Select(s => (object)SuKienJson(dv.Dl, s, true)).ToList() }
                 };
+            }
+        }
+
+        // ------------------------------------------------------------------ điều chuyển
+
+        static O DieuChuyen(DichVu dv, TaiKhoan tk, O b)
+        {
+            var y = new DichVu.YeuCauDieuChuyen
+            {
+                TaiSan = Json.MangSo(b, "taiSan"), DonVi = Json.So(b, "donVi", 0), ViTri = Json.Chu(b, "viTri"), NguoiSuDung = Json.Chu(b, "nguoiSuDung"),
+                NoiDung = Json.Chu(b, "noiDung") ?? "", Anh = Json.MangChu(b, "anh")
+            };
+            return ChiTietPhieu(dv, dv.DieuChuyen(tk, y).So);
+        }
+
+        static O PhieuJson(DuLieu dl, List<SuKien> l)
+        {
+            SuKien d = l[0];
+            var tu = l.Select(s => s.TuDonVi).Distinct().ToList();
+            return new O
+            {
+                { "so", d.Phieu }, { "luc", d.Luc }, { "nguoi", d.Nguoi }, { "hoTen", d.HoTen }, { "noiDung", d.NoiDung },
+                { "denDonVi", d.DenDonVi }, { "tenDenDonVi", dl.TenDonVi(d.DenDonVi) }, { "khoiDen", dl.KhoiCua(d.DenDonVi) },
+                { "tuDonVi", tu }, { "tenTuDonVi", string.Join(", ", tu.Select(x => dl.TenDonVi(x))) }, { "soTaiSan", l.Count }
+            };
+        }
+
+        /// <summary>Các phiếu điều chuyển mới nhất (donvi: phiếu có đơn vị đó giao hoặc nhận).</summary>
+        static O DanhSachPhieu(DichVu dv, NguCanh ctx)
+        {
+            int donVi = SoNguyen(ctx.Q("donvi"), 0);
+            lock (dv.Khoa)
+            {
+                IEnumerable<List<SuKien>> q = dv.Kho.CacPhieu();
+                if (donVi > 0) q = q.Where(l => l[0].DenDonVi == donVi || l.Any(s => s.TuDonVi == donVi));
+                var ds = q.Take(301).ToList();
+                return new O { { "ds", ds.Take(300).Select(l => (object)PhieuJson(dv.Dl, l)).ToList() }, { "conNua", ds.Count > 300 } };
+            }
+        }
+
+        static O ChiTietPhieu(DichVu dv, string so)
+        {
+            lock (dv.Khoa)
+            {
+                List<SuKien> l = dv.Kho.SuKienPhieu(so);
+                if (l == null) throw new LoiApi(404, "Không có phiếu điều chuyển " + so + ".");
+                O r = PhieuJson(dv.Dl, l);
+                r["ds"] = l.Select(s =>
+                {
+                    TaiSan t = dv.Dl.Tim(s.TaiSan);
+                    O o = t == null ? new O { { "id", s.TaiSan }, { "ma", "" }, { "ten", "(đã xoá)" } } : TomTat(dv.Dl, t);
+                    o["tuDonVi"] = s.TuDonVi;
+                    o["tenTuDonVi"] = dv.Dl.TenDonVi(s.TuDonVi);
+                    o["chiTiet"] = s.ChiTiet;
+                    return (object)o;
+                }).ToList();
+                return r;
             }
         }
 

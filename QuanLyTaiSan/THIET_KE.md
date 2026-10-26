@@ -120,6 +120,7 @@ C:\QuanLyTaiSanData\
 | **Trang tài sản** | ảnh lớn + dải ảnh (xem toàn màn hình, vuốt qua lại), mã, tình trạng, tên, loại, đơn vị, vị trí; nút Kiểm tra · Chụp ảnh · Bảo dưỡng / sửa · Sửa · Điều chuyển · In tem · Thanh lý; thông tin chung, thông số kỹ thuật, giá trị & bảo dưỡng, tem QR, **lịch sử dạng dòng thời gian** có ảnh và vị trí; ô kiểm kê năm nay (vừa ghi nhận / đã kiểm lúc… / chưa kiểm — nút Xác nhận, Ghi tình trạng kiểm kê) |
 | Thêm / sửa | đủ các trường, thông số kỹ thuật theo loại + thêm tuỳ ý, lấy toạ độ GPS hiện tại, chụp ảnh ngay khi khai báo |
 | Kiểm kê | mở thẳng kiểm kê năm nay (chưa bắt đầu: hướng dẫn + nút Bắt đầu, các năm trước); tiến độ theo khối → đơn vị, tab Chưa kiểm / Đã kiểm / Ngoài sổ, chọn năm, nút **Quét kiểm kê** (quét liên tục), xuất biên bản, kết thúc / mở lại |
+| Điều chuyển | các phiếu điều chuyển (lọc đơn vị giao / nhận), chi tiết phiếu, tải biên bản giao nhận; nút **Quét tem để điều chuyển** (trang Quét, chế độ Điều chuyển: gom tài sản bằng quét tem rồi chuyển 1 lần) |
 | In tem QR | chọn mẫu tem, nội dung tem, bỏ qua n ô đầu tờ (tờ decal dùng dở), mức chống bẩn, xem trước, in; cấp tem trắng |
 | Nhập từ Excel | tải mẫu; chọn file → xem trước (thêm / cập nhật / lỗi từng dòng) → nhập |
 | Danh mục, Tài khoản, Cài đặt, Hoạt động | như tên |
@@ -136,7 +137,9 @@ C:\QuanLyTaiSanData\
 5. **Báo hỏng → sửa chữa** — người kiểm tra chọn "Hỏng, cần sửa chữa" kèm ảnh; tổ sửa chữa xử lý xong quét tem → Bảo dưỡng / sửa:
    nội dung, chi phí, tình trạng sau sửa, ảnh. Lịch sử giữ đủ, cộng được chi phí sửa chữa theo tài sản.
 6. **Bảo dưỡng theo chu kỳ** — tổng quan nhắc tài sản đến hạn; ghi bảo dưỡng xong hạn tự lùi theo chu kỳ.
-7. **Điều chuyển** — đổi đơn vị / vị trí / người sử dụng, ghi số quyết định; lịch sử ghi "Đơn vị: A → B".
+7. **Điều chuyển** — trên điện thoại quét tem nhiều tài sản (hoặc chọn trong danh sách, hoặc từ trang 1 tài sản) → chọn đội / phòng ban nhận,
+   vị trí, người sử dụng, số quyết định → phần mềm lập **phiếu điều chuyển** DC-năm-số, đổi đơn vị ngay, lịch sử ghi "Đơn vị: A → B";
+   in **biên bản giao nhận Excel** (bên giao, bên nhận, danh sách, nguyên giá, giá trị còn lại, chữ ký) bất cứ lúc nào từ phiếu.
 8. **Kiểm kê hằng năm** — mỗi năm 1 lần, toàn công ty. Lần quét tem đầu tiên trong năm tự bắt đầu kiểm kê năm đó (hoặc cán bộ quản lý bấm Bắt đầu):
    phần mềm chốt sổ sách = mọi tài sản đang quản lý; tài sản khai báo thêm trong năm tự vào sổ; kiểm kê năm trước còn mở thì tự kết thúc.
    **Quét tem = ghi nhận đã kiểm kê** (giữ tình trạng hiện có; quét lại trong năm không ghi trùng). Tài sản có vấn đề thì ghi thêm tình trạng thực tế,
@@ -155,7 +158,8 @@ C:\QuanLyTaiSanData\
 | `GET theodonvi`, `POST xuat/donvi` | số liệu theo khối → đơn vị; sổ tài sản Excel (cả công ty / 1 khối / 1 đơn vị) |
 | `GET taisan/{id}`, `POST taisan`, `DELETE taisan?id=` | chi tiết (kèm lịch sử, ảnh, kiểm kê năm nay), thêm / sửa (chặn sửa đè bằng số phiên bản), xoá |
 | `GET tim?ma=<nội dung QR>` | đổi nội dung tem → tài sản |
-| `POST taisan/{id}/sukien` | kiểm tra, bảo dưỡng, điều chuyển, thanh lý |
+| `POST taisan/{id}/sukien` | kiểm tra, bảo dưỡng, thanh lý |
+| `POST dieuchuyen` (`taiSan: [id…], donVi, viTri?, nguoiSuDung?, noiDung`), `GET dieuchuyen?donvi=`, `GET dieuchuyen?so=`, `POST xuat/dieuchuyen` | điều chuyển 1 hoặc nhiều tài sản chung 1 phiếu; danh sách / chi tiết phiếu; biên bản giao nhận Excel |
 | `POST taisan/{id}/anh`, `DELETE taisan/{id}/anh?anh=`, `POST taisan/{id}/anhchinh`, `GET anh/{id}/{mã ảnh}?nho=1` | ảnh |
 | `GET nhan?...`, `POST nhan/datruoc` | dữ liệu in tem, cấp tem trắng |
 | `POST taisan/{id}/kiemke` (`lai: true` = ghi lại tình trạng, ghi chú, ảnh) | quét tem = ghi nhận kiểm kê năm nay (chưa bắt đầu thì tự bắt đầu; đã kiểm trong năm thì trả lần trước) |
