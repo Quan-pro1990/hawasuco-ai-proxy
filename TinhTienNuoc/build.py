@@ -1,7 +1,8 @@
 """Nhung TinhTienNuoc.html vao TinhTienNuoc.exe (tai nguyen RCDATA 101).
 
-TinhTienNuoc.exe chi la trinh khoi chay: no ghi trang HTML nhung ben trong ra
-%TEMP%\\TinhTienNuoc\\TinhTienNuoc.html roi mo bang Edge/Chrome (che do app).
+TinhTienNuoc.exe chi la trinh khoi chay: moi lan mo, no ghi trang HTML nhung
+ben trong ra AppData\\Local\\TinhTienNuoc\\TinhTienNuoc.html roi mo bang
+Edge/Chrome (che do app).
 Muon sua giao dien hay bang gia: sua TinhTienNuoc.html, roi chay
 
     python build.py

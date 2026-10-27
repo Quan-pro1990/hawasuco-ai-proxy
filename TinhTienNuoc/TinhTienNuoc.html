@@ -8,6 +8,7 @@
 <style>
 :root{--blue:#1f7fc6;--blue-d:#135f99;--sky:#e8f3fb;--ink:#26323f;--muted:#65727f;--line:#dde5ee;--bg:#eef2f6}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Segoe UI",Roboto,Arial,sans-serif}
 header{background:var(--blue-d);color:#fff;padding:14px 20px;display:flex;align-items:center;gap:12px}
 header b{font-size:18px}header small{opacity:.85}
@@ -20,6 +21,11 @@ select,input[type=number]{font:inherit;padding:10px 12px;border:1px solid #b8cbe
 input[type=number]{font-size:18px;font-weight:600}
 .chk{flex-direction:row;align-items:center;gap:10px;font-weight:400;margin:14px 0 6px;flex-basis:100%}
 .chk input{width:18px;height:18px}
+.chk+.chk{margin-top:0}
+#pctBox{flex-grow:0}
+#gtRes caption{text-align:left;font-weight:700;color:var(--blue-d);text-transform:uppercase;padding-top:14px}
+#gtRes th.do{color:#c62828}
+.gt-note{margin:6px 0 0;font-size:14px;color:var(--muted)}
 #bill{margin-top:14px;border:1px solid var(--line)}
 #bill div{display:flex;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
 #bill .sub{color:var(--muted);font-size:14px;padding:8px 16px 8px 36px}
@@ -60,7 +66,12 @@ th,td{border:1px solid var(--line);padding:7px 10px;text-align:left}th{backgroun
       <input id="vol" type="number" min="0" step="1" value="24" inputmode="numeric" autofocus>
     </label>
     <label class="chk no-print" for="bv"><input id="bv" type="checkbox"> Khu vực có thu phí bảo vệ môi trường đối với nước thải (10% đơn giá chưa VAT)</label>
+    <label class="chk no-print" for="gt"><input id="gt" type="checkbox"> Giảm trừ m³ do bể ống (tính % giảm trừ)</label>
+    <label for="pct" id="pctBox" hidden>Tỉ lệ % giảm
+      <input id="pct" type="number" min="0" max="100" step="any" value="" inputmode="decimal" placeholder="VD: 20">
+    </label>
   </div>
+  <div id="gtRes"></div>
   <div id="bill"></div>
   <div class="act">
     <button class="pri" id="copy">Sao chép kết quả</button>
@@ -79,6 +90,7 @@ th,td{border:1px solid var(--line);padding:7px 10px;text-align:left}th{backgroun
       • Số tiền = số m³ × đơn giá gồm VAT 5%; hộ dân cư tính lũy tiến theo bậc 10 m³.<br>
       • Kỳ không có m³ tiêu thụ: thu phí lưu bộ 10.000 đ (đã gồm VAT 8%).<br>
       • Khu vực có thu phí BVMT nước thải: cộng thêm 10% đơn giá chưa VAT.<br>
+      • Giảm trừ do bể ống: Số m³ giảm = Số m³ bị bể ống × Tỉ lệ % giảm; M³ phải thu = Số m³ bị bể ống − Số m³ giảm, làm tròn đến m³ để tính tiền.<br>
       • Khi giá nước thay đổi: mở tệp này bằng Notepad, sửa các con số trong phần <b>BẢNG GIÁ</b> ở đầu đoạn mã, lưu lại.
     </p>
   </details>
@@ -102,19 +114,33 @@ const TEN = { SH: "Hộ dân cư (SH)", HCSN: "Cơ quan hành chính sự nghi�
 const $ = id => document.getElementById(id);
 const fmt = n => Math.round(n).toLocaleString("vi-VN");
 const vnd = n => fmt(n) + " đ";
+const m3 = n => n.toLocaleString("vi-VN", { maximumFractionDigits: 2 });
+const r4 = n => Math.round(n * 1e4) / 1e4;   // bỏ sai số dấu phẩy động
 let lastText = "";
+
+// Tính % giảm trừ (bể ống): Số m³ giảm = Số m³ bị bể ống × Tỉ lệ %; M³ phải thu = Số m³ bị bể ống − Số m³ giảm
+function giamTru(v) {
+  if (!$("gt").checked) return null;
+  let pct = Number($("pct").value);
+  if (!Number.isFinite(pct) || pct < 0) pct = 0;
+  pct = Math.min(pct, 100);
+  const giam = r4(v * pct / 100), phaiThu = r4(v - giam);
+  return { be: v, pct, giam, phaiThu, tinhTien: Math.round(phaiThu) };
+}
 
 function calc() {
   const t = $("type").value;
   let v = Math.floor(Number($("vol").value));
   if (!Number.isFinite(v) || v < 0) v = 0;
   const hasBv = $("bv").checked;
+  const gt = giamTru(v);
+  if (gt) v = gt.tinhTien;
   const rows = [];
 
   if (v === 0) {
     rows.push(["Không có m³ tiêu thụ – phí lưu bộ (đã gồm VAT 8%)", PHI_LUU_BO]);
     rows.push(["  Trong đó: thuế VAT 8%", PHI_LUU_BO - PHI_LUU_BO / (1 + VAT_LUU_BO)]);
-    return render(rows, PHI_LUU_BO, t, v);
+    return render(rows, PHI_LUU_BO, t, v, gt);
   }
 
   let water = 0, bv = 0;
@@ -125,13 +151,21 @@ function calc() {
   rows.push(["Tiền nước (đã gồm VAT 5%)", water]);
   rows.push(["  Trong đó: thuế VAT 5%", water - water / (1 + VAT)]);
   if (hasBv) rows.push(["Phí BVMT nước thải (10% giá chưa VAT)", bv]);
-  render(rows, water + (hasBv ? bv : 0), t, v);
+  render(rows, water + (hasBv ? bv : 0), t, v, gt);
 }
 
-function render(rows, total, t, v) {
+function render(rows, total, t, v, gt) {
+  $("gtRes").innerHTML = !gt ? "" :
+    `<table><caption>Tính % giảm trừ</caption>
+      <thead><tr><th>Số m³ bị bể ống</th><th>Tỉ lệ % giảm</th><th>Số m³ giảm</th><th class="do">Đã trừ tỉ lệ % – M³ phải thu</th></tr></thead>
+      <tbody><tr><td class="n">${m3(gt.be)}</td><td class="n">${m3(gt.pct)}</td><td class="n">${m3(gt.giam)}</td><td class="n"><b>${m3(gt.phaiThu)}</b></td></tr></tbody>
+    </table>`
+    + (gt.tinhTien !== gt.phaiThu ? `<p class="gt-note">Tiền nước tính trên ${gt.tinhTien} m³ (làm tròn từ ${m3(gt.phaiThu)} m³).</p>` : "");
   $("bill").innerHTML = rows.map(([a, b]) => `<div${a.startsWith("  ") ? ' class="sub"' : ""}><span>${a.trim()}</span><span>${vnd(b)}</span></div>`).join("")
     + `<div class="tot"><span>Tổng cộng (ước tính)</span><span>${vnd(total)}</span></div>`;
-  lastText = `Đối tượng: ${TEN[t]}\nLượng nước: ${v} m³\n` + rows.map(([a, b]) => `${a.trim()}: ${vnd(b)}`).join("\n") + `\nTỔNG CỘNG: ${vnd(total)}`;
+  lastText = `Đối tượng: ${TEN[t]}\n`
+    + (gt ? `Số m³ bị bể ống: ${m3(gt.be)} m³\nTỉ lệ % giảm: ${m3(gt.pct)}%\nSố m³ giảm: ${m3(gt.giam)} m³\nM³ phải thu (đã trừ tỉ lệ %): ${m3(gt.phaiThu)} m³\nLượng nước tính tiền: ${v} m³\n` : `Lượng nước: ${v} m³\n`)
+    + rows.map(([a, b]) => `${a.trim()}: ${vnd(b)}`).join("\n") + `\nTỔNG CỘNG: ${vnd(total)}`;
 }
 
 function toast(m) { const t = $("toast"); t.textContent = m; t.classList.add("on"); setTimeout(() => t.classList.remove("on"), 1800); }
@@ -140,14 +174,16 @@ $("ptab").innerHTML =
   BAC_SH.map(([cap, p, c], i) => `<tr><td>Hộ dân cư ${i < 3 ? `${i * 10 + 1}–${(i + 1) * 10} m³` : "trên 30 m³"}</td><td>${c}</td><td class="n">${fmt(p / (1 + VAT))}</td><td class="n">${fmt(p)}</td></tr>`).join("") +
   Object.entries(GIA).map(([k, p]) => `<tr><td>${TEN[k].replace(/ \(.*/, "")}</td><td>${k}</td><td class="n">${fmt(p / (1 + VAT))}</td><td class="n">${fmt(p)}</td></tr>`).join("");
 
-["type", "vol", "bv"].forEach(id => $(id).addEventListener("input", calc));
+["type", "vol", "bv", "gt", "pct"].forEach(id => $(id).addEventListener("input", calc));
 $("vol").addEventListener("focus", e => e.target.select());
+$("pct").addEventListener("focus", e => e.target.select());
+$("gt").addEventListener("change", () => { $("pctBox").hidden = !$("gt").checked; if ($("gt").checked) $("pct").focus(); });
 $("copy").onclick = async () => {
   try { await navigator.clipboard.writeText(lastText); toast("Đã sao chép kết quả"); }
   catch { const ta = document.createElement("textarea"); ta.value = lastText; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); toast("Đã sao chép kết quả"); }
 };
 $("print").onclick = () => { $("pDate").textContent = new Date().toLocaleString("vi-VN"); window.print(); };
-$("reset").onclick = () => { $("type").value = "SH"; $("vol").value = ""; $("bv").checked = false; calc(); $("vol").focus(); };
+$("reset").onclick = () => { $("type").value = "SH"; $("vol").value = ""; $("bv").checked = false; $("gt").checked = false; $("pctBox").hidden = true; $("pct").value = ""; calc(); $("vol").focus(); };
 calc();
 </script>
 </body>
