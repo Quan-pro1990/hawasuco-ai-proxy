@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tính tiền nước – HAWASUCO</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20x%3D%228%22%20y%3D%222%22%20width%3D%2248%22%20height%3D%2260%22%20rx%3D%228%22%20fill%3D%22%23135f99%22/%3E%3Crect%20x%3D%2214%22%20y%3D%228%22%20width%3D%2236%22%20height%3D%2214%22%20rx%3D%223%22%20fill%3D%22%23e8f3fb%22/%3E%3Ctext%20x%3D%2246%22%20y%3D%2219.5%22%20font-family%3D%22Arial%22%20font-weight%3D%22700%22%20font-size%3D%2211%22%20text-anchor%3D%22end%22%20fill%3D%22%23135f99%22%3E123%3C/text%3E%3Crect%20x%3D%2214%22%20y%3D%2227%22%20width%3D%2210%22%20height%3D%228%22%20rx%3D%222%22%20fill%3D%22%23fff%22/%3E%3Crect%20x%3D%2227%22%20y%3D%2227%22%20width%3D%2210%22%20height%3D%228%22%20rx%3D%222%22%20fill%3D%22%23fff%22/%3E%3Crect%20x%3D%2240%22%20y%3D%2227%22%20width%3D%2210%22%20height%3D%228%22%20rx%3D%222%22%20fill%3D%22%23fff%22/%3E%3Crect%20x%3D%2214%22%20y%3D%2238%22%20width%3D%2210%22%20height%3D%228%22%20rx%3D%222%22%20fill%3D%22%23fff%22/%3E%3Crect%20x%3D%2227%22%20y%3D%2238%22%20width%3D%2210%22%20height%3D%228%22%20rx%3D%222%22%20fill%3D%22%23fff%22/%3E%3Crect%20x%3D%2240%22%20y%3D%2238%22%20width%3D%2210%22%20height%3D%228%22%20rx%3D%222%22%20fill%3D%22%23fff%22/%3E%3Crect%20x%3D%2214%22%20y%3D%2249%22%20width%3D%2210%22%20height%3D%228%22%20rx%3D%222%22%20fill%3D%22%23fff%22/%3E%3Crect%20x%3D%2227%22%20y%3D%2249%22%20width%3D%2210%22%20height%3D%228%22%20rx%3D%222%22%20fill%3D%22%23fff%22/%3E%3Crect%20x%3D%2240%22%20y%3D%2249%22%20width%3D%2210%22%20height%3D%228%22%20rx%3D%222%22%20fill%3D%22%23f5a623%22/%3E%3C/svg%3E">
+<style>
+:root{--blue:#1f7fc6;--blue-d:#135f99;--sky:#e8f3fb;--ink:#26323f;--muted:#65727f;--line:#dde5ee;--bg:#eef2f6}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Segoe UI",Roboto,Arial,sans-serif}
+header{background:var(--blue-d);color:#fff;padding:14px 20px;display:flex;align-items:center;gap:12px}
+header b{font-size:18px}header small{opacity:.85}
+main{max-width:860px;margin:20px auto;padding:0 16px}
+.card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:22px 24px;box-shadow:0 4px 14px rgba(10,40,90,.06)}
+h1{margin:0 0 18px;color:var(--blue-d);font-size:24px;text-transform:uppercase}
+.row{display:flex;gap:16px;flex-wrap:wrap}
+label{display:flex;flex-direction:column;gap:6px;font-weight:600;flex:1 1 260px}
+select,input[type=number]{font:inherit;padding:10px 12px;border:1px solid #b8cbe0;border-radius:4px;background:#fff;color:var(--ink)}
+input[type=number]{font-size:18px;font-weight:600}
+.chk{flex-direction:row;align-items:center;gap:10px;font-weight:400;margin:14px 0 6px;flex-basis:100%}
+.chk input{width:18px;height:18px}
+#bill{margin-top:14px;border:1px solid var(--line)}
+#bill div{display:flex;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+#bill .sub{color:var(--muted);font-size:14px;padding:8px 16px 8px 36px}
+#bill .tot{background:#3a97dc;color:#fff;font-weight:700;font-size:20px;border-bottom:0}
+.act{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+button{font:inherit;padding:9px 18px;border-radius:4px;border:1px solid var(--blue);background:#fff;color:var(--blue);cursor:pointer}
+button.pri{background:var(--blue);color:#fff}button:hover{filter:brightness(.95)}
+.hint{color:var(--muted);font-size:14px;margin:14px 0 0}
+details{margin-top:18px}summary{cursor:pointer;color:var(--blue-d);font-weight:600}
+table{border-collapse:collapse;width:100%;margin-top:10px;font-size:15px}
+th,td{border:1px solid var(--line);padding:7px 10px;text-align:left}th{background:var(--sky)}td.n{text-align:right;font-variant-numeric:tabular-nums}
+#toast{position:fixed;right:16px;bottom:16px;background:#1f2d3a;color:#fff;padding:10px 16px;border-radius:4px;opacity:0;transition:opacity .2s}
+#toast.on{opacity:1}
+.print-head{display:none}
+@media print{
+  body{background:#fff}header,.act,.hint,details,.no-print,#toast{display:none!important}
+  .card{border:0;box-shadow:none;padding:0}.print-head{display:block;margin-bottom:10px}
+  #bill .tot{background:#fff!important;color:#000;border-top:2px solid #000}
+}
+</style>
+</head>
+<body>
+<header><b>CÔNG TY TNHH MTV CẤP NƯỚC HẬU GIANG</b><small>· Công cụ tính tiền nước (dùng nội bộ)</small></header>
+<main>
+<div class="card">
+  <div class="print-head"><b>CÔNG TY TNHH MTV CẤP NƯỚC HẬU GIANG</b><br>Bảng tính tiền nước – <span id="pDate"></span></div>
+  <h1>Tính thử tiền nước</h1>
+  <div class="row">
+    <label for="type">Đối tượng
+      <select id="type">
+        <option value="SH">Hộ dân cư (SH)</option>
+        <option value="HCSN">Cơ quan hành chính sự nghiệp (HCSN)</option>
+        <option value="SX">Hộ sản xuất vật chất (SX)</option>
+        <option value="KD">Hộ kinh doanh, dịch vụ (KD)</option>
+      </select>
+    </label>
+    <label for="vol">Lượng nước tiêu thụ (m³)
+      <input id="vol" type="number" min="0" step="1" value="24" inputmode="numeric" autofocus>
+    </label>
+    <label class="chk no-print" for="bv"><input id="bv" type="checkbox"> Khu vực có thu phí bảo vệ môi trường đối với nước thải (10% đơn giá chưa VAT)</label>
+  </div>
+  <div id="bill"></div>
+  <div class="act">
+    <button class="pri" id="copy">Sao chép kết quả</button>
+    <button id="print">In</button>
+    <button id="reset">Nhập lại</button>
+  </div>
+  <p class="hint">Kết quả chỉ mang tính tham khảo. Số tiền chính xác theo hóa đơn tiền nước hằng tháng.</p>
+
+  <details>
+    <summary>Bảng đơn giá đang áp dụng (từ kỳ 07/2025)</summary>
+    <table>
+      <thead><tr><th>Đối tượng</th><th>Mã</th><th>Đơn giá chưa VAT (đ/m³)</th><th>Đơn giá gồm VAT 5% (đ/m³)</th></tr></thead>
+      <tbody id="ptab"></tbody>
+    </table>
+    <p class="hint">
+      • Số tiền = số m³ × đơn giá gồm VAT 5%; hộ dân cư tính lũy tiến theo bậc 10 m³.<br>
+      • Kỳ không có m³ tiêu thụ: thu phí lưu bộ 10.000 đ (đã gồm VAT 8%).<br>
+      • Khu vực có thu phí BVMT nước thải: cộng thêm 10% đơn giá chưa VAT.<br>
+      • Khi giá nước thay đổi: mở tệp này bằng Notepad, sửa các con số trong phần <b>BẢNG GIÁ</b> ở đầu đoạn mã, lưu lại.
+    </p>
+  </details>
+</div>
+</main>
+<div id="toast"></div>
+
+<script>
+// ======================= BẢNG GIÁ – sửa ở đây khi giá thay đổi =======================
+const VAT = 0.05;                 // thuế VAT tiền nước
+const PHI_BVMT = 0.10;            // phí BVMT nước thải = 10% đơn giá chưa VAT
+const PHI_LUU_BO = 10000;         // kỳ không tiêu thụ, đã gồm VAT 8%
+const VAT_LUU_BO = 0.08;
+// Hộ dân cư: [số m³ của bậc, đơn giá GỒM VAT 5%, tên bậc]
+const BAC_SH = [[10, 8085, "SH1"], [10, 9870, "SH2"], [10, 11235, "SH3"], [Infinity, 13335, "SH4"]];
+// Các đối tượng khác: đơn giá GỒM VAT 5%
+const GIA = { HCSN: 10395, SX: 11235, KD: 14070 };
+const TEN = { SH: "Hộ dân cư (SH)", HCSN: "Cơ quan hành chính sự nghiệp (HCSN)", SX: "Hộ sản xuất vật chất (SX)", KD: "Hộ kinh doanh, dịch vụ (KD)" };
+// =====================================================================================
+
+const $ = id => document.getElementById(id);
+const fmt = n => Math.round(n).toLocaleString("vi-VN");
+const vnd = n => fmt(n) + " đ";
+let lastText = "";
+
+function calc() {
+  const t = $("type").value;
+  let v = Math.floor(Number($("vol").value));
+  if (!Number.isFinite(v) || v < 0) v = 0;
+  const hasBv = $("bv").checked;
+  const rows = [];
+
+  if (v === 0) {
+    rows.push(["Không có m³ tiêu thụ – phí lưu bộ (đã gồm VAT 8%)", PHI_LUU_BO]);
+    rows.push(["  Trong đó: thuế VAT 8%", PHI_LUU_BO - PHI_LUU_BO / (1 + VAT_LUU_BO)]);
+    return render(rows, PHI_LUU_BO, t, v);
+  }
+
+  let water = 0, bv = 0;
+  const add = (label, q, p) => { water += q * p; bv += q * (p / (1 + VAT)) * PHI_BVMT; rows.push([`${label}: ${q} m³ × ${fmt(p)} đ`, q * p]); };
+  if (t === "SH") { let left = v; for (const [cap, p, c] of BAC_SH) { if (left <= 0) break; const q = Math.min(left, cap); add(c, q, p); left -= q; } }
+  else add(t, v, GIA[t]);
+
+  rows.push(["Tiền nước (đã gồm VAT 5%)", water]);
+  rows.push(["  Trong đó: thuế VAT 5%", water - water / (1 + VAT)]);
+  if (hasBv) rows.push(["Phí BVMT nước thải (10% giá chưa VAT)", bv]);
+  render(rows, water + (hasBv ? bv : 0), t, v);
+}
+
+function render(rows, total, t, v) {
+  $("bill").innerHTML = rows.map(([a, b]) => `<div${a.startsWith("  ") ? ' class="sub"' : ""}><span>${a.trim()}</span><span>${vnd(b)}</span></div>`).join("")
+    + `<div class="tot"><span>Tổng cộng (ước tính)</span><span>${vnd(total)}</span></div>`;
+  lastText = `Đối tượng: ${TEN[t]}\nLượng nước: ${v} m³\n` + rows.map(([a, b]) => `${a.trim()}: ${vnd(b)}`).join("\n") + `\nTỔNG CỘNG: ${vnd(total)}`;
+}
+
+function toast(m) { const t = $("toast"); t.textContent = m; t.classList.add("on"); setTimeout(() => t.classList.remove("on"), 1800); }
+
+$("ptab").innerHTML =
+  BAC_SH.map(([cap, p, c], i) => `<tr><td>Hộ dân cư ${i < 3 ? `${i * 10 + 1}–${(i + 1) * 10} m³` : "trên 30 m³"}</td><td>${c}</td><td class="n">${fmt(p / (1 + VAT))}</td><td class="n">${fmt(p)}</td></tr>`).join("") +
+  Object.entries(GIA).map(([k, p]) => `<tr><td>${TEN[k].replace(/ \(.*/, "")}</td><td>${k}</td><td class="n">${fmt(p / (1 + VAT))}</td><td class="n">${fmt(p)}</td></tr>`).join("");
+
+["type", "vol", "bv"].forEach(id => $(id).addEventListener("input", calc));
+$("vol").addEventListener("focus", e => e.target.select());
+$("copy").onclick = async () => {
+  try { await navigator.clipboard.writeText(lastText); toast("Đã sao chép kết quả"); }
+  catch { const ta = document.createElement("textarea"); ta.value = lastText; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); toast("Đã sao chép kết quả"); }
+};
+$("print").onclick = () => { $("pDate").textContent = new Date().toLocaleString("vi-VN"); window.print(); };
+$("reset").onclick = () => { $("type").value = "SH"; $("vol").value = ""; $("bv").checked = false; calc(); $("vol").focus(); };
+calc();
+</script>
+</body>
+</html>
