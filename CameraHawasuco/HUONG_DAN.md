@@ -41,9 +41,10 @@ Trong trang **Thông tin & cài đặt** (nút ⚙):
 
 - **Địa chỉ**: tự động đầy đủ (ấp, xã, huyện, tỉnh) / tự động rút gọn ("Châu Thành, Cần Thơ") / tự nhập
   (khi địa chỉ tự tra chưa đúng, nhất là sau sáp nhập tỉnh, xã).
-- **Nhân viên**, **Đội** (chưa nhập thì khung ngắm nhắc "(chạm để nhập)", ảnh lưu bỏ dòng trống),
+- **Nhân viên**, **Đội**: chữ to in đậm, luôn nằm trên một dòng (tên dài thì chữ tự nhỏ lại cho vừa);
+  chưa nhập thì khung ngắm nhắc "(chạm để nhập)", ảnh lưu bỏ dòng trống;
   nơi làm việc và nội dung công việc (không bắt buộc).
-- Bật / tắt từng dòng: bản đồ, địa chỉ, tọa độ, tên nhân viên, đội, nơi làm việc, nội dung, mã ảnh.
+- Bật / tắt từng dòng: bản đồ, địa chỉ, tọa độ, nhân viên, đội, nơi làm việc, nội dung, mã ảnh.
 - **Kiểu bản đồ**: vệ tinh (Esri) hoặc đường phố (OpenStreetMap).
 - **Ảnh lớn** (nét nhất, tối đa ~12 MP) hoặc **Ảnh vừa** (~3 MP, nhẹ, gửi nhanh).
 - **Lưu thêm ảnh gốc** không watermark (vào DCIM/HAWASUCO/Anh goc).

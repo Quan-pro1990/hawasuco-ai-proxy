@@ -62,15 +62,28 @@ final class Watermark {
         drawBrand(c, w, h, u, m, true);
         if (s.showPhotoId && d.photoId != null) drawPhotoId(c, w, h, u, d.photoId);
 
-        // Các dòng thông tin (ngày, địa chỉ, tọa độ, nhân viên...), tự xuống dòng khi dài.
-        // Nhân viên và Đội: chữ to, in đậm.
+        // Các dòng thông tin (ngày, địa chỉ, tọa độ...) tự xuống dòng khi dài.
+        // Nhân viên và Đội: chữ to, in đậm, luôn trên một dòng (dài quá thì thu nhỏ chữ cho vừa).
         float textX = m + 26 * u;
         float maxW = Math.max(260 * u, w - textX - m - brandW - 24 * u);
+        List<Line> items = items(d, s, preview);
+        strongSize = STRONG * u;
+        p.setTypeface(bold);
+        for (Line item : items) {
+            if (!item.strong) continue;
+            p.setTextSize(STRONG * u);
+            float tw = p.measureText(item.text);
+            if (tw > maxW) strongSize = Math.min(strongSize, STRONG * u * maxW / tw * 0.98f);
+        }
         List<Line> lines = new ArrayList<Line>();
-        for (Line item : items(d, s, preview)) {
-            textStyle(item.strong, u);
-            List<String> wrapped = wrap(item.text, maxW, item.strong ? 2 : 3);
-            for (int i = 0; i < wrapped.size(); i++) lines.add(new Line(wrapped.get(i), item.strong, i == 0));
+        for (Line item : items) {
+            if (item.strong) {
+                lines.add(item);
+                continue;
+            }
+            textStyle(false, u);
+            List<String> wrapped = wrap(item.text, maxW, 3);
+            for (int i = 0; i < wrapped.size(); i++) lines.add(new Line(wrapped.get(i), false, i == 0));
         }
         float span = 0;
         for (int i = 1; i < lines.size(); i++) span += pitch(lines.get(i), u);
@@ -124,13 +137,18 @@ final class Watermark {
         }
     }
 
-    private static float size(boolean strong, float u) {
-        return (strong ? 38 : 32) * u;
+    /** Cỡ chữ to của dòng Nhân viên / Đội (đơn vị u), trước khi thu nhỏ cho vừa một dòng. */
+    private static final float STRONG = 38;
+    /** Cỡ chữ Nhân viên / Đội của lần vẽ hiện tại (pixel). */
+    private float strongSize;
+
+    private float size(boolean strong, float u) {
+        return strong ? strongSize : 32 * u;
     }
 
     /** Khoảng cách từ dòng trên xuống chân dòng này. */
-    private static float pitch(Line l, float u) {
-        if (l.strong) return (l.start ? 56 : 46) * u;
+    private float pitch(Line l, float u) {
+        if (l.strong) return Math.max(50 * u, strongSize * 56 / STRONG);
         return (l.start ? 50 : 39) * u;
     }
 
