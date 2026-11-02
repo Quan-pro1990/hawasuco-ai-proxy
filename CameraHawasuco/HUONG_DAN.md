@@ -3,7 +3,7 @@
 Ứng dụng Android chụp ảnh kiểu **Timemark**: ngay trên khung ngắm và trên ảnh lưu có
 
 - băng rôn **HAWASUCO | giờ:phút | logo công ty**, 5 ngôi sao phía trên;
-- **ngày + thứ**, **địa chỉ** (tự tra từ GPS), **tọa độ GPS**, **nhân viên**, **nơi làm việc**, **nội dung công việc**;
+- **ngày + thứ**, **địa chỉ** (tự tra từ GPS), **tọa độ GPS**, **Tên nhân viên**, **Đội**, nơi làm việc, nội dung công việc;
 - **bản đồ nhỏ** (vệ tinh hoặc đường phố) góc trên trái, có ghim vị trí và hình quạt xanh chỉ hướng camera;
 - **mã ảnh** viết dọc mép phải, chữ "HAWASUCO Camera — Ảnh chụp thực tế" góc phải dưới.
 
@@ -19,7 +19,8 @@ Google Photos / Thư viện vẫn xem được vị trí. Giờ trên ảnh lấ
    Nếu Google Play Protect cảnh báo "ứng dụng chưa được xác minh" → **Thêm chi tiết → Vẫn cài đặt**.
 3. Mở **HAWASUCO Camera** → cho phép **Camera** và **Vị trí** (chọn **"Vị trí chính xác"**, "Khi dùng ứng dụng").
    Android 9 trở xuống hỏi thêm quyền **Bộ nhớ** để lưu ảnh.
-4. Bật **Vị trí (GPS)** của điện thoại. Chấm trên cùng chuyển xanh "GPS ±5 m" là có tọa độ.
+4. Lần đầu mở, app hiện bảng nhập **Tên nhân viên** và **Đội** (bấm **Chọn ▾** để lấy Đội Cấp nước số 1–6, hoặc gõ tay).
+5. Bật **Vị trí (GPS)** của điện thoại. Chấm trên cùng chuyển xanh "GPS ±5 m" là có tọa độ.
 
 Yêu cầu: Android 6.0 trở lên. Cần mạng (4G/Wi-Fi) để tra địa chỉ và tải bản đồ; mất mạng vẫn chụp được,
 ảnh vẫn có giờ và tọa độ (địa chỉ / bản đồ đã tải trước đó vẫn dùng được ở khu vực cũ).
@@ -29,7 +30,7 @@ Yêu cầu: Android 6.0 trở lên. Cần mạng (4G/Wi-Fi) để tra địa ch�
 | Thao tác | Cách làm |
 |---|---|
 | Chụp | Nút tròn trắng, hoặc **phím âm lượng** |
-| Sửa tên nhân viên, nơi làm việc, nội dung | Nút ⚙ góc phải trên, hoặc **chạm vào phần chữ** trên khung ngắm |
+| Sửa tên nhân viên, đội, nơi làm việc, nội dung | Nút ⚙ góc phải trên, hoặc **chạm vào phần chữ** trên khung ngắm |
 | Lấy nét | Chạm vào khung ngắm |
 | Zoom | Chụm / mở 2 ngón tay |
 | Đèn flash | Nút tia sét góc trái trên: tắt → tự động → luôn bật |
@@ -40,7 +41,9 @@ Trong **Cài đặt watermark**:
 
 - **Địa chỉ**: tự động đầy đủ (ấp, xã, huyện, tỉnh) / tự động rút gọn ("Châu Thành, Cần Thơ") / tự nhập
   (khi địa chỉ tự tra chưa đúng, nhất là sau sáp nhập tỉnh, xã).
-- Bật / tắt từng dòng: bản đồ, địa chỉ, tọa độ, nhân viên, nơi làm việc, nội dung, mã ảnh.
+- **Tên nhân viên**, **Đội** (chưa nhập thì khung ngắm nhắc "(chạm để nhập)", ảnh lưu bỏ dòng trống),
+  nơi làm việc và nội dung công việc (không bắt buộc).
+- Bật / tắt từng dòng: bản đồ, địa chỉ, tọa độ, tên nhân viên, đội, nơi làm việc, nội dung, mã ảnh.
 - **Kiểu bản đồ**: vệ tinh (Esri) hoặc đường phố (OpenStreetMap).
 - **Ảnh lớn** (nét nhất, tối đa ~12 MP) hoặc **Ảnh vừa** (~3 MP, nhẹ, gửi nhanh).
 - **Lưu thêm ảnh gốc** không watermark (vào DCIM/HAWASUCO/Anh goc).

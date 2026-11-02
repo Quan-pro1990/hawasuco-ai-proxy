@@ -424,6 +424,12 @@ public final class MainActivity extends Activity
                 btnFlash.setEnabled(hasFlash);
                 shutter.setEnabled(true);
                 message.setVisibility(View.GONE);
+                if (!prefs.introShown) {
+                    // Lần đầu mở app: mời nhập tên nhân viên và đội
+                    prefs.introShown = true;
+                    prefs.save(MainActivity.this);
+                    if (prefs.employee.isEmpty() || prefs.team.isEmpty()) showSettings();
+                }
             }
         });
     }

@@ -14,6 +14,7 @@ final class Prefs {
 
     String company = "HAWASUCO";
     String employee = "";
+    String team = "";
     String workplace = "";
     String note = "";
     int addressMode = ADDR_FULL;
@@ -22,6 +23,7 @@ final class Prefs {
     boolean showAddress = true;
     boolean showCoords = true;
     boolean showEmployee = true;
+    boolean showTeam = true;
     boolean showWorkplace = true;
     boolean showNote = true;
     boolean showPhotoId = true;
@@ -32,12 +34,14 @@ final class Prefs {
     int flashMode = FLASH_OFF;
     boolean frontCamera;
     String lastPhoto = "";
+    boolean introShown;
 
     static Prefs load(Context ctx) {
         SharedPreferences sp = ctx.getSharedPreferences(FILE, Context.MODE_PRIVATE);
         Prefs p = new Prefs();
         p.company = sp.getString("company", p.company);
         p.employee = sp.getString("employee", p.employee);
+        p.team = sp.getString("team", p.team);
         p.workplace = sp.getString("workplace", p.workplace);
         p.note = sp.getString("note", p.note);
         p.addressMode = sp.getInt("addressMode", p.addressMode);
@@ -46,6 +50,7 @@ final class Prefs {
         p.showAddress = sp.getBoolean("showAddress", p.showAddress);
         p.showCoords = sp.getBoolean("showCoords", p.showCoords);
         p.showEmployee = sp.getBoolean("showEmployee", p.showEmployee);
+        p.showTeam = sp.getBoolean("showTeam", p.showTeam);
         p.showWorkplace = sp.getBoolean("showWorkplace", p.showWorkplace);
         p.showNote = sp.getBoolean("showNote", p.showNote);
         p.showPhotoId = sp.getBoolean("showPhotoId", p.showPhotoId);
@@ -56,6 +61,13 @@ final class Prefs {
         p.flashMode = sp.getInt("flashMode", p.flashMode);
         p.frontCamera = sp.getBoolean("frontCamera", p.frontCamera);
         p.lastPhoto = sp.getString("lastPhoto", p.lastPhoto);
+        p.introShown = sp.getBoolean("introShown", p.introShown);
+        // Bản 1.0 chưa có ô "Đội": ai đã gõ đội vào ô "Nơi làm việc" thì chuyển sang ô "Đội".
+        String wp = p.workplace.trim().toLowerCase(java.util.Locale.ROOT);
+        if (!sp.contains("team") && (wp.startsWith("đội") || wp.startsWith("doi "))) {
+            p.team = p.workplace.trim();
+            p.workplace = "";
+        }
         return p;
     }
 
@@ -63,6 +75,7 @@ final class Prefs {
         ctx.getSharedPreferences(FILE, Context.MODE_PRIVATE).edit()
                 .putString("company", company)
                 .putString("employee", employee)
+                .putString("team", team)
                 .putString("workplace", workplace)
                 .putString("note", note)
                 .putInt("addressMode", addressMode)
@@ -71,6 +84,7 @@ final class Prefs {
                 .putBoolean("showAddress", showAddress)
                 .putBoolean("showCoords", showCoords)
                 .putBoolean("showEmployee", showEmployee)
+                .putBoolean("showTeam", showTeam)
                 .putBoolean("showWorkplace", showWorkplace)
                 .putBoolean("showNote", showNote)
                 .putBoolean("showPhotoId", showPhotoId)
@@ -81,6 +95,7 @@ final class Prefs {
                 .putInt("flashMode", flashMode)
                 .putBoolean("frontCamera", frontCamera)
                 .putString("lastPhoto", lastPhoto)
+                .putBoolean("introShown", introShown)
                 .apply();
     }
 
@@ -89,6 +104,7 @@ final class Prefs {
         Prefs p = new Prefs();
         p.company = company;
         p.employee = employee;
+        p.team = team;
         p.workplace = workplace;
         p.note = note;
         p.addressMode = addressMode;
@@ -97,6 +113,7 @@ final class Prefs {
         p.showAddress = showAddress;
         p.showCoords = showCoords;
         p.showEmployee = showEmployee;
+        p.showTeam = showTeam;
         p.showWorkplace = showWorkplace;
         p.showNote = showNote;
         p.showPhotoId = showPhotoId;
@@ -107,6 +124,7 @@ final class Prefs {
         p.flashMode = flashMode;
         p.frontCamera = frontCamera;
         p.lastPhoto = lastPhoto;
+        p.introShown = introShown;
         return p;
     }
 }

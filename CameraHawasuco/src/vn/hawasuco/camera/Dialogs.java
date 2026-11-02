@@ -41,10 +41,18 @@ final class Dialogs {
         sv.addView(box);
 
         header(box, "Thông tin trên ảnh");
-        final EditText company = field(box, "Tên đơn vị (băng rôn)", p.company);
-        final EditText employee = field(box, "Nhân viên (vd: Trần Văn Nam)", p.employee);
-        final EditText workplace = field(box, "Nơi làm việc (vd: ĐỘI SỐ 5)", p.workplace);
-        final EditText note = field(box, "Nội dung công việc / ghi chú", p.note);
+        label(box, "Tên đơn vị trên băng rôn");
+        final EditText company = field(box, "HAWASUCO", p.company);
+        label(box, "Tên nhân viên");
+        final EditText employee = field(box, "vd: Trần Văn Nam", p.employee);
+        employee.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_WORDS
+                | InputType.TYPE_TEXT_VARIATION_PERSON_NAME);
+        label(box, "Đội");
+        final EditText team = teamField(a, box, p.team);
+        label(box, "Nơi làm việc (không bắt buộc)");
+        final EditText workplace = field(box, "vd: Khu vực Châu Thành", p.workplace);
+        label(box, "Nội dung công việc (không bắt buộc)");
+        final EditText note = field(box, "vd: Lắp đặt đồng hồ nước", p.note);
 
         header(box, "Địa chỉ");
         final RadioGroup addr = radios(box, new String[]{
@@ -62,7 +70,8 @@ final class Dialogs {
         final CheckBox cMap = check(box, "Bản đồ vị trí", p.showMap);
         final CheckBox cAddr = check(box, "Địa chỉ", p.showAddress);
         final CheckBox cCoord = check(box, "Tọa độ GPS", p.showCoords);
-        final CheckBox cEmp = check(box, "Nhân viên", p.showEmployee);
+        final CheckBox cEmp = check(box, "Tên nhân viên", p.showEmployee);
+        final CheckBox cTeam = check(box, "Đội", p.showTeam);
         final CheckBox cWork = check(box, "Nơi làm việc", p.showWorkplace);
         final CheckBox cNote = check(box, "Nội dung / ghi chú", p.showNote);
         final CheckBox cId = check(box, "Mã ảnh (chữ dọc mép phải)", p.showPhotoId);
@@ -94,6 +103,7 @@ final class Dialogs {
                     public void onClick(DialogInterface di, int which) {
                         p.company = text(company);
                         p.employee = text(employee);
+                        p.team = text(team);
                         p.workplace = text(workplace);
                         p.note = text(note);
                         p.addressMode = checked(addr);
@@ -102,6 +112,7 @@ final class Dialogs {
                         p.showAddress = cAddr.isChecked();
                         p.showCoords = cCoord.isChecked();
                         p.showEmployee = cEmp.isChecked();
+                        p.showTeam = cTeam.isChecked();
                         p.showWorkplace = cWork.isChecked();
                         p.showNote = cNote.isChecked();
                         p.showPhotoId = cId.isChecked();
@@ -124,6 +135,57 @@ final class Dialogs {
         t.setPadding(0, dp(box.getContext(), 16), 0, dp(box.getContext(), 2));
         box.addView(t);
     }
+
+    private static void label(LinearLayout box, String text) {
+        TextView t = new TextView(box.getContext());
+        t.setText(text);
+        t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+        t.setTextColor(0xFF4A5663);
+        t.setPadding(dp(box.getContext(), 4), dp(box.getContext(), 8), 0, 0);
+        box.addView(t);
+    }
+
+    /** Ô "Đội": gõ tay hoặc bấm "Chọn" để lấy từ danh sách các đội cấp nước. */
+    private static EditText teamField(final Activity a, LinearLayout box, String value) {
+        LinearLayout row = new LinearLayout(a);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        final EditText e = new EditText(a);
+        e.setHint("vd: Đội Cấp nước số 5");
+        e.setText(value);
+        e.setSingleLine(true);
+        e.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+        e.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+        row.addView(e, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        TextView pick = new TextView(a);
+        pick.setText("Chọn ▾");
+        pick.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
+        pick.setTypeface(Typeface.DEFAULT_BOLD);
+        pick.setTextColor(0xFF1D5F95);
+        pick.setPadding(dp(a, 12), dp(a, 10), dp(a, 4), dp(a, 10));
+        pick.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                new AlertDialog.Builder(a, android.R.style.Theme_Material_Light_Dialog_Alert)
+                        .setTitle("Chọn đội")
+                        .setItems(TEAMS, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface di, int which) {
+                                e.setText(TEAMS[which]);
+                                e.setSelection(e.length());
+                            }
+                        })
+                        .show();
+            }
+        });
+        row.addView(pick);
+        box.addView(row, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        return e;
+    }
+
+    private static final String[] TEAMS = {
+            "Đội Cấp nước số 1", "Đội Cấp nước số 2", "Đội Cấp nước số 3",
+            "Đội Cấp nước số 4", "Đội Cấp nước số 5", "Đội Cấp nước số 6"};
 
     private static EditText field(LinearLayout box, String hint, String value) {
         EditText e = new EditText(box.getContext());

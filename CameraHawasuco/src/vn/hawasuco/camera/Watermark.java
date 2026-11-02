@@ -132,10 +132,17 @@ final class Watermark {
             if (d.hasLocation) out.add(String.format(Locale.US, "Tọa độ: %.6f, %.6f", d.lat, d.lon));
             else if (preview && !s.showAddress) out.add("Tọa độ: đang chờ GPS…");
         }
-        if (s.showEmployee && notEmpty(s.employee)) out.add("Nhân viên: " + s.employee.trim());
+        if (s.showEmployee) addField(out, "Tên nhân viên: ", s.employee, preview);
+        if (s.showTeam) addField(out, "Đội: ", s.team, preview);
         if (s.showWorkplace && notEmpty(s.workplace)) out.add("Nơi làm việc: " + s.workplace.trim());
         if (s.showNote && notEmpty(s.note)) out.add("Nội dung: " + s.note.trim());
         return out;
+    }
+
+    /** Dòng bắt buộc nên điền: chưa điền thì khung ngắm nhắc "chạm để nhập", ảnh lưu bỏ qua dòng đó. */
+    private static void addField(List<String> out, String label, String value, boolean preview) {
+        if (notEmpty(value)) out.add(label + value.trim());
+        else if (preview) out.add(label + "(chạm để nhập)");
     }
 
     private static boolean notEmpty(String v) {
