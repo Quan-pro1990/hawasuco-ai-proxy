@@ -63,7 +63,7 @@ final class Watermark {
         if (s.showPhotoId && d.photoId != null) drawPhotoId(c, w, h, u, d.photoId);
 
         // Các dòng thông tin (ngày, địa chỉ, tọa độ, nhân viên...), tự xuống dòng khi dài.
-        // Tên nhân viên và Đội: chữ to, in đậm.
+        // Nhân viên và Đội: chữ to, in đậm.
         float textX = m + 26 * u;
         float maxW = Math.max(260 * u, w - textX - m - brandW - 24 * u);
         List<Line> lines = new ArrayList<Line>();
@@ -112,7 +112,7 @@ final class Watermark {
         return d.addressFull;
     }
 
-    /** Một dòng chữ; strong = chữ to in đậm (Tên nhân viên, Đội); start = dòng đầu của một mục. */
+    /** Một dòng chữ; strong = chữ to in đậm (Nhân viên, Đội); start = dòng đầu của một mục. */
     private static final class Line {
         final String text;
         final boolean strong, start;
@@ -153,7 +153,7 @@ final class Watermark {
             if (d.hasLocation) add(out, String.format(Locale.US, "Tọa độ: %.6f, %.6f", d.lat, d.lon));
             else if (preview && !s.showAddress) add(out, "Tọa độ: đang chờ GPS…");
         }
-        if (s.showEmployee) addField(out, "Tên nhân viên: ", s.employee, preview);
+        if (s.showEmployee) addField(out, "Nhân viên: ", s.employee, preview);
         if (s.showTeam) addField(out, "Đội: ", s.team, preview);
         if (s.showWorkplace && notEmpty(s.workplace)) add(out, "Nơi làm việc: " + s.workplace.trim());
         if (s.showNote && notEmpty(s.note)) add(out, "Nội dung: " + s.note.trim());

@@ -3,7 +3,7 @@
 Ứng dụng Android chụp ảnh kiểu **Timemark**: ngay trên khung ngắm và trên ảnh lưu có
 
 - băng rôn **HAWASUCO | giờ:phút | logo công ty**, 5 ngôi sao phía trên;
-- **ngày + thứ**, **địa chỉ** (tự tra từ GPS), **tọa độ GPS**, **Tên nhân viên**, **Đội**, nơi làm việc, nội dung công việc;
+- **ngày + thứ**, **địa chỉ** (tự tra từ GPS), **tọa độ GPS**, **Nhân viên**, **Đội**, nơi làm việc, nội dung công việc;
 - **bản đồ nhỏ** (vệ tinh hoặc đường phố) góc trên trái, có ghim vị trí và hình quạt xanh chỉ hướng camera;
 - **mã ảnh** viết dọc mép phải, chữ "HAWASUCO Camera — Ảnh chụp thực tế" góc phải dưới.
 
@@ -19,7 +19,7 @@ Google Photos / Thư viện vẫn xem được vị trí. Giờ trên ảnh lấ
    Nếu Google Play Protect cảnh báo "ứng dụng chưa được xác minh" → **Thêm chi tiết → Vẫn cài đặt**.
 3. Mở **HAWASUCO Camera** → cho phép **Camera** và **Vị trí** (chọn **"Vị trí chính xác"**, "Khi dùng ứng dụng").
    Android 9 trở xuống hỏi thêm quyền **Bộ nhớ** để lưu ảnh.
-4. Lần đầu mở, app hiện bảng nhập **Tên nhân viên** và **Đội** (bấm **Chọn ▾** để lấy Đội Cấp nước số 1–6, hoặc gõ tay).
+4. Lần đầu mở, app hiện bảng nhập **Nhân viên** và **Đội** (bấm **Chọn ▾** để lấy Đội Cấp nước số 1–6, hoặc gõ tay).
 5. Bật **Vị trí (GPS)** của điện thoại. Chấm trên cùng chuyển xanh "GPS ±5 m" là có tọa độ.
 
 Yêu cầu: Android 6.0 trở lên. Cần mạng (4G/Wi-Fi) để tra địa chỉ và tải bản đồ; mất mạng vẫn chụp được,
@@ -41,7 +41,7 @@ Trong trang **Thông tin & cài đặt** (nút ⚙):
 
 - **Địa chỉ**: tự động đầy đủ (ấp, xã, huyện, tỉnh) / tự động rút gọn ("Châu Thành, Cần Thơ") / tự nhập
   (khi địa chỉ tự tra chưa đúng, nhất là sau sáp nhập tỉnh, xã).
-- **Tên nhân viên**, **Đội** (chưa nhập thì khung ngắm nhắc "(chạm để nhập)", ảnh lưu bỏ dòng trống),
+- **Nhân viên**, **Đội** (chưa nhập thì khung ngắm nhắc "(chạm để nhập)", ảnh lưu bỏ dòng trống),
   nơi làm việc và nội dung công việc (không bắt buộc).
 - Bật / tắt từng dòng: bản đồ, địa chỉ, tọa độ, tên nhân viên, đội, nơi làm việc, nội dung, mã ảnh.
 - **Kiểu bản đồ**: vệ tinh (Esri) hoặc đường phố (OpenStreetMap).
@@ -50,7 +50,7 @@ Trong trang **Thông tin & cài đặt** (nút ⚙):
 
 Ảnh chụp khi cầm ngang sẽ lưu thành ảnh ngang, watermark vẫn ở góc trái dưới.
 
-**Tên nhân viên và Đội chỉ cần nhập một lần**: được lưu trong máy, mở lại app hay **cài bản mới đè lên bản cũ**
+**Nhân viên và Đội chỉ cần nhập một lần**: được lưu trong máy, mở lại app hay **cài bản mới đè lên bản cũ**
 đều giữ nguyên (không cần gỡ app cũ trước khi cài bản mới). Nếu gỡ hẳn app rồi cài lại, Android tự khôi phục
 cài đặt từ bản sao lưu Google của máy (khi máy bật Sao lưu); không có sao lưu thì phải nhập lại.
 

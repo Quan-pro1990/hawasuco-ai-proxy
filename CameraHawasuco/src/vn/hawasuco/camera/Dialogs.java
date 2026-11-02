@@ -82,14 +82,14 @@ final class Dialogs {
         root.addView(sv, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
         LinearLayout info = card(box, "Thông tin trên ảnh");
-        final EditText employee = input(info, "Tên nhân viên", "Nhập họ tên, vd: Trần Văn Nam", p.employee);
+        final EditText employee = input(info, "Nhân viên", "Nhập họ tên, vd: Trần Văn Nam", p.employee);
         employee.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_WORDS
                 | InputType.TYPE_TEXT_VARIATION_PERSON_NAME);
         final EditText team = teamInput(info, p.team);
         final EditText workplace = input(info, "Nơi làm việc (không bắt buộc)", "vd: Khu vực Châu Thành", p.workplace);
         final EditText note = input(info, "Nội dung công việc (không bắt buộc)", "vd: Lắp đặt đồng hồ nước", p.note);
         final EditText company = input(info, "Tên đơn vị trên băng rôn", "HAWASUCO", p.company);
-        note(info, "Tên nhân viên và đội được lưu trong máy: lần sau mở app, cài bản cập nhật "
+        note(info, "Nhân viên và đội được lưu trong máy: lần sau mở app, cài bản cập nhật "
                 + "đều tự dùng lại, không cần nhập lại.");
 
         LinearLayout addrCard = card(box, "Địa chỉ trên ảnh");
@@ -105,7 +105,7 @@ final class Dialogs {
         });
 
         LinearLayout show = card(box, "Hiển thị trên ảnh");
-        final CheckBox cEmp = check(show, "Tên nhân viên", p.showEmployee);
+        final CheckBox cEmp = check(show, "Nhân viên", p.showEmployee);
         final CheckBox cTeam = check(show, "Đội", p.showTeam);
         final CheckBox cAddr = check(show, "Địa chỉ", p.showAddress);
         final CheckBox cCoord = check(show, "Tọa độ GPS", p.showCoords);
