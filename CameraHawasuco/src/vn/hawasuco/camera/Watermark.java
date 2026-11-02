@@ -27,7 +27,7 @@ import java.util.Locale;
 final class Watermark {
     private static final String[] THU = {"Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"};
     private static final Locale VI = new Locale("vi", "VN");
-    private static final int SHADOW = 0xC0000000;
+    private static final int SHADOW = 0xE6000000;
 
     private final Bitmap logo;
     private final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
@@ -63,7 +63,7 @@ final class Watermark {
         if (s.showPhotoId && d.photoId != null) drawPhotoId(c, w, h, u, d.photoId);
 
         // Các dòng thông tin (ngày, địa chỉ, tọa độ, nhân viên...), tự xuống dòng khi dài.
-        float textSize = 30 * u;
+        float textSize = 32 * u;
         float textX = m + 26 * u;
         float maxW = Math.max(260 * u, w - textX - m - brandW - 24 * u);
         p.setTypeface(medium);
@@ -77,7 +77,7 @@ final class Watermark {
                 starts.add(i == 0);
             }
         }
-        float itemPitch = 47 * u, wrapPitch = 37 * u;
+        float itemPitch = 50 * u, wrapPitch = 39 * u;
         float span = 0;
         for (int i = 1; i < lines.size(); i++) span += starts.get(i) ? itemPitch : wrapPitch;
         float lastBase = h - 36 * u;
@@ -97,7 +97,7 @@ final class Watermark {
         p.setTypeface(medium);
         p.setTextSize(textSize);
         p.setColor(Color.WHITE);
-        p.setShadowLayer(3 * u, 0, 1.5f * u, SHADOW);
+        p.setShadowLayer(4 * u, 0, 2 * u, SHADOW);
         float y = firstBase;
         float textRight = 0;
         for (int i = 0; i < lines.size(); i++) {

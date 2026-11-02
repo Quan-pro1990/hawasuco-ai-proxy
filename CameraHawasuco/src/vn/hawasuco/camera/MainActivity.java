@@ -11,6 +11,7 @@ import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
+import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.location.Location;
 import android.location.LocationManager;
@@ -276,7 +277,8 @@ public final class MainActivity extends Activity
     private TextView chip() {
         TextView t = new TextView(this);
         t.setTextColor(Color.WHITE);
-        t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+        t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+        t.setTypeface(Typeface.DEFAULT_BOLD);
         t.setPadding(dp(12), dp(5), dp(12), dp(5));
         t.setSingleLine(true);
         setChipColor(t, 0x99000000);

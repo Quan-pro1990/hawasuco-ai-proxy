@@ -37,7 +37,7 @@ Yêu cầu: Android 6.0 trở lên. Cần mạng (4G/Wi-Fi) để tra địa ch�
 | Camera trước / sau | Nút mũi tên tròn góc phải dưới |
 | Xem lại, **chia sẻ Zalo**, xoá | Chạm ảnh nhỏ góc trái dưới |
 
-Trong **Cài đặt watermark**:
+Trong trang **Thông tin & cài đặt** (nút ⚙):
 
 - **Địa chỉ**: tự động đầy đủ (ấp, xã, huyện, tỉnh) / tự động rút gọn ("Châu Thành, Cần Thơ") / tự nhập
   (khi địa chỉ tự tra chưa đúng, nhất là sau sáp nhập tỉnh, xã).
@@ -49,6 +49,10 @@ Trong **Cài đặt watermark**:
 - **Lưu thêm ảnh gốc** không watermark (vào DCIM/HAWASUCO/Anh goc).
 
 Ảnh chụp khi cầm ngang sẽ lưu thành ảnh ngang, watermark vẫn ở góc trái dưới.
+
+**Tên nhân viên và Đội chỉ cần nhập một lần**: được lưu trong máy, mở lại app hay **cài bản mới đè lên bản cũ**
+đều giữ nguyên (không cần gỡ app cũ trước khi cài bản mới). Nếu gỡ hẳn app rồi cài lại, Android tự khôi phục
+cài đặt từ bản sao lưu Google của máy (khi máy bật Sao lưu); không có sao lưu thì phải nhập lại.
 
 ## Build lại tệp APK (dành cho người sửa mã nguồn)
 
