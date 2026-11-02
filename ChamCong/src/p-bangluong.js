@@ -52,7 +52,10 @@
       } else c.push({ t: pc.ten, nhom: 'Phụ cấp', kieu: 'so', w: 11, f: tien, pc: pc.ma });
     });
     c.push(
-      { t: 'Thưởng', k: 'thuong', kieu: 'so', w: 11, nhap: 'thuong' },
+      { t: 'Thưởng', k: 'thuong', kieu: 'so', w: 11, nhap: 'thuong' }
+    );
+    if (co(function (r) { return r.thuongQD; })) c.push({ t: 'Thưởng theo QĐ', k: 'thuongQD', kieu: 'so', w: 11 });
+    c.push(
       { t: 'Cộng khác', k: 'congKhac', kieu: 'so', w: 10, nhap: 'congKhac' },
       { t: 'Tổng thu nhập', k: 'tongThuNhap', kieu: 'so', w: 13, dam: true },
       { t: 'Tạm ứng kỳ I', k: 'tamUng', kieu: 'so', w: 11, nhap: 'tamUng' }
@@ -66,6 +69,7 @@
     if (co(function (r) { return r.doanPhi; })) c.push({ t: 'Công đoàn ' + App.so(cd.bh.doanPhi) + '%', nhom: KT, k: 'doanPhi', kieu: 'so', w: 9 });
     c.push({ t: 'Thuế TNCN phải nộp', nhom: KT, k: 'thue', kieu: 'so', w: 10 });
     if (co(function (r) { return r.phatMuon; })) c.push({ t: 'Phạt đi muộn', nhom: KT, k: 'phatMuon', kieu: 'so', w: 9 });
+    if (co(function (r) { return r.phatQD; })) c.push({ t: 'Phạt, bồi thường theo QĐ', nhom: KT, k: 'phatQD', kieu: 'so', w: 10 });
     c.push(
       { t: 'Khấu trừ khác', nhom: KT, k: 'khauTru', kieu: 'so', w: 10, nhap: 'khauTru' },
       { t: 'Cộng', nhom: KT, k: 'tongKhauTru', kieu: 'so', w: 11 },
@@ -324,6 +328,7 @@
       d_('Phụ cấp ' + h(pc.ten.toLowerCase()), gc + (pc.chiuThue ? '' : ' · không chịu thuế'), t(v));
     });
     if (r.thuong) d_('Thưởng', '', t(r.thuong));
+    if (r.thuongQD) d_('Thưởng theo quyết định khen thưởng', '', t(r.thuongQD));
     if (r.congKhac) d_('Khoản cộng khác', '', t(r.congKhac));
     d_('<b>Tổng thu nhập</b>', '', '<b>' + t(r.tongThuNhap) + '</b>');
     m_('3. Bảo hiểm, công đoàn (người lao động đóng)');
@@ -356,6 +361,7 @@
     m_('5. Lãnh kỳ II');
     if (r.phatMuon) d_('Phạt đi muộn / về sớm', c.muonLan + ' lần, ' + c.muonPhut + ' phút', '−' + t(r.phatMuon));
     if (r.khauTru) d_('Khấu trừ khác', h(r.ghiChu), '−' + t(r.khauTru));
+    if (r.phatQD) d_('Phạt, bồi thường theo quyết định kỷ luật', '', '−' + t(r.phatQD));
     d_('Cộng các khoản khấu trừ', 'BH + công đoàn + thuế + khấu trừ khác', '−' + t(r.tongKhauTru));
     if (r.tamUng) d_('Tạm ứng kỳ I', '', '−' + t(r.tamUng));
     d_('<b>Lãnh kỳ II</b>', 'Tổng thu nhập − tạm ứng − các khoản khấu trừ', '<b style="color:var(--chinh-dam);font-size:15px">' + t(r.thucLinh) + '</b>');
@@ -467,6 +473,7 @@
       L.push(['c', 'Phụ cấp ' + pc.ten.toLowerCase() + (pc.cachTinh === 'theo_ngay' ? ' (' + App.so((r.phuCapNgay || {})[pc.ma]) + ' ngày)' : ''), r.phuCap[pc.ma]]);
     });
     if (r.thuong) L.push(['c', 'Thưởng', r.thuong]);
+    if (r.thuongQD) L.push(['c', 'Thưởng theo quyết định', r.thuongQD]);
     if (r.congKhac) L.push(['c', 'Khoản cộng khác', r.congKhac]);
     L.push(['m', 'Tổng thu nhập', r.tongThuNhap]);
     L.push(['m', 'II. CÁC KHOẢN KHẤU TRỪ', '']);
@@ -477,6 +484,7 @@
     L.push(['c', 'Thuế TNCN', r.thue]);
     if (r.phatMuon) L.push(['c', 'Phạt đi muộn / về sớm', r.phatMuon]);
     if (r.khauTru) L.push(['c', 'Khấu trừ khác' + (r.ghiChu ? ' (' + r.ghiChu + ')' : ''), r.khauTru]);
+    if (r.phatQD) L.push(['c', 'Phạt, bồi thường theo quyết định', r.phatQD]);
     L.push(['m', 'Cộng các khoản khấu trừ', r.tongKhauTru]);
     if (r.tamUng) L.push(['m', 'III. ĐÃ TẠM ỨNG KỲ I', r.tamUng]);
     L.push(['tl', 'LÃNH KỲ II', r.thucLinh]);

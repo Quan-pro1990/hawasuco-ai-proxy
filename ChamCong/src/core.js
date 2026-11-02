@@ -69,7 +69,10 @@
     tim: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
     hoantac: '<path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/>',
     dien: '<path d="M4 20l6-6M14 4l6 6-8 8-6-6z"/>',
-    ngan: '<path d="M3 10l9-6 9 6M5 10v8M19 10v8M9 10v8M15 10v8M3 20h18"/>'
+    ngan: '<path d="M3 10l9-6 9 6M5 10v8M19 10v8M9 10v8M15 10v8M3 20h18"/>',
+    quyetdinh: '<path d="M7 3h10v18H7z"/><path d="M10 7h4M10 11h4M10 15h2"/><circle cx="16.5" cy="17.5" r="2.5"/>',
+    nghiphep: '<rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4M9 14l6 4M15 14l-6 4"/>',
+    cocau: '<circle cx="12" cy="12" r="9"/><path d="M12 3v9l7 5"/>'
   };
   App.icon = function (ten) {
     return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (P[ten] || '') + '</svg>';
@@ -370,6 +373,28 @@
     } catch (e) { console.error(e); App.bao('Lỗi xuất Excel: ' + e.message, 'loi'); }
   };
 
+  /** Tham số trên địa chỉ trang: #hoso?id=nv1 */
+  App.thamSo = function (ten) {
+    var q = (location.hash.split('?')[1] || '').split('&');
+    for (var i = 0; i < q.length; i++) { var p = q[i].split('='); if (decodeURIComponent(p[0]) === ten) return decodeURIComponent(p[1] || ''); }
+    return '';
+  };
+
+  /** In một nội dung riêng (hợp đồng, sơ yếu lý lịch…) mà không in cả trang */
+  App.inNoiDung = function (html, doc) {
+    var d = document.createElement('div');
+    d.className = 'in-rieng';
+    d.innerHTML = html;
+    document.body.appendChild(d);
+    document.body.classList.add('dang-in-rieng');
+    var st = document.createElement('style');
+    st.textContent = '@page { size: A4 ' + (doc === false ? 'landscape' : 'portrait') + '; margin: 15mm 15mm 15mm 20mm; }';
+    document.head.appendChild(st);
+    var xong = function () { d.remove(); st.remove(); document.body.classList.remove('dang-in-rieng'); window.removeEventListener('afterprint', xong); };
+    window.addEventListener('afterprint', xong);
+    setTimeout(function () { window.print(); setTimeout(xong, 1500); }, 60);
+  };
+
   /** Ô chọn loại lao động để lọc */
   App.chonLoaiLD = function (id, v) {
     var ds = App.db.caiDat.loaiLD || [];
@@ -418,13 +443,18 @@
   /* ================= Khung & điều hướng ================= */
   var MENU = [
     { id: 'dashboard', ten: 'Tổng quan', icon: 'tongquan' },
-    { nhom: 'Nghiệp vụ' },
-    { id: 'nhanvien', ten: 'Nhân viên', icon: 'nhanvien' },
+    { nhom: 'Nhân sự' },
+    { id: 'nhanvien', ten: 'Hồ sơ nhân viên', icon: 'nhanvien' },
+    { id: 'hopdong', ten: 'Hợp đồng lao động', icon: 'phieuluong' },
+    { id: 'quyetdinh', ten: 'Quyết định', icon: 'quyetdinh' },
+    { id: 'nghiphep', ten: 'Đơn nghỉ phép', icon: 'nghiphep' },
+    { id: 'bcnhansu', ten: 'Báo cáo nhân sự', icon: 'cocau' },
+    { nhom: 'Chấm công – tiền lương' },
     { id: 'chamcong', ten: 'Bảng chấm công', icon: 'chamcong' },
     { id: 'vaora', ten: 'Giờ vào / ra', icon: 'vaora' },
     { id: 'bangluong', ten: 'Bảng lương', icon: 'bangluong' },
     { id: 'phieuluong', ten: 'Phiếu lương', icon: 'phieuluong' },
-    { id: 'baocao', ten: 'Báo cáo', icon: 'baocao' },
+    { id: 'baocao', ten: 'Báo cáo lương', icon: 'baocao' },
     { nhom: 'Thiết lập' },
     { id: 'danhmuc', ten: 'Danh mục', icon: 'danhmuc' },
     { id: 'caidat', ten: 'Cài đặt & dữ liệu', icon: 'caidat' }
@@ -435,7 +465,7 @@
     var root = document.getElementById('app');
     root.className = 'app';
     root.innerHTML =
-      '<aside class="sb"><div class="logo"><div class="bieu">' + App.icon('chamcong') + '</div><div><b>Chấm công</b><span>&amp; Tính lương</span></div></div><nav>' +
+      '<aside class="sb"><div class="logo"><div class="bieu">' + App.icon('nhanvien') + '</div><div><b>Nhân sự</b><span>Chấm công – Tiền lương</span></div></div><nav>' +
       MENU.map(function (x) {
         if (x.nhom) return '<div class="nhom-nav">' + x.nhom + '</div>';
         return '<a href="#' + x.id + '" data-id="' + x.id + '">' + App.icon(x.icon) + '<span>' + x.ten + '</span></a>';
@@ -470,11 +500,11 @@
     if (!App.trang[id]) id = 'dashboard';
     if (App.trangHienTai !== id && App.trang[App.trangHienTai] && App.trang[App.trangHienTai].roi) App.trang[App.trangHienTai].roi();
     App.trangHienTai = id;
-    var muc = MENU.filter(function (x) { return x.id === id; })[0];
-    App.$$('.sb nav a').forEach(function (a) { a.classList.toggle('chon', a.dataset.id === id); });
+    var tg = App.trang[id], idMenu = tg.menu || id;
+    var muc = MENU.filter(function (x) { return x.id === idMenu; })[0];
+    App.$$('.sb nav a').forEach(function (a) { a.classList.toggle('chon', a.dataset.id === idMenu); });
     App.$('#tieu-de').textContent = muc ? muc.ten : '';
-    document.title = (muc ? muc.ten + ' – ' : '') + 'Chấm công & Tính lương';
-    var tg = App.trang[id];
+    document.title = (muc ? muc.ten + ' – ' : '') + 'Nhân sự – Chấm công – Tiền lương';
     App.$('#chon-ky').style.display = tg.khongKy ? 'none' : '';
     veKy();
     var noi = App.$('#noi');

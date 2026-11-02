@@ -1,4 +1,4 @@
-# Phần mềm Chấm công & Tính lương
+# Phần mềm Nhân sự – Chấm công – Tiền lương
 
 Mở file **`ChamCong_TinhLuong.html`** bằng trình duyệt (Chrome, Edge, Cốc Cốc, Firefox) là dùng được ngay:
 không cần cài đặt, không cần Internet, không cần máy chủ. Có thể chép file này sang máy khác, USB, hoặc đặt lên IIS
@@ -23,14 +23,58 @@ Khi dùng thật: trang **Tổng quan** → bấm **Xoá dữ liệu mẫu, bắ
    - **Sản phẩm (lương SP)**: tên, đơn vị tính, đơn giá – vd *Hoá đơn ghi thu 1.200 đ/HĐ*, *Lắp đặt đồng hồ … đ/cái*.
    - **Phụ cấp**: *Cơm trưa* mặc định **50.000 đ/ngày** áp dụng cho mọi nhân viên (cột *Mức chung*).
    - Phòng ban / bộ phận (thứ tự in trên bảng), ký hiệu chấm công, ngày lễ (bấm *Tạo tự động* cho từng năm).
-4. **Nhân viên**: thêm từng người hoặc **Nhập từ Excel** (bấm *Tải file mẫu* để có đúng các cột). Mỗi người cần:
+4. **Hồ sơ nhân viên**: thêm từng người hoặc **Nhập từ Excel** (bấm *Tải file mẫu* để có đúng các cột). Mỗi người cần:
    - **Loại lao động** (văn phòng 22 công / công nhân 26 công). Ai khác thì nhập *Công chuẩn riêng*.
    - **Sản phẩm chính** nếu có lương sản phẩm (có thể đặt đơn giá riêng cho người đó).
    - **Mức lương/HĐ**, phụ cấp riêng nếu có, có tham gia BH không, đoàn viên công đoàn, số người phụ thuộc.
      Tiền cơm **50.000 đ/ngày** đã là mức chung cho mọi người, không cần nhập; ai khác mức thì nhập mức riêng, nhập 0 = không hưởng.
    - **Mã chấm công** = số ID của người đó trên máy chấm công vân tay (nếu dùng).
 
-## Hằng ngày / hằng tháng
+## Quản lý nhân sự
+
+Menu **Nhân sự** dùng chung dữ liệu với chấm công và tiền lương: sửa hồ sơ, hợp đồng, quyết định, đơn nghỉ là bảng
+chấm công, bảng lương tự cập nhật theo.
+
+### Hồ sơ nhân viên
+Bấm 1 người trong danh sách để mở hồ sơ gồm các tab:
+- **Thông tin cá nhân**: ảnh 3×4, ngày sinh, nơi sinh, quê quán, dân tộc, tôn giáo, CCCD (ngày cấp, nơi cấp), địa chỉ thường trú,
+  chỗ ở, liên hệ khẩn cấp, trình độ học vấn – chuyên môn – ngoại ngữ – tin học – lý luận chính trị, Đảng viên.
+- **Công việc & lương**: phòng ban, chức vụ, loại lao động, trạng thái, ngày vào / nghỉ, mức lương, phụ cấp, sản phẩm, ngân hàng, phép năm.
+- **Bảo hiểm, thuế & người phụ thuộc**: lương đóng BH, số sổ BHXH, mã thẻ BHYT, nơi KCB; MST; danh sách **người phụ thuộc**
+  có *từ tháng – đến tháng* để giảm trừ gia cảnh đúng từng tháng.
+- **Hợp đồng lao động**, **Quá trình công tác**, **Nghỉ phép** (phép năm theo tháng, đơn nghỉ), **Lương các kỳ** (12 kỳ gần nhất).
+- **In sơ yếu lý lịch** (A4, có ảnh). Sửa xong bấm **Lưu hồ sơ** (rời trang thì phần mềm tự lưu).
+
+### Hợp đồng lao động
+- Thêm hợp đồng ở hồ sơ hoặc trang **Hợp đồng lao động**: số, loại (thử việc, xác định / không xác định thời hạn, thời vụ),
+  ngày ký, hiệu lực, chức danh, mức lương, phụ cấp, địa điểm, công việc.
+- Đánh dấu *Cập nhật hồ sơ* thì loại HĐ, ngày hết hạn, chức danh được cập nhật; hết thử việc sang HĐ chính thức thì tự chuyển
+  "Đang làm việc", hưởng 100% lương. Nếu mức lương trong HĐ khác hiện tại có thể *áp dụng từ ngày hiệu lực* (tự tạo quyết định điều chỉnh lương).
+- Trang **Hợp đồng lao động** đếm và lọc: sắp hết hạn (30 ngày), đã hết hạn, chưa có hợp đồng; **In hợp đồng** theo mẫu tham khảo
+  (Bộ luật Lao động 2019) – kiểm tra điều khoản theo quy chế công ty trước khi ký.
+
+### Quyết định
+Tiếp nhận, bổ nhiệm, điều chuyển, **nâng lương**, **khen thưởng**, **kỷ luật**, **thôi việc**:
+- **Nâng lương**: nhập mức lương mới và ngày hiệu lực. Kỳ lương nào kết thúc trước ngày hiệu lực vẫn tính **lương cũ**, từ kỳ
+  có ngày hiệu lực trở đi tính lương mới (không phải sửa tay từng tháng).
+- **Khen thưởng / kỷ luật** có số tiền và *kỳ lương*: tiền thưởng tự cộng vào thu nhập (chịu thuế), tiền phạt / bồi thường
+  tự vào khấu trừ của bảng lương kỳ đó (kỳ đã chốt thì cần mở khoá).
+- **Bổ nhiệm, điều chuyển** cập nhật phòng ban, chức vụ; **Thôi việc** đặt ngày nghỉ việc = ngày trước ngày hiệu lực.
+- Xoá quyết định mới nhất thì lương / phòng ban / trạng thái trở về như trước.
+
+### Đơn nghỉ phép
+Tạo đơn (nhân viên, loại nghỉ `P`, `P/2`, `Ô`, `Cô`, `TS`, `KL`, `R`…, từ ngày – đến ngày, lý do); phần mềm báo số ngày làm việc và
+số phép năm còn lại. **Duyệt** thì tự chấm ký hiệu vào bảng chấm công cho các ngày làm việc trong khoảng (bỏ ngày nghỉ tuần, ngày lễ;
+thay ô đang chấm `+`, giữ nguyên ô đã chấm nghỉ khác). **Huỷ duyệt** hoặc **xoá đơn** thì xoá lại các ô đó.
+
+### Báo cáo nhân sự
+Cơ cấu lao động (phòng ban, giới tính, độ tuổi, trình độ, loại HĐ, loại lao động, thâm niên), biến động lao động 12 tháng
+(tăng, giảm, đầu – cuối tháng), danh sách trích ngang, sinh nhật theo tháng, hợp đồng hết hạn trong 60 ngày,
+lao động đến tuổi nghỉ hưu trong 24 tháng (lộ trình Nghị định 135/2020/NĐ-CP), khen thưởng – kỷ luật trong năm. Xuất Excel, in.
+
+Trang **Tổng quan** nhắc: đơn nghỉ chờ duyệt, hợp đồng sắp / đã hết hạn, nhân viên chưa có hợp đồng, sắp đến tuổi nghỉ hưu, sinh nhật.
+
+## Chấm công – tiền lương hằng tháng
 
 ### 1. Bảng chấm công
 - Chọn kỳ ở góc trên bên phải. Bấm **Chấm đủ công…** để điền `+` cho mọi ngày làm việc (theo lịch của từng người), rồi chỉ sửa ngày khác.
@@ -117,6 +161,7 @@ Hãy đối chiếu lại với văn bản hiện hành của cơ quan thuế, B
 
 - Mã nguồn trong `src/` (mở thẳng `src/index.html` cũng chạy được). Sửa xong chạy `node build.js` để đóng gói lại
   thành `ChamCong_TinhLuong.html` (1 file duy nhất, không dùng thư viện ngoài).
-- `src/tinhluong.js`: toàn bộ cách tính (kỳ công, công chuẩn, lương, BH, thuế). `src/amlich.js`: lịch âm để tạo ngày lễ.
-  `src/xlsx.js`: đọc / ghi Excel. Các trang giao diện: `src/p-*.js`.
+- `src/tinhluong.js`: toàn bộ cách tính (kỳ công, công chuẩn, lương, BH, thuế, lương theo quyết định, người phụ thuộc,
+  đơn nghỉ, tuổi nghỉ hưu). `src/amlich.js`: lịch âm để tạo ngày lễ. `src/xlsx.js`: đọc / ghi Excel.
+  Các trang giao diện: `src/p-*.js` (`p-hoso.js` hồ sơ nhân viên, `p-nhansu.js` hợp đồng – quyết định – đơn nghỉ – báo cáo nhân sự).
 - Kiểm thử cách tính: `node test/tinhluong.test.js` (có ca đối chiếu đúng 1 dòng bảng lương mẫu tháng 10/2026).

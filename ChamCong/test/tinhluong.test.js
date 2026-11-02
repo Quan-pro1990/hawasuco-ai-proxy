@@ -178,6 +178,73 @@ t('Đi làm ngày lễ ×2 công, ngày Tết ×3 công; SP không nhân; cơm v
   assert.strictEqual(k.kyHieu, '+'); assert.strictEqual(k.ot, 0);
 });
 
+t('Nhân sự: quyết định nâng lương có hiệu lực từ kỳ sau, kỳ trước giữ lương cũ', function () {
+  var db = dbMau(), nv = db.nhanVien[0];
+  nv.luongCB = 9000000; // đã nâng
+  nv.quyetDinh = [{ id: 'q1', loai: 'nang_luong', so: '15/QĐ', hieuLuc: '2026-10-01', luongCu: 8000000, luongMoi: 9000000 }];
+  // kỳ 9 (21/8 – 20/9) kết thúc trước 1/10 -> lương cũ; kỳ 10 (21/9 – 20/10) -> lương mới
+  assert.strictEqual(TL.luongTheoKy(db, nv, 2026, 9).luongCB, 8000000);
+  assert.strictEqual(TL.luongTheoKy(db, nv, 2026, 10).luongCB, 9000000);
+  TL.thang(db, 2026, 9, true).cc[nv.id] = { 1: '+' };
+  assert.strictEqual(TL.tinhBangLuong(db, 2026, 9).rows[0].luongCB, 8000000);
+  assert.strictEqual(TL.tinhBangLuong(db, 2026, 9).rows[0].bhxh, 0); // nghỉ nhiều -> không BH, chỉ kiểm tra không lỗi
+  // hai lần nâng lương
+  nv.luongCB = 10000000;
+  nv.quyetDinh.push({ id: 'q2', loai: 'nang_luong', hieuLuc: '2027-01-01', luongCu: 9000000, luongMoi: 10000000 });
+  assert.strictEqual(TL.luongTheoKy(db, nv, 2026, 9).luongCB, 8000000);
+  assert.strictEqual(TL.luongTheoKy(db, nv, 2026, 12).luongCB, 9000000);
+  assert.strictEqual(TL.luongTheoKy(db, nv, 2027, 1).luongCB, 10000000);
+});
+
+t('Nhân sự: người phụ thuộc theo tháng, thưởng / phạt theo quyết định vào đúng kỳ lương', function () {
+  var db = dbMau(), nv = db.nhanVien[0];
+  nv.soNPT = 5; // bị bỏ qua khi có danh sách
+  nv.nguoiPhuThuoc = [{ hoTen: 'Con A', tuThang: '2026-01' }, { hoTen: 'Mẹ', tuThang: '2026-01', denThang: '2026-06' }, { hoTen: 'Con B', tuThang: '2026-11' }];
+  assert.strictEqual(TL.soNPTKy(nv, 2026, 3), 2);
+  assert.strictEqual(TL.soNPTKy(nv, 2026, 10), 1);
+  assert.strictEqual(TL.soNPTKy(nv, 2026, 11), 2);
+  nv.quyetDinh = [
+    { loai: 'khen_thuong', soTien: 1000000, kyLuong: '2026-10' },
+    { loai: 'ky_luat', soTien: 200000, kyLuong: '2026-10' },
+    { loai: 'khen_thuong', soTien: 500000, kyLuong: '2026-11' }
+  ];
+  var ds = TL.ngayKy(db, 2026, 10);
+  ds.forEach(function (x) { if ([0, 6].indexOf(TL.thuTrongTuan(x.y, x.m, x.d)) < 0) { var T = TL.thang(db, x.y, x.m, true); (T.cc[nv.id] = T.cc[nv.id] || {})[x.d] = '+'; } });
+  var r = TL.tinhBangLuong(db, 2026, 10).rows[0];
+  assert.strictEqual(r.thuongQD, 1000000);
+  assert.strictEqual(r.phatQD, 200000);
+  assert.strictEqual(r.soNPT, 1);
+  assert.strictEqual(r.tongThuNhap, r.luongTG + r.tongPhuCap + 1000000);
+  assert.strictEqual(r.thucLinh, r.tongThuNhap - r.tamUng - r.tongKhauTru);
+  assert(r.tongKhauTru >= 200000 + r.tongBH);
+});
+
+t('Nhân sự: duyệt đơn nghỉ tự chấm vào bảng chấm công (bỏ T7, CN, lễ), huỷ duyệt thì xoá', function () {
+  var db = dbMau(), nv = db.nhanVien[0];
+  db.ngayLe = [{ ngay: '2026-09-02', ten: 'Quốc khánh', loai: 'le' }];
+  TL.thang(db, 2026, 8, true).cc[nv.id] = { 31: '+' };
+  TL.thang(db, 2026, 9, true).cc[nv.id] = { 1: 'CT' };
+  var don = { id: 'd1', nvId: nv.id, tuNgay: '2026-08-31', denNgay: '2026-09-07', kyHieu: 'P' };
+  // 31/8 (T2, đang +) chấm P; 1/9 đang CT giữ nguyên; 2/9 lễ bỏ; 3,4/9 P; 5,6/9 T7 CN bỏ; 7/9 P
+  var kq = TL.apDungDonNghi(db, don);
+  assert.deepStrictEqual(kq.cham, ['2026-08-31', '2026-09-03', '2026-09-04', '2026-09-07']);
+  assert.deepStrictEqual(kq.trung, ['2026-09-01']);
+  assert.strictEqual(TL.oNgay(db, 'cc', nv.id, 2026, 9, 3), 'P');
+  assert.strictEqual(TL.boDonNghi(db, don), 4);
+  assert.strictEqual(TL.oNgay(db, 'cc', nv.id, 2026, 9, 3), undefined);
+  // kỳ đã chốt thì không chấm
+  TL.chotThang(db, 2026, 9);
+  kq = TL.apDungDonNghi(db, don);
+  assert.strictEqual(kq.cham.length, 0); assert.strictEqual(kq.khoa.length, 5); // cả 5 ngày làm việc đều thuộc kỳ đã chốt
+});
+
+t('Nhân sự: tuổi nghỉ hưu theo lộ trình, thâm niên', function () {
+  assert.strictEqual(TL.ngayNghiHuu('Nam', '1966-03-15'), '2027-12-15');   // 61 tuổi 9 tháng
+  assert.strictEqual(TL.ngayNghiHuu('Nữ', '1970-05-10'), '2027-09-10');    // 57 tuổi 4 tháng
+  assert.strictEqual(TL.ngayNghiHuu('Nam', '1980-01-01'), '2042-01-01');   // 62 tuổi
+  assert.deepStrictEqual(TL.thamNien('2019-05-06', '2026-11-02'), { nam: 7, thang: 5, tongThang: 89 });
+});
+
 t('Nghỉ phép tính vào công thời gian; nghỉ không lương ≥ 14 ngày thì không đóng BH', function () {
   var db = dbMau(), nv = db.nhanVien[0];
   var T = TL.thang(db, 2026, 10, true);

@@ -73,6 +73,56 @@
     nv16.hinhThuc = 'gio'; nv16.thamGiaBH = false; nv16.cachTinhThue = 'khau_tru'; nv16.loaiHD = 'Thời vụ / khoán việc'; nv16.doanVien = false;
     nv17.trangThai = 'nghi_viec'; nv17.ngayNghi = TL.iso(nghiNV.y, nghiNV.m, 20);
 
+    // ---- Hồ sơ nhân sự: lý lịch, trình độ, bảo hiểm, người phụ thuộc, hợp đồng, quyết định ----
+    var tinh = ['Cần Thơ', 'Hậu Giang', 'Vĩnh Long', 'Sóc Trăng', 'An Giang', 'Kiên Giang', 'Bạc Liêu', 'Cà Mau'];
+    var tdo = function (nv) {
+      if (/Giám đốc|Kế toán trưởng|Trưởng phòng/.test(nv.chucVu)) return ['Đại học', /Kế toán/.test(nv.chucVu) ? 'Kế toán' : /Kỹ thuật/.test(nv.phongBan === 'KTH' ? 'Kỹ thuật' : '') ? 'Cấp thoát nước' : 'Quản trị kinh doanh'];
+      if (/CN LĐ-SC|Bảo vệ|Tài xế/.test(nv.chucVu)) return [nv.chucVu === 'CN LĐ-SC' ? 'Trung cấp' : 'Sơ cấp nghề', nv.chucVu === 'CN LĐ-SC' ? 'Cấp thoát nước' : nv.chucVu === 'Tài xế' ? 'Lái xe hạng C' : ''];
+      return [nv.chucVu === 'Kế toán viên' || nv.chucVu === 'Chuyên viên nhân sự' ? 'Đại học' : 'Cao đẳng', nv.chucVu === 'Kế toán viên' ? 'Kế toán' : nv.chucVu === 'Chuyên viên nhân sự' ? 'Quản trị nhân lực' : 'Quản trị kinh doanh'];
+    };
+    function cong12(iso, th) { var n = TL.docNgay(iso), t = new Date(n.y, n.m - 1 + th, n.d - 1); return TL.iso(t.getFullYear(), t.getMonth() + 1, t.getDate()); }
+    db.nhanVien.forEach(function (nv, i) {
+      var t = tdo(nv);
+      Object.assign(nv, {
+        noiSinh: tinh[i % tinh.length], queQuan: tinh[(i * 3 + 1) % tinh.length], danToc: 'Kinh', tonGiao: i % 5 === 2 ? 'Phật giáo' : 'Không', quocTich: 'Việt Nam',
+        honNhan: i % 3 === 0 ? 'Độc thân' : 'Đã kết hôn', ngayCapCCCD: (2021 + i % 4) + '-0' + (1 + i % 9) + '-1' + (i % 9), noiCapCCCD: 'Cục Cảnh sát QLHC về TTXH',
+        thuongTru: 'Số ' + (10 + i) + ' đường Mẫu ' + (i % 4 + 1) + ', phường Mẫu, ' + tinh[i % tinh.length], diaChi: 'Số ' + (10 + i) + ' đường Mẫu ' + (i % 4 + 1) + ', phường Mẫu, ' + tinh[i % tinh.length],
+        trinhDoHV: '12/12', trinhDoCM: t[0], chuyenNganh: t[1], truongDT: t[0] === 'Đại học' ? 'Trường Đại học (mẫu)' : 'Trường Cao đẳng nghề (mẫu)', namTN: String(+nv.ngaySinh.slice(0, 4) + 22),
+        ngoaiNgu: t[0] === 'Đại học' ? 'Tiếng Anh B1' : '', tinHoc: 'Văn phòng', dangVien: i < 3, ngayVaoDang: i < 3 ? (2005 + i * 2) + '-05-19' : '',
+        soSoBHXH: '79' + String(10000000 + i * 1234567).slice(0, 8), maTheBHYT: nv.thamGiaBH ? 'DN479' + String(1000000000 + i * 98765431).slice(0, 10) : '', noiKCB: nv.thamGiaBH ? 'Bệnh viện Đa khoa (mẫu)' : '',
+        lienHeKhanCap: 'Người thân – 09' + String(20000000 + i * 7654321).slice(0, 8), hopDong: [], quyetDinh: [], nguoiPhuThuoc: []
+      });
+      // người phụ thuộc theo số đã có
+      for (var k = 0; k < (nv.soNPT || 0); k++) nv.nguoiPhuThuoc.push({ hoTen: (k === 0 && i % 2 ? 'Mẹ của ' : 'Con của ') + nv.hoTen.split(' ').pop(), quanHe: k === 0 && i % 2 ? 'Mẹ' : 'Con', ngaySinh: (2012 + k * 3) + '-0' + (k + 3) + '-15', maSo: '0' + String(80000000000 + i * 1111 + k), tuThang: (2019 + k) + '-01' });
+      // hợp đồng: thử việc 2 tháng -> xác định thời hạn 12 tháng -> không xác định thời hạn
+      var so = 0, tvHet = cong12(nv.ngayVao, 2);
+      function hd(loai, tu, den, luong) { so++; nv.hopDong.push({ id: 'hd' + i + '_' + so, so: TL.pad(so) + '/' + tu.slice(0, 4) + '/HĐLĐ-' + nv.ma, loai: loai, ngayKy: tu, tuNgay: tu, denNgay: den, chucDanh: nv.chucVu, luongCB: luong, diaDiem: db.congTy.diaChi, phuCap: 'Cơm trưa 50.000 đ/ngày làm việc' }); }
+      if (nv.trangThai === 'thu_viec') hd('Thử việc', nv.ngayVao, nv.ngayHetHD, nv.luongCB);
+      else if (nv.hinhThuc === 'gio') hd('Thời vụ / khoán việc', nv.ngayVao, cong12(nv.ngayVao, 18), nv.luongCB);
+      else {
+        hd('Thử việc', nv.ngayVao, tvHet, nv.luongCB);
+        var tu2 = TL.congNgay(+tvHet.slice(0, 4), +tvHet.slice(5, 7), +tvHet.slice(8), 1);
+        if (nv.ma === 'NV013' || nv.ma === 'NV015') { hd('Xác định thời hạn', tu2, cong12(tu2, 12), nv.luongCB); var tu3 = TL.congNgay(+nv.hopDong[1].denNgay.slice(0, 4), +nv.hopDong[1].denNgay.slice(5, 7), +nv.hopDong[1].denNgay.slice(8), 1); hd('Xác định thời hạn', tu3, TL.congNgay(Y, M, D, nv.ma === 'NV013' ? 18 : 40), nv.luongCB); }
+        else { hd('Xác định thời hạn', tu2, cong12(tu2, 12), nv.luongCB); var hdx = nv.hopDong[nv.hopDong.length - 1]; hd('Không xác định thời hạn', TL.congNgay(+hdx.denNgay.slice(0, 4), +hdx.denNgay.slice(5, 7), +hdx.denNgay.slice(8), 1), '', nv.luongCB); }
+      }
+      var cuoi = nv.hopDong[nv.hopDong.length - 1];
+      nv.loaiHD = cuoi.loai; nv.ngayHetHD = cuoi.denNgay || '';
+      nv.quyetDinh.push({ id: 'qd' + i + '_0', loai: 'tiep_nhan', so: TL.pad(i + 1) + '/QĐ-TN', ngay: nv.ngayVao, hieuLuc: nv.ngayVao, noiDung: 'Tiếp nhận vào làm việc tại ' + TL.tenPhongBan(db, nv.phongBan) });
+    });
+    function qd(ma, q) { var nv = db.nhanVien.filter(function (x) { return x.ma === ma; })[0]; q.id = App.uid(); nv.quyetDinh.push(q); return nv; }
+    var dau = function (k) { return TL.iso(k.y, k.m, 1); };
+    var kyTruoc = (function () { var k = TL.kyCuaNgay(db, Y, M, D), t = new Date(k.y, k.m - 2, 1); return TL.khoaKy(t.getFullYear(), t.getMonth() + 1); })();
+    qd('NV001', { loai: 'bo_nhiem', so: '01/QĐ-HĐTV', ngay: '2019-12-20', hieuLuc: '2020-01-01', phongBanCu: 'BGD', phongBanMoi: 'BGD', chucVuCu: 'Phó Giám đốc', chucVuMoi: 'Giám đốc', noiDung: 'Bổ nhiệm Giám đốc công ty' });
+    qd('NV001', { loai: 'khen_thuong', so: '120/QĐ-UBND', ngay: (Y - 1) + '-12-28', hieuLuc: (Y - 1) + '-12-28', hinhThuc: 'Bằng khen', noiDung: 'Hoàn thành xuất sắc nhiệm vụ năm ' + (Y - 1) });
+    qd('NV009', { loai: 'dieu_chuyen', so: '45/QĐ-CT', ngay: '2023-02-25', hieuLuc: '2023-03-01', phongBanCu: 'KDVT', phongBanMoi: 'KTH', chucVuCu: 'CN LĐ-SC', chucVuMoi: 'CN LĐ-SC', noiDung: 'Điều chuyển về Phòng Kỹ thuật' });
+    var nl1 = qd('NV006', { loai: 'nang_luong', so: '88/QĐ-CT', ngay: dau(lui(2)), hieuLuc: dau(lui(2)), luongCu: 8500000, luongMoi: 9000000, noiDung: 'Nâng bậc lương thường xuyên' });
+    var nl2 = qd('NV011', { loai: 'nang_luong', so: '61/QĐ-CT', ngay: dau(lui(5)), hieuLuc: dau(lui(5)), luongCu: 7500000, luongMoi: 8000000, noiDung: 'Nâng bậc lương thường xuyên' });
+    [nl1, nl2].forEach(function (nv) { nv.hopDong[nv.hopDong.length - 1].luongCB = nv.quyetDinh[nv.quyetDinh.length - 1].luongCu; });
+    qd('NV010', { loai: 'khen_thuong', so: '95/QĐ-CT', ngay: TL.congNgay(Y, M, D, -10), hieuLuc: TL.congNgay(Y, M, D, -10), hinhThuc: 'Tiền thưởng', soTien: 1000000, kyLuong: kyTruoc, noiDung: 'Hoàn thành vượt chỉ tiêu thu tiền nước' });
+    qd('NV013', { loai: 'ky_luat', so: '96/QĐ-CT', ngay: TL.congNgay(Y, M, D, -8), hieuLuc: TL.congNgay(Y, M, D, -8), hinhThuc: 'Khiển trách', soTien: 300000, kyLuong: kyTruoc, noiDung: 'Bồi thường chi phí sửa xe do vi phạm quy định vận hành' });
+    var nv17q = db.nhanVien[16];
+    qd('NV017', { loai: 'thoi_viec', so: '70/QĐ-CT', ngay: TL.congNgay(+nv17q.ngayNghi.slice(0, 4), +nv17q.ngayNghi.slice(5, 7), +nv17q.ngayNghi.slice(8), -15), hieuLuc: TL.congNgay(+nv17q.ngayNghi.slice(0, 4), +nv17q.ngayNghi.slice(5, 7), +nv17q.ngayNghi.slice(8), 1), lyDo: 'Người lao động xin nghỉ việc', trangThaiCu: 'dang_lam', ngayNghiCu: '' });
+
     db.ngayLe = TL.taoNgayLe(Y - 1, db.caiDat).concat(TL.taoNgayLe(Y, db.caiDat), TL.taoNgayLe(Y + 1, db.caiDat));
     var le = TL.bangNgayLe(db);
     var thaiSan = [lui(6), lui(5), lui(4)].map(function (k) { return TL.khoaKy(k.y, k.m); });
@@ -158,6 +208,15 @@
       });
       if (lk >= 3) TL.chotThang(db, ky, km);
     }
+
+    // ---- Đơn nghỉ phép: 1 đơn đã duyệt (tự chấm P vào những ngày tới), 1 đơn chờ duyệt, 1 đơn bị từ chối ----
+    var timNgay = function (tu) { var s = TL.congNgay(Y, M, D, tu); var n = TL.docNgay(s); while ([0, 6].indexOf(TL.thuTrongTuan(n.y, n.m, n.d)) >= 0) { s = TL.congNgay(n.y, n.m, n.d, 1); n = TL.docNgay(s); } return s; };
+    var a1 = timNgay(3), a2 = timNgay(6), a3 = timNgay(9);
+    var don1 = { id: 'dn1', nvId: 'nv8', kyHieu: 'P', tuNgay: a1, denNgay: a1, lyDo: 'Việc gia đình', trangThai: 'cho', ngayTao: TL.congNgay(Y, M, D, -1) };
+    TL.apDungDonNghi(db, don1); don1.trangThai = 'duyet'; don1.ngayDuyet = TL.congNgay(Y, M, D, -1);
+    db.donNghi = [don1,
+      { id: 'dn2', nvId: 'nv4', kyHieu: 'P', tuNgay: a2, denNgay: TL.congNgay(+a2.slice(0, 4), +a2.slice(5, 7), +a2.slice(8), 1), lyDo: 'Về quê', trangThai: 'cho', ngayTao: TL.congNgay(Y, M, D, 0) },
+      { id: 'dn3', nvId: 'nv12', kyHieu: 'KL', tuNgay: a3, denNgay: a3, lyDo: 'Việc riêng', trangThai: 'tuchoi', ngayTao: TL.congNgay(Y, M, D, -2) }];
     return db;
   };
 })();

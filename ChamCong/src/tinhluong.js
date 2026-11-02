@@ -130,6 +130,7 @@
       phongBan: [],
       nhanVien: [],
       ngayLe: [],
+      donNghi: [],
       thang: {}
     };
     db.ngayLe = taoNgayLe(nam, db.caiDat).concat(taoNgayLe(nam + 1, db.caiDat));
@@ -149,6 +150,7 @@
     if (!Array.isArray(db.ngayLe)) db.ngayLe = md.ngayLe;
     db.ngayLe.forEach(function (x) { if (!x.loai) x.loai = loaiNgayLe(x); });
     if (!db.thang || typeof db.thang !== 'object') db.thang = {};
+    if (!Array.isArray(db.donNghi)) db.donNghi = [];
     if (!Array.isArray(db.sanPham)) {
       db.sanPham = sanPhamMacDinh();
       if (db.caiDat.donGiaSP) db.sanPham[0].donGia = +db.caiDat.donGiaSP;
@@ -160,6 +162,7 @@
     });
     db.nhanVien.forEach(function (nv) {
       if (!nv.phuCap) nv.phuCap = {};
+      ['hopDong', 'quyetDinh', 'nguoiPhuThuoc'].forEach(function (f) { if (!Array.isArray(nv[f])) nv[f] = []; });
       if (nv.lichLam) { nv.loaiLD = nv.lichLam === 'T2-T6' ? 'VP' : nv.lichLam === 'T2-T7' ? 'CN' : ''; delete nv.lichLam; }
     });
     db.phienBan = 1;
@@ -457,6 +460,118 @@
     return Math.round(thue);
   }
 
+  /* ================= Nhân sự: quyết định, người phụ thuộc, đơn nghỉ ================= */
+
+  var LOAI_QD = {
+    tiep_nhan: 'Tiếp nhận', bo_nhiem: 'Bổ nhiệm', dieu_chuyen: 'Điều chuyển', nang_luong: 'Nâng lương / điều chỉnh lương',
+    khen_thuong: 'Khen thưởng', ky_luat: 'Kỷ luật', thoi_viec: 'Thôi việc', khac: 'Khác'
+  };
+
+  /** Mức lương và lương đóng BH áp dụng cho kỳ: nếu có quyết định nâng lương hiệu lực SAU kỳ này
+      thì kỳ này dùng mức lương cũ ghi trong quyết định đó (quyết định sớm nhất). */
+  function luongTheoKy(db, nv, y, m) {
+    var cuoi = ketThucKy(db, y, m);
+    var kq = { luongCB: +nv.luongCB || 0, luongBH: +nv.luongBH || 0, qd: null };
+    var ds = (nv.quyetDinh || []).filter(function (q) { return q.loai === 'nang_luong' && q.hieuLuc && q.hieuLuc > cuoi; })
+      .sort(function (a, b) { return a.hieuLuc < b.hieuLuc ? -1 : 1; });
+    if (ds.length) {
+      var q = ds[0];
+      if (q.luongCu != null && q.luongCu !== '') kq.luongCB = +q.luongCu;
+      if (q.luongBHCu != null && q.luongBHCu !== '') kq.luongBH = +q.luongBHCu;
+      kq.qd = q;
+    }
+    return kq;
+  }
+
+  /** Số người phụ thuộc được giảm trừ trong tháng (theo danh sách có từ tháng – đến tháng) */
+  function soNPTKy(nv, y, m) {
+    var ds = nv.nguoiPhuThuoc;
+    if (!Array.isArray(ds) || !ds.length) return +nv.soNPT || 0;
+    var k = khoaKy(y, m);
+    return ds.filter(function (p) { return (!p.tuThang || p.tuThang <= k) && (!p.denThang || p.denThang >= k); }).length;
+  }
+
+  /** Tiền thưởng / phạt theo quyết định khen thưởng, kỷ luật được đưa vào bảng lương kỳ y-m */
+  function thuongPhatQD(nv, y, m) {
+    var k = khoaKy(y, m), t = 0, p = 0;
+    (nv.quyetDinh || []).forEach(function (q) {
+      if (q.kyLuong !== k || !+q.soTien) return;
+      if (q.loai === 'khen_thuong') t += +q.soTien; else if (q.loai === 'ky_luat') p += +q.soTien;
+    });
+    return { thuong: t, phat: p };
+  }
+
+  /** Ngày làm việc của nhân viên trong khoảng [tu, den] (bỏ ngày nghỉ tuần, ngày lễ, ngoài thời gian làm việc) */
+  function ngayLamTrongKhoang(db, nv, tu, den) {
+    var a = docNgay(tu), ds = [], le = bangNgayLe(db);
+    if (!a || !den || den < tu) return ds;
+    for (var i = 0; i < 400; i++) {
+      var s = congNgay(a.y, a.m, a.d, i);
+      if (s > den) break;
+      var n = docNgay(s);
+      if (!nvLamNgay(nv, n.y, n.m, n.d)) continue;
+      if (loaiNgay(db, n.y, n.m, n.d, le, nv) === 'nghi' || le[s]) continue;
+      ds.push({ y: n.y, m: n.m, d: n.d, iso: s });
+    }
+    return ds;
+  }
+
+  /** Duyệt đơn nghỉ: chấm ký hiệu vào bảng chấm công cho các ngày làm việc trong khoảng.
+      Ghi đè ô trống hoặc ô đang chấm đi làm (+, +/2); giữ nguyên ô đã chấm nghỉ khác; bỏ qua kỳ đã chốt. */
+  function apDungDonNghi(db, don) {
+    var nv = db.nhanVien.filter(function (x) { return x.id === don.nvId; })[0];
+    var kq = { cham: [], khoa: [], trung: [] };
+    if (!nv) return kq;
+    var cd = db.caiDat, diLam = [cd.khDiLam || '+', cd.khNuaNgay || '+/2'].map(function (x) { return String(x).toUpperCase(); });
+    ngayLamTrongKhoang(db, nv, don.tuNgay, don.denNgay).forEach(function (x) {
+      var k = kyCuaNgay(db, x.y, x.m, x.d), TK = db.thang[khoaKy(k.y, k.m)];
+      if (TK && TK.khoa) { kq.khoa.push(x.iso); return; }
+      var T = thang(db, x.y, x.m, true), cc = T.cc[nv.id] || (T.cc[nv.id] = {});
+      var cu = cc[x.d] ? String(cc[x.d]).toUpperCase() : '';
+      if (cu && diLam.indexOf(cu) < 0 && cu !== String(don.kyHieu).toUpperCase()) { kq.trung.push(x.iso); return; }
+      cc[x.d] = don.kyHieu;
+      kq.cham.push(x.iso);
+    });
+    don.ngayDaCham = kq.cham;
+    return kq;
+  }
+
+  /** Huỷ duyệt đơn: xoá các ô đã chấm theo đơn (nếu vẫn còn đúng ký hiệu và kỳ chưa chốt) */
+  function boDonNghi(db, don) {
+    var n = 0;
+    (don.ngayDaCham || []).forEach(function (s) {
+      var x = docNgay(s), k = kyCuaNgay(db, x.y, x.m, x.d), TK = db.thang[khoaKy(k.y, k.m)];
+      if (TK && TK.khoa) return;
+      var T = db.thang[khoaKy(x.y, x.m)], cc = T && T.cc[don.nvId];
+      if (cc && String(cc[x.d]) === String(don.kyHieu)) { delete cc[x.d]; n++; }
+    });
+    don.ngayDaCham = [];
+    return n;
+  }
+
+  /** Ngày đủ tuổi nghỉ hưu (điều kiện lao động bình thường, lộ trình Nghị định 135/2020/NĐ-CP):
+      nam 60 tuổi 3 tháng (2021) +3 tháng/năm đến 62 tuổi; nữ 55 tuổi 4 tháng (2021) +4 tháng/năm đến 60 tuổi. */
+  function ngayNghiHuu(gioiTinh, ngaySinh) {
+    var n = docNgay(ngaySinh);
+    if (!n) return '';
+    var nu = /n[ữu]/i.test(gioiTinh || '');
+    for (var y = 2021; y <= 2100; y++) {
+      var thangTuoi = nu ? Math.min(720, 55 * 12 + 4 * (y - 2020)) : Math.min(744, 60 * 12 + 3 * (y - 2020));
+      var t = new Date(n.y, n.m - 1 + thangTuoi, n.d);
+      if (t.getFullYear() <= y) return iso(t.getFullYear(), t.getMonth() + 1, t.getDate());
+    }
+    return '';
+  }
+
+  /** Thâm niên (năm, tháng) tính đến ngày */
+  function thamNien(ngayVao, denNgay) {
+    var a = docNgay(ngayVao), b = docNgay(denNgay);
+    if (!a || !b) return { nam: 0, thang: 0, tongThang: 0 };
+    var t = (b.y - a.y) * 12 + (b.m - a.m) - (b.d < a.d ? 1 : 0);
+    t = Math.max(0, t);
+    return { nam: Math.floor(t / 12), thang: t % 12, tongThang: t };
+  }
+
   /* ================= Tính lương 1 nhân viên ================= */
 
   function r0(x) { return Math.round(x || 0); }
@@ -468,7 +583,8 @@
     var c = tongHopCong(db, y, m, nv, ctx);
     var cc = c.congChuan || 1;
     var tl = (nv.tiLeHuong == null || nv.tiLeHuong === '' ? 100 : +nv.tiLeHuong) / 100;
-    var cb = +nv.luongCB || 0;
+    var lk = luongTheoKy(db, nv, y, m);
+    var cb = lk.luongCB;
     var gio = +cd.gioLamNgay || 8;
     var hinhThuc = nv.hinhThuc || 'thang';
     var luongNgay, luongGio;
@@ -533,13 +649,14 @@
 
     var thuong = +dc.thuong || 0, congKhac = +dc.congKhac || 0;
     var tamUng = +dc.tamUng || 0, khauTru = +dc.khauTru || 0;
-    var tongThuNhap = luongSP + luongCong + tienOT + tongPC + thuong + congKhac;
+    var qd = thuongPhatQD(nv, y, m), thuongQD = qd.thuong, phatQD = qd.phat;
+    var tongThuNhap = luongSP + luongCong + tienOT + tongPC + thuong + thuongQD + congKhac;
 
     // Bảo hiểm
     var canhBao = [];
     var luongBH = 0;
     if (nv.thamGiaBH) {
-      if (+nv.luongBH > 0) luongBH = +nv.luongBH;
+      if (lk.luongBH > 0) luongBH = lk.luongBH;
       else if (hinhThuc === 'thang' || hinhThuc === 'khoan') luongBH = cb + pcDongBH;
       else canhBao.push('Chưa nhập lương đóng BH');
       if (luongBH > 0 && luongBH < (+cd.luongToiThieuVung || 0)) canhBao.push('Lương đóng BH thấp hơn lương tối thiểu vùng');
@@ -564,7 +681,7 @@
 
     // Thuế TNCN
     var tnct = Math.max(0, tongThuNhap - pcKhongThue - otMienThue);
-    var soNPT = +nv.soNPT || 0;
+    var soNPT = soNPTKy(nv, y, m);
     var gtBT = 0, gtNPT = 0, tntt = 0, thue = 0;
     var cachThue = nv.cachTinhThue || 'luy_tien';
     if (cachThue === 'luy_tien') {
@@ -578,7 +695,7 @@
     }
 
     var phatMuon = r0((+cd.phatMuonMoiLan || 0) * c.muonLan + (+cd.phatMuonMoiPhut || 0) * c.muonPhut);
-    var tongKhauTru = tongBH + doanPhi + thue + phatMuon + khauTru;   // cột "Cộng" các khoản khấu trừ (không gồm tạm ứng)
+    var tongKhauTru = tongBH + doanPhi + thue + phatMuon + khauTru + phatQD;   // cột "Cộng" các khoản khấu trừ (không gồm tạm ứng)
     var thucLinh = tongThuNhap - tamUng - tongKhauTru;
     var lt = +cd.lamTron || 1;
     thucLinh = Math.round(thucLinh / lt) * lt;
@@ -594,7 +711,7 @@
       luongTG: luongTG, luongNgung: luongNgung, luongCong: luongCong,
       tienOT: tienOT, otMienThue: otMienThue,
       phuCap: phuCap, phuCapNgay: phuCapNgay, tongPhuCap: tongPC, pcKhongThue: pcKhongThue,
-      thuong: thuong, congKhac: congKhac, tongThuNhap: tongThuNhap,
+      thuong: thuong, thuongQD: thuongQD, phatQD: phatQD, congKhac: congKhac, tongThuNhap: tongThuNhap, qdLuong: lk.qd ? lk.qd.so || '' : '',
       luongBH: luongBH, dongBH: !!dongBH, bhxh: bhxh, bhyt: bhyt, bhtn: bhtn, tongBH: tongBH, doanPhi: doanPhi,
       tnct: tnct, giamTruBT: gtBT, soNPT: soNPT, giamTruNPT: gtNPT, tntt: tntt, thue: thue,
       tamUng: tamUng, khauTru: khauTru, phatMuon: phatMuon, tongKhauTru: tongKhauTru, ghiChu: dc.ghiChu || '',
@@ -603,7 +720,7 @@
     };
   }
 
-  var TRUONG_TONG = ['luongCB', 'slSP', 'luongSP', 'luongTG', 'luongNgung', 'luongCong', 'tienOT', 'otMienThue', 'tongPhuCap', 'pcKhongThue', 'thuong', 'congKhac', 'tongThuNhap',
+  var TRUONG_TONG = ['luongCB', 'slSP', 'luongSP', 'luongTG', 'luongNgung', 'luongCong', 'tienOT', 'otMienThue', 'tongPhuCap', 'pcKhongThue', 'thuong', 'thuongQD', 'phatQD', 'congKhac', 'tongThuNhap',
     'luongBH', 'bhxh', 'bhyt', 'bhtn', 'tongBH', 'doanPhi', 'tnct', 'tntt', 'thue', 'tamUng', 'khauTru', 'phatMuon', 'tongKhauTru', 'thucLinh', 'chiPhiDN'];
 
   function cong(rows, phuCapList) {
@@ -750,6 +867,8 @@
     bangKyHieu: bangKyHieu, tongHopCong: tongHopCong,
     thueLuyTien: thueLuyTien, tinhLuongNV: tinhLuongNV, tinhBangLuong: tinhBangLuong, congTong: cong,
     chotThang: chotThang, moKhoaThang: moKhoaThang,
-    tinhVaoRa: tinhVaoRa, phepNam: phepNam, docSo: docSo
+    tinhVaoRa: tinhVaoRa, phepNam: phepNam, docSo: docSo,
+    LOAI_QD: LOAI_QD, luongTheoKy: luongTheoKy, soNPTKy: soNPTKy, thuongPhatQD: thuongPhatQD,
+    ngayLamTrongKhoang: ngayLamTrongKhoang, apDungDonNghi: apDungDonNghi, boDonNghi: boDonNghi, ngayNghiHuu: ngayNghiHuu, thamNien: thamNien
   };
 });
