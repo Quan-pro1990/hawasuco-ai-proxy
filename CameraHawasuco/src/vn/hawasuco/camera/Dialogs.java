@@ -46,7 +46,7 @@ final class Dialogs {
             "Đội Cấp nước số 1", "Đội Cấp nước số 2", "Đội Cấp nước số 3",
             "Đội Cấp nước số 4", "Đội Cấp nước số 5", "Đội Cấp nước số 6"};
     private static final String[] EQUIPMENT = {
-            "Đồng hồ nước khách hàng", "Thủy lượng kế (TLK)", "Đồng hồ cấp 1", "Van", "Trụ cứu hỏa",
+            "Đồng hồ nước khách hàng", "Thủy lượng kế (TLK)", "Đồng hồ cấp 1", "SCADA", "Van", "Trụ cứu hỏa",
             "Đường ống", "Máy bơm", "Giếng", "Bể chứa"};
 
     /** Trang cài đặt toàn màn hình, nền sáng, chữ to. */

@@ -43,7 +43,7 @@ Trong trang **Thông tin & cài đặt** (nút ⚙):
   (khi địa chỉ tự tra chưa đúng, nhất là sau sáp nhập tỉnh, xã).
 - **Nhân viên**, **Đội**: chữ to in đậm, luôn nằm trên một dòng (tên dài thì chữ tự nhỏ lại cho vừa);
   chưa nhập thì khung ngắm nhắc "(chạm để nhập)", ảnh lưu bỏ dòng trống;
-  **Thiết bị** (bấm **Chọn ▾**: đồng hồ nước, TLK, van, trụ cứu hỏa… hoặc gõ tay), nơi làm việc và
+  **Thiết bị** (bấm **Chọn ▾**: đồng hồ nước, TLK, SCADA, van, trụ cứu hỏa… hoặc gõ tay), nơi làm việc và
   nội dung công việc (không bắt buộc, để trống thì không in lên ảnh).
 - Bật / tắt từng dòng: bản đồ, địa chỉ, tọa độ, nhân viên, đội, thiết bị, nơi làm việc, nội dung, mã ảnh.
 - **Kiểu bản đồ**: vệ tinh (Esri) hoặc đường phố (OpenStreetMap).
