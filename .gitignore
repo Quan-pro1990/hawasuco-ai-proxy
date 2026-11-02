@@ -10,3 +10,8 @@ node_modules/
 *.log
 .DS_Store
 Thumbs.db
+
+# Khoa ky ung dung Android va thu muc build tam - KHONG dua len GitHub
+*.jks
+*.keystore
+CameraHawasuco/build/
