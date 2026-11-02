@@ -9,7 +9,7 @@
     ot: { ten: 'Làm thêm (giờ)', kho: 'ot' },
     muon: { ten: 'Đi muộn / về sớm (phút)', kho: 'muon' }
   };
-  var st = { che: 'kh', pb: '', tim: '', anc: null, act: null, sel: null, keo: false, undo: [], kyUndo: '' };
+  var st = { che: 'kh', pb: '', ld: '', tim: '', anc: null, act: null, sel: null, keo: false, undo: [], kyUndo: '' };
   var C = null; // ngữ cảnh đang hiển thị
   var oSua = null;
 
@@ -31,6 +31,7 @@
     var ngay = TL.ngayKy(db, y, m), le = TL.bangNgayLe(db);
     var rows = TL.dsNhanVienKy(db, y, m).filter(function (nv) {
       if (st.pb && nv.phongBan !== st.pb) return false;
+      if (st.ld && (nv.loaiLD || '') !== (st.ld === '-' ? '' : st.ld)) return false;
       if (st.tim && !App.timKhop(nv.ma + ' ' + nv.hoTen, st.tim)) return false;
       return true;
     });
@@ -50,6 +51,7 @@
       '<div class="the khong-in" style="padding:12px 14px"><div class="cc-cong">' +
       '<div class="nut-nhom" id="cc-che">' + Object.keys(CHE).map(function (k) { return '<button class="nut' + (st.che === k ? ' chon' : '') + '" data-che="' + k + '">' + CHE[k].ten + '</button>'; }).join('') + '</div>' +
       '<select id="cc-pb"><option value="">Tất cả bộ phận</option>' + db.phongBan.map(function (p) { return '<option value="' + h(p.ma) + '"' + (st.pb === p.ma ? ' selected' : '') + '>' + h(p.ten) + '</option>'; }).join('') + '</select>' +
+      App.chonLoaiLD('cc-ld', st.ld) +
       '<input type="search" id="cc-tim" placeholder="Tìm nhân viên…" value="' + h(st.tim) + '" style="width:170px">' +
       '<span class="gian"></span>' +
       '<button class="nut" id="cc-du"' + (khoa ? ' disabled' : '') + '>' + App.icon('dien') + 'Chấm đủ công…</button>' +
@@ -66,7 +68,7 @@
         'Tháng ' + m + ' năm ' + y + ' (từ ' + TL.hienNgay(ngay[0].iso) + ' đến ' + TL.hienNgay(ngay[ngay.length - 1].iso) + ')' + (st.pb ? ' – Bộ phận: ' + TL.tenPhongBan(db, st.pb) : '')) +
       '<div class="cuon cao" id="cc-cuon" style="position:relative"><table class="cc" id="cc-bang"></table></div>' +
       '<div class="chu-giai">' + (st.che === 'kh' ? db.kyHieu.map(function (k) { return '<span><b style="background:var(--k-' + k.nhom + ')">' + h(k.ma) + '</b>' + h(k.ten) + '</span>'; }).join('') : '') +
-      '<span><b style="background:var(--ngay-nghi)">&nbsp;</b>Ngày nghỉ hằng tuần (theo lịch từng người)</span><span><b style="background:var(--ngay-le)">&nbsp;</b>Ngày lễ</span>' +
+      '<span><b style="background:var(--ngay-nghi)">&nbsp;</b>Ngày nghỉ hằng tuần (theo loại lao động)</span><span><b style="background:var(--ngay-le)">&nbsp;</b>Ngày lễ</span>' +
       '<span><b style="background:repeating-linear-gradient(45deg,#f5f6f8,#f5f6f8 4px,#eceef2 4px,#eceef2 8px)">&nbsp;</b>Chưa vào làm / đã nghỉ việc</span></div>' +
       App.kyIn();
 
@@ -74,6 +76,7 @@
 
     App.$('#cc-che').onclick = function (e) { var b = e.target.closest('[data-che]'); if (b) { huySua(); st.che = b.dataset.che; App.veLai(); } };
     App.$('#cc-pb').onchange = function () { st.pb = this.value; st.sel = st.act = null; App.veLai(); };
+    var ld = App.$('#cc-ld'); if (ld) ld.onchange = function () { st.ld = this.value; st.sel = st.act = null; App.veLai(); };
     App.$('#cc-tim').oninput = function () { st.tim = this.value; st.sel = st.act = null; var v = this.value; App.veLai(); var i = App.$('#cc-tim'); i.focus(); i.setSelectionRange(v.length, v.length); };
     var mau = App.$('#cc-mau');
     if (mau) mau.onclick = function (e) { var b = e.target.closest('[data-k]'); if (b) ganChon(b.dataset.k); };
@@ -386,7 +389,7 @@
         '<label class="chk"><input type="checkbox" name="le" checked> Đánh <b>' + h(kl) + '</b> vào ngày lễ</label>' +
         '<label class="chk"><input type="checkbox" name="boGio" checked> Bỏ qua nhân viên lương giờ</label>' +
         '<label class="chk"><input type="checkbox" name="de"> Ghi đè các ô đã chấm</label>' +
-        '<p class="mo nho" style="margin:0">Ngày làm việc (theo lịch làm việc của từng người) được chấm <b>' + h(kc) + '</b>' + (cd.nuaNgayT7 ? ', thứ bảy chấm <b>' + h(kn) + '</b>' : '') + '; ngày nghỉ hằng tuần để trống. Sau đó chỉ cần sửa những ngày nghỉ phép, SP, công tác…</p></form>',
+        '<p class="mo nho" style="margin:0">Ngày làm việc (theo loại lao động của từng người) được chấm <b>' + h(kc) + '</b>' + (cd.nuaNgayT7 ? ', thứ bảy chấm <b>' + h(kn) + '</b>' : '') + '; ngày nghỉ hằng tuần để trống. Sau đó chỉ cần sửa những ngày nghỉ phép, SP, công tác…</p></form>',
       nut: [{ ten: 'Huỷ' }, {
         ten: 'Chấm công', loai: 'chinh', bam: function (el) {
           var f = App.$('form', el), pv = f.pv.value, den = +f.den.value, coLe = f.le.checked, de = f.de.checked, boGio = f.boGio.checked;
@@ -566,7 +569,7 @@
 
   function xuatExcel() {
     var db = App.db, shs = [];
-    var all = TL.dsNhanVienKy(db, C.y, C.m);
+    var all = TL.dsNhanVienKy(db, C.y, C.m).filter(function (nv) { return !st.ld || (nv.loaiLD || '') === (st.ld === '-' ? '' : st.ld); });
     var pbs = st.pb ? db.phongBan.filter(function (p) { return p.ma === st.pb; }) : db.phongBan.slice();
     pbs.forEach(function (p) {
       var rows = all.filter(function (nv) { return nv.phongBan === p.ma; });

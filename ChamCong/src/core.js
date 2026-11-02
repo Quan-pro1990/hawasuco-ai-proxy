@@ -370,6 +370,15 @@
     } catch (e) { console.error(e); App.bao('Lỗi xuất Excel: ' + e.message, 'loi'); }
   };
 
+  /** Ô chọn loại lao động để lọc */
+  App.chonLoaiLD = function (id, v) {
+    var ds = App.db.caiDat.loaiLD || [];
+    if (!ds.length) return '';
+    var chua = App.db.nhanVien.some(function (nv) { return !nv.loaiLD && nv.trangThai !== 'nghi_viec'; });
+    return '<select id="' + id + '"><option value="">Mọi loại lao động</option>' + ds.map(function (l) { return '<option value="' + App.h(l.ma) + '"' + (v === l.ma ? ' selected' : '') + '>' + App.h(l.ten) + '</option>'; }).join('') +
+      (chua ? '<option value="-"' + (v === '-' ? ' selected' : '') + '>(Chưa chọn loại)</option>' : '') + '</select>';
+  };
+
   /* ================= In ================= */
   App.dauIn = function (tieuDe, phuDe) {
     var ct = App.db.congTy;

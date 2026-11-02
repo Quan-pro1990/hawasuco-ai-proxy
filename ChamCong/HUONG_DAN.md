@@ -16,9 +16,15 @@ Khi dùng thật: trang **Tổng quan** → bấm **Xoá dữ liệu mẫu, bắ
    tiêu đề bảng lương (vd *BẢNG THANH TOÁN TIỀN LƯƠNG VĂN PHÒNG CÔNG TY*), người ký.
 2. **Kỳ công & giờ làm**: chọn **kỳ công bắt đầu từ ngày** – vd *ngày 21* thì bảng chấm công tháng 10 tính từ 21/9 đến 20/10.
    Chọn ngày nghỉ hằng tuần chung, giờ vào – ra (dùng khi đọc máy chấm công).
-3. **Danh mục**: phòng ban / bộ phận (thứ tự in trên bảng), phụ cấp, ký hiệu chấm công, ngày lễ (bấm *Tạo tự động* cho từng năm).
+3. **Danh mục**:
+   - **Loại lao động & công chuẩn**: mặc định *Nhân viên văn phòng* = **22 công** (nghỉ thứ 7, chủ nhật) và
+     *Công nhân* = **26 công** (nghỉ chủ nhật). Công chuẩn là số cố định, không đổi theo tháng; để trống thì phần mềm
+     đếm số ngày làm việc thực tế trong kỳ. Thêm loại khác được (vd bảo vệ, trực ca).
+   - **Sản phẩm (lương SP)**: tên, đơn vị tính, đơn giá – vd *Hoá đơn ghi thu 1.200 đ/HĐ*, *Lắp đặt đồng hồ … đ/cái*.
+   - Phòng ban / bộ phận (thứ tự in trên bảng), phụ cấp, ký hiệu chấm công, ngày lễ (bấm *Tạo tự động* cho từng năm).
 4. **Nhân viên**: thêm từng người hoặc **Nhập từ Excel** (bấm *Tải file mẫu* để có đúng các cột). Mỗi người cần:
-   - **Lịch làm việc**: *Thứ 2 – Thứ 6* (công chuẩn thường 22) hoặc *Thứ 2 – Thứ 7* (thường 26). Cần cố định số công thì nhập *Công chuẩn riêng*.
+   - **Loại lao động** (văn phòng 22 công / công nhân 26 công). Ai khác thì nhập *Công chuẩn riêng*.
+   - **Sản phẩm chính** nếu có lương sản phẩm (có thể đặt đơn giá riêng cho người đó).
    - **Mức lương/HĐ**, phụ cấp (vd cơm trưa 50.000 đ/ngày), có tham gia BH không, đoàn viên công đoàn, số người phụ thuộc.
    - **Mã chấm công** = số ID của người đó trên máy chấm công vân tay (nếu dùng).
 
@@ -57,7 +63,9 @@ Cột theo mẫu *Bảng thanh toán tiền lương*: Mức lương/HĐ · Lươ
 Phụ cấp cơm trưa (số công, số tiền) · phụ cấp khác · Thưởng · Tổng thu nhập · Tạm ứng kỳ I ·
 BHXH 8% · BHYT 1,5% · BHTN 1% · Công đoàn 0,5% · Thuế TNCN · Khấu trừ khác · Cộng · **Lãnh kỳ II** · Ký nhận.
 
-- Ô nền vàng nhập trực tiếp: **sản lượng (số HĐ)**, thưởng, khoản cộng khác, **tạm ứng kỳ I**, khấu trừ khác, ghi chú.
+- Ô nền vàng nhập trực tiếp: **số lượng sản phẩm chính**, thưởng, khoản cộng khác, **tạm ứng kỳ I**, khấu trừ khác, ghi chú.
+  Người làm nhiều loại sản phẩm trong tháng: bấm nút **…** cạnh ô số lượng để nhập từng loại.
+- Lọc theo **phòng ban** và **loại lao động** (vd chỉ in bảng lương công nhân); bảng chấm công cũng lọc được như vậy.
 - Bấm tên nhân viên để xem **chi tiết cách tính** từng con số.
 - **Xuất Excel** (kèm trang *Bảo hiểm*), **File chuyển khoản** cho ngân hàng, **In**.
 - **Chốt lương tháng**: khoá chấm công và bảng lương của kỳ, lưu cố định số liệu (không đổi khi sau này sửa mức lương,
@@ -65,8 +73,11 @@ BHXH 8% · BHYT 1,5% · BHTN 1% · Công đoàn 0,5% · Thuế TNCN · Khấu tr
 
 Cách tính chính:
 - Lương thời gian = Mức lương × tỷ lệ hưởng ÷ công chuẩn × số công lương thời gian
-  (vd 8.000.000 ÷ 22 × 19 = 6.909.091).
-- Lương sản phẩm = sản lượng × đơn giá (vd 2.490 HĐ × 1.200 đ = 2.988.000).
+  (văn phòng: 8.000.000 ÷ 22 × 19 = 6.909.091; công nhân: 8.040.000 ÷ 26 × 23 = 7.112.308).
+  Đi làm nhiều hơn công chuẩn thì được trả theo số công thực tế; muốn tối đa bằng mức lương thì bật
+  *Không trả lương thời gian quá công chuẩn* trong Cài đặt → Kỳ công.
+- Lương sản phẩm = Σ số lượng × đơn giá từng sản phẩm (vd 2.490 HĐ × 1.200 đ = 2.988.000).
+  Ngày chấm `SP` không tính vào lương thời gian nhưng vẫn tính ngày cơm.
 - Cơm trưa = đơn giá × ngày làm thực tế (gồm cả ngày SP).
 - BH trên lương đóng BH (mặc định = mức lương + phụ cấp có đánh dấu đóng BH), có trần 20 × lương cơ sở (BHXH, BHYT)
   và 20 × lương tối thiểu vùng (BHTN). Nghỉ không lương từ 14 ngày trở lên trong kỳ thì không đóng BH.

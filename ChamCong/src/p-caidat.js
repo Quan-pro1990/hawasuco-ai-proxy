@@ -8,12 +8,12 @@
   function datPath(o, p, v) { var ks = p.split('.'), x = o; for (var i = 0; i < ks.length - 1; i++) { if (x[ks[i]] == null) x[ks[i]] = {}; x = x[ks[i]]; } x[ks[ks.length - 1]] = v; }
 
   /* ================= DANH MỤC ================= */
-  var TABS_DM = [['pb', 'Phòng ban / bộ phận'], ['pc', 'Phụ cấp'], ['kh', 'Ký hiệu chấm công'], ['le', 'Ngày lễ, Tết']];
+  var TABS_DM = [['pb', 'Phòng ban / bộ phận'], ['ld', 'Loại lao động & công chuẩn'], ['sp', 'Sản phẩm (lương SP)'], ['pc', 'Phụ cấp'], ['kh', 'Ký hiệu chấm công'], ['le', 'Ngày lễ, Tết']];
 
   function veDM(noi) {
     noi.innerHTML = '<div class="tabs">' + TABS_DM.map(function (t) { return '<button data-t="' + t[0] + '"' + (st.tab === t[0] ? ' class="chon"' : '') + '>' + t[1] + '</button>'; }).join('') + '</div><div id="dm-noi"></div>';
     App.$('.tabs', noi).onclick = function (e) { var b = e.target.closest('[data-t]'); if (b) { st.tab = b.dataset.t; App.veLai(); } };
-    ({ pb: dmPB, pc: dmPC, kh: dmKH, le: dmLe })[st.tab](App.$('#dm-noi'));
+    ({ pb: dmPB, ld: dmLD, sp: dmSP, pc: dmPC, kh: dmKH, le: dmLe })[st.tab](App.$('#dm-noi'));
   }
 
   function dmPB(el) {
@@ -48,6 +48,93 @@
         if (!ma) ma = App.boDau(ten).split(/\s+/).map(function (w) { return w[0] || ''; }).join('').toUpperCase().replace(/[^A-Z0-9]/g, '') || 'PB' + (db.phongBan.length + 1);
         if (db.phongBan.some(function (p) { return p.ma.toLowerCase() === ma.toLowerCase(); })) ma += db.phongBan.length + 1;
         db.phongBan.push({ ma: ma, ten: ten }); App.luu(); dmPB(el);
+      }
+    };
+  }
+
+  function dmLD(el) {
+    var db = App.db, ds = db.caiDat.loaiLD;
+    var dem = {}; db.nhanVien.forEach(function (nv) { if (nv.trangThai !== 'nghi_viec') dem[nv.loaiLD || ''] = (dem[nv.loaiLD || ''] || 0) + 1; });
+    var thu = [1, 2, 3, 4, 5, 6, 0];
+    el.innerHTML = '<div class="the"><h3>Loại lao động & công chuẩn</h3><p class="mo" style="margin-top:0">Lương thời gian = Mức lương ÷ <b>công chuẩn</b> × số công. ' +
+      'Vd nhân viên văn phòng 22 công (nghỉ thứ 7, chủ nhật), công nhân 26 công (nghỉ chủ nhật). Để trống ô công chuẩn thì phần mềm đếm số ngày làm việc thực tế trong kỳ. ' +
+      'Ngày nghỉ tuần dùng để tô màu bảng chấm công, “Chấm đủ công” và tính làm thêm ngày nghỉ (' + db.caiDat.heSoOT.nghi + '%).</p>' +
+      '<div class="cuon"><table class="bang"><thead><tr><th>Mã</th><th style="min-width:220px">Tên loại lao động</th><th>Công chuẩn / tháng</th>' +
+      thu.map(function (t) { return '<th>Nghỉ ' + TL.TEN_THU[t] + '</th>'; }).join('') + '<th>Nhân viên</th><th></th></tr></thead><tbody>' +
+      ds.map(function (l, i) {
+        return '<tr data-i="' + i + '"><td>' + h(l.ma) + '</td><td><input class="o-nhap chu" data-f="ten" value="' + h(l.ten) + '" style="width:100%"></td>' +
+          '<td><input class="o-nhap" data-f="congChuan" value="' + (l.congChuan ? App.so(l.congChuan) : '') + '" placeholder="theo lịch" style="min-width:80px;width:90px"></td>' +
+          thu.map(function (t) { return '<td class="giua"><input type="checkbox" data-nghi="' + t + '"' + ((l.nghiTuan || []).indexOf(t) >= 0 ? ' checked' : '') + '></td>'; }).join('') +
+          '<td class="giua">' + (dem[l.ma] || 0) + '</td><td><button class="nut nho nguy" data-a="xoa">' + App.icon('xoa') + '</button></td></tr>';
+      }).join('') + '</tbody></table></div>' +
+      '<div class="hang" style="margin-top:12px"><input id="ld-ten" placeholder="Tên loại mới (vd Bảo vệ, trực ca)" style="width:280px"><button class="nut chinh" id="ld-them">' + App.icon('them') + 'Thêm loại lao động</button></div>' +
+      (dem[''] ? '<p class="mo nho">' + dem[''] + ' nhân viên chưa chọn loại lao động (đang dùng công chuẩn chung trong Cài đặt).</p>' : '') + '</div>';
+    el.onchange = function (e) {
+      var i = e.target, tr = i.closest('tr[data-i]'); if (!tr) return;
+      var l = ds[+tr.dataset.i];
+      if (i.dataset.nghi != null) {
+        var t = +i.dataset.nghi, n = (l.nghiTuan || []).filter(function (x) { return x !== t; });
+        if (i.checked) n.push(t);
+        l.nghiTuan = n.sort();
+      } else if (i.dataset.f === 'congChuan') l.congChuan = App.docSo(i.value) || '';
+      else l.ten = i.value.trim();
+      App.luu(); App.bao('Đã lưu'); dmLD(el);
+    };
+    el.onclick = function (e) {
+      var b = e.target.closest('[data-a="xoa"]');
+      if (b) {
+        var l = ds[+b.closest('tr').dataset.i];
+        if (dem[l.ma]) { App.bao('Còn ' + dem[l.ma] + ' nhân viên thuộc loại này, hãy chuyển họ sang loại khác trước.', 'loi'); return; }
+        db.caiDat.loaiLD = ds.filter(function (x) { return x !== l; }); App.luu(); dmLD(el); return;
+      }
+      if (e.target.closest('#ld-them')) {
+        var ten = App.$('#ld-ten').value.trim(); if (!ten) { App.bao('Nhập tên loại lao động.', 'loi'); return; }
+        var ma = App.boDau(ten).split(/\s+/).map(function (w) { return w[0] || ''; }).join('').toUpperCase().replace(/[^A-Z0-9]/g, '') || 'LD';
+        while (ds.some(function (x) { return x.ma === ma; })) ma += '1';
+        ds.push({ ma: ma, ten: ten, congChuan: 26, nghiTuan: [0] }); App.luu(); dmLD(el);
+      }
+    };
+  }
+
+  function dmSP(el) {
+    var db = App.db, ds = db.sanPham;
+    var dem = {}; db.nhanVien.forEach(function (nv) { if (nv.trangThai !== 'nghi_viec') { var m = nv.maSP || (ds[0] && ds[0].ma); dem[m] = (dem[m] || 0) + 1; } });
+    el.innerHTML = '<div class="the"><h3>Sản phẩm / công việc tính lương sản phẩm</h3><p class="mo" style="margin-top:0">Lương sản phẩm = số lượng × đơn giá. ' +
+      'Mỗi nhân viên có 1 <b>sản phẩm chính</b> (chọn trong hồ sơ, có thể đặt đơn giá riêng); số lượng nhập hằng tháng ở <b>Bảng lương</b>. ' +
+      'Người làm nhiều loại sản phẩm trong tháng: bấm nút “…” cạnh ô số lượng để nhập từng loại.</p>' +
+      '<div class="hang" style="margin-bottom:10px">' + o('Hiện cột “Lương sản phẩm” trên bảng lương', 'caiDat.luongSP', 'bool') + '</div>' +
+      '<div class="cuon"><table class="bang"><thead><tr><th>Mã</th><th style="min-width:240px">Tên sản phẩm / công việc</th><th>Đơn vị tính</th><th class="so">Đơn giá (đ)</th><th>Là SP chính của</th><th></th></tr></thead><tbody>' +
+      ds.map(function (p, i) {
+        return '<tr data-i="' + i + '"><td>' + h(p.ma) + '</td><td><input class="o-nhap chu" data-f="ten" value="' + h(p.ten) + '" style="width:100%"></td>' +
+          '<td><input class="o-nhap chu" data-f="dvt" value="' + h(p.dvt || '') + '" style="min-width:70px;width:90px"></td>' +
+          '<td><input class="o-nhap" data-f="donGia" value="' + App.tien(p.donGia) + '"></td><td class="giua">' + (dem[p.ma] || 0) + ' người</td>' +
+          '<td><button class="nut nho nguy" data-a="xoa">' + App.icon('xoa') + '</button></td></tr>';
+      }).join('') + (ds.length ? '' : '<tr><td colspan="6" class="trong">Chưa có sản phẩm.</td></tr>') + '</tbody></table></div>' +
+      '<div class="hang" style="margin-top:12px"><input id="sp-ten" placeholder="Tên (vd Lắp đặt đồng hồ nước)" style="width:260px"><input id="sp-dvt" placeholder="ĐVT (vd cái)" style="width:110px">' +
+      '<input id="sp-gia" class="so" placeholder="Đơn giá" style="width:130px"><button class="nut chinh" id="sp-them">' + App.icon('them') + 'Thêm sản phẩm</button></div></div>';
+    App.$$('input.o-nhap:not(.chu)', el).forEach(App.ganOTien);
+    el.onchange = function (e) {
+      var i = e.target;
+      if (i.dataset.p) { datPath(App.db, i.dataset.p, i.checked); App.luu(); App.bao('Đã lưu'); return; }
+      var tr = i.closest('tr[data-i]'); if (!tr || !i.dataset.f) return;
+      var p = ds[+tr.dataset.i];
+      p[i.dataset.f] = i.dataset.f === 'donGia' ? App.docSo(i.value) : i.value.trim();
+      App.luu(); App.bao('Đã lưu');
+    };
+    el.onclick = function (e) {
+      var b = e.target.closest('[data-a="xoa"]');
+      if (b) {
+        var p = ds[+b.closest('tr').dataset.i];
+        App.xacNhan('Xoá sản phẩm <b>' + h(p.ten) + '</b>? Số lượng đã nhập của sản phẩm này ở các kỳ chưa chốt sẽ không còn được tính.', { nut: 'Xoá', nguy: true }).then(function (ok) {
+          if (!ok) return; db.sanPham = ds.filter(function (x) { return x !== p; }); App.luu(); dmSP(el);
+        });
+        return;
+      }
+      if (e.target.closest('#sp-them')) {
+        var ten = App.$('#sp-ten').value.trim(); if (!ten) { App.bao('Nhập tên sản phẩm.', 'loi'); return; }
+        var ma = App.boDau(ten).split(/\s+/).map(function (w) { return w[0] || ''; }).join('').toUpperCase().replace(/[^A-Z0-9]/g, '') || 'SP';
+        while (ds.some(function (x) { return x.ma === ma; })) ma += '1';
+        ds.push({ ma: ma, ten: ten, dvt: App.$('#sp-dvt').value.trim(), donGia: App.docSo(App.$('#sp-gia').value) }); App.luu(); dmSP(el);
       }
     };
   }
@@ -206,15 +293,20 @@
         html = '<div class="the"><h3>Kỳ công & ngày công chuẩn</h3><div class="form">' +
           o('Kỳ công bắt đầu từ ngày', 'caiDat.ngayDauKy', [[1, 'Ngày 1 – chấm công theo tháng dương lịch']].concat(Array.from({ length: 27 }, function (_, i) { return [i + 2, 'Ngày ' + (i + 2) + ' tháng trước đến ngày ' + (i + 1) + ' tháng này']; })),
             'Vd chọn ngày 21: bảng chấm công tháng 10 tính từ 21/9 đến 20/10') +
-          o('Cách tính công chuẩn', 'caiDat.congChuan.cach', [['theo_thang', 'Theo lịch: số ngày trong kỳ trừ ngày nghỉ tuần'], ['co_dinh', 'Cố định số ngày']]) +
-          o('Số công chuẩn cố định', 'caiDat.congChuan.soNgay', 'so', 'Chỉ dùng khi chọn “Cố định”, vd 26') +
+          o('Không trả lương thời gian quá công chuẩn', 'caiDat.gioiHanCong', 'bool') +
+          '<div class="ca goi-y">Công chuẩn đặt theo <b>loại lao động</b> ở <a href="#danhmuc">Danh mục → Loại lao động</a>: ' +
+          (cd.loaiLD || []).map(function (l) { return '<b>' + h(l.ten) + '</b> ' + App.moTaLoaiLD(l); }).join('; ') + '. ' +
+          'Các ô dưới đây chỉ dùng cho nhân viên chưa chọn loại lao động.</div>' +
+          o('Cách tính công chuẩn (chung)', 'caiDat.congChuan.cach', [['theo_thang', 'Theo lịch: số ngày trong kỳ trừ ngày nghỉ tuần'], ['co_dinh', 'Cố định số ngày']]) +
+          o('Số công chuẩn cố định (chung)', 'caiDat.congChuan.soNgay', 'so', 'Chỉ dùng khi chọn “Cố định”, vd 26') +
           o('Số giờ làm 1 ngày', 'caiDat.gioLamNgay', 'so') +
-          '<div class="ca"><div class="mo nho" style="margin-bottom:6px">Ngày nghỉ hằng tuần (chung cho cả công ty; từng nhân viên có thể đặt lịch riêng T2–T6 / T2–T7 trong hồ sơ)</div><div class="hang">' +
+          '<div class="ca"><div class="mo nho" style="margin-bottom:6px">Ngày nghỉ hằng tuần (chung – cho nhân viên chưa chọn loại lao động)</div><div class="hang">' +
           thu.map(function (t) { return '<label class="chk"><input type="checkbox" data-nghi="' + t + '"' + (cd.nghiTuan.indexOf(t) >= 0 ? ' checked' : '') + '> ' + TL.TEN_THU_DAY[t] + '</label>'; }).join('') + '</div></div>' +
           o('Thứ bảy làm nửa ngày (0,5 công chuẩn)', 'caiDat.nuaNgayT7', 'bool') +
           o('Số ngày phép năm mặc định', 'caiDat.phepNam', 'so') +
-          '</div><p class="mo nho">Công chuẩn kỳ đang chọn (' + App.tenKy(App.ky.y, App.ky.m).toLowerCase() + '): <b>' + App.so(TL.congChuan(db, App.ky.y, App.ky.m)) + '</b> ngày theo lịch chung; ' +
-          'lịch T2–T6: <b>' + App.so(TL.congChuan(db, App.ky.y, App.ky.m, { lichLam: 'T2-T6' })) + '</b>; lịch T2–T7: <b>' + App.so(TL.congChuan(db, App.ky.y, App.ky.m, { lichLam: 'T2-T7' })) + '</b>.</p></div>' +
+          '</div><p class="mo nho">Kỳ ' + App.tenKy(App.ky.y, App.ky.m).toLowerCase() + ' (' + TL.hienNgay(TL.batDauKy(db, App.ky.y, App.ky.m)) + ' – ' + TL.hienNgay(TL.ketThucKy(db, App.ky.y, App.ky.m)) + '): ' +
+          (cd.loaiLD || []).map(function (l) { return h(l.ten) + ' <b>' + App.so(TL.congChuan(db, App.ky.y, App.ky.m, { loaiLD: l.ma })) + '</b> công'; }).join(' · ') +
+          ' · chung <b>' + App.so(TL.congChuan(db, App.ky.y, App.ky.m)) + '</b> công.</p></div>' +
           '<div class="the"><h3>Giờ làm việc (dùng khi đọc dữ liệu máy chấm công)</h3><div class="form ba">' +
           o('Giờ vào', 'caiDat.gioVao', 'gio') + o('Giờ ra', 'caiDat.gioRa', 'gio') + o('Giờ ra thứ bảy (nếu làm nửa ngày)', 'caiDat.gioRaT7', 'gio') +
           o('Nghỉ trưa từ', 'caiDat.nghiTruaTu', 'gio') + o('Nghỉ trưa đến', 'caiDat.nghiTruaDen', 'gio') + o('Cho phép đi muộn / về sớm (phút)', 'caiDat.phutChoPhep', 'so') +
@@ -224,9 +316,8 @@
         break;
       case 'luong':
         html = '<div class="the"><h3>Lương sản phẩm</h3><div class="form">' +
-          o('Có lương sản phẩm (cột “Lương sản phẩm” trên bảng lương)', 'caiDat.luongSP', 'bool') + '<span></span>' +
-          o('Tên đơn vị sản lượng', 'caiDat.tenSP', 'chu', 'vd Số HĐ, Số đồng hồ, Sản phẩm') +
-          o('Đơn giá chung (đ / 1 đơn vị)', 'caiDat.donGiaSP', 'tien', 'Từng nhân viên có thể có đơn giá riêng trong hồ sơ') +
+          o('Có lương sản phẩm (cột “Lương sản phẩm” trên bảng lương)', 'caiDat.luongSP', 'bool') +
+          '<div class="mo">Đơn giá từng sản phẩm: <a href="#danhmuc">Danh mục → Sản phẩm</a> (' + (db.sanPham || []).map(function (p) { return h(p.ten) + ' ' + App.tien(p.donGia) + ' đ/' + h(p.dvt || 'đv'); }).join('; ') + ').</div>' +
           '</div></div>' +
           '<div class="the"><h3>Làm thêm giờ, ngừng việc</h3><div class="form ba">' +
           o('Làm thêm ngày thường (%)', 'caiDat.heSoOT.thuong', 'so') + o('Làm thêm ngày nghỉ tuần (%)', 'caiDat.heSoOT.nghi', 'so') + o('Làm thêm ngày lễ, Tết (%)', 'caiDat.heSoOT.le', 'so') +

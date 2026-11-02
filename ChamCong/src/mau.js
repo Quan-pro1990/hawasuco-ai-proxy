@@ -31,30 +31,34 @@
     ];
     function lui(thang) { var t = new Date(Y, M - 1 - thang, 1); return { y: t.getFullYear(), m: t.getMonth() + 1 }; }
     var vaoTV = lui(1), nghiNV = lui(4);
-    // [mã, họ tên, giới tính, ngày sinh, phòng, chức vụ, ngày vào, lương, phụ cấp, NPT, lịch làm]
+    db.sanPham = [
+      { ma: 'HD', ten: 'Hoá đơn ghi thu', dvt: 'HĐ', donGia: 1200 },
+      { ma: 'DH', ten: 'Lắp đặt, thay đồng hồ nước', dvt: 'cái', donGia: 60000 }
+    ];
+    // [mã, họ tên, giới tính, ngày sinh, phòng, chức vụ, ngày vào, lương, phụ cấp, NPT, loại lao động]
     var ds = [
-      ['NV001', 'Nguyễn Văn An', 'Nam', '1975-03-12', 'BGD', 'Giám đốc', '2015-01-05', 30000000, { AN: 50000, DT: 1000000, TN: 4000000 }, 2, 'T2-T6'],
-      ['NV002', 'Trần Thị Bình', 'Nữ', '1982-07-21', 'KTTV', 'Kế toán trưởng', '2016-03-01', 18000000, { AN: 50000, DT: 500000, TN: 2000000 }, 1, 'T2-T6'],
-      ['NV003', 'Lê Hoàng Cường', 'Nam', '1985-11-02', 'KDVT', 'Trưởng phòng', '2017-06-15', 15500000, { AN: 50000, TN: 1500000 }, 2, 'T2-T6'],
-      ['NV004', 'Phạm Thu Dung', 'Nữ', '1990-' + TL.pad(M) + '-14', 'TCHC', 'Trưởng phòng', '2018-04-02', 14000000, { AN: 50000, TN: 1500000 }, 1, 'T2-T6'],
-      ['NV005', 'Hoàng Minh Đức', 'Nam', '1988-09-30', 'KTH', 'Trưởng phòng', '2017-09-01', 15000000, { AN: 50000, TN: 1500000 }, 2, 'T2-T6'],
-      ['NV006', 'Vũ Thị Hà', 'Nữ', '1993-05-18', 'KTTV', 'Kế toán viên', '2020-07-01', 9000000, { AN: 50000 }, 0, 'T2-T6'],
-      ['NV007', 'Đặng Quốc Huy', 'Nam', '1995-12-05', 'KDVT', 'Nhân viên ghi thu', '2021-02-22', 8040000, { AN: 50000 }, 0, 'T2-T7'],
-      ['NV008', 'Bùi Thị Lan', 'Nữ', '1996-08-08', 'TCHC', 'Chuyên viên nhân sự', '2021-10-11', 9000000, { AN: 50000 }, 0, 'T2-T6'],
-      ['NV009', 'Đỗ Văn Long', 'Nam', '1992-04-25', 'KTH', 'CN LĐ-SC', '2019-05-06', 9000000, { AN: 50000 }, 1, 'T2-T7'],
-      ['NV010', 'Ngô Thị Mai', 'Nữ', '1997-' + TL.pad(M) + '-25', 'KDVT', 'Nhân viên ghi thu', '2022-03-01', 7320000, { AN: 50000 }, 0, 'T2-T7'],
-      ['NV011', 'Dương Văn Nam', 'Nam', '1994-06-11', 'KTH', 'CN LĐ-SC', '2020-11-16', 8000000, { AN: 50000 }, 1, 'T2-T7'],
-      ['NV012', 'Lý Thị Oanh', 'Nữ', '1999-10-03', 'KDVT', 'Thủ kho', '2023-02-13', 8000000, { AN: 50000 }, 0, 'T2-T6'],
-      ['NV013', 'Phan Thanh Phong', 'Nam', '1998-03-27', 'KDVT', 'Tài xế', '2024-08-05', 9000000, { AN: 50000 }, 0, 'T2-T7'],
-      ['NV014', 'Trịnh Thị Quỳnh', 'Nữ', '2000-12-12', 'KDVT', 'Nhân viên ghi thu', TL.iso(vaoTV.y, vaoTV.m, 1), 7000000, { AN: 50000 }, 0, 'T2-T7'],
-      ['NV015', 'Mai Văn Sơn', 'Nam', '1979-07-07', 'TCHC', 'Bảo vệ', '2019-01-02', 300000, { AN: 50000 }, 1, 'T2-CN'],
+      ['NV001', 'Nguyễn Văn An', 'Nam', '1975-03-12', 'BGD', 'Giám đốc', '2015-01-05', 30000000, { AN: 50000, DT: 1000000, TN: 4000000 }, 2, 'VP'],
+      ['NV002', 'Trần Thị Bình', 'Nữ', '1982-07-21', 'KTTV', 'Kế toán trưởng', '2016-03-01', 18000000, { AN: 50000, DT: 500000, TN: 2000000 }, 1, 'VP'],
+      ['NV003', 'Lê Hoàng Cường', 'Nam', '1985-11-02', 'KDVT', 'Trưởng phòng', '2017-06-15', 15500000, { AN: 50000, TN: 1500000 }, 2, 'VP'],
+      ['NV004', 'Phạm Thu Dung', 'Nữ', '1990-' + TL.pad(M) + '-14', 'TCHC', 'Trưởng phòng', '2018-04-02', 14000000, { AN: 50000, TN: 1500000 }, 1, 'VP'],
+      ['NV005', 'Hoàng Minh Đức', 'Nam', '1988-09-30', 'KTH', 'Trưởng phòng', '2017-09-01', 15000000, { AN: 50000, TN: 1500000 }, 2, 'VP'],
+      ['NV006', 'Vũ Thị Hà', 'Nữ', '1993-05-18', 'KTTV', 'Kế toán viên', '2020-07-01', 9000000, { AN: 50000 }, 0, 'VP'],
+      ['NV007', 'Đặng Quốc Huy', 'Nam', '1995-12-05', 'KDVT', 'Nhân viên ghi thu', '2021-02-22', 8040000, { AN: 50000 }, 0, 'CN'],
+      ['NV008', 'Bùi Thị Lan', 'Nữ', '1996-08-08', 'TCHC', 'Chuyên viên nhân sự', '2021-10-11', 9000000, { AN: 50000 }, 0, 'VP'],
+      ['NV009', 'Đỗ Văn Long', 'Nam', '1992-04-25', 'KTH', 'CN LĐ-SC', '2019-05-06', 9000000, { AN: 50000 }, 1, 'CN'],
+      ['NV010', 'Ngô Thị Mai', 'Nữ', '1997-' + TL.pad(M) + '-25', 'KDVT', 'Nhân viên ghi thu', '2022-03-01', 7320000, { AN: 50000 }, 0, 'CN'],
+      ['NV011', 'Dương Văn Nam', 'Nam', '1994-06-11', 'KTH', 'CN LĐ-SC', '2020-11-16', 8000000, { AN: 50000 }, 1, 'CN'],
+      ['NV012', 'Lý Thị Oanh', 'Nữ', '1999-10-03', 'KDVT', 'Thủ kho', '2023-02-13', 8000000, { AN: 50000 }, 0, 'VP'],
+      ['NV013', 'Phan Thanh Phong', 'Nam', '1998-03-27', 'KDVT', 'Tài xế', '2024-08-05', 9000000, { AN: 50000 }, 0, 'CN'],
+      ['NV014', 'Trịnh Thị Quỳnh', 'Nữ', '2000-12-12', 'KDVT', 'Nhân viên ghi thu', TL.iso(vaoTV.y, vaoTV.m, 1), 7000000, { AN: 50000 }, 0, 'CN'],
+      ['NV015', 'Mai Văn Sơn', 'Nam', '1979-07-07', 'TCHC', 'Bảo vệ', '2019-01-02', 300000, { AN: 50000 }, 1, ''],
       ['NV016', 'Hồ Thị Thu', 'Nữ', '2003-05-05', 'TCHC', 'Cộng tác viên', '2025-09-08', 30000, {}, 0, ''],
       ['NV017', 'Tạ Văn Tâm', 'Nam', '1990-01-20', 'KDVT', 'Nhân viên ghi thu', '2022-05-01', 7320000, { AN: 50000 }, 0, 'T2-T7']
     ];
     db.nhanVien = ds.map(function (x, i) {
       return {
         id: 'nv' + (i + 1), ma: x[0], maChamCong: String(i + 1), hoTen: x[1], gioiTinh: x[2], ngaySinh: x[3], phongBan: x[4], chucVu: x[5],
-        ngayVao: x[6], luongCB: x[7], phuCap: x[8], soNPT: x[9], lichLam: x[10], hinhThuc: 'thang', tiLeHuong: 100, thamGiaBH: true, doanVien: true,
+        ngayVao: x[6], luongCB: x[7], phuCap: x[8], soNPT: x[9], loaiLD: x[10], maSP: x[5] === 'CN LĐ-SC' ? 'DH' : '', hinhThuc: 'thang', tiLeHuong: 100, thamGiaBH: true, doanVien: true,
         cachTinhThue: 'luy_tien', trangThai: 'dang_lam', loaiHD: 'Không xác định thời hạn', luongBH: 0,
         cccd: '0010' + (90000000 + i * 7919), sdt: '09' + String(10000000 + i * 1234567).slice(0, 8), email: '', diaChi: '',
         mst: '80' + String(10000000 + i * 271828).slice(0, 8), nganHang: i % 3 ? 'Vietcombank' : 'BIDV', soTK: '10' + String(20000000 + i * 3141592).slice(0, 10),
@@ -73,6 +77,7 @@
     var le = TL.bangNgayLe(db);
     var thaiSan = [lui(6), lui(5), lui(4)].map(function (k) { return TL.khoaKy(k.y, k.m); });
     var ghiThu = function (nv) { return nv.chucVu === 'Nhân viên ghi thu'; };
+    var congNhanSC = function (nv) { return nv.chucVu === 'CN LĐ-SC'; };
 
     // 1) Chấm công theo ngày thật (13 tháng gần nhất đến hôm nay)
     for (var lu = 13; lu >= 0; lu--) {
@@ -89,6 +94,8 @@
           if (loai === 'le') { if (nv.hinhThuc !== 'gio') cc[d] = 'L'; continue; }
           // nhân viên ghi thu: đợt ghi chỉ số ngày 17–22 hằng tháng chấm SP (kể cả chủ nhật)
           if (ghiThu(nv) && d >= 17 && d <= 22 && R() < 0.85) { cc[d] = 'SP'; continue; }
+          // công nhân lắp đặt – sửa chữa: vài ngày khoán theo sản phẩm
+          if (congNhanSC(nv) && loai === 'thuong' && d >= 18 && d <= 20 && R() < 0.7) { cc[d] = 'SP'; continue; }
           if (loai === 'nghi') {
             if (nv.phongBan === 'KTH' && TL.thuTrongTuan(y, m, d) === 0 && R() < 0.15) {
               ot[d] = 4;
@@ -137,7 +144,9 @@
       TL.dsNhanVienKy(db, ky, km).forEach(function (nv, idx) {
         var dc = {};
         if (kyTet && kyTet.y === ky && kyTet.m === km && nv.hinhThuc === 'thang') dc.thuong = Math.round(nv.luongCB / 100000) * 100000;
-        if (ghiThu(nv)) dc.slSP = 1500 + Math.floor(R() * 1100);
+        if (ghiThu(nv)) dc.sp = { HD: 1500 + Math.floor(R() * 1100) };
+        if (congNhanSC(nv)) dc.sp = { DH: 6 + Math.floor(R() * 15) };
+        if (nv.id === 'nv7' && R() < 0.5) dc.sp = Object.assign(dc.sp || {}, { DH: 2 + Math.floor(R() * 4) });
         if (nv.hinhThuc === 'thang' && idx > 0 && R() < 0.6) dc.tamUng = nv.luongCB >= 15000000 ? 3000000 : 2000000;
         if (R() < 0.04 && idx > 3) { dc.khauTru = 150000; dc.ghiChu = 'Bồi thường làm hỏng dụng cụ'; }
         if (Object.keys(dc).length) TK.dc[nv.id] = dc;

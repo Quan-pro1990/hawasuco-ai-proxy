@@ -34,10 +34,9 @@ t('Đọc số bằng chữ', function () {
 function dbMau() {
   var db = TL.duLieuMoi();
   db.caiDat.ngayDauKy = 21;
-  db.caiDat.donGiaSP = 1200;
   db.ngayLe = [];
   db.phongBan = [{ ma: 'KD', ten: 'Phòng Kinh doanh - Vật tư' }];
-  db.nhanVien = [{ id: 'a', ma: 'NV01', hoTen: 'Nhân viên A', phongBan: 'KD', hinhThuc: 'thang', luongCB: 8000000, lichLam: 'T2-T6',
+  db.nhanVien = [{ id: 'a', ma: 'NV01', hoTen: 'Nhân viên A', phongBan: 'KD', hinhThuc: 'thang', luongCB: 8000000, loaiLD: 'VP',
     thamGiaBH: true, doanVien: true, cachTinhThue: 'luy_tien', soNPT: 0, phuCap: { AN: 50000 }, ngayVao: '2020-01-01' }];
   return db;
 }
@@ -48,7 +47,7 @@ t('Kỳ công 21/9 – 20/10/2026', function () {
   assert.strictEqual(ds[ds.length - 1].iso, '2026-10-20');
   assert.strictEqual(ds.length, 30);
   assert.strictEqual(TL.congChuan(db, 2026, 10, db.nhanVien[0]), 22);
-  assert.strictEqual(TL.congChuan(db, 2026, 10, { lichLam: 'T2-T7' }), 26);
+  assert.strictEqual(TL.congChuan(db, 2026, 10, { loaiLD: 'CN' }), 26);
   assert.deepStrictEqual(TL.kyCuaNgay(db, 2026, 10, 25), { y: 2026, m: 11 });
   assert.deepStrictEqual(TL.kyCuaNgay(db, 2026, 10, 20), { y: 2026, m: 10 });
 });
@@ -79,6 +78,44 @@ t('Bảng lương khớp mẫu: 19 công thời gian + 5 SP, 2.490 HĐ, cơm 50.
   assert.strictEqual(r.thue, 0);
   assert.strictEqual(r.tongKhauTru, 880000);
   assert.strictEqual(r.thucLinh, 8217091);
+});
+
+t('Công chuẩn cố định theo loại lao động: văn phòng 22, công nhân 26 (kể cả kỳ có 23 / 27 ngày làm)', function () {
+  var db = dbMau();
+  // kỳ 21/10 – 20/11/2026: lịch có 23 ngày T2–T6 và 27 ngày T2–T7
+  assert.strictEqual(TL.congChuan(db, 2026, 11, { loaiLD: 'VP' }), 22);
+  assert.strictEqual(TL.congChuan(db, 2026, 11, { loaiLD: 'CN' }), 26);
+  db.caiDat.loaiLD[0].congChuan = '';            // để trống = đếm theo lịch
+  assert.strictEqual(TL.congChuan(db, 2026, 11, { loaiLD: 'VP' }), 23);
+  assert.strictEqual(TL.congChuan(db, 2026, 11, { loaiLD: 'CN', congChuanRieng: 24 }), 24);
+  // thứ bảy là ngày nghỉ của văn phòng, ngày làm của công nhân
+  assert.strictEqual(TL.loaiNgay(db, 2026, 10, 24, {}, { loaiLD: 'VP' }), 'nghi');
+  assert.strictEqual(TL.loaiNgay(db, 2026, 10, 24, {}, { loaiLD: 'CN' }), 'thuong');
+});
+
+t('Công nhân 26 công: đi làm 27 ngày được 27/26 lương, bật giới hạn thì tối đa 26', function () {
+  var db = dbMau(), nv = db.nhanVien[0];
+  nv.loaiLD = 'CN'; nv.luongCB = 9000000; nv.phuCap = {};
+  TL.ngayKy(db, 2026, 11).forEach(function (x) {
+    if (TL.thuTrongTuan(x.y, x.m, x.d) === 0) return;
+    var T = TL.thang(db, x.y, x.m, true); (T.cc[nv.id] = T.cc[nv.id] || {})[x.d] = '+';
+  });
+  var r = TL.tinhBangLuong(db, 2026, 11).rows[0];
+  assert.strictEqual(r.cong.congTG, 27);
+  assert.strictEqual(r.luongTG, Math.round(9000000 / 26 * 27));
+  db.caiDat.gioiHanCong = true;
+  assert.strictEqual(TL.tinhBangLuong(db, 2026, 11).rows[0].luongTG, 9000000);
+});
+
+t('Lương sản phẩm nhiều loại, đơn giá riêng của người cho sản phẩm chính', function () {
+  var db = dbMau(), nv = db.nhanVien[0];
+  db.sanPham.push({ ma: 'DH', ten: 'Lắp đặt đồng hồ', dvt: 'cái', donGia: 85000 });
+  nv.maSP = 'DH'; nv.donGiaSP = 90000;
+  TL.thang(db, 2026, 10, true).dc[nv.id] = { sp: { DH: 10, HD: 500 } };
+  var r = TL.tinhBangLuong(db, 2026, 10).rows[0];
+  assert.strictEqual(r.slSP, 10);
+  assert.strictEqual(r.luongSP, 10 * 90000 + 500 * 1200);
+  assert.strictEqual(r.spChiTiet.length, 2);
 });
 
 t('Nghỉ phép tính vào công thời gian; nghỉ không lương ≥ 14 ngày thì không đóng BH', function () {

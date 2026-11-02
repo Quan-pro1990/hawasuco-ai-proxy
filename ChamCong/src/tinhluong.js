@@ -54,6 +54,22 @@
     ];
   }
 
+  /** Loại lao động: công chuẩn cố định và ngày nghỉ hằng tuần (0 = CN, 6 = T7).
+      congChuan để trống = đếm theo lịch (số ngày trong kỳ trừ ngày nghỉ tuần). */
+  function loaiLDMacDinh() {
+    return [
+      { ma: 'VP', ten: 'Nhân viên văn phòng', congChuan: 22, nghiTuan: [0, 6] },
+      { ma: 'CN', ten: 'Công nhân', congChuan: 26, nghiTuan: [0] }
+    ];
+  }
+
+  /** Sản phẩm / công việc tính lương sản phẩm: số lượng × đơn giá */
+  function sanPhamMacDinh() {
+    return [
+      { ma: 'HD', ten: 'Hoá đơn ghi thu', dvt: 'HĐ', donGia: 1200 }
+    ];
+  }
+
   function caiDatMacDinh() {
     return {
       ngayDauKy: 1,             // kỳ công bắt đầu từ ngày này của tháng trước (1 = theo tháng dương lịch, 21 = từ 21 tháng trước đến 20 tháng này)
@@ -71,9 +87,9 @@
       otLamTronPhut: 30,        // làm tròn xuống giờ làm thêm theo bội số phút
       heSoOT: { thuong: 150, nghi: 200, le: 300 },
       tiLeNgungViec: 100,       // % lương cho ngày nghỉ / ngừng việc (ký hiệu nhóm "ngung")
-      luongSP: true,            // có lương sản phẩm (số lượng × đơn giá)
-      tenSP: 'Số HĐ',           // tên đơn vị sản lượng
-      donGiaSP: 1200,           // đơn giá mặc định 1 sản phẩm
+      gioiHanCong: false,       // không trả lương thời gian quá công chuẩn
+      luongSP: true,            // có lương sản phẩm (số lượng × đơn giá, danh mục Sản phẩm)
+      loaiLD: loaiLDMacDinh(),
       phatMuonMoiLan: 0, phatMuonMoiPhut: 0,
       bh: {
         nv: { bhxh: 8, bhyt: 1.5, bhtn: 1 },
@@ -108,6 +124,7 @@
       caiDat: caiDatMacDinh(),
       kyHieu: kyHieuMacDinh(),
       phuCap: phuCapMacDinh(),
+      sanPham: sanPhamMacDinh(),
       phongBan: [],
       nhanVien: [],
       ngayLe: [],
@@ -129,7 +146,15 @@
     if (!Array.isArray(db.nhanVien)) db.nhanVien = [];
     if (!Array.isArray(db.ngayLe)) db.ngayLe = md.ngayLe;
     if (!db.thang || typeof db.thang !== 'object') db.thang = {};
-    db.nhanVien.forEach(function (nv) { if (!nv.phuCap) nv.phuCap = {}; });
+    if (!Array.isArray(db.sanPham)) {
+      db.sanPham = sanPhamMacDinh();
+      if (db.caiDat.donGiaSP) db.sanPham[0].donGia = +db.caiDat.donGiaSP;
+    }
+    if (!Array.isArray(db.caiDat.loaiLD) || !db.caiDat.loaiLD.length) db.caiDat.loaiLD = loaiLDMacDinh();
+    db.nhanVien.forEach(function (nv) {
+      if (!nv.phuCap) nv.phuCap = {};
+      if (nv.lichLam) { nv.loaiLD = nv.lichLam === 'T2-T6' ? 'VP' : nv.lichLam === 'T2-T7' ? 'CN' : ''; delete nv.lichLam; }
+    });
     db.phienBan = 1;
     return db;
   }
@@ -241,12 +266,18 @@
     return { y: y, m: m };
   }
 
-  /** Ngày nghỉ hằng tuần của nhân viên (theo lịch làm việc riêng hoặc cài đặt chung) */
+  function loaiLDNV(db, nv) {
+    var ma = nv && nv.loaiLD;
+    if (!ma) return null;
+    var ds = db.caiDat.loaiLD || [];
+    for (var i = 0; i < ds.length; i++) if (ds[i].ma === ma) return ds[i];
+    return null;
+  }
+
+  /** Ngày nghỉ hằng tuần của nhân viên (theo loại lao động hoặc cài đặt chung) */
   function nghiTuanNV(db, nv) {
-    var l = nv && nv.lichLam;
-    if (l === 'T2-T6') return [0, 6];
-    if (l === 'T2-T7') return [0];
-    if (l === 'T2-CN') return [];
+    var l = loaiLDNV(db, nv);
+    if (l && Array.isArray(l.nghiTuan)) return l.nghiTuan;
     return db.caiDat.nghiTuan || [0];
   }
 
@@ -256,22 +287,29 @@
     if (le[iso(y, m, d)]) return 'le';
     var t = thuTrongTuan(y, m, d);
     if (nghiTuanNV(db, nv).indexOf(t) >= 0) return 'nghi';
-    if (db.caiDat.nuaNgayT7 && t === 6 && !(nv && nv.lichLam)) return 'nua';
+    if (db.caiDat.nuaNgayT7 && t === 6 && !loaiLDNV(db, nv)) return 'nua';
     return 'thuong';
   }
 
-  /** Công chuẩn của kỳ (chung, hoặc riêng cho 1 nhân viên) */
-  function congChuan(db, y, m, nv) {
-    var cd = db.caiDat;
-    if (nv && +nv.congChuanRieng > 0) return +nv.congChuanRieng;
-    if (cd.congChuan && cd.congChuan.cach === 'co_dinh' && !(nv && nv.lichLam)) return +cd.congChuan.soNgay || 26;
-    var nghi = nghiTuanNV(db, nv), nua = cd.nuaNgayT7 && !(nv && nv.lichLam), c = 0;
+  /** Đếm số ngày làm việc trong kỳ theo ngày nghỉ tuần */
+  function demNgayLam(db, y, m, nghi, nua) {
+    var c = 0;
     ngayKy(db, y, m).forEach(function (x) {
       var t = thuTrongTuan(x.y, x.m, x.d);
       if (nghi.indexOf(t) >= 0) return;
       c += (nua && t === 6) ? 0.5 : 1;
     });
     return c;
+  }
+
+  /** Công chuẩn của kỳ: công chuẩn riêng của người > công chuẩn của loại lao động > cài đặt chung */
+  function congChuan(db, y, m, nv) {
+    var cd = db.caiDat;
+    if (nv && +nv.congChuanRieng > 0) return +nv.congChuanRieng;
+    var l = loaiLDNV(db, nv);
+    if (l) return +l.congChuan > 0 ? +l.congChuan : demNgayLam(db, y, m, nghiTuanNV(db, nv), false);
+    if (cd.congChuan && cd.congChuan.cach === 'co_dinh') return +cd.congChuan.soNgay || 26;
+    return demNgayLam(db, y, m, cd.nghiTuan || [0], cd.nuaNgayT7);
   }
 
   /* ================= Dữ liệu tháng ================= */
@@ -407,16 +445,31 @@
     else if (hinhThuc === 'gio') { luongGio = cb * tl; luongNgay = luongGio * gio; }
     else { luongNgay = cb * tl / cc; luongGio = luongNgay / gio; }
     var luongTG, luongNgung;
+    var congTinh = c.congTG;
+    if (cd.gioiHanCong && hinhThuc === 'thang') congTinh = Math.min(c.congTG, Math.max(0, cc - c.ngung));
     if (hinhThuc === 'khoan') { luongTG = (c.congHL + c.sp) > 0 ? cb * tl : 0; luongNgung = 0; }
-    else { luongTG = luongNgay * c.congTG; luongNgung = luongNgay * c.ngung * (cd.tiLeNgungViec == null ? 100 : +cd.tiLeNgungViec) / 100; }
+    else { luongTG = luongNgay * congTinh; luongNgung = luongNgay * c.ngung * (cd.tiLeNgungViec == null ? 100 : +cd.tiLeNgungViec) / 100; }
     luongTG = r0(luongTG); luongNgung = r0(luongNgung);
     var luongCong = luongTG + luongNgung;
 
     var dc = (T.dc && T.dc[nv.id]) || {};
-    // Lương sản phẩm = số lượng × đơn giá
-    var slSP = +dc.slSP || 0;
-    var donGiaSP = +nv.donGiaSP > 0 ? +nv.donGiaSP : (+cd.donGiaSP || 0);
-    var luongSP = r0(slSP * donGiaSP);
+    // Lương sản phẩm = Σ số lượng × đơn giá (sản phẩm chính của người dùng đơn giá riêng nếu có)
+    var dsSP = ctx.sanPham || db.sanPham || [];
+    var maSP = nv.maSP || (dsSP[0] && dsSP[0].ma) || '';
+    var slMap = Object.assign({}, dc.sp || {});
+    if (+dc.slSP && !slMap[maSP]) slMap[maSP] = +dc.slSP; // dữ liệu cũ
+    var spChiTiet = [], luongSP = 0;
+    dsSP.forEach(function (sp) {
+      var sl = +slMap[sp.ma] || 0;
+      if (!sl) return;
+      var dg = sp.ma === maSP && +nv.donGiaSP > 0 ? +nv.donGiaSP : (+sp.donGia || 0);
+      var tien = r0(sl * dg);
+      spChiTiet.push({ ma: sp.ma, ten: sp.ten, dvt: sp.dvt || '', sl: sl, donGia: dg, tien: tien });
+      luongSP += tien;
+    });
+    var slSP = +slMap[maSP] || 0;
+    var spChinh = dsSP.filter(function (x) { return x.ma === maSP; })[0];
+    var donGiaSP = +nv.donGiaSP > 0 ? +nv.donGiaSP : (spChinh ? +spChinh.donGia || 0 : 0);
 
     // Làm thêm giờ: phần 100% chịu thuế, phần chênh lệch được miễn thuế
     var hs = cd.heSoOT || {};
@@ -502,7 +555,8 @@
       hinhThuc: hinhThuc, cachTinhThue: cachThue, tiLeHuong: tl * 100,
       cong: c, congChuan: c.congChuan,
       luongCB: cb, luongNgay: r0(luongNgay), luongGio: r0(luongGio),
-      slSP: slSP, donGiaSP: donGiaSP, luongSP: luongSP,
+      maSP: maSP, slSP: slSP, donGiaSP: donGiaSP, luongSP: luongSP, spChiTiet: spChiTiet, congTinh: congTinh,
+      loaiLD: nv.loaiLD || '',
       luongTG: luongTG, luongNgung: luongNgung, luongCong: luongCong,
       tienOT: tienOT, otMienThue: otMienThue,
       phuCap: phuCap, phuCapNgay: phuCapNgay, tongPhuCap: tongPC, pcKhongThue: pcKhongThue,
@@ -540,7 +594,7 @@
     if (T.khoa && T.chot && T.chot.rows) {
       return { rows: T.chot.rows, phuCap: T.chot.phuCap, congChuan: T.chot.congChuan, khoa: true, ngayChot: T.chot.ngay, tong: cong(T.chot.rows, T.chot.phuCap) };
     }
-    var ctx = { T: T, kh: bangKyHieu(db), le: bangNgayLe(db), ngay: ngayKy(db, y, m), phuCap: db.phuCap };
+    var ctx = { T: T, kh: bangKyHieu(db), le: bangNgayLe(db), ngay: ngayKy(db, y, m), phuCap: db.phuCap, sanPham: db.sanPham };
     var rows = dsNhanVienKy(db, y, m).map(function (nv) { return tinhLuongNV(db, y, m, nv, ctx); });
     return { rows: rows, phuCap: db.phuCap, congChuan: congChuan(db, y, m), khoa: !!T.khoa, tong: cong(rows, db.phuCap) };
   }
@@ -650,7 +704,8 @@
 
   return {
     NHOM_KY_HIEU: NHOM_KY_HIEU, TEN_THU: TEN_THU, TEN_THU_DAY: TEN_THU_DAY,
-    kyHieuMacDinh: kyHieuMacDinh, phuCapMacDinh: phuCapMacDinh, caiDatMacDinh: caiDatMacDinh,
+    kyHieuMacDinh: kyHieuMacDinh, phuCapMacDinh: phuCapMacDinh, caiDatMacDinh: caiDatMacDinh, loaiLDMacDinh: loaiLDMacDinh, sanPhamMacDinh: sanPhamMacDinh,
+    loaiLDNV: loaiLDNV,
     duLieuMoi: duLieuMoi, chuanHoa: chuanHoa,
     pad: pad, khoaKy: khoaKy, iso: iso, soNgay: soNgay, thuTrongTuan: thuTrongTuan, docNgay: docNgay, hienNgay: hienNgay,
     phut: phut, hhmm: hhmm, congNgay: congNgay,

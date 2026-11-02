@@ -8,6 +8,10 @@
   App.TRANG_THAI = { dang_lam: 'Đang làm việc', thu_viec: 'Thử việc', tam_nghi: 'Tạm nghỉ', nghi_viec: 'Đã nghỉ việc' };
   App.CACH_THUE = { luy_tien: 'Lũy tiến từng phần', khau_tru: 'Khấu trừ 10%', khong: 'Không tính thuế' };
   App.LOAI_HD = ['Thử việc', 'Xác định thời hạn', 'Không xác định thời hạn', 'Thời vụ / khoán việc', 'Học việc'];
+  App.moTaLoaiLD = function (l) {
+    var nghi = (l.nghiTuan || []).slice().sort(function (a, b) { return (a || 7) - (b || 7); }).map(function (t) { return TL.TEN_THU[t]; }).join(', ');
+    return (+l.congChuan > 0 ? App.so(l.congChuan) + ' công' : 'công theo lịch') + (nghi ? ', nghỉ ' + nghi : ', làm cả tuần');
+  };
   App.CACH_PC = { co_dinh: 'Cố định / tháng', theo_cong: 'Theo ngày công', theo_ngay: 'Đơn giá × ngày đi làm' };
 
   /** Chuẩn hoá ngày nhập (dd/mm/yyyy, yyyy-mm-dd, số Excel) -> 'yyyy-mm-dd' */
@@ -50,7 +54,7 @@
       '</div></div>' +
       App.dauIn('DANH SÁCH NHÂN VIÊN', 'Ngày ' + new Date().toLocaleDateString('vi-VN')) +
       '<div class="cuon cao"><table class="bang" id="nv-bang"></table></div>' +
-      '<p class="mo nho khong-in">Bấm vào một dòng để xem / sửa. Mức lương theo hình thức trả lương (tháng, ngày hoặc giờ). “Lịch làm” quyết định công chuẩn: T2-T6 ≈ 22 công, T2-T7 ≈ 26 công.</p>';
+      '<p class="mo nho khong-in">Bấm vào một dòng để xem / sửa. Mức lương theo hình thức trả lương (tháng, ngày hoặc giờ). Công chuẩn theo loại lao động (Danh mục → Loại lao động), vd văn phòng 22 công, công nhân 26 công.</p>';
     veBang();
     App.$('#nv-tim').oninput = function () { loc.tim = this.value; veBang(); };
     App.$('#nv-pb').onchange = function () { loc.pb = this.value; veBang(); };
@@ -70,14 +74,14 @@
   function veBang() {
     var ds = dsLoc(), db = App.db;
     var html = '<thead><tr><th>STT</th><th>Mã NV</th><th style="min-width:170px">Họ và tên</th><th>Phòng ban</th><th>Chức vụ</th><th>Ngày vào</th><th>Loại HĐ</th>' +
-      '<th>Lịch làm</th><th>Hình thức</th><th class="so">Mức lương</th><th class="so">Lương đóng BH</th><th>NPT</th><th>Trạng thái</th><th class="khong-in"></th></tr></thead><tbody>';
-    if (!ds.length) html += '<tr><td colspan="14" class="trong">' + (db.nhanVien.length ? 'Không có nhân viên phù hợp bộ lọc.' : 'Chưa có nhân viên. Bấm “Thêm nhân viên” hoặc “Nhập từ Excel”.') + '</td></tr>';
+      '<th>Loại LĐ</th><th>Công chuẩn</th><th>Hình thức</th><th class="so">Mức lương</th><th class="so">Lương đóng BH</th><th>NPT</th><th>Trạng thái</th><th class="khong-in"></th></tr></thead><tbody>';
+    if (!ds.length) html += '<tr><td colspan="15" class="trong">' + (db.nhanVien.length ? 'Không có nhân viên phù hợp bộ lọc.' : 'Chưa có nhân viên. Bấm “Thêm nhân viên” hoặc “Nhập từ Excel”.') + '</td></tr>';
     ds.forEach(function (nv, i) {
       var tt = nv.trangThai || 'dang_lam';
       var lbh = nv.thamGiaBH ? (+nv.luongBH > 0 ? App.tien(nv.luongBH) : ((nv.hinhThuc || 'thang') === 'thang' || nv.hinhThuc === 'khoan' ? '<span class="mo" title="Lương CB + phụ cấp đóng BH">' + App.tien(luongBHMacDinh(nv)) + '</span>' : '<span class="the-tt cam">Chưa nhập</span>')) : '<span class="mo">Không tham gia</span>';
       html += '<tr data-id="' + nv.id + '" style="cursor:pointer"><td class="giua">' + (i + 1) + '</td><td>' + h(nv.ma) + '</td><td class="ten">' + h(nv.hoTen) + '</td>' +
         '<td>' + h(TL.tenPhongBan(db, nv.phongBan)) + '</td><td>' + h(nv.chucVu) + '</td><td class="giua">' + TL.hienNgay(nv.ngayVao) + '</td><td>' + h(nv.loaiHD || '') + '</td>' +
-        '<td class="giua">' + (nv.congChuanRieng ? nv.congChuanRieng + ' công' : (nv.lichLam || '<span class="mo">chung</span>')) + '</td><td>' + (App.HINH_THUC[nv.hinhThuc || 'thang']) + '</td><td class="so">' + App.tien(nv.luongCB) + (nv.tiLeHuong != null && +nv.tiLeHuong !== 100 ? ' <span class="the-tt cam">' + nv.tiLeHuong + '%</span>' : '') + '</td>' +
+        '<td>' + h((TL.loaiLDNV(db, nv) || {}).ten || '') + '</td><td class="giua">' + App.so(TL.congChuan(db, App.ky.y, App.ky.m, nv)) + '</td><td>' + (App.HINH_THUC[nv.hinhThuc || 'thang']) + '</td><td class="so">' + App.tien(nv.luongCB) + (nv.tiLeHuong != null && +nv.tiLeHuong !== 100 ? ' <span class="the-tt cam">' + nv.tiLeHuong + '%</span>' : '') + '</td>' +
         '<td class="so">' + lbh + '</td><td class="giua">' + (nv.soNPT || '') + '</td>' +
         '<td><span class="the-tt ' + ({ dang_lam: 'xanh', thu_viec: 'cam', tam_nghi: 'lam', nghi_viec: '' }[tt]) + '">' + App.TRANG_THAI[tt] + '</span></td>' +
         '<td class="khong-in"><button class="nut nho nguy xoa" title="Xoá">' + App.icon('xoa') + '</button></td></tr>';
@@ -131,13 +135,14 @@
       o('Loại hợp đồng', sel('loaiHD', d.loaiHD, App.LOAI_HD)) + o('Trạng thái', sel('trangThai', d.trangThai, cap(App.TRANG_THAI))) +
       o('Ngày vào làm', txt('ngayVao', d.ngayVao, 'type="date"')) + o('Ngày hết hạn HĐ / thử việc', txt('ngayHetHD', d.ngayHetHD, 'type="date"')) +
       o('Ngày nghỉ việc', txt('ngayNghi', d.ngayNghi, 'type="date"'), 'Ngày làm việc cuối cùng. Sau ngày này không chấm công, không tính lương.') +
-      o('Lịch làm việc', sel('lichLam', d.lichLam || '', [['', 'Theo cài đặt chung'], ['T2-T6', 'Thứ 2 – Thứ 6 (nghỉ T7, CN)'], ['T2-T7', 'Thứ 2 – Thứ 7 (nghỉ CN)'], ['T2-CN', 'Cả tuần (trực, bảo vệ…)']]), 'Quyết định công chuẩn: vd T2–T6 thường 22 công, T2–T7 thường 26 công') +
+      o('Loại lao động', sel('loaiLD', d.loaiLD || '', [['', '(Theo cài đặt chung)']].concat((db.caiDat.loaiLD || []).map(function (l) { return [l.ma, l.ten + ' – ' + App.moTaLoaiLD(l)]; }))), 'Quyết định công chuẩn và ngày nghỉ tuần. <a href="#danhmuc" data-dong>Sửa loại lao động…</a>') +
       '<h4>Lương &amp; phụ cấp</h4>' +
       o('Hình thức trả lương', sel('hinhThuc', d.hinhThuc || 'thang', cap(App.HINH_THUC))) +
       o('Mức lương / HĐ <span id="dv-luong">(' + App.DV_LUONG[d.hinhThuc || 'thang'] + ')</span>', tien('luongCB', d.luongCB)) +
       o('Tỷ lệ hưởng lương (%)', txt('tiLeHuong', d.tiLeHuong == null ? 100 : d.tiLeHuong, 'type="number" min="0" max="200" step="1"'), 'Thử việc thường 85%') +
-      o('Công chuẩn riêng (ngày)', txt('congChuanRieng', d.congChuanRieng || '', 'type="number" min="0" step="0.5" placeholder="Tự tính theo lịch làm việc"'), 'Chỉ nhập khi người này có công chuẩn cố định, vd 26') +
-      o('Đơn giá lương sản phẩm (đ)', tien('donGiaSP', d.donGiaSP), 'Để trống = đơn giá chung ' + App.tien(db.caiDat.donGiaSP) + ' đ / ' + h((db.caiDat.tenSP || 'sản phẩm').toLowerCase())) + '<span></span>' +
+      o('Công chuẩn riêng (ngày)', txt('congChuanRieng', d.congChuanRieng || '', 'type="number" min="0" step="0.5" placeholder="Theo loại lao động"'), 'Chỉ nhập khi người này khác với loại lao động của mình') +
+      o('Sản phẩm chính (lương sản phẩm)', sel('maSP', d.maSP || '', [['', '(Sản phẩm đầu danh mục)']].concat((db.sanPham || []).map(function (p) { return [p.ma, p.ten + ' – ' + App.tien(p.donGia) + ' đ/' + (p.dvt || 'đv')]; }))), 'Số lượng nhập hằng tháng ở Bảng lương. <a href="#danhmuc" data-dong>Danh mục sản phẩm…</a>') +
+      o('Đơn giá riêng cho sản phẩm chính (đ)', tien('donGiaSP', d.donGiaSP), 'Để trống = đơn giá trong danh mục') + '<span></span>' +
       pc +
       '<h4>Bảo hiểm &amp; thuế TNCN</h4>' +
       '<label class="chk"><input type="checkbox" name="thamGiaBH"' + (d.thamGiaBH ? ' checked' : '') + '> Tham gia BHXH, BHYT, BHTN</label>' +
@@ -160,7 +165,7 @@
           if (this.value === 'thu_viec') { App.$('[name=tiLeHuong]', el).value = 85; App.$('[name=loaiHD]', el).value = 'Thử việc'; }
         };
         App.$('[name=ngayNghi]', el).onchange = function () { if (this.value) App.$('[name=trangThai]', el).value = 'nghi_viec'; };
-        var a = App.$('[data-dong]', el); if (a) a.onclick = dong;
+        App.$$('[data-dong]', el).forEach(function (a) { a.onclick = dong; });
       },
       nut: [
         { ten: 'Huỷ' },
@@ -225,8 +230,9 @@
       ['cccd', 'Số CCCD', 14], ['sdt', 'Điện thoại', 12], ['email', 'Email', 18], ['diaChi', 'Địa chỉ', 24],
       ['phongBan', 'Phòng ban', 22, 'pb'], ['chucVu', 'Chức vụ', 18], ['loaiHD', 'Loại hợp đồng', 16], ['ngayVao', 'Ngày vào làm', 11, 'ngay'],
       ['ngayHetHD', 'Ngày hết hạn HĐ', 11, 'ngay'], ['trangThai', 'Trạng thái', 13, 'tt'], ['ngayNghi', 'Ngày nghỉ việc', 11, 'ngay'],
-      ['lichLam', 'Lịch làm việc', 10, 'lich'], ['congChuanRieng', 'Công chuẩn riêng', 8, 'so'],
-      ['hinhThuc', 'Hình thức lương', 13, 'ht'], ['luongCB', 'Mức lương', 13, 'so'], ['tiLeHuong', '% hưởng lương', 8, 'so'], ['donGiaSP', 'Đơn giá SP', 9, 'so'],
+      ['loaiLD', 'Loại lao động', 16, 'lld'], ['congChuanRieng', 'Công chuẩn riêng', 8, 'so'],
+      ['hinhThuc', 'Hình thức lương', 13, 'ht'], ['luongCB', 'Mức lương', 13, 'so'], ['tiLeHuong', '% hưởng lương', 8, 'so'],
+      ['maSP', 'Sản phẩm chính', 16, 'spm'], ['donGiaSP', 'Đơn giá SP riêng', 9, 'so'],
       ['luongBH', 'Lương đóng BH', 13, 'so'], ['thamGiaBH', 'Tham gia BH', 8, 'bool'], ['doanVien', 'Đoàn viên CĐ', 8, 'bool'],
       ['cachTinhThue', 'Cách tính thuế', 16, 'thue'], ['mst', 'MST cá nhân', 13], ['soNPT', 'Số người phụ thuộc', 8, 'so'],
       ['nganHang', 'Ngân hàng', 14], ['soTK', 'Số tài khoản', 16], ['phepNam', 'Phép năm', 7, 'so'], ['phepTon', 'Phép tồn', 7, 'so']
@@ -244,7 +250,8 @@
       case 'ht': return App.HINH_THUC[v || 'thang'];
       case 'thue': return App.CACH_THUE[v || 'luy_tien'];
       case 'bool': return v ? 'x' : '';
-      case 'lich': return v || '';
+      case 'lld': var l = TL.loaiLDNV(App.db, { loaiLD: v }); return l ? l.ten : '';
+      case 'spm': var sp = (App.db.sanPham || []).filter(function (x) { return x.ma === v; })[0]; return sp ? sp.ten : '';
       case 'so': return v === '' || v == null ? '' : +v;
       default: return v == null ? '' : String(v);
     }
@@ -281,6 +288,12 @@
     for (var i = 0; i < ks.length; i++) if (khop(map[ks[i]]) === x || khop(ks[i]) === x) return ks[i];
     for (i = 0; i < ks.length; i++) if (x && khop(map[ks[i]]).indexOf(x) >= 0) return ks[i];
     return null;
+  }
+
+  function timDM(ds, v) {
+    var x = khop(v);
+    var t = (ds || []).filter(function (d) { return khop(d.ten) === x || khop(d.ma) === x; })[0];
+    return t ? t.ma : null;
   }
 
   function nhapExcel() {
@@ -336,7 +349,8 @@
           case 'ngay': val = App.chuanNgay(raw); break;
           case 'so': val = App.docSo(raw); break;
           case 'bool': val = /^(x|có|co|1|true|yes|v)$/i.test(String(raw).trim()); break;
-          case 'lich': val = /t2\s*-\s*t6|thu 2.*thu 6|5 ngay/i.test(App.boDau(raw)) ? 'T2-T6' : /t2\s*-\s*t7|thu 2.*thu 7|6 ngay/i.test(App.boDau(raw)) ? 'T2-T7' : /cn|ca tuan/i.test(App.boDau(raw)) ? 'T2-CN' : ''; break;
+          case 'lld': val = timDM(App.db.caiDat.loaiLD, raw) || (/van phong|vp/i.test(App.boDau(raw)) ? 'VP' : /cong nhan|cn/i.test(App.boDau(raw)) ? 'CN' : ''); break;
+          case 'spm': val = timDM(App.db.sanPham, raw) || ''; break;
           case 'tt': val = timTheoNhan(App.TRANG_THAI, raw) || 'dang_lam'; break;
           case 'ht': val = timTheoNhan(App.HINH_THUC, raw) || (/ngay|ngày/i.test(raw) ? 'ngay' : /gio|giờ/i.test(raw) ? 'gio' : 'thang'); break;
           case 'thue': val = /10|khau|khấu/i.test(raw) ? 'khau_tru' : /khong|không/i.test(raw) ? 'khong' : 'luy_tien'; break;

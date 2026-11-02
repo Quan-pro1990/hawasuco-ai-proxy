@@ -2,10 +2,10 @@
 (function () {
   'use strict';
   var App = window.App, TL = window.TL, h = App.h;
-  var st = { pb: '', tim: '', nhomPB: true, pl: '' };
+  var st = { pb: '', ld: '', tim: '', nhomPB: true, pl: '' };
 
   var NHAP = {
-    slSP: 'Sản lượng trong kỳ (vd số hoá đơn đã ghi thu) – nhân với đơn giá để ra lương sản phẩm',
+    slSP: 'Số lượng sản phẩm chính trong kỳ – nhân đơn giá ra lương sản phẩm',
     thuong: 'Thưởng (chịu thuế TNCN)',
     congKhac: 'Khoản cộng khác (truy lĩnh, hỗ trợ…), chịu thuế; nhập số âm để truy thu',
     tamUng: 'Tạm ứng kỳ I',
@@ -25,7 +25,10 @@
       { t: 'Mức lương/HĐ', k: 'luongCB', kieu: 'so', w: 12 }
     ];
     if (cd.luongSP || co(function (r) { return r.slSP || r.luongSP || r.cong.sp; })) {
-      c.push({ t: cd.tenSP || 'Số lượng', nhom: 'Lương sản phẩm', k: 'slSP', kieu: 'so', w: 8, nhap: 'slSP' });
+      var dvt = {};
+      rows.forEach(function (r) { var sp = (App.db.sanPham || []).filter(function (x) { return x.ma === r.maSP; })[0]; if (sp && sp.dvt) dvt[sp.dvt] = 1; });
+      var dv = Object.keys(dvt);
+      c.push({ t: dv.length === 1 ? 'Số ' + dv[0] : 'Số lượng', nhom: 'Lương sản phẩm', k: 'slSP', kieu: 'so', w: 8, nhap: 'slSP' });
       c.push({ t: 'Số tiền', nhom: 'Lương sản phẩm', k: 'luongSP', kieu: 'so', w: 11 });
     }
     c.push({ t: 'Số công', nhom: 'Lương thời gian', kieu: 'cong', w: 6, f: function (r) { return r.cong.congTG; } });
@@ -80,6 +83,7 @@
   function locRows(rows) {
     return rows.filter(function (r) {
       if (st.pb && r.phongBan !== st.pb) return false;
+      if (st.ld && (r.loaiLD || '') !== (st.ld === '-' ? '' : st.ld)) return false;
       if (st.tim && !App.timKhop(r.ma + ' ' + r.hoTen, st.tim)) return false;
       return true;
     });
@@ -98,6 +102,7 @@
     noi.innerHTML =
       '<div class="the khong-in" style="padding:12px 14px"><div class="hang">' +
       '<select id="bl-pb"><option value="">Tất cả phòng ban</option>' + db.phongBan.map(function (p) { return '<option value="' + h(p.ma) + '"' + (st.pb === p.ma ? ' selected' : '') + '>' + h(p.ten) + '</option>'; }).join('') + '</select>' +
+      App.chonLoaiLD('bl-ld', st.ld) +
       '<input type="search" id="bl-tim" placeholder="Tìm nhân viên…" value="' + h(st.tim) + '" style="width:170px">' +
       '<label class="chk"><input type="checkbox" id="bl-nhom"' + (st.nhomPB ? ' checked' : '') + '> Nhóm theo phòng ban</label>' +
       '<span class="gian"></span>' +
@@ -115,6 +120,7 @@
     veBangBL(bl);
     App.$('#bl-pb').onchange = function () { st.pb = this.value; veBangBL(TL.tinhBangLuong(App.db, y, m)); };
     App.$('#bl-tim').oninput = function () { st.tim = this.value; veBangBL(TL.tinhBangLuong(App.db, y, m)); };
+    App.$('#bl-ld').onchange = function () { st.ld = this.value; veBangBL(TL.tinhBangLuong(App.db, y, m)); };
     App.$('#bl-nhom').onchange = function () { st.nhomPB = this.checked; veBangBL(TL.tinhBangLuong(App.db, y, m)); };
     App.$('#bl-xuat').onclick = function () { xuatBL(TL.tinhBangLuong(App.db, y, m)); };
     App.$('#bl-ck').onclick = function () { xuatCK(TL.tinhBangLuong(App.db, y, m)); };
@@ -143,7 +149,13 @@
       var x = '<tr data-id="' + r.nvId + '">';
       cot.forEach(function (c, ci) {
         if (c.stt) { x += '<td class="giua">' + stt + '</td>'; return; }
-        if (c.nhap && !khoa) { x += '<td><input class="o-nhap" data-f="' + c.nhap + '" value="' + (r[c.nhap] ? App.tien(r[c.nhap]) : '') + '" title="' + h(NHAP[c.nhap]) + '" inputmode="numeric"' + (c.nhap === 'slSP' ? ' style="min-width:70px"' : '') + '></td>'; return; }
+        if (c.nhap === 'slSP' && !khoa) {
+          var nhieu = (App.db.sanPham || []).length > 1, khac = (r.spChiTiet || []).some(function (x) { return x.ma !== r.maSP; });
+          x += '<td data-c="' + ci + '"><div style="display:flex;gap:3px;align-items:center"><input class="o-nhap" data-f="slSP" data-ma="' + h(r.maSP) + '" value="' + (r.slSP ? App.tien(r.slSP) : '') + '" title="' + h(NHAP.slSP + (r.donGiaSP ? ' (' + App.tien(r.donGiaSP) + ' đ)' : '')) + '" inputmode="numeric" style="min-width:64px">' +
+            (nhieu ? '<button class="nut nho" data-spct="' + r.nvId + '" title="Nhập nhiều loại sản phẩm" style="padding:1px 6px;min-height:24px' + (khac ? ';background:var(--nhap);font-weight:700' : '') + '">' + (khac ? '+' + ((r.spChiTiet || []).length - (r.slSP ? 1 : 0)) : '…') + '</button>' : '') + '</div></td>';
+          return;
+        }
+        if (c.nhap && !khoa) { x += '<td><input class="o-nhap" data-f="' + c.nhap + '" value="' + (r[c.nhap] ? App.tien(r[c.nhap]) : '') + '" title="' + h(NHAP[c.nhap]) + '" inputmode="numeric"></td>'; return; }
         var v = gt(c, r);
         x += '<td data-c="' + ci + '" class="' + (c.kieu === 'so' ? 'so' : c.kieu === 'cong' ? 'giua' : '') + (c.ten ? ' ten dinh' : '') + (c.kieu === 'so' && v < 0 ? ' am' : '') + '"' + (c.dam ? ' style="font-weight:700"' : '') + '>' +
           (c.ten ? '<span class="lk" data-ct="' + r.nvId + '">' + h(v) + '</span>' + (r.canhBao && r.canhBao.length ? ' <span title="' + h(r.canhBao.join('\n')) + '" style="color:var(--cam);cursor:help">⚠</span>' : '') : hien(c, v)) + '</td>';
@@ -180,12 +192,20 @@
       var T = TL.thang(App.db, App.ky.y, App.ky.m, true);
       var dc = T.dc[id] = T.dc[id] || {};
       var v = f === 'ghiChu' ? i.value.trim() : App.docSo(i.value);
-      if (!v) delete dc[f]; else dc[f] = v;
+      if (f === 'slSP') {
+        var ma = i.dataset.ma; delete dc.slSP;
+        dc.sp = dc.sp || {};
+        if (!v) delete dc.sp[ma]; else dc.sp[ma] = v;
+        if (!Object.keys(dc.sp).length) delete dc.sp;
+      } else if (!v) delete dc[f]; else dc[f] = v;
       if (!Object.keys(dc).length) delete T.dc[id];
       App.luu();
       capNhatSo();
     };
-    bang.onclick = function (e) { var a = e.target.closest('[data-ct]'); if (a) App.chiTietLuong(a.dataset.ct); };
+    bang.onclick = function (e) {
+      var a = e.target.closest('[data-ct]'); if (a) App.chiTietLuong(a.dataset.ct);
+      var b = e.target.closest('[data-spct]'); if (b) nhapNhieuSP(b.dataset.spct);
+    };
   }
 
   /** Cập nhật các ô tính toán mà không vẽ lại ô nhập (giữ con trỏ khi Tab sang ô khác) */
@@ -198,7 +218,7 @@
     App.$$('tr[data-id]', bang).forEach(function (tr) {
       var r = map[tr.dataset.id]; if (!r) return;
       App.$$('td[data-c]', tr).forEach(function (td) {
-        var c = cot[+td.dataset.c]; if (!c || c.ten) return;
+        var c = cot[+td.dataset.c]; if (!c || c.ten || c.nhap) return;
         var v = gt(c, r); td.innerHTML = hien(c, v); td.classList.toggle('am', c.kieu === 'so' && v < 0);
       });
     });
@@ -215,6 +235,35 @@
       });
     });
     void soCot;
+  }
+
+  function nhapNhieuSP(nvId) {
+    var y = App.ky.y, m = App.ky.m, db = App.db;
+    var r = TL.tinhBangLuong(db, y, m).rows.filter(function (x) { return x.nvId === nvId; })[0]; if (!r) return;
+    var T = TL.thang(db, y, m, true), dc = T.dc[nvId] || {}, sl = Object.assign({}, dc.sp || {});
+    if (+dc.slSP && !sl[r.maSP]) sl[r.maSP] = +dc.slSP;
+    var nv = db.nhanVien.filter(function (x) { return x.id === nvId; })[0] || {};
+    App.hop({
+      tieuDe: 'Lương sản phẩm – ' + r.hoTen + ' – tháng ' + m + '/' + y, co: 'hep',
+      than: '<table class="bang"><thead><tr><th>Sản phẩm</th><th class="so">Đơn giá</th><th class="so">Số lượng</th></tr></thead><tbody>' +
+        db.sanPham.map(function (p) {
+          var dg = p.ma === r.maSP && +nv.donGiaSP > 0 ? +nv.donGiaSP : p.donGia;
+          return '<tr><td>' + h(p.ten) + (p.ma === r.maSP ? ' <span class="the-tt lam">chính</span>' : '') + '</td><td class="so">' + App.tien(dg) + ' đ/' + h(p.dvt || 'đv') + '</td>' +
+            '<td><input class="o-nhap" data-sp="' + h(p.ma) + '" value="' + (sl[p.ma] ? App.tien(sl[p.ma]) : '') + '" inputmode="numeric"></td></tr>';
+        }).join('') + '</tbody></table>',
+      moRa: function (el) { App.$$('input', el).forEach(App.ganOTien); },
+      nut: [{ ten: 'Huỷ' }, {
+        ten: 'Lưu', loai: 'chinh', bam: function (el) {
+          var moi = {};
+          App.$$('input[data-sp]', el).forEach(function (i) { var v = App.docSo(i.value); if (v) moi[i.dataset.sp] = v; });
+          var d = T.dc[nvId] = T.dc[nvId] || {};
+          delete d.slSP;
+          if (Object.keys(moi).length) d.sp = moi; else delete d.sp;
+          if (!Object.keys(d).length) delete T.dc[nvId];
+          App.luu(); App.veLai();
+        }
+      }]
+    });
   }
 
   App.chotLuong = function () {
@@ -243,7 +292,8 @@
     function m_(a) { L.push('<tr class="m"><td colspan="3">' + a + '</td></tr>'); }
     function d_(a, b, v) { L.push('<tr><td>' + a + '</td><td>' + (b || '') + '</td><td>' + v + '</td></tr>'); }
     m_('1. Ngày công');
-    d_('Công chuẩn của kỳ', r.congChuan === bl.congChuan ? '' : 'Theo lịch làm việc riêng', App.so(r.congChuan));
+    var lld = TL.loaiLDNV(db, { loaiLD: r.loaiLD });
+    d_('Công chuẩn của kỳ', lld ? h(lld.ten) : 'Theo cài đặt chung', App.so(r.congChuan));
     if (c.sp) d_('Công hưởng lương sản phẩm (SP)', 'Không tính vào lương thời gian', App.so(c.sp));
     d_('Ngày đi làm hưởng lương thời gian', '', App.so(c.lamTG));
     d_('Nghỉ có hưởng lương', 'Phép ' + App.so(c.phep) + ', lễ ' + App.so(c.le) + ', khác ' + App.so(c.huongKhac), App.so(c.huong - c.ngung));
@@ -252,13 +302,13 @@
     d_('<b>Số công lương thời gian</b>', '', '<b>' + App.so(c.congTG) + '</b>');
     d_('Ngày làm thực tế (tính cơm)', 'Gồm cả ngày SP', App.so(c.ngayLamThucTe));
     m_('2. Thu nhập');
-    if (r.luongSP) d_('Lương sản phẩm', App.tien(r.slSP) + ' × ' + t(r.donGiaSP) + ' đ', t(r.luongSP));
+    (r.spChiTiet || []).forEach(function (x) { d_('Lương sản phẩm: ' + h(x.ten), App.tien(x.sl) + ' ' + h(x.dvt) + ' × ' + t(x.donGia) + ' đ', t(x.tien)); });
     var ht = r.hinhThuc;
-    var cachLuong = ht === 'thang' ? t(r.luongCB) + (r.tiLeHuong !== 100 ? ' × ' + App.so(r.tiLeHuong) + '%' : '') + ' ÷ ' + App.so(r.congChuan) + ' × ' + App.so(c.congTG)
+    var cachLuong = ht === 'thang' ? t(r.luongCB) + (r.tiLeHuong !== 100 ? ' × ' + App.so(r.tiLeHuong) + '%' : '') + ' ÷ ' + App.so(r.congChuan) + ' × ' + App.so(r.congTinh != null ? r.congTinh : c.congTG)
       : ht === 'ngay' ? t(r.luongCB) + '/ngày' + (r.tiLeHuong !== 100 ? ' × ' + App.so(r.tiLeHuong) + '%' : '') + ' × ' + App.so(c.congTG)
         : ht === 'gio' ? t(r.luongCB) + '/giờ × ' + cd.gioLamNgay + ' giờ × ' + App.so(c.congTG) + ' công'
           : 'Lương khoán';
-    d_('Lương thời gian', cachLuong, t(r.luongTG));
+    d_('Lương thời gian', cachLuong + (r.congTinh != null && r.congTinh < c.congTG ? ' (tính tối đa ' + App.so(r.congTinh) + ' công)' : ''), t(r.luongTG));
     if (r.luongNgung) d_('Lương nghỉ, ngừng việc', 'Lương ngày ' + t(r.luongNgay) + ' × ' + App.so(c.ngung) + ' × ' + (cd.tiLeNgungViec == null ? 100 : cd.tiLeNgungViec) + '%', t(r.luongNgung));
     if (c.otTong) {
       var hs = cd.heSoOT, parts = [];
@@ -407,7 +457,7 @@
   function dongPhieu(r, bl) {
     var cd = App.db.caiDat, c = r.cong, L = [];
     L.push(['m', 'I. THU NHẬP', '']);
-    if (r.luongSP) L.push(['c', 'Lương sản phẩm (' + App.tien(r.slSP) + ' × ' + App.tien(r.donGiaSP) + ' đ)', r.luongSP]);
+    (r.spChiTiet || []).forEach(function (x) { L.push(['c', x.ten + ' (' + App.tien(x.sl) + ' ' + x.dvt + ' × ' + App.tien(x.donGia) + ' đ)', x.tien]); });
     L.push(['c', 'Lương thời gian (' + App.so(c.congTG) + ' công)', r.luongTG]);
     if (r.luongNgung) L.push(['c', 'Nghỉ, ngừng việc hưởng lương (' + App.so(c.ngung) + ' công)', r.luongNgung]);
     if (r.tienOT) L.push(['c', 'Làm thêm giờ (' + App.so(c.otTong) + ' giờ)', r.tienOT]);
