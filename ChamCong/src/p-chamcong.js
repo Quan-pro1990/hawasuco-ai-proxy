@@ -19,7 +19,7 @@
     if (che === 'muon') return [['muonLan', 'Số lần'], ['muonPhut', 'Số phút', 1]];
     var c = [['congChuan', 'Công chuẩn']];
     if (coSP) c.push(['sp', 'Công lương SP']);
-    c.push(['congTG', 'Công lương thời gian', 1], ['ngayLamThucTe', 'Ngày làm (cơm)'], ['ngung', 'Nghỉ hưởng 100% lương'], ['khongHL', 'Nghỉ không lương'], ['bhxh', 'Hưởng BHXH']);
+    c.push(['congTG', 'Công lương thời gian', 1], ['ngayCom', 'Ngày cơm'], ['ngung', 'Nghỉ hưởng 100% lương'], ['khongHL', 'Nghỉ không lương'], ['bhxh', 'Hưởng BHXH']);
     return c;
   }
   function giaTriTong(th, k) { return k === 'khongHL' ? Math.round((th.khong + th.kp) * 100) / 100 : th[k]; }
@@ -428,7 +428,7 @@
     var tongCot = [
       ['sp', '32', 'Số công hưởng lương sản phẩm'],
       ['congTG', '33', 'Lương', 'Số công hưởng lương thời gian'],
-      ['ngayLamThucTe', '', 'Cơm', 'Số công hưởng lương thời gian'],
+      ['ngayCom', '', 'Cơm', 'Số công hưởng lương thời gian'],
       ['ngung', '34', 'Số công nghỉ việc, ngừng việc hưởng 100% lương'],
       ['khongHL', '35', 'Số công nghỉ việc, ngừng việc không hưởng lương'],
       ['bhxh', '36', 'Số công hưởng BHXH']

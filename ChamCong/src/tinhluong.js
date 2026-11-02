@@ -47,7 +47,7 @@
 
   function phuCapMacDinh() {
     return [
-      { ma: 'AN',   ten: 'Cơm trưa',     cachTinh: 'theo_ngay', mucChung: 50000, chiuThue: false, dongBH: false, ghiChu: '50.000 đ × mỗi ngày đi làm thực tế (kể cả ngày SP)' },
+      { ma: 'AN',   ten: 'Cơm trưa',     cachTinh: 'theo_ngay', mucChung: 50000, boNgayLe: true, chiuThue: false, dongBH: false, ghiChu: '50.000 đ × ngày đi làm thực tế (kể cả SP), không tính ngày lễ, Tết' },
       { ma: 'XANG', ten: 'Xăng xe',      cachTinh: 'theo_cong', chiuThue: true,  dongBH: false, ghiChu: '' },
       { ma: 'DT',   ten: 'Điện thoại',   cachTinh: 'co_dinh',   chiuThue: true,  dongBH: false, ghiChu: '' },
       { ma: 'TN',   ten: 'Trách nhiệm',  cachTinh: 'theo_cong', chiuThue: true,  dongBH: true,  ghiChu: 'Tính vào lương đóng BHXH' }
@@ -151,7 +151,10 @@
       if (db.caiDat.donGiaSP) db.sanPham[0].donGia = +db.caiDat.donGiaSP;
     }
     if (!Array.isArray(db.caiDat.loaiLD) || !db.caiDat.loaiLD.length) db.caiDat.loaiLD = loaiLDMacDinh();
-    db.phuCap.forEach(function (pc) { if (pc.ma === 'AN' && pc.cachTinh === 'theo_ngay' && pc.mucChung == null) pc.mucChung = 50000; });
+    db.phuCap.forEach(function (pc) {
+      if (pc.ma === 'AN' && pc.cachTinh === 'theo_ngay' && pc.mucChung == null) pc.mucChung = 50000;
+      if (pc.ma === 'AN' && pc.boNgayLe == null) pc.boNgayLe = true;
+    });
     db.nhanVien.forEach(function (nv) {
       if (!nv.phuCap) nv.phuCap = {};
       if (nv.lichLam) { nv.loaiLD = nv.lichLam === 'T2-T6' ? 'VP' : nv.lichLam === 'T2-T7' ? 'CN' : ''; delete nv.lichLam; }
@@ -377,7 +380,7 @@
     var r = {
       congChuan: congChuan(db, y, m, nv),
       lam: 0, lamTG: 0, sp: 0, huong: 0, phep: 0, le: 0, huongKhac: 0, ngung: 0, bhxh: 0, khong: 0, kp: 0,
-      congTG: 0, congHL: 0, ngayLamThucTe: 0,
+      congTG: 0, congHL: 0, ngayLamThucTe: 0, ngayLamLe: 0, ngayCom: 0,
       otThuong: 0, otNghi: 0, otLe: 0, otTong: 0,
       muonLan: 0, muonPhut: 0, demKyHieu: {}
     };
@@ -387,6 +390,7 @@
       if (k) {
         var lam = +k.lam || 0, huong = +k.huong || 0, con = Math.max(0, 1 - lam - huong);
         r.lam += lam; r.huong += huong;
+        if (le[x.iso]) r.ngayLamLe += lam;      // đi làm đúng ngày lễ, Tết: vẫn tính công, không tính cơm
         if (k.sp) r.sp += lam; else r.lamTG += lam;
         if (k.phep) r.phep += huong;
         if (k.nhom === 'le') r.le += huong;
@@ -407,9 +411,10 @@
     });
     r.otTong = r.otThuong + r.otNghi + r.otLe;
     r.ngayLamThucTe = r.lam;
+    r.ngayCom = r.lam - r.ngayLamLe;       // ngày tính cơm: ngày đi làm thực tế trừ ngày lễ, Tết
     r.congHL = r.lamTG + r.huong;          // công hưởng lương thời gian (kể cả ngừng việc)
     r.congTG = r.congHL - r.ngung;         // cột "Lương thời gian – số công" (gồm cả phép, lễ)
-    ['lam', 'lamTG', 'sp', 'huong', 'phep', 'le', 'huongKhac', 'ngung', 'bhxh', 'khong', 'kp', 'congTG', 'congHL', 'ngayLamThucTe', 'otThuong', 'otNghi', 'otLe', 'otTong']
+    ['lam', 'lamTG', 'sp', 'huong', 'phep', 'le', 'huongKhac', 'ngung', 'bhxh', 'khong', 'kp', 'congTG', 'congHL', 'ngayLamThucTe', 'ngayLamLe', 'ngayCom', 'otThuong', 'otNghi', 'otLe', 'otTong']
       .forEach(function (f) { r[f] = Math.round(r[f] * 100) / 100; });
     return r;
   }
@@ -489,7 +494,7 @@
       var rieng = npc[pc.ma] != null && npc[pc.ma] !== '';
       var muc = rieng ? (+npc[pc.ma] || 0) : (+pc.mucChung || 0), tien = 0;
       if (muc) {
-        if (pc.cachTinh === 'theo_ngay') { tien = muc * c.ngayLamThucTe; phuCapNgay[pc.ma] = c.ngayLamThucTe; }
+        if (pc.cachTinh === 'theo_ngay') { var soNgayPC = pc.boNgayLe ? c.ngayCom : c.ngayLamThucTe; tien = muc * soNgayPC; phuCapNgay[pc.ma] = soNgayPC; }
         else if (pc.cachTinh === 'theo_cong') tien = coCong > 0 ? muc * Math.min(coCong, cc) / cc : 0;
         else tien = coCong > 0 ? muc : 0;
       }
@@ -577,7 +582,7 @@
 
   function cong(rows, phuCapList) {
     var t = { phuCap: {}, phuCapNgay: {}, dn: { bhxh: 0, bhyt: 0, bhtn: 0, kpcd: 0, tong: 0 }, soNV: rows.length,
-      cong: { congHL: 0, congTG: 0, lam: 0, sp: 0, ngung: 0, ngayLamThucTe: 0, otTong: 0, phep: 0, muonLan: 0, muonPhut: 0, khong: 0, kp: 0, bhxh: 0 } };
+      cong: { congHL: 0, congTG: 0, lam: 0, sp: 0, ngung: 0, ngayLamThucTe: 0, ngayCom: 0, otTong: 0, phep: 0, muonLan: 0, muonPhut: 0, khong: 0, kp: 0, bhxh: 0 } };
     TRUONG_TONG.forEach(function (f) { t[f] = 0; });
     (phuCapList || []).forEach(function (pc) { t.phuCap[pc.ma] = 0; });
     rows.forEach(function (r) {

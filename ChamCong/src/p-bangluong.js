@@ -300,7 +300,7 @@
     if (c.ngung) d_('Nghỉ, ngừng việc hưởng ' + (cd.tiLeNgungViec == null ? 100 : cd.tiLeNgungViec) + '% lương', '', App.so(c.ngung));
     if (c.bhxh || c.khong || c.kp) d_('Nghỉ không hưởng lương', 'Ốm/TS ' + App.so(c.bhxh) + ', không lương ' + App.so(c.khong) + ', không phép ' + App.so(c.kp), '');
     d_('<b>Số công lương thời gian</b>', '', '<b>' + App.so(c.congTG) + '</b>');
-    d_('Ngày làm thực tế (tính cơm)', 'Gồm cả ngày SP', App.so(c.ngayLamThucTe));
+    d_('Ngày tính cơm', 'Ngày đi làm thực tế, gồm SP' + (c.ngayLamLe ? '; trừ ' + App.so(c.ngayLamLe) + ' ngày đi làm vào ngày lễ, Tết' : '; không tính ngày lễ, Tết'), App.so(c.ngayCom));
     m_('2. Thu nhập');
     (r.spChiTiet || []).forEach(function (x) { d_('Lương sản phẩm: ' + h(x.ten), App.tien(x.sl) + ' ' + h(x.dvt) + ' × ' + t(x.donGia) + ' đ', t(x.tien)); });
     var ht = r.hinhThuc;

@@ -38,7 +38,7 @@ Khi dùng thật: trang **Tổng quan** → bấm **Xoá dữ liệu mẫu, bắ
 - Phím: mũi tên di chuyển, Shift + mũi tên chọn vùng, Delete xoá, Ctrl+Z hoàn tác, Ctrl+C / Ctrl+V chép – dán (dán được cả vùng ký hiệu từ Excel).
 - Chế độ **Làm thêm (giờ)** và **Đi muộn / về sớm (phút)** dùng chung lưới.
 - **Xuất Excel (mẫu 01a)**: mỗi bộ phận 1 trang tính theo mẫu 01a-LĐTL, có phần *Quy ra công*:
-  32 công lương sản phẩm · 33 công lương thời gian (*Lương*) và ngày làm thực tế (*Cơm*) · 34 nghỉ hưởng 100% lương ·
+  32 công lương sản phẩm · 33 công lương thời gian (*Lương*, gồm cả ngày lễ) và ngày tính cơm (*Cơm*, không gồm ngày lễ) · 34 nghỉ hưởng 100% lương ·
   35 nghỉ không hưởng lương · 36 hưởng BHXH, kèm ký hiệu chấm công và chữ ký *Người chấm công – Phụ trách bộ phận – Người duyệt*.
 
 Ký hiệu mặc định (sửa được ở Danh mục):
@@ -81,7 +81,9 @@ Cách tính chính:
 - Lương sản phẩm = Σ số lượng × đơn giá từng sản phẩm (vd 2.490 HĐ × 1.200 đ = 2.988.000).
   Ngày chấm `SP` không tính vào lương thời gian nhưng vẫn tính ngày cơm.
 - Cơm trưa = 50.000 đ × ngày làm thực tế (gồm ngày `+`, `SP`, công tác, học tập; nửa ngày `+/2` tính 0,5;
-  không tính ngày nghỉ phép, lễ, ốm). Mức 50.000 sửa ở Danh mục → Phụ cấp → *Mức chung*.
+  không tính ngày nghỉ phép, ốm). Mức 50.000 sửa ở Danh mục → Phụ cấp → *Mức chung*.
+- **Ngày lễ, Tết** (có trong Danh mục → Ngày lễ): vẫn tính công lương thời gian nhưng **không tính cơm**, dù chấm `L`
+  hay chấm `+` / `SP` (người phải đi làm ngày lễ). Bỏ được bằng ô *Không tính ngày lễ, Tết* ở Danh mục → Phụ cấp.
 - BH trên lương đóng BH (mặc định = mức lương + phụ cấp có đánh dấu đóng BH), có trần 20 × lương cơ sở (BHXH, BHYT)
   và 20 × lương tối thiểu vùng (BHTN). Nghỉ không lương từ 14 ngày trở lên trong kỳ thì không đóng BH.
 - Thuế TNCN biểu lũy tiến 5 bậc, giảm trừ bản thân 15,5 triệu, người phụ thuộc 6,2 triệu; phần lương làm thêm vượt

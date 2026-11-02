@@ -132,6 +132,19 @@ t('Tiền cơm 50.000 đ/ngày áp dụng chung; mức riêng và 0 = không hư
   assert.strictEqual(TL.chuanHoa({ phuCap: [{ ma: 'AN', ten: 'Ăn ca', cachTinh: 'theo_ngay' }], nhanVien: [], caiDat: {} }).phuCap[0].mucChung, 50000);
 });
 
+t('Ngày lễ, Tết: vẫn tính công nhưng không tính cơm (chấm L hay + đều vậy)', function () {
+  var db = dbMau(), nv = db.nhanVien[0];
+  db.ngayLe = [{ ngay: '2026-09-01', ten: 'Quốc khánh (liền kề)' }, { ngay: '2026-09-02', ten: 'Quốc khánh' }];
+  // kỳ 9/2026 = 21/8 – 20/9: 31/8 đi làm, 1/9 nghỉ lễ (L), 2/9 vẫn đi làm (+), 3/9 đi làm, 4/9 SP
+  TL.thang(db, 2026, 8, true).cc[nv.id] = { 31: '+' };
+  TL.thang(db, 2026, 9, true).cc[nv.id] = { 1: 'L', 2: '+', 3: '+', 4: 'SP' };
+  var r = TL.tinhBangLuong(db, 2026, 9).rows[0];
+  assert.strictEqual(r.cong.congTG, 4);              // 31/8, 1/9 (L), 2/9, 3/9
+  assert.strictEqual(r.cong.sp, 1);
+  assert.strictEqual(r.cong.ngayCom, 3);             // 31/8, 3/9, 4/9 – không tính 1/9 và 2/9
+  assert.strictEqual(r.phuCap.AN, 150000);
+});
+
 t('Nghỉ phép tính vào công thời gian; nghỉ không lương ≥ 14 ngày thì không đóng BH', function () {
   var db = dbMau(), nv = db.nhanVien[0];
   var T = TL.thang(db, 2026, 10, true);
