@@ -245,7 +245,8 @@
               var T = TL.thang(db, nn.y, nn.m, true);
               var kq = TL.tinhVaoRa(cd, TL.loaiNgay(db, nn.y, nn.m, d, le, nv), TL.phut(x.v), TL.phut(x.r));
               var cc = T.cc[nv.id] = T.cc[nv.id] || {}, mu = T.muon[nv.id] = T.muon[nv.id] || {}, ot = T.ot[nv.id] = T.ot[nv.id] || {};
-              if (f.kh.checked && kq.kyHieu && (!cc[d] || (f.de.checked && kq.kyHieu !== (cd.khLe || 'L')))) cc[d] = kq.kyHieu;
+              var laL = String(cc[d] || '').toUpperCase() === String(cd.khLe || 'L').toUpperCase();
+              if (f.kh.checked && kq.kyHieu && (!cc[d] || f.de.checked || laL)) cc[d] = kq.kyHieu; // có chấm vân tay ngày lễ => đi làm (nhân công)
               if (f.muon.checked) { var p = kq.muon + kq.veSom; if (p) mu[d] = p; else delete mu[d]; }
               if (f.ot.checked) { if (kq.ot) ot[d] = kq.ot; else delete ot[d]; }
               n++;

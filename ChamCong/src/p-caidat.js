@@ -229,17 +229,25 @@
     var db = App.db, y = st.namLe;
     var ds = db.ngayLe.map(function (x, i) { return { x: x, i: i }; }).filter(function (o) { return o.x.ngay.slice(0, 4) === String(y); }).sort(function (a, b) { return a.x.ngay < b.x.ngay ? -1 : 1; });
     el.innerHTML = '<div class="the"><h3>Ngày lễ, Tết năm <select id="le-nam">' + [y - 2, y - 1, y, y + 1, y + 2].map(function (n) { return '<option' + (n === y ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select>' +
-      '<span class="phai">Ngày lễ được tô màu trên bảng chấm công, làm thêm ngày lễ tính hệ số ' + db.caiDat.heSoOT.le + '%</span></h3>' +
-      '<div class="cuon"><table class="bang"><thead><tr><th>Ngày</th><th>Thứ</th><th style="min-width:320px">Tên ngày lễ</th><th></th></tr></thead><tbody>' +
+      '<span class="phai">Nghỉ lễ (L) = 1 công · đi làm hoặc làm SP ngày lễ = ' + App.so(db.caiDat.heSoCongLe) + ' công, ngày Tết = ' + App.so(db.caiDat.heSoCongTet) + ' công · cơm tính 1 ngày</span></h3>' +
+      '<div class="cuon"><table class="bang"><thead><tr><th>Ngày</th><th>Thứ</th><th style="min-width:320px">Tên ngày lễ</th><th>Loại</th><th></th></tr></thead><tbody>' +
       (ds.length ? ds.map(function (o) {
         var n = TL.docNgay(o.x.ngay);
-        return '<tr data-i="' + o.i + '"><td class="giua">' + TL.hienNgay(o.x.ngay) + '</td><td class="giua">' + TL.TEN_THU_DAY[TL.thuTrongTuan(n.y, n.m, n.d)] + '</td><td>' + h(o.x.ten) + '</td><td><button class="nut nho nguy" data-a="xoa">' + App.icon('xoa') + '</button></td></tr>';
-      }).join('') : '<tr><td colspan="4" class="trong">Chưa có ngày lễ của năm ' + y + '. Bấm “Tạo tự động”.</td></tr>') +
-      '</tbody></table></div><div class="hang" style="margin-top:12px"><input type="date" id="le-ngay"><input id="le-ten" placeholder="Tên ngày lễ / ngày nghỉ (vd Nghỉ hoán đổi Tết)" style="width:300px"><button class="nut" id="le-them">' + App.icon('them') + 'Thêm ngày</button>' +
+        var lo = TL.loaiNgayLe(o.x);
+        return '<tr data-i="' + o.i + '"><td class="giua">' + TL.hienNgay(o.x.ngay) + '</td><td class="giua">' + TL.TEN_THU_DAY[TL.thuTrongTuan(n.y, n.m, n.d)] + '</td><td>' + h(o.x.ten) + '</td>' +
+          '<td><select data-loai><option value="le"' + (lo === 'le' ? ' selected' : '') + '>Lễ – đi làm ×' + App.so(db.caiDat.heSoCongLe) + ' công</option><option value="tet"' + (lo === 'tet' ? ' selected' : '') + '>Tết – đi làm ×' + App.so(db.caiDat.heSoCongTet) + ' công</option></select></td>' +
+          '<td><button class="nut nho nguy" data-a="xoa">' + App.icon('xoa') + '</button></td></tr>';
+      }).join('') : '<tr><td colspan="5" class="trong">Chưa có ngày lễ của năm ' + y + '. Bấm “Tạo tự động”.</td></tr>') +
+      '</tbody></table></div><div class="hang" style="margin-top:12px"><input type="date" id="le-ngay"><input id="le-ten" placeholder="Tên ngày lễ / ngày nghỉ (vd Nghỉ hoán đổi Tết)" style="width:300px">' +
+      '<select id="le-loai"><option value="le">Lễ (×' + App.so(db.caiDat.heSoCongLe) + ')</option><option value="tet">Tết (×' + App.so(db.caiDat.heSoCongTet) + ')</option></select><button class="nut" id="le-them">' + App.icon('them') + 'Thêm ngày</button>' +
       '<span class="gian"></span><button class="nut chinh" id="le-tao">Tạo tự động năm ' + y + '</button></div>' +
       '<p class="mo nho">Tạo tự động gồm: Tết Dương lịch, Tết Âm lịch (ngày cuối năm + mùng 1–4, tính theo lịch âm), Giỗ Tổ 10/3 âm lịch, 30/4, 1/5, Quốc khánh 2/9 + 1 ngày liền kề' + (y >= 2026 ? ', Ngày Văn hóa Việt Nam 24/11' : '') +
-      ' và ngày nghỉ bù khi trùng ngày nghỉ hằng tuần. Lịch nghỉ hoán đổi do Chính phủ thông báo từng năm – hãy kiểm tra và thêm / xoá cho đúng.</p></div>';
+      ' và ngày nghỉ bù khi trùng ngày nghỉ hằng tuần. Các ngày Tết Nguyên đán được đặt loại <b>Tết</b>, còn lại là <b>Lễ</b> (sửa được ở cột Loại). Lịch nghỉ hoán đổi do Chính phủ thông báo từng năm – hãy kiểm tra và thêm / xoá cho đúng.</p></div>';
     App.$('#le-nam', el).onchange = function () { st.namLe = +this.value; dmLe(el); };
+    el.onchange = function (e) {
+      var s = e.target.closest('[data-loai]'); if (!s) return;
+      db.ngayLe[+s.closest('tr').dataset.i].loai = s.value; App.luu(); App.bao('Đã lưu');
+    };
     el.onclick = function (e) {
       var b = e.target.closest('[data-a="xoa"]');
       if (b) { db.ngayLe.splice(+b.closest('tr').dataset.i, 1); App.luu(); dmLe(el); return; }
@@ -247,7 +255,7 @@
         var ng = App.$('#le-ngay').value, ten = App.$('#le-ten').value.trim() || 'Ngày nghỉ';
         if (!ng) { App.bao('Chọn ngày.', 'loi'); return; }
         if (db.ngayLe.some(function (x) { return x.ngay === ng; })) { App.bao('Ngày này đã có trong danh sách.', 'loi'); return; }
-        db.ngayLe.push({ ngay: ng, ten: ten }); st.namLe = +ng.slice(0, 4); App.luu(); dmLe(el); return;
+        db.ngayLe.push({ ngay: ng, ten: ten, loai: App.$('#le-loai').value }); st.namLe = +ng.slice(0, 4); App.luu(); dmLe(el); return;
       }
       if (e.target.closest('#le-tao')) {
         App.xacNhan('Tạo lại danh sách ngày lễ năm ' + y + '? Các ngày lễ năm ' + y + ' hiện có sẽ được thay thế.', { nut: 'Tạo' }).then(function (ok) {
@@ -326,6 +334,8 @@
           '<div class="the"><h3>Làm thêm giờ, ngừng việc</h3><div class="form ba">' +
           o('Làm thêm ngày thường (%)', 'caiDat.heSoOT.thuong', 'so') + o('Làm thêm ngày nghỉ tuần (%)', 'caiDat.heSoOT.nghi', 'so') + o('Làm thêm ngày lễ, Tết (%)', 'caiDat.heSoOT.le', 'so') +
           o('Lương ngày nghỉ / ngừng việc (ký hiệu N) (%)', 'caiDat.tiLeNgungViec', 'so') +
+          o('Đi làm / làm SP ngày lễ được tính (công)', 'caiDat.heSoCongLe', 'so', 'Mặc định 2 công; nghỉ lễ (L) vẫn 1 công') +
+          o('Đi làm / làm SP ngày Tết được tính (công)', 'caiDat.heSoCongTet', 'so', 'Mặc định 3 công; tiền cơm vẫn tính 1 ngày') +
           '</div><p class="mo nho">Theo Bộ luật Lao động 2019: làm thêm ngày thường ít nhất 150%, ngày nghỉ hằng tuần 200%, ngày lễ 300% (chưa kể lương ngày lễ). Phần chênh lệch so với lương giờ bình thường không chịu thuế TNCN.</p></div>' +
           '<div class="the"><h3>Khác</h3><div class="form ba">' +
           o('Làm tròn số tiền lãnh', 'caiDat.lamTron', [[1, 'Không làm tròn'], [100, 'Đến 100 đ'], [1000, 'Đến 1.000 đ']]) +

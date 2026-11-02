@@ -139,12 +139,39 @@ t('Ngày lễ: nghỉ lễ (L) tính công, không tính cơm; đi làm (+) ho�
   TL.thang(db, 2026, 8, true).cc[nv.id] = { 31: '+' };
   TL.thang(db, 2026, 9, true).cc[nv.id] = { 1: 'L', 2: '+', 3: '+', 4: 'SP' };
   var r = TL.tinhBangLuong(db, 2026, 9).rows[0];
-  assert.strictEqual(r.cong.congTG, 4);              // 31/8, 1/9 (L), 2/9, 3/9
+  assert.strictEqual(r.cong.congTG, 5);              // 31/8 = 1, 1/9 (L) = 1, 2/9 đi làm ngày lễ = 2, 3/9 = 1
   assert.strictEqual(r.cong.sp, 1);
   assert.strictEqual(r.cong.ngayCom, 4);             // 31/8, 2/9, 3/9, 4/9 – không tính 1/9 nghỉ lễ
   assert.strictEqual(r.phuCap.AN, 200000);
   // dữ liệu đã lưu từ bản trước có tuỳ chọn cũ thì bỏ đi
   assert.strictEqual(TL.chuanHoa({ phuCap: [{ ma: 'AN', ten: 'Cơm', cachTinh: 'theo_ngay', mucChung: 50000, boNgayLe: true }], nhanVien: [], caiDat: {} }).phuCap[0].boNgayLe, undefined);
+});
+
+t('Đi làm ngày lễ ×2 công, ngày Tết ×3 công; cơm vẫn 1 ngày; nghỉ lễ L = 1 công', function () {
+  var db = dbMau(), nv = db.nhanVien[0];
+  db.ngayLe = TL.taoNgayLe(2026, db.caiDat);
+  assert.strictEqual(TL.bangLoaiLe(db)['2026-02-17'], 'tet');
+  assert.strictEqual(TL.bangLoaiLe(db)['2026-09-02'], 'le');
+  // kỳ 9/2026 (21/8 – 20/9): 1/9 nghỉ lễ L, 2/9 đi làm (+), 3/9 đi làm (+), 4/9 SP
+  TL.thang(db, 2026, 9, true).cc[nv.id] = { 1: 'L', 2: '+', 3: '+', 4: 'SP' };
+  var r = TL.tinhBangLuong(db, 2026, 9).rows[0];
+  assert.strictEqual(r.cong.congTG, 1 + 2 + 1);      // L = 1, đi làm 2/9 = 2, 3/9 = 1
+  assert.strictEqual(r.cong.congThemLe, 1);
+  assert.strictEqual(r.cong.ngayCom, 3);             // 2/9, 3/9, 4/9 – mỗi ngày 1 suất cơm
+  assert.strictEqual(r.phuCap.AN, 150000);
+  assert.strictEqual(r.luongTG, Math.round(8000000 / 22 * 4));
+  // kỳ 2/2026 (21/1 – 20/2): làm SP mùng 1 Tết (17/2) = 3 công SP, đi làm mùng 2 (18/2) = 3 công
+  TL.thang(db, 2026, 2, true).cc[nv.id] = { 16: 'L', 17: 'SP', 18: '+' };
+  r = TL.tinhBangLuong(db, 2026, 2).rows[0];
+  assert.strictEqual(r.cong.sp, 3);
+  assert.strictEqual(r.cong.congTG, 1 + 3);
+  assert.strictEqual(r.cong.ngayCom, 2);
+  // giới hạn công chuẩn không cắt phần tăng thêm ngày lễ
+  db.caiDat.gioiHanCong = true;
+  assert.strictEqual(TL.tinhBangLuong(db, 2026, 2).rows[0].luongTG, Math.round(8000000 / 22 * 4));
+  // chấm giờ vào/ra ngày lễ -> đề xuất "+" (để được nhân công), không tự cộng làm thêm
+  var k = TL.tinhVaoRa(db.caiDat, 'le', TL.phut('07:55'), TL.phut('17:05'));
+  assert.strictEqual(k.kyHieu, '+'); assert.strictEqual(k.ot, 0);
 });
 
 t('Nghỉ phép tính vào công thời gian; nghỉ không lương ≥ 14 ngày thì không đóng BH', function () {

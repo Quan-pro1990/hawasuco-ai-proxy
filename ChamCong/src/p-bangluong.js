@@ -294,11 +294,12 @@
     m_('1. Ngày công');
     var lld = TL.loaiLDNV(db, { loaiLD: r.loaiLD });
     d_('Công chuẩn của kỳ', lld ? h(lld.ten) : 'Theo cài đặt chung', App.so(r.congChuan));
-    if (c.sp) d_('Công hưởng lương sản phẩm (SP)', 'Không tính vào lương thời gian', App.so(c.sp));
-    d_('Ngày đi làm hưởng lương thời gian', '', App.so(c.lamTG));
+    if (c.sp) d_('Công hưởng lương sản phẩm (SP)', 'Không tính vào lương thời gian' + (c.congThemLeSP ? '; gồm ' + App.so(c.congThemLeSP) + ' công tăng thêm làm SP ngày lễ, Tết' : ''), App.so(c.sp));
+    d_('Ngày đi làm hưởng lương thời gian', '', App.so(c.lamTG - c.congThemLeTG));
     d_('Nghỉ có hưởng lương', 'Phép ' + App.so(c.phep) + ', lễ ' + App.so(c.le) + ', khác ' + App.so(c.huongKhac), App.so(c.huong - c.ngung));
     if (c.ngung) d_('Nghỉ, ngừng việc hưởng ' + (cd.tiLeNgungViec == null ? 100 : cd.tiLeNgungViec) + '% lương', '', App.so(c.ngung));
     if (c.bhxh || c.khong || c.kp) d_('Nghỉ không hưởng lương', 'Ốm/TS ' + App.so(c.bhxh) + ', không lương ' + App.so(c.khong) + ', không phép ' + App.so(c.kp), '');
+    if (c.congThemLeTG) d_('Đi làm ngày lễ, Tết', (c.ngayLamLe ? App.so(c.ngayLamLe) + ' ngày lễ × ' + App.so(cd.heSoCongLe) : '') + (c.ngayLamLe && c.ngayLamTet ? ', ' : '') + (c.ngayLamTet ? App.so(c.ngayLamTet) + ' ngày Tết × ' + App.so(cd.heSoCongTet) : '') + ' công', '+' + App.so(c.congThemLeTG) + ' công');
     d_('<b>Số công lương thời gian</b>', '', '<b>' + App.so(c.congTG) + '</b>');
     d_('Ngày tính cơm', 'Ngày có đi làm (gồm SP, đi làm ngày lễ); nghỉ lễ, nghỉ phép không tính', App.so(c.ngayCom));
     m_('2. Thu nhập');
@@ -458,7 +459,7 @@
     var cd = App.db.caiDat, c = r.cong, L = [];
     L.push(['m', 'I. THU NHẬP', '']);
     (r.spChiTiet || []).forEach(function (x) { L.push(['c', x.ten + ' (' + App.tien(x.sl) + ' ' + x.dvt + ' × ' + App.tien(x.donGia) + ' đ)', x.tien]); });
-    L.push(['c', 'Lương thời gian (' + App.so(c.congTG) + ' công)', r.luongTG]);
+    L.push(['c', 'Lương thời gian (' + App.so(c.congTG) + ' công' + (c.congThemLeTG ? ', gồm ' + App.so(c.congThemLeTG) + ' công tăng thêm đi làm lễ, Tết' : '') + ')', r.luongTG]);
     if (r.luongNgung) L.push(['c', 'Nghỉ, ngừng việc hưởng lương (' + App.so(c.ngung) + ' công)', r.luongNgung]);
     if (r.tienOT) L.push(['c', 'Làm thêm giờ (' + App.so(c.otTong) + ' giờ)', r.tienOT]);
     (bl.phuCap || []).forEach(function (pc) {

@@ -91,7 +91,12 @@
           if (lu === 0 && d > D) break;
           if (!TL.nvLamNgay(nv, y, m, d)) continue;
           var loai = TL.loaiNgay(db, y, m, d, le, nv);
-          if (loai === 'le') { if (nv.hinhThuc !== 'gio') cc[d] = 'L'; continue; }
+          if (loai === 'le') {
+            // công nhân kỹ thuật trực sự cố ngày lễ: đi làm (được nhân công)
+            if (congNhanSC(nv) && R() < 0.4) { cc[d] = '+'; continue; }
+            if (nv.hinhThuc !== 'gio') cc[d] = 'L';
+            continue;
+          }
           // nhân viên ghi thu: đợt ghi chỉ số ngày 17–22 hằng tháng chấm SP (kể cả chủ nhật)
           if (ghiThu(nv) && d >= 17 && d <= 22 && R() < 0.85) { cc[d] = 'SP'; continue; }
           // công nhân lắp đặt – sửa chữa: vài ngày khoán theo sản phẩm

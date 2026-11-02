@@ -344,3 +344,7 @@ body.in-doc { }
 .nut.chinh.nguy-hop:hover { background: #a11f1f; }
 .bang-mau .n-kp { color: var(--do); }
 .ct-tinh tr.m td { text-align: left !important; }
+table.cc td.nhan { box-shadow: inset 0 0 0 2px #e0a33a; }
+table.cc td.nhan sup { font-size: 8.5px; color: #a15c00; margin-left: 1px; font-weight: 700; }
+table.cc td.nhan.sel { box-shadow: inset 0 0 0 2px #e0a33a, inset 0 0 0 999px rgba(42,120,214,.16); }
+table.cc tfoot td.dinh1, table.cc tfoot td.dinh2 { z-index: 3; }
