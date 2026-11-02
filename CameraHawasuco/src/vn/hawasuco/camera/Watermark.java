@@ -173,6 +173,7 @@ final class Watermark {
         }
         if (s.showEmployee) addField(out, "Nhân viên: ", s.employee, preview);
         if (s.showTeam) addField(out, "Đội: ", s.team, preview);
+        if (s.showEquipment && notEmpty(s.equipment)) add(out, "Thiết bị: " + s.equipment.trim());
         if (s.showWorkplace && notEmpty(s.workplace)) add(out, "Nơi làm việc: " + s.workplace.trim());
         if (s.showNote && notEmpty(s.note)) add(out, "Nội dung: " + s.note.trim());
         return out;

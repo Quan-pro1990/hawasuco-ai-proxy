@@ -3,7 +3,7 @@
 Ứng dụng Android chụp ảnh kiểu **Timemark**: ngay trên khung ngắm và trên ảnh lưu có
 
 - băng rôn **HAWASUCO | giờ:phút | logo công ty**, 5 ngôi sao phía trên;
-- **ngày + thứ**, **địa chỉ** (tự tra từ GPS), **tọa độ GPS**, **Nhân viên**, **Đội**, nơi làm việc, nội dung công việc;
+- **ngày + thứ**, **địa chỉ** (tự tra từ GPS), **tọa độ GPS**, **Nhân viên**, **Đội**, **Thiết bị**, nơi làm việc, nội dung công việc;
 - **bản đồ nhỏ** (vệ tinh hoặc đường phố) góc trên trái, có ghim vị trí và hình quạt xanh chỉ hướng camera;
 - **mã ảnh** viết dọc mép phải, chữ "HAWASUCO Camera — Ảnh chụp thực tế" góc phải dưới.
 
@@ -30,7 +30,7 @@ Yêu cầu: Android 6.0 trở lên. Cần mạng (4G/Wi-Fi) để tra địa ch�
 | Thao tác | Cách làm |
 |---|---|
 | Chụp | Nút tròn trắng, hoặc **phím âm lượng** |
-| Sửa tên nhân viên, đội, nơi làm việc, nội dung | Nút ⚙ góc phải trên, hoặc **chạm vào phần chữ** trên khung ngắm |
+| Sửa nhân viên, đội, thiết bị, nơi làm việc, nội dung | Nút ⚙ góc phải trên, hoặc **chạm vào phần chữ** trên khung ngắm |
 | Lấy nét | Chạm vào khung ngắm |
 | Zoom | Chụm / mở 2 ngón tay |
 | Đèn flash | Nút tia sét góc trái trên: tắt → tự động → luôn bật |
@@ -43,8 +43,9 @@ Trong trang **Thông tin & cài đặt** (nút ⚙):
   (khi địa chỉ tự tra chưa đúng, nhất là sau sáp nhập tỉnh, xã).
 - **Nhân viên**, **Đội**: chữ to in đậm, luôn nằm trên một dòng (tên dài thì chữ tự nhỏ lại cho vừa);
   chưa nhập thì khung ngắm nhắc "(chạm để nhập)", ảnh lưu bỏ dòng trống;
-  nơi làm việc và nội dung công việc (không bắt buộc).
-- Bật / tắt từng dòng: bản đồ, địa chỉ, tọa độ, nhân viên, đội, nơi làm việc, nội dung, mã ảnh.
+  **Thiết bị** (bấm **Chọn ▾**: đồng hồ nước, TLK, van, trụ cứu hỏa… hoặc gõ tay), nơi làm việc và
+  nội dung công việc (không bắt buộc, để trống thì không in lên ảnh).
+- Bật / tắt từng dòng: bản đồ, địa chỉ, tọa độ, nhân viên, đội, thiết bị, nơi làm việc, nội dung, mã ảnh.
 - **Kiểu bản đồ**: vệ tinh (Esri) hoặc đường phố (OpenStreetMap).
 - **Ảnh lớn** (nét nhất, tối đa ~12 MP) hoặc **Ảnh vừa** (~3 MP, nhẹ, gửi nhanh).
 - **Lưu thêm ảnh gốc** không watermark (vào DCIM/HAWASUCO/Anh goc).

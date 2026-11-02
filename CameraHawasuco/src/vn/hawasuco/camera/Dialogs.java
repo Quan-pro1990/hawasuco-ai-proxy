@@ -45,6 +45,9 @@ final class Dialogs {
     private static final String[] TEAMS = {
             "Đội Cấp nước số 1", "Đội Cấp nước số 2", "Đội Cấp nước số 3",
             "Đội Cấp nước số 4", "Đội Cấp nước số 5", "Đội Cấp nước số 6"};
+    private static final String[] EQUIPMENT = {
+            "Đồng hồ nước khách hàng", "Thủy lượng kế (TLK)", "Đồng hồ cấp 1", "Van", "Trụ cứu hỏa",
+            "Đường ống", "Máy bơm", "Giếng", "Bể chứa"};
 
     /** Trang cài đặt toàn màn hình, nền sáng, chữ to. */
     static void settings(final Activity a, final Prefs p, final Runnable onSaved) {
@@ -85,7 +88,9 @@ final class Dialogs {
         final EditText employee = input(info, "Nhân viên", "Nhập họ tên, vd: Trần Văn Nam", p.employee);
         employee.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_WORDS
                 | InputType.TYPE_TEXT_VARIATION_PERSON_NAME);
-        final EditText team = teamInput(info, p.team);
+        final EditText team = pickInput(info, "Đội", "vd: Đội Cấp nước số 5", p.team, "Chọn đội", TEAMS);
+        final EditText equipment = pickInput(info, "Thiết bị (không bắt buộc)", "vd: Đồng hồ nước khách hàng",
+                p.equipment, "Chọn thiết bị", EQUIPMENT);
         final EditText workplace = input(info, "Nơi làm việc (không bắt buộc)", "vd: Khu vực Châu Thành", p.workplace);
         final EditText note = input(info, "Nội dung công việc (không bắt buộc)", "vd: Lắp đặt đồng hồ nước", p.note);
         final EditText company = input(info, "Tên đơn vị trên băng rôn", "HAWASUCO", p.company);
@@ -107,6 +112,7 @@ final class Dialogs {
         LinearLayout show = card(box, "Hiển thị trên ảnh");
         final CheckBox cEmp = check(show, "Nhân viên", p.showEmployee);
         final CheckBox cTeam = check(show, "Đội", p.showTeam);
+        final CheckBox cEquip = check(show, "Thiết bị", p.showEquipment);
         final CheckBox cAddr = check(show, "Địa chỉ", p.showAddress);
         final CheckBox cCoord = check(show, "Tọa độ GPS", p.showCoords);
         final CheckBox cMap = check(show, "Bản đồ vị trí", p.showMap);
@@ -147,6 +153,7 @@ final class Dialogs {
             public void onClick(View v) {
                 p.employee = text(employee);
                 p.team = text(team);
+                p.equipment = text(equipment);
                 p.workplace = text(workplace);
                 p.note = text(note);
                 p.company = text(company);
@@ -154,6 +161,7 @@ final class Dialogs {
                 p.manualAddress = text(manual);
                 p.showEmployee = cEmp.isChecked();
                 p.showTeam = cTeam.isChecked();
+                p.showEquipment = cEquip.isChecked();
                 p.showAddress = cAddr.isChecked();
                 p.showCoords = cCoord.isChecked();
                 p.showMap = cMap.isChecked();
@@ -273,14 +281,15 @@ final class Dialogs {
         return e;
     }
 
-    /** Ô "Đội": gõ tay hoặc bấm "Chọn đội" để lấy từ danh sách các đội cấp nước. */
-    private static EditText teamInput(LinearLayout parent, String value) {
+    /** Ô nhập kèm nút "Chọn ▾": gõ tay hoặc chọn nhanh từ danh sách (đội, thiết bị). */
+    private static EditText pickInput(LinearLayout parent, String label, String hint, String value,
+                                      final String title, final String[] options) {
         final Context c = parent.getContext();
-        label(parent, "Đội");
+        label(parent, label);
         LinearLayout row = new LinearLayout(c);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
-        final EditText e = editText(c, "vd: Đội Cấp nước số 5", value);
+        final EditText e = editText(c, hint, value);
         row.addView(e, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
         TextView pick = new TextView(c);
         pick.setText("Chọn ▾");
@@ -294,11 +303,11 @@ final class Dialogs {
             @Override
             public void onClick(View v) {
                 new AlertDialog.Builder(c, android.R.style.Theme_Material_Light_Dialog_Alert)
-                        .setTitle("Chọn đội")
-                        .setItems(TEAMS, new DialogInterface.OnClickListener() {
+                        .setTitle(title)
+                        .setItems(options, new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface di, int which) {
-                                e.setText(TEAMS[which]);
+                                e.setText(options[which]);
                                 e.setSelection(e.length());
                             }
                         })

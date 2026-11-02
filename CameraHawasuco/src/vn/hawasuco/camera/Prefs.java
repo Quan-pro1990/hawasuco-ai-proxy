@@ -15,6 +15,7 @@ final class Prefs {
     String company = "HAWASUCO";
     String employee = "";
     String team = "";
+    String equipment = "";
     String workplace = "";
     String note = "";
     int addressMode = ADDR_FULL;
@@ -24,6 +25,7 @@ final class Prefs {
     boolean showCoords = true;
     boolean showEmployee = true;
     boolean showTeam = true;
+    boolean showEquipment = true;
     boolean showWorkplace = true;
     boolean showNote = true;
     boolean showPhotoId = true;
@@ -42,6 +44,7 @@ final class Prefs {
         p.company = sp.getString("company", p.company);
         p.employee = sp.getString("employee", p.employee);
         p.team = sp.getString("team", p.team);
+        p.equipment = sp.getString("equipment", p.equipment);
         p.workplace = sp.getString("workplace", p.workplace);
         p.note = sp.getString("note", p.note);
         p.addressMode = sp.getInt("addressMode", p.addressMode);
@@ -51,6 +54,7 @@ final class Prefs {
         p.showCoords = sp.getBoolean("showCoords", p.showCoords);
         p.showEmployee = sp.getBoolean("showEmployee", p.showEmployee);
         p.showTeam = sp.getBoolean("showTeam", p.showTeam);
+        p.showEquipment = sp.getBoolean("showEquipment", p.showEquipment);
         p.showWorkplace = sp.getBoolean("showWorkplace", p.showWorkplace);
         p.showNote = sp.getBoolean("showNote", p.showNote);
         p.showPhotoId = sp.getBoolean("showPhotoId", p.showPhotoId);
@@ -76,6 +80,7 @@ final class Prefs {
                 .putString("company", company)
                 .putString("employee", employee)
                 .putString("team", team)
+                .putString("equipment", equipment)
                 .putString("workplace", workplace)
                 .putString("note", note)
                 .putInt("addressMode", addressMode)
@@ -85,6 +90,7 @@ final class Prefs {
                 .putBoolean("showCoords", showCoords)
                 .putBoolean("showEmployee", showEmployee)
                 .putBoolean("showTeam", showTeam)
+                .putBoolean("showEquipment", showEquipment)
                 .putBoolean("showWorkplace", showWorkplace)
                 .putBoolean("showNote", showNote)
                 .putBoolean("showPhotoId", showPhotoId)
@@ -105,6 +111,7 @@ final class Prefs {
         p.company = company;
         p.employee = employee;
         p.team = team;
+        p.equipment = equipment;
         p.workplace = workplace;
         p.note = note;
         p.addressMode = addressMode;
@@ -114,6 +121,7 @@ final class Prefs {
         p.showCoords = showCoords;
         p.showEmployee = showEmployee;
         p.showTeam = showTeam;
+        p.showEquipment = showEquipment;
         p.showWorkplace = showWorkplace;
         p.showNote = showNote;
         p.showPhotoId = showPhotoId;
