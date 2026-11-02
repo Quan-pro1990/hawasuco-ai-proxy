@@ -1,0 +1,665 @@
+/* Lõi tính toán: ngày tháng, công chuẩn, tổng hợp công, lương, bảo hiểm, thuế TNCN.
+   Không phụ thuộc giao diện – chạy được cả trong trình duyệt lẫn Node (để kiểm thử). */
+(function (root, factory) {
+  var isNode = typeof module === 'object' && module.exports;
+  var AL = isNode ? require('./amlich.js') : root.AmLich;
+  var TL = factory(AL);
+  if (isNode) module.exports = TL; else root.TL = TL;
+})(this, function (AmLich) {
+  'use strict';
+
+  /* ================= Mặc định ================= */
+
+  var NHOM_KY_HIEU = {
+    lam:   'Đi làm',
+    phep:  'Nghỉ phép năm',
+    le:    'Nghỉ lễ, Tết',
+    huong: 'Nghỉ khác có lương',
+    ngung: 'Nghỉ / ngừng việc hưởng lương',
+    bhxh:  'Ốm, thai sản (BHXH trả)',
+    khong: 'Nghỉ không lương',
+    kp:    'Nghỉ không phép'
+  };
+
+  /** Ký hiệu theo mẫu 01a-LĐTL (TT 133/2016, TT 200/2014) + vài ký hiệu thông dụng.
+      lam: công làm việc, huong: công nghỉ có hưởng lương, sp: công hưởng lương sản phẩm */
+  function kyHieuMacDinh() {
+    return [
+      { ma: '+',   ten: 'Lương thời gian (đi làm cả ngày)', lam: 1,   huong: 0,   nhom: 'lam' },
+      { ma: '+/2', ten: 'Đi làm nửa ngày',                lam: 0.5, huong: 0,   nhom: 'lam' },
+      { ma: 'SP',  ten: 'Lương sản phẩm',                 lam: 1,   huong: 0,   nhom: 'lam', sp: true },
+      { ma: 'CT',  ten: 'Đi công tác',                    lam: 1,   huong: 0,   nhom: 'lam' },
+      { ma: 'H',   ten: 'Hội nghị, học tập',              lam: 1,   huong: 0,   nhom: 'lam' },
+      { ma: 'P',   ten: 'Nghỉ phép',                      lam: 0,   huong: 1,   nhom: 'phep', phep: true },
+      { ma: 'P/2', ten: 'Nửa ngày phép, nửa ngày làm',    lam: 0.5, huong: 0.5, nhom: 'phep', phep: true },
+      { ma: 'L',   ten: 'Nghỉ lễ, Tết',                   lam: 0,   huong: 1,   nhom: 'le' },
+      { ma: 'NB',  ten: 'Nghỉ bù',                        lam: 0,   huong: 1,   nhom: 'huong' },
+      { ma: 'R',   ten: 'Nghỉ việc riêng có lương (cưới, tang)', lam: 0, huong: 1, nhom: 'huong' },
+      { ma: 'N',   ten: 'Ngừng việc (hưởng lương)',       lam: 0,   huong: 1,   nhom: 'ngung' },
+      { ma: 'Ô',   ten: 'Ốm, điều dưỡng',                 lam: 0,   huong: 0,   nhom: 'bhxh' },
+      { ma: 'Cô',  ten: 'Con ốm',                         lam: 0,   huong: 0,   nhom: 'bhxh' },
+      { ma: 'TS',  ten: 'Thai sản',                       lam: 0,   huong: 0,   nhom: 'bhxh' },
+      { ma: 'T',   ten: 'Tai nạn',                        lam: 0,   huong: 0,   nhom: 'bhxh' },
+      { ma: 'KL',  ten: 'Nghỉ không lương',               lam: 0,   huong: 0,   nhom: 'khong' },
+      { ma: 'KP',  ten: 'Nghỉ không phép',                lam: 0,   huong: 0,   nhom: 'kp' }
+    ];
+  }
+
+  function phuCapMacDinh() {
+    return [
+      { ma: 'AN',   ten: 'Cơm trưa',     cachTinh: 'theo_ngay', chiuThue: false, dongBH: false, ghiChu: 'Đơn giá mỗi ngày đi làm thực tế (kể cả ngày SP)' },
+      { ma: 'XANG', ten: 'Xăng xe',      cachTinh: 'theo_cong', chiuThue: true,  dongBH: false, ghiChu: '' },
+      { ma: 'DT',   ten: 'Điện thoại',   cachTinh: 'co_dinh',   chiuThue: true,  dongBH: false, ghiChu: '' },
+      { ma: 'TN',   ten: 'Trách nhiệm',  cachTinh: 'theo_cong', chiuThue: true,  dongBH: true,  ghiChu: 'Tính vào lương đóng BHXH' }
+    ];
+  }
+
+  function caiDatMacDinh() {
+    return {
+      ngayDauKy: 1,             // kỳ công bắt đầu từ ngày này của tháng trước (1 = theo tháng dương lịch, 21 = từ 21 tháng trước đến 20 tháng này)
+      congChuan: { cach: 'theo_thang', soNgay: 26 }, // theo_thang: số ngày trong kỳ trừ ngày nghỉ tuần
+      khDiLam: '+', khNuaNgay: '+/2', khLe: 'L',
+      nghiTuan: [0],            // 0 = Chủ nhật, 6 = Thứ bảy
+      nuaNgayT7: false,         // Thứ bảy làm nửa ngày (0,5 công chuẩn)
+      gioLamNgay: 8,
+      gioVao: '08:00', gioRa: '17:00', gioRaT7: '12:00',
+      nghiTruaTu: '12:00', nghiTruaDen: '13:00',
+      phutChoPhep: 5,           // đi muộn / về sớm dưới số phút này thì bỏ qua
+      nguongCaNgay: 6,          // giờ làm ≥ ngưỡng này => đủ công (+)
+      nguongNuaNgay: 3,         // giờ làm ≥ ngưỡng này => nửa công (+/2)
+      otToiThieuPhut: 30,       // làm quá giờ ra từ x phút mới tính làm thêm
+      otLamTronPhut: 30,        // làm tròn xuống giờ làm thêm theo bội số phút
+      heSoOT: { thuong: 150, nghi: 200, le: 300 },
+      tiLeNgungViec: 100,       // % lương cho ngày nghỉ / ngừng việc (ký hiệu nhóm "ngung")
+      luongSP: true,            // có lương sản phẩm (số lượng × đơn giá)
+      tenSP: 'Số HĐ',           // tên đơn vị sản lượng
+      donGiaSP: 1200,           // đơn giá mặc định 1 sản phẩm
+      phatMuonMoiLan: 0, phatMuonMoiPhut: 0,
+      bh: {
+        nv: { bhxh: 8, bhyt: 1.5, bhtn: 1 },
+        dn: { bhxh: 17.5, bhyt: 3, bhtn: 1, kpcd: 2 },
+        doanPhi: 0.5
+      },
+      luongCoSo: 2530000,
+      luongToiThieuVung: 5310000,
+      vung: 'I',
+      nguongNghiKhongDongBH: 14,
+      giamTruBanThan: 15500000,
+      giamTruNPT: 6200000,
+      bieuThue: [
+        { den: 10000000, ts: 5 },
+        { den: 30000000, ts: 10 },
+        { den: 60000000, ts: 20 },
+        { den: 100000000, ts: 30 },
+        { den: null, ts: 35 }
+      ],
+      thueKhauTru: 10, nguongKhauTru: 2000000,
+      lamTron: 1,               // làm tròn thực lĩnh: 1, 100, 1000
+      phepNam: 12
+    };
+  }
+
+  function duLieuMoi() {
+    var nam = new Date().getFullYear();
+    var db = {
+      phienBan: 1,
+      congTy: { ten: 'CÔNG TY CỦA BẠN', diaChi: '', mst: '', dienThoai: '', diaDanh: '', thongTu: '133', tieuDeBangLuong: 'BẢNG THANH TOÁN TIỀN LƯƠNG',
+        nguoiLap: '', keToan: '', giamDoc: '', nguoiChamCong: '', phuTrachBP: '', nguoiDuyet: '' },
+      caiDat: caiDatMacDinh(),
+      kyHieu: kyHieuMacDinh(),
+      phuCap: phuCapMacDinh(),
+      phongBan: [],
+      nhanVien: [],
+      ngayLe: [],
+      thang: {}
+    };
+    db.ngayLe = taoNgayLe(nam, db.caiDat).concat(taoNgayLe(nam + 1, db.caiDat));
+    return db;
+  }
+
+  /** Bổ sung trường còn thiếu khi mở dữ liệu cũ. */
+  function chuanHoa(db) {
+    var md = duLieuMoi();
+    if (!db || typeof db !== 'object') return md;
+    db.congTy = Object.assign({}, md.congTy, db.congTy || {});
+    db.caiDat = honHop(md.caiDat, db.caiDat || {});
+    if (!Array.isArray(db.kyHieu) || !db.kyHieu.length) db.kyHieu = md.kyHieu;
+    if (!Array.isArray(db.phuCap)) db.phuCap = md.phuCap;
+    if (!Array.isArray(db.phongBan)) db.phongBan = [];
+    if (!Array.isArray(db.nhanVien)) db.nhanVien = [];
+    if (!Array.isArray(db.ngayLe)) db.ngayLe = md.ngayLe;
+    if (!db.thang || typeof db.thang !== 'object') db.thang = {};
+    db.nhanVien.forEach(function (nv) { if (!nv.phuCap) nv.phuCap = {}; });
+    db.phienBan = 1;
+    return db;
+  }
+
+  function honHop(goc, moi) {
+    var kq = Array.isArray(goc) ? goc.slice() : Object.assign({}, goc);
+    Object.keys(moi).forEach(function (k) {
+      var v = moi[k];
+      if (v && typeof v === 'object' && !Array.isArray(v) && goc[k] && typeof goc[k] === 'object' && !Array.isArray(goc[k])) kq[k] = honHop(goc[k], v);
+      else kq[k] = v;
+    });
+    return kq;
+  }
+
+  /* ================= Ngày tháng ================= */
+
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function khoaKy(y, m) { return y + '-' + pad(m); }
+  function iso(y, m, d) { return y + '-' + pad(m) + '-' + pad(d); }
+  function soNgay(y, m) { return new Date(y, m, 0).getDate(); }
+  function thuTrongTuan(y, m, d) { return new Date(y, m - 1, d).getDay(); }
+  var TEN_THU = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+  var TEN_THU_DAY = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'];
+
+  function docNgay(s) { // 'yyyy-mm-dd' -> {y,m,d}
+    if (!s) return null;
+    var p = String(s).split('-');
+    if (p.length !== 3) return null;
+    return { y: +p[0], m: +p[1], d: +p[2] };
+  }
+  function hienNgay(s) { var n = docNgay(s); return n ? pad(n.d) + '/' + pad(n.m) + '/' + n.y : ''; }
+  function phut(hhmm) { // '08:30' -> 510
+    if (hhmm == null || hhmm === '') return null;
+    var p = String(hhmm).split(':');
+    return (+p[0] || 0) * 60 + (+p[1] || 0);
+  }
+  function hhmm(ph) { if (ph == null) return ''; ph = Math.round(ph); return pad(Math.floor(ph / 60)) + ':' + pad(ph % 60); }
+  function congNgay(y, m, d, them) { var t = new Date(y, m - 1, d + them); return iso(t.getFullYear(), t.getMonth() + 1, t.getDate()); }
+
+  /* ================= Ngày lễ ================= */
+
+  function taoNgayLe(nam, cd) {
+    var ds = [];
+    function them(dmy, ten) { ds.push({ ngay: iso(dmy[2], dmy[1], dmy[0]), ten: ten }); }
+    them([1, 1, nam], 'Tết Dương lịch');
+    // Tết Nguyên đán: ngày cuối năm âm lịch + mùng 1 – mùng 4
+    var tet = AmLich.amSangDuong(1, 1, nam, 0, 7);
+    var jdTet = AmLich.jdFromDate(tet[0], tet[1], tet[2]);
+    them(AmLich.jdToDate(jdTet - 1), 'Tết Nguyên đán (ngày cuối năm âm lịch)');
+    for (var i = 0; i < 4; i++) them(AmLich.jdToDate(jdTet + i), 'Tết Nguyên đán (mùng ' + (i + 1) + ')');
+    them(AmLich.amSangDuong(10, 3, nam, 0, 7), 'Giỗ Tổ Hùng Vương (10/3 âm lịch)');
+    them([30, 4, nam], 'Ngày Chiến thắng 30/4');
+    them([1, 5, nam], 'Ngày Quốc tế Lao động 1/5');
+    them([2, 9, nam], 'Quốc khánh 2/9');
+    // ngày liền kề Quốc khánh: chọn ngày nối với cuối tuần
+    var t29 = thuTrongTuan(nam, 9, 2);
+    var lienKe = (t29 === 1 || t29 === 4 || t29 === 0) ? 3 : 1;
+    them([lienKe, 9, nam], 'Quốc khánh (ngày liền kề)');
+    if (nam >= 2026) them([24, 11, nam], 'Ngày Văn hóa Việt Nam 24/11');
+    // Nghỉ bù khi ngày lễ trùng ngày nghỉ hằng tuần
+    var nghiTuan = (cd && cd.nghiTuan) || [0];
+    var daCo = {};
+    ds.forEach(function (x) { daCo[x.ngay] = true; });
+    var bu = [];
+    ds.slice().sort(function (a, b) { return a.ngay < b.ngay ? -1 : 1; }).forEach(function (x) {
+      var n = docNgay(x.ngay);
+      if (nghiTuan.indexOf(thuTrongTuan(n.y, n.m, n.d)) >= 0) {
+        var k = 1, ng;
+        do {
+          ng = congNgay(n.y, n.m, n.d, k++);
+          var nn = docNgay(ng);
+          var laNghi = nghiTuan.indexOf(thuTrongTuan(nn.y, nn.m, nn.d)) >= 0;
+        } while (daCo[ng] || laNghi);
+        daCo[ng] = true;
+        bu.push({ ngay: ng, ten: 'Nghỉ bù ' + x.ten, bu: true });
+      }
+    });
+    return ds.concat(bu).sort(function (a, b) { return a.ngay < b.ngay ? -1 : 1; });
+  }
+
+  function bangNgayLe(db) {
+    var s = {};
+    (db.ngayLe || []).forEach(function (x) { s[x.ngay] = x.ten || 'Ngày lễ'; });
+    return s;
+  }
+
+  /* ================= Kỳ công ================= */
+
+  function ngayDauKy(db) { var s = +((db.caiDat || {}).ngayDauKy) || 1; return Math.max(1, Math.min(28, s)); }
+
+  /** Danh sách ngày của kỳ công tháng m/y: [{y, m, d, iso}] */
+  function ngayKy(db, y, m) {
+    var s = ngayDauKy(db), ds = [];
+    if (s === 1) {
+      for (var d = 1; d <= soNgay(y, m); d++) ds.push({ y: y, m: m, d: d, iso: iso(y, m, d) });
+      return ds;
+    }
+    var t = new Date(y, m - 2, 1), y0 = t.getFullYear(), m0 = t.getMonth() + 1;
+    for (var d0 = s; d0 <= soNgay(y0, m0); d0++) ds.push({ y: y0, m: m0, d: d0, iso: iso(y0, m0, d0) });
+    for (var d1 = 1; d1 < s; d1++) ds.push({ y: y, m: m, d: d1, iso: iso(y, m, d1) });
+    return ds;
+  }
+  function batDauKy(db, y, m) { return ngayKy(db, y, m)[0].iso; }
+  function ketThucKy(db, y, m) { var ds = ngayKy(db, y, m); return ds[ds.length - 1].iso; }
+  /** Kỳ công chứa ngày y-m-d */
+  function kyCuaNgay(db, y, m, d) {
+    var s = ngayDauKy(db);
+    if (s > 1 && d >= s) { m++; if (m > 12) { m = 1; y++; } }
+    return { y: y, m: m };
+  }
+
+  /** Ngày nghỉ hằng tuần của nhân viên (theo lịch làm việc riêng hoặc cài đặt chung) */
+  function nghiTuanNV(db, nv) {
+    var l = nv && nv.lichLam;
+    if (l === 'T2-T6') return [0, 6];
+    if (l === 'T2-T7') return [0];
+    if (l === 'T2-CN') return [];
+    return db.caiDat.nghiTuan || [0];
+  }
+
+  /** 'le' | 'nghi' | 'nua' | 'thuong' – nv không bắt buộc */
+  function loaiNgay(db, y, m, d, le, nv) {
+    le = le || bangNgayLe(db);
+    if (le[iso(y, m, d)]) return 'le';
+    var t = thuTrongTuan(y, m, d);
+    if (nghiTuanNV(db, nv).indexOf(t) >= 0) return 'nghi';
+    if (db.caiDat.nuaNgayT7 && t === 6 && !(nv && nv.lichLam)) return 'nua';
+    return 'thuong';
+  }
+
+  /** Công chuẩn của kỳ (chung, hoặc riêng cho 1 nhân viên) */
+  function congChuan(db, y, m, nv) {
+    var cd = db.caiDat;
+    if (nv && +nv.congChuanRieng > 0) return +nv.congChuanRieng;
+    if (cd.congChuan && cd.congChuan.cach === 'co_dinh' && !(nv && nv.lichLam)) return +cd.congChuan.soNgay || 26;
+    var nghi = nghiTuanNV(db, nv), nua = cd.nuaNgayT7 && !(nv && nv.lichLam), c = 0;
+    ngayKy(db, y, m).forEach(function (x) {
+      var t = thuTrongTuan(x.y, x.m, x.d);
+      if (nghi.indexOf(t) >= 0) return;
+      c += (nua && t === 6) ? 0.5 : 1;
+    });
+    return c;
+  }
+
+  /* ================= Dữ liệu tháng ================= */
+
+  /** Dữ liệu theo tháng dương lịch (chấm công lưu theo ngày thật) và theo kỳ (thưởng, tạm ứng, chốt lương). */
+  function thang(db, y, m, taoMoi) {
+    var k = khoaKy(y, m);
+    var t = db.thang[k];
+    if (!t && taoMoi) t = db.thang[k] = { cc: {}, ot: {}, muon: {}, vr: {}, dc: {}, khoa: false, chot: null };
+    if (t) { ['cc', 'ot', 'muon', 'vr', 'dc'].forEach(function (f) { if (!t[f]) t[f] = {}; }); }
+    return t || { cc: {}, ot: {}, muon: {}, vr: {}, dc: {}, khoa: false, chot: null, rong: true };
+  }
+  /** Giá trị 1 ô của nhân viên tại 1 ngày thật. kho: cc | ot | muon | vr */
+  function oNgay(db, kho, nvId, y, m, d) {
+    var t = db.thang[khoaKy(y, m)];
+    var o = t && t[kho] && t[kho][nvId];
+    return o ? o[d] : undefined;
+  }
+
+  function nvTrongKy(nv, y, m, db) {
+    var dau = db ? batDauKy(db, y, m) : iso(y, m, 1), cuoi = db ? ketThucKy(db, y, m) : iso(y, m, soNgay(y, m));
+    if (nv.ngayVao && nv.ngayVao > cuoi) return false;
+    if (nv.ngayNghi && nv.ngayNghi < dau) return false;
+    if (nv.trangThai === 'nghi_viec' && !nv.ngayNghi) return false;
+    return true;
+  }
+
+  function nvLamNgay(nv, y, m, d) {
+    var s = iso(y, m, d);
+    if (nv.ngayVao && s < nv.ngayVao) return false;
+    if (nv.ngayNghi && s > nv.ngayNghi) return false;
+    return true;
+  }
+
+  function tenPhongBan(db, ma) {
+    for (var i = 0; i < db.phongBan.length; i++) if (db.phongBan[i].ma === ma) return db.phongBan[i].ten;
+    return ma || '';
+  }
+
+  function dsNhanVienKy(db, y, m) {
+    var thuTu = {};
+    db.phongBan.forEach(function (p, i) { thuTu[p.ma] = i; });
+    return db.nhanVien.filter(function (nv) { return nvTrongKy(nv, y, m, db); }).sort(function (a, b) {
+      var pa = thuTu[a.phongBan], pb = thuTu[b.phongBan];
+      pa = pa == null ? 999 : pa; pb = pb == null ? 999 : pb;
+      if (pa !== pb) return pa - pb;
+      return String(a.ma).localeCompare(String(b.ma), 'vi', { numeric: true });
+    });
+  }
+
+  function bangKyHieu(db) {
+    var s = {};
+    db.kyHieu.forEach(function (k) { s[String(k.ma).toUpperCase()] = k; });
+    return s;
+  }
+
+  /* ================= Tổng hợp công ================= */
+
+  function tongHopCong(db, y, m, nv, ctx) {
+    ctx = ctx || {};
+    var kh = ctx.kh || bangKyHieu(db);
+    var le = ctx.le || bangNgayLe(db);
+    var ds = ctx.ngay || ngayKy(db, y, m);
+    var r = {
+      congChuan: congChuan(db, y, m, nv),
+      lam: 0, lamTG: 0, sp: 0, huong: 0, phep: 0, le: 0, huongKhac: 0, ngung: 0, bhxh: 0, khong: 0, kp: 0,
+      congTG: 0, congHL: 0, ngayLamThucTe: 0,
+      otThuong: 0, otNghi: 0, otLe: 0, otTong: 0,
+      muonLan: 0, muonPhut: 0, demKyHieu: {}
+    };
+    ds.forEach(function (x) {
+      var v = oNgay(db, 'cc', nv.id, x.y, x.m, x.d);
+      var k = v != null && v !== '' ? kh[String(v).toUpperCase()] : null;
+      if (k) {
+        var lam = +k.lam || 0, huong = +k.huong || 0, con = Math.max(0, 1 - lam - huong);
+        r.lam += lam; r.huong += huong;
+        if (k.sp) r.sp += lam; else r.lamTG += lam;
+        if (k.phep) r.phep += huong;
+        if (k.nhom === 'le') r.le += huong;
+        else if (k.nhom === 'ngung') r.ngung += huong;
+        else if (!k.phep) r.huongKhac += huong;
+        if (k.nhom === 'bhxh') r.bhxh += con;
+        if (k.nhom === 'khong') r.khong += con;
+        if (k.nhom === 'kp') r.kp += con;
+        r.demKyHieu[k.ma] = (r.demKyHieu[k.ma] || 0) + 1;
+      }
+      var h = +oNgay(db, 'ot', nv.id, x.y, x.m, x.d) || 0;
+      if (h) {
+        var loai = loaiNgay(db, x.y, x.m, x.d, le, nv);
+        if (loai === 'le') r.otLe += h; else if (loai === 'nghi') r.otNghi += h; else r.otThuong += h;
+      }
+      var p = +oNgay(db, 'muon', nv.id, x.y, x.m, x.d) || 0;
+      if (p > 0) { r.muonLan++; r.muonPhut += p; }
+    });
+    r.otTong = r.otThuong + r.otNghi + r.otLe;
+    r.ngayLamThucTe = r.lam;
+    r.congHL = r.lamTG + r.huong;          // công hưởng lương thời gian (kể cả ngừng việc)
+    r.congTG = r.congHL - r.ngung;         // cột "Lương thời gian – số công" (gồm cả phép, lễ)
+    ['lam', 'lamTG', 'sp', 'huong', 'phep', 'le', 'huongKhac', 'ngung', 'bhxh', 'khong', 'kp', 'congTG', 'congHL', 'ngayLamThucTe', 'otThuong', 'otNghi', 'otLe', 'otTong']
+      .forEach(function (f) { r[f] = Math.round(r[f] * 100) / 100; });
+    return r;
+  }
+
+  /* ================= Thuế ================= */
+
+  function thueLuyTien(tntt, bieu) {
+    var thue = 0, duoi = 0;
+    for (var i = 0; i < bieu.length; i++) {
+      var tren = bieu[i].den == null || bieu[i].den === '' ? Infinity : +bieu[i].den;
+      if (tntt > duoi) thue += (Math.min(tntt, tren) - duoi) * (+bieu[i].ts) / 100;
+      if (tntt <= tren) break;
+      duoi = tren;
+    }
+    return Math.round(thue);
+  }
+
+  /* ================= Tính lương 1 nhân viên ================= */
+
+  function r0(x) { return Math.round(x || 0); }
+
+  function tinhLuongNV(db, y, m, nv, ctx) {
+    ctx = ctx || {};
+    var cd = db.caiDat;
+    var T = ctx.T || thang(db, y, m);
+    var c = tongHopCong(db, y, m, nv, ctx);
+    var cc = c.congChuan || 1;
+    var tl = (nv.tiLeHuong == null || nv.tiLeHuong === '' ? 100 : +nv.tiLeHuong) / 100;
+    var cb = +nv.luongCB || 0;
+    var gio = +cd.gioLamNgay || 8;
+    var hinhThuc = nv.hinhThuc || 'thang';
+    var luongNgay, luongGio;
+    if (hinhThuc === 'ngay') { luongNgay = cb * tl; luongGio = luongNgay / gio; }
+    else if (hinhThuc === 'gio') { luongGio = cb * tl; luongNgay = luongGio * gio; }
+    else { luongNgay = cb * tl / cc; luongGio = luongNgay / gio; }
+    var luongTG, luongNgung;
+    if (hinhThuc === 'khoan') { luongTG = (c.congHL + c.sp) > 0 ? cb * tl : 0; luongNgung = 0; }
+    else { luongTG = luongNgay * c.congTG; luongNgung = luongNgay * c.ngung * (cd.tiLeNgungViec == null ? 100 : +cd.tiLeNgungViec) / 100; }
+    luongTG = r0(luongTG); luongNgung = r0(luongNgung);
+    var luongCong = luongTG + luongNgung;
+
+    var dc = (T.dc && T.dc[nv.id]) || {};
+    // Lương sản phẩm = số lượng × đơn giá
+    var slSP = +dc.slSP || 0;
+    var donGiaSP = +nv.donGiaSP > 0 ? +nv.donGiaSP : (+cd.donGiaSP || 0);
+    var luongSP = r0(slSP * donGiaSP);
+
+    // Làm thêm giờ: phần 100% chịu thuế, phần chênh lệch được miễn thuế
+    var hs = cd.heSoOT || {};
+    var tienOT = luongGio * (c.otThuong * (+hs.thuong || 150) + c.otNghi * (+hs.nghi || 200) + c.otLe * (+hs.le || 300)) / 100;
+    var otChiuThue = luongGio * c.otTong;
+    var otMienThue = Math.max(0, tienOT - otChiuThue);
+    tienOT = r0(tienOT); otMienThue = r0(otMienThue);
+
+    // Phụ cấp
+    var pcList = ctx.phuCap || db.phuCap;
+    var phuCap = {}, phuCapNgay = {}, tongPC = 0, pcKhongThue = 0, pcDongBH = 0;
+    var npc = nv.phuCap || {};
+    var coCong = c.congHL + c.sp;
+    pcList.forEach(function (pc) {
+      var muc = +npc[pc.ma] || 0, tien = 0;
+      if (muc) {
+        if (pc.cachTinh === 'theo_ngay') { tien = muc * c.ngayLamThucTe; phuCapNgay[pc.ma] = c.ngayLamThucTe; }
+        else if (pc.cachTinh === 'theo_cong') tien = coCong > 0 ? muc * Math.min(coCong, cc) / cc : 0;
+        else tien = coCong > 0 ? muc : 0;
+      }
+      tien = r0(tien);
+      phuCap[pc.ma] = tien;
+      tongPC += tien;
+      if (!pc.chiuThue) pcKhongThue += tien;
+      if (pc.dongBH) pcDongBH += muc;
+    });
+
+    var thuong = +dc.thuong || 0, congKhac = +dc.congKhac || 0;
+    var tamUng = +dc.tamUng || 0, khauTru = +dc.khauTru || 0;
+    var tongThuNhap = luongSP + luongCong + tienOT + tongPC + thuong + congKhac;
+
+    // Bảo hiểm
+    var canhBao = [];
+    var luongBH = 0;
+    if (nv.thamGiaBH) {
+      if (+nv.luongBH > 0) luongBH = +nv.luongBH;
+      else if (hinhThuc === 'thang' || hinhThuc === 'khoan') luongBH = cb + pcDongBH;
+      else canhBao.push('Chưa nhập lương đóng BH');
+      if (luongBH > 0 && luongBH < (+cd.luongToiThieuVung || 0)) canhBao.push('Lương đóng BH thấp hơn lương tối thiểu vùng');
+    }
+    var ngayKhongLuong = Math.max(0, cc - c.congHL - c.sp);
+    var dongBH = nv.thamGiaBH && luongBH > 0 && ngayKhongLuong < (+cd.nguongNghiKhongDongBH || 14);
+    if (nv.thamGiaBH && luongBH > 0 && !dongBH) canhBao.push('Nghỉ từ ' + (cd.nguongNghiKhongDongBH || 14) + ' ngày không lương trở lên: không đóng BH tháng này');
+    var capXH = 20 * (+cd.luongCoSo || 0), capTN = 20 * (+cd.luongToiThieuVung || 0);
+    var nenXH = dongBH ? Math.min(luongBH, capXH || luongBH) : 0;
+    var nenTN = dongBH ? Math.min(luongBH, capTN || luongBH) : 0;
+    var bnv = cd.bh.nv, bdn = cd.bh.dn;
+    var bhxh = r0(nenXH * bnv.bhxh / 100), bhyt = r0(nenXH * bnv.bhyt / 100), bhtn = r0(nenTN * bnv.bhtn / 100);
+    var tongBH = bhxh + bhyt + bhtn;
+    var dn = {
+      bhxh: r0(nenXH * bdn.bhxh / 100), bhyt: r0(nenXH * bdn.bhyt / 100),
+      bhtn: r0(nenTN * bdn.bhtn / 100), kpcd: r0(nenXH * bdn.kpcd / 100)
+    };
+    dn.tong = dn.bhxh + dn.bhyt + dn.bhtn + dn.kpcd;
+    // Đoàn phí công đoàn: % trên lương đóng BH (chưa tham gia BH thì tính trên mức lương), tối đa 10% lương cơ sở
+    var nenDP = luongBH > 0 ? luongBH : ((hinhThuc === 'thang' || hinhThuc === 'khoan') ? cb : 0);
+    var doanPhi = (nv.doanVien && nenDP > 0 && tongThuNhap > 0) ? r0(Math.min(nenDP * (+cd.bh.doanPhi || 0) / 100, 0.1 * (+cd.luongCoSo || Infinity))) : 0;
+
+    // Thuế TNCN
+    var tnct = Math.max(0, tongThuNhap - pcKhongThue - otMienThue);
+    var soNPT = +nv.soNPT || 0;
+    var gtBT = 0, gtNPT = 0, tntt = 0, thue = 0;
+    var cachThue = nv.cachTinhThue || 'luy_tien';
+    if (cachThue === 'luy_tien') {
+      gtBT = +cd.giamTruBanThan || 0;
+      gtNPT = soNPT * (+cd.giamTruNPT || 0);
+      tntt = Math.max(0, tnct - tongBH - gtBT - gtNPT);
+      thue = thueLuyTien(tntt, cd.bieuThue);
+    } else if (cachThue === 'khau_tru') {
+      tntt = tnct;
+      thue = tnct >= (+cd.nguongKhauTru || 0) ? r0(tnct * (+cd.thueKhauTru || 10) / 100) : 0;
+    }
+
+    var phatMuon = r0((+cd.phatMuonMoiLan || 0) * c.muonLan + (+cd.phatMuonMoiPhut || 0) * c.muonPhut);
+    var tongKhauTru = tongBH + doanPhi + thue + phatMuon + khauTru;   // cột "Cộng" các khoản khấu trừ (không gồm tạm ứng)
+    var thucLinh = tongThuNhap - tamUng - tongKhauTru;
+    var lt = +cd.lamTron || 1;
+    thucLinh = Math.round(thucLinh / lt) * lt;
+
+    return {
+      nvId: nv.id, ma: nv.ma, hoTen: nv.hoTen, phongBan: nv.phongBan, tenPhongBan: tenPhongBan(db, nv.phongBan),
+      chucVu: nv.chucVu || '', mst: nv.mst || '', nganHang: nv.nganHang || '', soTK: nv.soTK || '',
+      hinhThuc: hinhThuc, cachTinhThue: cachThue, tiLeHuong: tl * 100,
+      cong: c, congChuan: c.congChuan,
+      luongCB: cb, luongNgay: r0(luongNgay), luongGio: r0(luongGio),
+      slSP: slSP, donGiaSP: donGiaSP, luongSP: luongSP,
+      luongTG: luongTG, luongNgung: luongNgung, luongCong: luongCong,
+      tienOT: tienOT, otMienThue: otMienThue,
+      phuCap: phuCap, phuCapNgay: phuCapNgay, tongPhuCap: tongPC, pcKhongThue: pcKhongThue,
+      thuong: thuong, congKhac: congKhac, tongThuNhap: tongThuNhap,
+      luongBH: luongBH, dongBH: !!dongBH, bhxh: bhxh, bhyt: bhyt, bhtn: bhtn, tongBH: tongBH, doanPhi: doanPhi,
+      tnct: tnct, giamTruBT: gtBT, soNPT: soNPT, giamTruNPT: gtNPT, tntt: tntt, thue: thue,
+      tamUng: tamUng, khauTru: khauTru, phatMuon: phatMuon, tongKhauTru: tongKhauTru, ghiChu: dc.ghiChu || '',
+      thucLinh: thucLinh, dn: dn, chiPhiDN: tongThuNhap + dn.tong,
+      canhBao: canhBao
+    };
+  }
+
+  var TRUONG_TONG = ['luongCB', 'slSP', 'luongSP', 'luongTG', 'luongNgung', 'luongCong', 'tienOT', 'otMienThue', 'tongPhuCap', 'pcKhongThue', 'thuong', 'congKhac', 'tongThuNhap',
+    'luongBH', 'bhxh', 'bhyt', 'bhtn', 'tongBH', 'doanPhi', 'tnct', 'tntt', 'thue', 'tamUng', 'khauTru', 'phatMuon', 'tongKhauTru', 'thucLinh', 'chiPhiDN'];
+
+  function cong(rows, phuCapList) {
+    var t = { phuCap: {}, phuCapNgay: {}, dn: { bhxh: 0, bhyt: 0, bhtn: 0, kpcd: 0, tong: 0 }, soNV: rows.length,
+      cong: { congHL: 0, congTG: 0, lam: 0, sp: 0, ngung: 0, ngayLamThucTe: 0, otTong: 0, phep: 0, muonLan: 0, muonPhut: 0, khong: 0, kp: 0, bhxh: 0 } };
+    TRUONG_TONG.forEach(function (f) { t[f] = 0; });
+    (phuCapList || []).forEach(function (pc) { t.phuCap[pc.ma] = 0; });
+    rows.forEach(function (r) {
+      TRUONG_TONG.forEach(function (f) { t[f] += r[f] || 0; });
+      Object.keys(r.phuCap || {}).forEach(function (k) { t.phuCap[k] = (t.phuCap[k] || 0) + r.phuCap[k]; });
+      Object.keys(r.phuCapNgay || {}).forEach(function (k) { t.phuCapNgay[k] = (t.phuCapNgay[k] || 0) + r.phuCapNgay[k]; });
+      Object.keys(t.dn).forEach(function (k) { t.dn[k] += r.dn[k] || 0; });
+      Object.keys(t.cong).forEach(function (k) { t.cong[k] += r.cong[k] || 0; });
+    });
+    Object.keys(t.cong).forEach(function (k) { t.cong[k] = Math.round(t.cong[k] * 100) / 100; });
+    return t;
+  }
+
+  /** Bảng lương cả kỳ. Kỳ đã chốt thì trả về số liệu đã lưu khi chốt. */
+  function tinhBangLuong(db, y, m) {
+    var T = thang(db, y, m);
+    if (T.khoa && T.chot && T.chot.rows) {
+      return { rows: T.chot.rows, phuCap: T.chot.phuCap, congChuan: T.chot.congChuan, khoa: true, ngayChot: T.chot.ngay, tong: cong(T.chot.rows, T.chot.phuCap) };
+    }
+    var ctx = { T: T, kh: bangKyHieu(db), le: bangNgayLe(db), ngay: ngayKy(db, y, m), phuCap: db.phuCap };
+    var rows = dsNhanVienKy(db, y, m).map(function (nv) { return tinhLuongNV(db, y, m, nv, ctx); });
+    return { rows: rows, phuCap: db.phuCap, congChuan: congChuan(db, y, m), khoa: !!T.khoa, tong: cong(rows, db.phuCap) };
+  }
+
+  function chotThang(db, y, m) {
+    var T = thang(db, y, m, true);
+    T.khoa = false; T.chot = null;
+    var bl = tinhBangLuong(db, y, m);
+    T.chot = { ngay: new Date().toISOString(), rows: JSON.parse(JSON.stringify(bl.rows)), phuCap: JSON.parse(JSON.stringify(bl.phuCap)), congChuan: bl.congChuan };
+    T.khoa = true;
+    return T.chot;
+  }
+  function moKhoaThang(db, y, m) { var T = thang(db, y, m, true); T.khoa = false; T.chot = null; }
+
+  /* ================= Vào / ra (máy chấm công) ================= */
+
+  /** Tính công một ngày từ giờ vào/ra (phút trong ngày). */
+  function tinhVaoRa(cd, loai, vao, ra) {
+    var gv = phut(cd.gioVao), gr = phut(loai === 'nua' ? (cd.gioRaT7 || '12:00') : cd.gioRa);
+    var t1 = phut(cd.nghiTruaTu), t2 = phut(cd.nghiTruaDen);
+    var cp = +cd.phutChoPhep || 0;
+    function chong(a1, a2, b1, b2) { return Math.max(0, Math.min(a2, b2) - Math.max(a1, b1)); }
+    var kq = { gioLam: 0, muon: 0, veSom: 0, ot: 0, kyHieu: '', ghiChu: '' };
+    if (vao == null && ra == null) return kq;
+    var motLan = vao == null || ra == null || vao === ra;
+    if (motLan) {
+      var p = vao != null ? vao : ra;
+      kq.ghiChu = 'Chỉ có 1 lần chấm';
+      if (loai === 'nghi' || loai === 'le') { kq.kyHieu = loai === 'le' ? 'L' : ''; return kq; }
+      if (p < (t1 || 720) && p - gv > cp) kq.muon = p - gv;
+      kq.kyHieu = cd.khDiLam || '+';
+      return kq;
+    }
+    var nghiTrua = (t1 != null && t2 != null && loai !== 'nua') ? chong(vao, ra, t1, t2) : 0;
+    var block = +cd.otLamTronPhut || 1;
+    if (loai === 'nghi' || loai === 'le') {
+      var tong = Math.max(0, ra - vao - nghiTrua);
+      kq.gioLam = Math.round(tong / 60 * 100) / 100;
+      kq.ot = Math.floor(tong / block) * block / 60;
+      kq.kyHieu = loai === 'le' ? (cd.khLe || 'L') : '';
+      return kq;
+    }
+    var lam = chong(vao, ra, gv, gr) - nghiTrua;
+    kq.gioLam = Math.round(Math.max(0, lam) / 60 * 100) / 100;
+    if (vao - gv > cp) kq.muon = vao - gv;
+    if (gr - ra > cp) kq.veSom = gr - ra;
+    var them = ra - gr;
+    if (them >= (+cd.otToiThieuPhut || 0) && them > 0) kq.ot = Math.floor(them / block) * block / 60;
+    var kc = cd.khDiLam || '+', kn = cd.khNuaNgay || '+/2';
+    if (kq.gioLam >= (+cd.nguongCaNgay || 6) || (loai === 'nua' && kq.gioLam >= (+cd.nguongNuaNgay || 3))) kq.kyHieu = loai === 'nua' ? kn : kc;
+    else if (kq.gioLam >= (+cd.nguongNuaNgay || 3)) kq.kyHieu = kn;
+    else kq.ghiChu = 'Giờ làm quá ít';
+    return kq;
+  }
+
+  /* ================= Phép năm ================= */
+
+  function phepNam(db, nv, nam) {
+    var kh = bangKyHieu(db), daNghi = 0, theoThang = [];
+    for (var m = 1; m <= 12; m++) {
+      var T = db.thang[khoaKy(nam, m)], s = 0;
+      if (T && T.cc && T.cc[nv.id]) {
+        var cc = T.cc[nv.id];
+        Object.keys(cc).forEach(function (d) { var k = kh[String(cc[d]).toUpperCase()]; if (k && k.phep) s += +k.huong || 0; });
+      }
+      theoThang.push(s); daNghi += s;
+    }
+    var duoc = (nv.phepNam == null || nv.phepNam === '' ? +db.caiDat.phepNam : +nv.phepNam) || 0;
+    var ton = +nv.phepTon || 0;
+    return { duoc: duoc, ton: ton, daNghi: daNghi, conLai: duoc + ton - daNghi, theoThang: theoThang };
+  }
+
+  /* ================= Đọc số tiền bằng chữ ================= */
+
+  var CHU_SO = ['không', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
+  function docBaSo(n, day) {
+    var tram = Math.floor(n / 100), chuc = Math.floor((n % 100) / 10), dv = n % 10, s = [];
+    if (day || tram > 0) { s.push(CHU_SO[tram] + ' trăm'); }
+    if (chuc > 1) { s.push(CHU_SO[chuc] + ' mươi'); }
+    else if (chuc === 1) s.push('mười');
+    else if ((day || tram > 0) && dv > 0) s.push('linh');
+    if (dv > 0) {
+      if (dv === 1 && chuc > 1) s.push('mốt');
+      else if (dv === 5 && chuc > 0) s.push('lăm');
+      else if (dv === 4 && chuc > 1) s.push('tư');
+      else s.push(CHU_SO[dv]);
+    }
+    return s.join(' ');
+  }
+  function docSo(so) {
+    so = Math.round(+so || 0);
+    if (so === 0) return 'Không đồng';
+    var am = so < 0; so = Math.abs(so);
+    var donVi = ['', ' nghìn', ' triệu', ' tỷ', ' nghìn tỷ', ' triệu tỷ'];
+    var nhom = [];
+    while (so > 0) { nhom.push(so % 1000); so = Math.floor(so / 1000); }
+    var s = [];
+    for (var i = nhom.length - 1; i >= 0; i--) {
+      if (nhom[i] === 0) continue;
+      var day = i < nhom.length - 1;
+      s.push(docBaSo(nhom[i], day) + donVi[i]);
+    }
+    var kq = s.join(' ').replace(/\s+/g, ' ').trim();
+    kq = kq.charAt(0).toUpperCase() + kq.slice(1) + ' đồng';
+    return (am ? 'Âm ' + kq.charAt(0).toLowerCase() + kq.slice(1) : kq);
+  }
+
+  return {
+    NHOM_KY_HIEU: NHOM_KY_HIEU, TEN_THU: TEN_THU, TEN_THU_DAY: TEN_THU_DAY,
+    kyHieuMacDinh: kyHieuMacDinh, phuCapMacDinh: phuCapMacDinh, caiDatMacDinh: caiDatMacDinh,
+    duLieuMoi: duLieuMoi, chuanHoa: chuanHoa,
+    pad: pad, khoaKy: khoaKy, iso: iso, soNgay: soNgay, thuTrongTuan: thuTrongTuan, docNgay: docNgay, hienNgay: hienNgay,
+    phut: phut, hhmm: hhmm, congNgay: congNgay,
+    taoNgayLe: taoNgayLe, bangNgayLe: bangNgayLe, loaiNgay: loaiNgay, congChuan: congChuan, nghiTuanNV: nghiTuanNV,
+    ngayDauKy: ngayDauKy, ngayKy: ngayKy, batDauKy: batDauKy, ketThucKy: ketThucKy, kyCuaNgay: kyCuaNgay, oNgay: oNgay,
+    thang: thang, nvTrongKy: nvTrongKy, nvLamNgay: nvLamNgay, dsNhanVienKy: dsNhanVienKy, tenPhongBan: tenPhongBan,
+    bangKyHieu: bangKyHieu, tongHopCong: tongHopCong,
+    thueLuyTien: thueLuyTien, tinhLuongNV: tinhLuongNV, tinhBangLuong: tinhBangLuong, congTong: cong,
+    chotThang: chotThang, moKhoaThang: moKhoaThang,
+    tinhVaoRa: tinhVaoRa, phepNam: phepNam, docSo: docSo
+  };
+});
