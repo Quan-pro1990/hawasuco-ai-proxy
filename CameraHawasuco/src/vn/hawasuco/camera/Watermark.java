@@ -63,27 +63,21 @@ final class Watermark {
         if (s.showPhotoId && d.photoId != null) drawPhotoId(c, w, h, u, d.photoId);
 
         // Các dòng thông tin (ngày, địa chỉ, tọa độ, nhân viên...), tự xuống dòng khi dài.
-        float textSize = 32 * u;
+        // Tên nhân viên và Đội: chữ to, in đậm.
         float textX = m + 26 * u;
         float maxW = Math.max(260 * u, w - textX - m - brandW - 24 * u);
-        p.setTypeface(medium);
-        p.setTextSize(textSize);
-        List<String> lines = new ArrayList<String>();
-        List<Boolean> starts = new ArrayList<Boolean>();
-        for (String item : items(d, s, preview)) {
-            List<String> wrapped = wrap(item, maxW, 3);
-            for (int i = 0; i < wrapped.size(); i++) {
-                lines.add(wrapped.get(i));
-                starts.add(i == 0);
-            }
+        List<Line> lines = new ArrayList<Line>();
+        for (Line item : items(d, s, preview)) {
+            textStyle(item.strong, u);
+            List<String> wrapped = wrap(item.text, maxW, item.strong ? 2 : 3);
+            for (int i = 0; i < wrapped.size(); i++) lines.add(new Line(wrapped.get(i), item.strong, i == 0));
         }
-        float itemPitch = 50 * u, wrapPitch = 39 * u;
         float span = 0;
-        for (int i = 1; i < lines.size(); i++) span += starts.get(i) ? itemPitch : wrapPitch;
+        for (int i = 1; i < lines.size(); i++) span += pitch(lines.get(i), u);
         float lastBase = h - 36 * u;
         float firstBase = lastBase - span;
         float bannerH = 82 * u;
-        float bannerBottom = firstBase - textSize - 16 * u;
+        float bannerBottom = firstBase - (lines.isEmpty() ? 0 : size(lines.get(0).strong, u)) - 16 * u;
         float bannerTop = bannerBottom - bannerH;
 
         drawStars(c, m + 12 * u, bannerTop - 10 * u, 24 * u, u);
@@ -94,16 +88,16 @@ final class Watermark {
         p.setColor(0xFF2F8FE8);
         c.drawRect(m + 6 * u, bannerBottom + 6 * u, m + 11 * u, lastBase + 10 * u, p);
 
-        p.setTypeface(medium);
-        p.setTextSize(textSize);
         p.setColor(Color.WHITE);
         p.setShadowLayer(4 * u, 0, 2 * u, SHADOW);
         float y = firstBase;
         float textRight = 0;
         for (int i = 0; i < lines.size(); i++) {
-            if (i > 0) y += starts.get(i) ? itemPitch : wrapPitch;
-            c.drawText(lines.get(i), textX, y, p);
-            textRight = Math.max(textRight, textX + p.measureText(lines.get(i)));
+            Line line = lines.get(i);
+            if (i > 0) y += pitch(line, u);
+            textStyle(line.strong, u);
+            c.drawText(line.text, textX, y, p);
+            textRight = Math.max(textRight, textX + p.measureText(line.text));
         }
         noShadow();
         infoBounds.set(m, bannerTop - 40 * u, Math.max(bannerRight, textRight), lastBase + 12 * u);
@@ -118,31 +112,62 @@ final class Watermark {
         return d.addressFull;
     }
 
-    private List<String> items(StampData d, Prefs s, boolean preview) {
-        List<String> out = new ArrayList<String>();
+    /** Một dòng chữ; strong = chữ to in đậm (Tên nhân viên, Đội); start = dòng đầu của một mục. */
+    private static final class Line {
+        final String text;
+        final boolean strong, start;
+
+        Line(String text, boolean strong, boolean start) {
+            this.text = text;
+            this.strong = strong;
+            this.start = start;
+        }
+    }
+
+    private static float size(boolean strong, float u) {
+        return (strong ? 38 : 32) * u;
+    }
+
+    /** Khoảng cách từ dòng trên xuống chân dòng này. */
+    private static float pitch(Line l, float u) {
+        if (l.strong) return (l.start ? 56 : 46) * u;
+        return (l.start ? 50 : 39) * u;
+    }
+
+    private void textStyle(boolean strong, float u) {
+        p.setTypeface(strong ? bold : medium);
+        p.setTextSize(size(strong, u));
+    }
+
+    private List<Line> items(StampData d, Prefs s, boolean preview) {
+        List<Line> out = new ArrayList<Line>();
         Calendar cal = Calendar.getInstance();
         cal.setTimeInMillis(d.time);
-        out.add(dmy.format(new Date(d.time)) + "  " + THU[cal.get(Calendar.DAY_OF_WEEK) - 1]);
+        add(out, dmy.format(new Date(d.time)) + "  " + THU[cal.get(Calendar.DAY_OF_WEEK) - 1]);
         if (s.showAddress) {
             String a = address(d, s);
-            if (a != null) out.add(a);
-            else if (preview) out.add(d.hasLocation ? "Đang lấy địa chỉ…" : "Đang chờ vị trí GPS…");
+            if (a != null) add(out, a);
+            else if (preview) add(out, d.hasLocation ? "Đang lấy địa chỉ…" : "Đang chờ vị trí GPS…");
         }
         if (s.showCoords) {
-            if (d.hasLocation) out.add(String.format(Locale.US, "Tọa độ: %.6f, %.6f", d.lat, d.lon));
-            else if (preview && !s.showAddress) out.add("Tọa độ: đang chờ GPS…");
+            if (d.hasLocation) add(out, String.format(Locale.US, "Tọa độ: %.6f, %.6f", d.lat, d.lon));
+            else if (preview && !s.showAddress) add(out, "Tọa độ: đang chờ GPS…");
         }
         if (s.showEmployee) addField(out, "Tên nhân viên: ", s.employee, preview);
         if (s.showTeam) addField(out, "Đội: ", s.team, preview);
-        if (s.showWorkplace && notEmpty(s.workplace)) out.add("Nơi làm việc: " + s.workplace.trim());
-        if (s.showNote && notEmpty(s.note)) out.add("Nội dung: " + s.note.trim());
+        if (s.showWorkplace && notEmpty(s.workplace)) add(out, "Nơi làm việc: " + s.workplace.trim());
+        if (s.showNote && notEmpty(s.note)) add(out, "Nội dung: " + s.note.trim());
         return out;
     }
 
-    /** Dòng bắt buộc nên điền: chưa điền thì khung ngắm nhắc "chạm để nhập", ảnh lưu bỏ qua dòng đó. */
-    private static void addField(List<String> out, String label, String value, boolean preview) {
-        if (notEmpty(value)) out.add(label + value.trim());
-        else if (preview) out.add(label + "(chạm để nhập)");
+    private static void add(List<Line> out, String text) {
+        out.add(new Line(text, false, true));
+    }
+
+    /** Dòng bắt buộc nên điền (chữ to đậm): chưa điền thì khung ngắm nhắc "chạm để nhập", ảnh lưu bỏ qua. */
+    private static void addField(List<Line> out, String label, String value, boolean preview) {
+        if (notEmpty(value)) out.add(new Line(label + value.trim(), true, true));
+        else if (preview) out.add(new Line(label + "(chạm để nhập)", true, true));
     }
 
     private static boolean notEmpty(String v) {
@@ -223,15 +248,15 @@ final class Watermark {
         c.drawText(t, x2 + 20 * u, top + bh / 2 - (fm.ascent + fm.descent) / 2, p);
         noShadow();
 
-        float x3 = x2 + timeW;
+        // Logo tròn, không nền trắng; to hơn băng rôn một chút, có bóng mờ bên dưới.
+        if (logo == null) return x2 + timeW;
+        float dia = bh + 10 * u, lx = x2 + timeW + 6 * u, cy = top + bh / 2;
+        p.setColor(0x59000000);
+        c.drawCircle(lx + dia / 2, cy + 2 * u, dia / 2 + u, p);
         p.setColor(Color.WHITE);
-        c.drawRect(x3, top, x3 + bh, top + bh, p);
-        if (logo != null) {
-            float in = 5 * u;
-            rf.set(x3 + in, top + in, x3 + bh - in, top + bh - in);
-            c.drawBitmap(logo, null, rf, p);
-        }
-        return x3 + bh;
+        rf.set(lx, cy - dia / 2, lx + dia, cy + dia / 2);
+        c.drawBitmap(logo, null, rf, p);
+        return lx + dia;
     }
 
     private void drawStars(Canvas c, float x, float bottom, float size, float u) {

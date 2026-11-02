@@ -749,7 +749,7 @@ public final class MainActivity extends Activity
                     color = ORANGE;
                 } else {
                     text = (gps ? "GPS" : "Định vị mạng") + acc;
-                    color = GREEN;
+                    color = l.hasAccuracy() && l.getAccuracy() > 50 ? ORANGE : GREEN;
                 }
             }
         }
