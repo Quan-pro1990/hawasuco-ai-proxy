@@ -47,7 +47,7 @@ final class Dialogs {
             "Đội Cấp nước số 4", "Đội Cấp nước số 5", "Đội Cấp nước số 6"};
     private static final String[] EQUIPMENT = {
             "Đồng hồ nước khách hàng", "Thủy lượng kế (TLK)", "Đồng hồ cấp 1", "SCADA", "Van", "Trụ cứu hỏa",
-            "Đường ống", "Máy bơm", "Giếng", "Bể chứa"};
+            "Đường ống", "Bể ống", "Máy bơm", "Giếng", "Bể chứa"};
 
     /** Trang cài đặt toàn màn hình, nền sáng, chữ to. */
     static void settings(final Activity a, final Prefs p, final Runnable onSaved) {
