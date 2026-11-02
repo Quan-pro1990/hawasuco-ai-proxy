@@ -47,7 +47,7 @@
 
   function phuCapMacDinh() {
     return [
-      { ma: 'AN',   ten: 'Cơm trưa',     cachTinh: 'theo_ngay', chiuThue: false, dongBH: false, ghiChu: 'Đơn giá mỗi ngày đi làm thực tế (kể cả ngày SP)' },
+      { ma: 'AN',   ten: 'Cơm trưa',     cachTinh: 'theo_ngay', mucChung: 50000, chiuThue: false, dongBH: false, ghiChu: '50.000 đ × mỗi ngày đi làm thực tế (kể cả ngày SP)' },
       { ma: 'XANG', ten: 'Xăng xe',      cachTinh: 'theo_cong', chiuThue: true,  dongBH: false, ghiChu: '' },
       { ma: 'DT',   ten: 'Điện thoại',   cachTinh: 'co_dinh',   chiuThue: true,  dongBH: false, ghiChu: '' },
       { ma: 'TN',   ten: 'Trách nhiệm',  cachTinh: 'theo_cong', chiuThue: true,  dongBH: true,  ghiChu: 'Tính vào lương đóng BHXH' }
@@ -151,6 +151,7 @@
       if (db.caiDat.donGiaSP) db.sanPham[0].donGia = +db.caiDat.donGiaSP;
     }
     if (!Array.isArray(db.caiDat.loaiLD) || !db.caiDat.loaiLD.length) db.caiDat.loaiLD = loaiLDMacDinh();
+    db.phuCap.forEach(function (pc) { if (pc.ma === 'AN' && pc.cachTinh === 'theo_ngay' && pc.mucChung == null) pc.mucChung = 50000; });
     db.nhanVien.forEach(function (nv) {
       if (!nv.phuCap) nv.phuCap = {};
       if (nv.lichLam) { nv.loaiLD = nv.lichLam === 'T2-T6' ? 'VP' : nv.lichLam === 'T2-T7' ? 'CN' : ''; delete nv.lichLam; }
@@ -484,7 +485,9 @@
     var npc = nv.phuCap || {};
     var coCong = c.congHL + c.sp;
     pcList.forEach(function (pc) {
-      var muc = +npc[pc.ma] || 0, tien = 0;
+      // mức riêng của người (kể cả 0 = không hưởng) > mức chung áp dụng cho mọi nhân viên
+      var rieng = npc[pc.ma] != null && npc[pc.ma] !== '';
+      var muc = rieng ? (+npc[pc.ma] || 0) : (+pc.mucChung || 0), tien = 0;
       if (muc) {
         if (pc.cachTinh === 'theo_ngay') { tien = muc * c.ngayLamThucTe; phuCapNgay[pc.ma] = c.ngayLamThucTe; }
         else if (pc.cachTinh === 'theo_cong') tien = coCong > 0 ? muc * Math.min(coCong, cc) / cc : 0;

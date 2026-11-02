@@ -118,6 +118,20 @@ t('Lương sản phẩm nhiều loại, đơn giá riêng của người cho s�
   assert.strictEqual(r.spChiTiet.length, 2);
 });
 
+t('Tiền cơm 50.000 đ/ngày áp dụng chung; mức riêng và 0 = không hưởng', function () {
+  var db = dbMau(), nv = db.nhanVien[0];
+  nv.phuCap = {}; // không nhập gì trong hồ sơ
+  TL.thang(db, 2026, 10, true).cc[nv.id] = { 1: '+', 2: '+', 5: 'SP', 6: 'P', 7: '+/2' };
+  var r = TL.tinhBangLuong(db, 2026, 10).rows[0];
+  assert.strictEqual(r.phuCapNgay.AN, 3.5);            // +, +, SP, nửa ngày; không tính ngày phép
+  assert.strictEqual(r.phuCap.AN, 175000);
+  nv.phuCap = { AN: 40000 };
+  assert.strictEqual(TL.tinhBangLuong(db, 2026, 10).rows[0].phuCap.AN, 140000);
+  nv.phuCap = { AN: 0 };
+  assert.strictEqual(TL.tinhBangLuong(db, 2026, 10).rows[0].phuCap.AN, 0);
+  assert.strictEqual(TL.chuanHoa({ phuCap: [{ ma: 'AN', ten: 'Ăn ca', cachTinh: 'theo_ngay' }], nhanVien: [], caiDat: {} }).phuCap[0].mucChung, 50000);
+});
+
 t('Nghỉ phép tính vào công thời gian; nghỉ không lương ≥ 14 ngày thì không đóng BH', function () {
   var db = dbMau(), nv = db.nhanVien[0];
   var T = TL.thang(db, 2026, 10, true);

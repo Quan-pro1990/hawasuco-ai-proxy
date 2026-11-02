@@ -120,7 +120,11 @@
     var chucVu = {};
     db.nhanVien.forEach(function (x) { if (x.chucVu) chucVu[x.chucVu] = 1; });
     var pc = db.phuCap.map(function (p) {
-      return o('Phụ cấp ' + h(p.ten.toLowerCase()), tien('pc_' + p.ma, (d.phuCap || {})[p.ma]), App.CACH_PC[p.cachTinh] + (p.cachTinh === 'theo_ngay' ? ' (nhập đơn giá 1 ngày)' : '') + (p.chiuThue ? '' : ' · không chịu thuế') + (p.dongBH ? ' · tính vào lương đóng BH' : ''));
+      var v = (d.phuCap || {})[p.ma], coRieng = v != null && v !== '';
+      var inp = '<input name="pc_' + p.ma + '" class="so tien" inputmode="numeric" value="' + (coRieng ? App.tien(v) : '') + '"' + (p.mucChung ? ' placeholder="Mức chung ' + App.tien(p.mucChung) + '"' : '') + '>';
+      return o('Phụ cấp ' + h(p.ten.toLowerCase()) + (p.cachTinh === 'theo_ngay' ? ' (đ/ngày)' : ''), inp,
+        (p.mucChung ? 'Để trống = mức chung ' + App.tien(p.mucChung) + ' đ; nhập 0 = không hưởng. ' : '') +
+        App.CACH_PC[p.cachTinh] + (p.chiuThue ? '' : ' · không chịu thuế') + (p.dongBH ? ' · tính vào lương đóng BH' : ''));
     }).join('');
     var than = '<form class="form" autocomplete="off" onsubmit="return false">' +
       '<h4>Thông tin chung</h4>' +
@@ -189,7 +193,11 @@
             v.phepTon = v.phepTon === '' ? '' : +v.phepTon;
             v.maChamCong = String(v.maChamCong || '').trim();
             var pcv = {};
-            App.db.phuCap.forEach(function (p) { var x = App.docSo(v['pc_' + p.ma]); if (x) pcv[p.ma] = x; delete v['pc_' + p.ma]; });
+            App.db.phuCap.forEach(function (p) {
+              var raw = String(v['pc_' + p.ma] == null ? '' : v['pc_' + p.ma]).trim(), x = App.docSo(raw);
+              if (raw !== '' && (x || p.mucChung)) pcv[p.ma] = x; // 0 chỉ lưu khi có mức chung (= không hưởng)
+              delete v['pc_' + p.ma];
+            });
             v.phuCap = pcv;
             if (v.trangThai === 'nghi_viec' && !v.ngayNghi) { App.bao('Nhân viên đã nghỉ việc: hãy nhập ngày nghỉ việc.', 'loi'); return false; }
             if (v.ngayNghi && v.trangThai !== 'nghi_viec') v.trangThai = 'nghi_viec';
@@ -207,7 +215,7 @@
 
   /** Ô nhập tiền: tự thêm dấu chấm ngăn cách hàng nghìn khi rời ô */
   function ganOTien(i) {
-    i.addEventListener('blur', function () { var n = App.docSo(i.value); i.value = n ? App.tien(n) : ''; });
+    i.addEventListener('blur', function () { var n = App.docSo(i.value); i.value = n ? App.tien(n) : (/^\s*0+\s*$/.test(i.value) ? '0' : ''); });
     i.addEventListener('focus', function () { setTimeout(function () { i.select(); }, 0); });
   }
   App.ganOTien = ganOTien;
@@ -360,7 +368,7 @@
             val = pb.ma; break;
           default: val = String(raw).trim();
         }
-        if (k.indexOf('pc:') === 0) { if (val) v.phuCap[k.slice(3)] = val; } else v[k] = val;
+        if (k.indexOf('pc:') === 0) v.phuCap[k.slice(3)] = val; else v[k] = val;
       });
       if (!v.hoTen) { loi.push('Dòng ' + (hd + ri + 2) + ': thiếu họ tên'); return; }
       var cu = v.ma ? App.db.nhanVien.filter(function (x) { return String(x.ma).toLowerCase() === String(v.ma).toLowerCase(); })[0] : null;

@@ -21,11 +21,13 @@ Khi dùng thật: trang **Tổng quan** → bấm **Xoá dữ liệu mẫu, bắ
      *Công nhân* = **26 công** (nghỉ chủ nhật). Công chuẩn là số cố định, không đổi theo tháng; để trống thì phần mềm
      đếm số ngày làm việc thực tế trong kỳ. Thêm loại khác được (vd bảo vệ, trực ca).
    - **Sản phẩm (lương SP)**: tên, đơn vị tính, đơn giá – vd *Hoá đơn ghi thu 1.200 đ/HĐ*, *Lắp đặt đồng hồ … đ/cái*.
-   - Phòng ban / bộ phận (thứ tự in trên bảng), phụ cấp, ký hiệu chấm công, ngày lễ (bấm *Tạo tự động* cho từng năm).
+   - **Phụ cấp**: *Cơm trưa* mặc định **50.000 đ/ngày** áp dụng cho mọi nhân viên (cột *Mức chung*).
+   - Phòng ban / bộ phận (thứ tự in trên bảng), ký hiệu chấm công, ngày lễ (bấm *Tạo tự động* cho từng năm).
 4. **Nhân viên**: thêm từng người hoặc **Nhập từ Excel** (bấm *Tải file mẫu* để có đúng các cột). Mỗi người cần:
    - **Loại lao động** (văn phòng 22 công / công nhân 26 công). Ai khác thì nhập *Công chuẩn riêng*.
    - **Sản phẩm chính** nếu có lương sản phẩm (có thể đặt đơn giá riêng cho người đó).
-   - **Mức lương/HĐ**, phụ cấp (vd cơm trưa 50.000 đ/ngày), có tham gia BH không, đoàn viên công đoàn, số người phụ thuộc.
+   - **Mức lương/HĐ**, phụ cấp riêng nếu có, có tham gia BH không, đoàn viên công đoàn, số người phụ thuộc.
+     Tiền cơm **50.000 đ/ngày** đã là mức chung cho mọi người, không cần nhập; ai khác mức thì nhập mức riêng, nhập 0 = không hưởng.
    - **Mã chấm công** = số ID của người đó trên máy chấm công vân tay (nếu dùng).
 
 ## Hằng ngày / hằng tháng
@@ -78,7 +80,8 @@ Cách tính chính:
   *Không trả lương thời gian quá công chuẩn* trong Cài đặt → Kỳ công.
 - Lương sản phẩm = Σ số lượng × đơn giá từng sản phẩm (vd 2.490 HĐ × 1.200 đ = 2.988.000).
   Ngày chấm `SP` không tính vào lương thời gian nhưng vẫn tính ngày cơm.
-- Cơm trưa = đơn giá × ngày làm thực tế (gồm cả ngày SP).
+- Cơm trưa = 50.000 đ × ngày làm thực tế (gồm ngày `+`, `SP`, công tác, học tập; nửa ngày `+/2` tính 0,5;
+  không tính ngày nghỉ phép, lễ, ốm). Mức 50.000 sửa ở Danh mục → Phụ cấp → *Mức chung*.
 - BH trên lương đóng BH (mặc định = mức lương + phụ cấp có đánh dấu đóng BH), có trần 20 × lương cơ sở (BHXH, BHYT)
   và 20 × lương tối thiểu vùng (BHTN). Nghỉ không lương từ 14 ngày trở lên trong kỳ thì không đóng BH.
 - Thuế TNCN biểu lũy tiến 5 bậc, giảm trừ bản thân 15,5 triệu, người phụ thuộc 6,2 triệu; phần lương làm thêm vượt

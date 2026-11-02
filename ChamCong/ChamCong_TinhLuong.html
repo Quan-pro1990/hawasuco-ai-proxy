@@ -539,7 +539,7 @@ body.in-doc { }
 
   function phuCapMacDinh() {
     return [
-      { ma: 'AN',   ten: 'Cơm trưa',     cachTinh: 'theo_ngay', chiuThue: false, dongBH: false, ghiChu: 'Đơn giá mỗi ngày đi làm thực tế (kể cả ngày SP)' },
+      { ma: 'AN',   ten: 'Cơm trưa',     cachTinh: 'theo_ngay', mucChung: 50000, chiuThue: false, dongBH: false, ghiChu: '50.000 đ × mỗi ngày đi làm thực tế (kể cả ngày SP)' },
       { ma: 'XANG', ten: 'Xăng xe',      cachTinh: 'theo_cong', chiuThue: true,  dongBH: false, ghiChu: '' },
       { ma: 'DT',   ten: 'Điện thoại',   cachTinh: 'co_dinh',   chiuThue: true,  dongBH: false, ghiChu: '' },
       { ma: 'TN',   ten: 'Trách nhiệm',  cachTinh: 'theo_cong', chiuThue: true,  dongBH: true,  ghiChu: 'Tính vào lương đóng BHXH' }
@@ -643,6 +643,7 @@ body.in-doc { }
       if (db.caiDat.donGiaSP) db.sanPham[0].donGia = +db.caiDat.donGiaSP;
     }
     if (!Array.isArray(db.caiDat.loaiLD) || !db.caiDat.loaiLD.length) db.caiDat.loaiLD = loaiLDMacDinh();
+    db.phuCap.forEach(function (pc) { if (pc.ma === 'AN' && pc.cachTinh === 'theo_ngay' && pc.mucChung == null) pc.mucChung = 50000; });
     db.nhanVien.forEach(function (nv) {
       if (!nv.phuCap) nv.phuCap = {};
       if (nv.lichLam) { nv.loaiLD = nv.lichLam === 'T2-T6' ? 'VP' : nv.lichLam === 'T2-T7' ? 'CN' : ''; delete nv.lichLam; }
@@ -976,7 +977,9 @@ body.in-doc { }
     var npc = nv.phuCap || {};
     var coCong = c.congHL + c.sp;
     pcList.forEach(function (pc) {
-      var muc = +npc[pc.ma] || 0, tien = 0;
+      // mức riêng của người (kể cả 0 = không hưởng) > mức chung áp dụng cho mọi nhân viên
+      var rieng = npc[pc.ma] != null && npc[pc.ma] !== '';
+      var muc = rieng ? (+npc[pc.ma] || 0) : (+pc.mucChung || 0), tien = 0;
       if (muc) {
         if (pc.cachTinh === 'theo_ngay') { tien = muc * c.ngayLamThucTe; phuCapNgay[pc.ma] = c.ngayLamThucTe; }
         else if (pc.cachTinh === 'theo_cong') tien = coCong > 0 ? muc * Math.min(coCong, cc) / cc : 0;
@@ -2148,23 +2151,23 @@ body.in-doc { }
     ];
     // [mã, họ tên, giới tính, ngày sinh, phòng, chức vụ, ngày vào, lương, phụ cấp, NPT, loại lao động]
     var ds = [
-      ['NV001', 'Nguyễn Văn An', 'Nam', '1975-03-12', 'BGD', 'Giám đốc', '2015-01-05', 30000000, { AN: 50000, DT: 1000000, TN: 4000000 }, 2, 'VP'],
-      ['NV002', 'Trần Thị Bình', 'Nữ', '1982-07-21', 'KTTV', 'Kế toán trưởng', '2016-03-01', 18000000, { AN: 50000, DT: 500000, TN: 2000000 }, 1, 'VP'],
-      ['NV003', 'Lê Hoàng Cường', 'Nam', '1985-11-02', 'KDVT', 'Trưởng phòng', '2017-06-15', 15500000, { AN: 50000, TN: 1500000 }, 2, 'VP'],
-      ['NV004', 'Phạm Thu Dung', 'Nữ', '1990-' + TL.pad(M) + '-14', 'TCHC', 'Trưởng phòng', '2018-04-02', 14000000, { AN: 50000, TN: 1500000 }, 1, 'VP'],
-      ['NV005', 'Hoàng Minh Đức', 'Nam', '1988-09-30', 'KTH', 'Trưởng phòng', '2017-09-01', 15000000, { AN: 50000, TN: 1500000 }, 2, 'VP'],
-      ['NV006', 'Vũ Thị Hà', 'Nữ', '1993-05-18', 'KTTV', 'Kế toán viên', '2020-07-01', 9000000, { AN: 50000 }, 0, 'VP'],
-      ['NV007', 'Đặng Quốc Huy', 'Nam', '1995-12-05', 'KDVT', 'Nhân viên ghi thu', '2021-02-22', 8040000, { AN: 50000 }, 0, 'CN'],
-      ['NV008', 'Bùi Thị Lan', 'Nữ', '1996-08-08', 'TCHC', 'Chuyên viên nhân sự', '2021-10-11', 9000000, { AN: 50000 }, 0, 'VP'],
-      ['NV009', 'Đỗ Văn Long', 'Nam', '1992-04-25', 'KTH', 'CN LĐ-SC', '2019-05-06', 9000000, { AN: 50000 }, 1, 'CN'],
-      ['NV010', 'Ngô Thị Mai', 'Nữ', '1997-' + TL.pad(M) + '-25', 'KDVT', 'Nhân viên ghi thu', '2022-03-01', 7320000, { AN: 50000 }, 0, 'CN'],
-      ['NV011', 'Dương Văn Nam', 'Nam', '1994-06-11', 'KTH', 'CN LĐ-SC', '2020-11-16', 8000000, { AN: 50000 }, 1, 'CN'],
-      ['NV012', 'Lý Thị Oanh', 'Nữ', '1999-10-03', 'KDVT', 'Thủ kho', '2023-02-13', 8000000, { AN: 50000 }, 0, 'VP'],
-      ['NV013', 'Phan Thanh Phong', 'Nam', '1998-03-27', 'KDVT', 'Tài xế', '2024-08-05', 9000000, { AN: 50000 }, 0, 'CN'],
-      ['NV014', 'Trịnh Thị Quỳnh', 'Nữ', '2000-12-12', 'KDVT', 'Nhân viên ghi thu', TL.iso(vaoTV.y, vaoTV.m, 1), 7000000, { AN: 50000 }, 0, 'CN'],
-      ['NV015', 'Mai Văn Sơn', 'Nam', '1979-07-07', 'TCHC', 'Bảo vệ', '2019-01-02', 300000, { AN: 50000 }, 1, ''],
-      ['NV016', 'Hồ Thị Thu', 'Nữ', '2003-05-05', 'TCHC', 'Cộng tác viên', '2025-09-08', 30000, {}, 0, ''],
-      ['NV017', 'Tạ Văn Tâm', 'Nam', '1990-01-20', 'KDVT', 'Nhân viên ghi thu', '2022-05-01', 7320000, { AN: 50000 }, 0, 'T2-T7']
+      ['NV001', 'Nguyễn Văn An', 'Nam', '1975-03-12', 'BGD', 'Giám đốc', '2015-01-05', 30000000, { DT: 1000000, TN: 4000000 }, 2, 'VP'],
+      ['NV002', 'Trần Thị Bình', 'Nữ', '1982-07-21', 'KTTV', 'Kế toán trưởng', '2016-03-01', 18000000, { DT: 500000, TN: 2000000 }, 1, 'VP'],
+      ['NV003', 'Lê Hoàng Cường', 'Nam', '1985-11-02', 'KDVT', 'Trưởng phòng', '2017-06-15', 15500000, { TN: 1500000 }, 2, 'VP'],
+      ['NV004', 'Phạm Thu Dung', 'Nữ', '1990-' + TL.pad(M) + '-14', 'TCHC', 'Trưởng phòng', '2018-04-02', 14000000, { TN: 1500000 }, 1, 'VP'],
+      ['NV005', 'Hoàng Minh Đức', 'Nam', '1988-09-30', 'KTH', 'Trưởng phòng', '2017-09-01', 15000000, { TN: 1500000 }, 2, 'VP'],
+      ['NV006', 'Vũ Thị Hà', 'Nữ', '1993-05-18', 'KTTV', 'Kế toán viên', '2020-07-01', 9000000, {}, 0, 'VP'],
+      ['NV007', 'Đặng Quốc Huy', 'Nam', '1995-12-05', 'KDVT', 'Nhân viên ghi thu', '2021-02-22', 8040000, {}, 0, 'CN'],
+      ['NV008', 'Bùi Thị Lan', 'Nữ', '1996-08-08', 'TCHC', 'Chuyên viên nhân sự', '2021-10-11', 9000000, {}, 0, 'VP'],
+      ['NV009', 'Đỗ Văn Long', 'Nam', '1992-04-25', 'KTH', 'CN LĐ-SC', '2019-05-06', 9000000, {}, 1, 'CN'],
+      ['NV010', 'Ngô Thị Mai', 'Nữ', '1997-' + TL.pad(M) + '-25', 'KDVT', 'Nhân viên ghi thu', '2022-03-01', 7320000, {}, 0, 'CN'],
+      ['NV011', 'Dương Văn Nam', 'Nam', '1994-06-11', 'KTH', 'CN LĐ-SC', '2020-11-16', 8000000, {}, 1, 'CN'],
+      ['NV012', 'Lý Thị Oanh', 'Nữ', '1999-10-03', 'KDVT', 'Thủ kho', '2023-02-13', 8000000, {}, 0, 'VP'],
+      ['NV013', 'Phan Thanh Phong', 'Nam', '1998-03-27', 'KDVT', 'Tài xế', '2024-08-05', 9000000, {}, 0, 'CN'],
+      ['NV014', 'Trịnh Thị Quỳnh', 'Nữ', '2000-12-12', 'KDVT', 'Nhân viên ghi thu', TL.iso(vaoTV.y, vaoTV.m, 1), 7000000, {}, 0, 'CN'],
+      ['NV015', 'Mai Văn Sơn', 'Nam', '1979-07-07', 'TCHC', 'Bảo vệ', '2019-01-02', 300000, {}, 1, ''],
+      ['NV016', 'Hồ Thị Thu', 'Nữ', '2003-05-05', 'TCHC', 'Cộng tác viên', '2025-09-08', 30000, { AN: 0 }, 0, ''],
+      ['NV017', 'Tạ Văn Tâm', 'Nam', '1990-01-20', 'KDVT', 'Nhân viên ghi thu', '2022-05-01', 7320000, {}, 0, 'T2-T7']
     ];
     db.nhanVien = ds.map(function (x, i) {
       return {
@@ -2575,7 +2578,11 @@ body.in-doc { }
     var chucVu = {};
     db.nhanVien.forEach(function (x) { if (x.chucVu) chucVu[x.chucVu] = 1; });
     var pc = db.phuCap.map(function (p) {
-      return o('Phụ cấp ' + h(p.ten.toLowerCase()), tien('pc_' + p.ma, (d.phuCap || {})[p.ma]), App.CACH_PC[p.cachTinh] + (p.cachTinh === 'theo_ngay' ? ' (nhập đơn giá 1 ngày)' : '') + (p.chiuThue ? '' : ' · không chịu thuế') + (p.dongBH ? ' · tính vào lương đóng BH' : ''));
+      var v = (d.phuCap || {})[p.ma], coRieng = v != null && v !== '';
+      var inp = '<input name="pc_' + p.ma + '" class="so tien" inputmode="numeric" value="' + (coRieng ? App.tien(v) : '') + '"' + (p.mucChung ? ' placeholder="Mức chung ' + App.tien(p.mucChung) + '"' : '') + '>';
+      return o('Phụ cấp ' + h(p.ten.toLowerCase()) + (p.cachTinh === 'theo_ngay' ? ' (đ/ngày)' : ''), inp,
+        (p.mucChung ? 'Để trống = mức chung ' + App.tien(p.mucChung) + ' đ; nhập 0 = không hưởng. ' : '') +
+        App.CACH_PC[p.cachTinh] + (p.chiuThue ? '' : ' · không chịu thuế') + (p.dongBH ? ' · tính vào lương đóng BH' : ''));
     }).join('');
     var than = '<form class="form" autocomplete="off" onsubmit="return false">' +
       '<h4>Thông tin chung</h4>' +
@@ -2644,7 +2651,11 @@ body.in-doc { }
             v.phepTon = v.phepTon === '' ? '' : +v.phepTon;
             v.maChamCong = String(v.maChamCong || '').trim();
             var pcv = {};
-            App.db.phuCap.forEach(function (p) { var x = App.docSo(v['pc_' + p.ma]); if (x) pcv[p.ma] = x; delete v['pc_' + p.ma]; });
+            App.db.phuCap.forEach(function (p) {
+              var raw = String(v['pc_' + p.ma] == null ? '' : v['pc_' + p.ma]).trim(), x = App.docSo(raw);
+              if (raw !== '' && (x || p.mucChung)) pcv[p.ma] = x; // 0 chỉ lưu khi có mức chung (= không hưởng)
+              delete v['pc_' + p.ma];
+            });
             v.phuCap = pcv;
             if (v.trangThai === 'nghi_viec' && !v.ngayNghi) { App.bao('Nhân viên đã nghỉ việc: hãy nhập ngày nghỉ việc.', 'loi'); return false; }
             if (v.ngayNghi && v.trangThai !== 'nghi_viec') v.trangThai = 'nghi_viec';
@@ -2662,7 +2673,7 @@ body.in-doc { }
 
   /** Ô nhập tiền: tự thêm dấu chấm ngăn cách hàng nghìn khi rời ô */
   function ganOTien(i) {
-    i.addEventListener('blur', function () { var n = App.docSo(i.value); i.value = n ? App.tien(n) : ''; });
+    i.addEventListener('blur', function () { var n = App.docSo(i.value); i.value = n ? App.tien(n) : (/^\s*0+\s*$/.test(i.value) ? '0' : ''); });
     i.addEventListener('focus', function () { setTimeout(function () { i.select(); }, 0); });
   }
   App.ganOTien = ganOTien;
@@ -2815,7 +2826,7 @@ body.in-doc { }
             val = pb.ma; break;
           default: val = String(raw).trim();
         }
-        if (k.indexOf('pc:') === 0) { if (val) v.phuCap[k.slice(3)] = val; } else v[k] = val;
+        if (k.indexOf('pc:') === 0) v.phuCap[k.slice(3)] = val; else v[k] = val;
       });
       if (!v.hoTen) { loi.push('Dòng ' + (hd + ri + 2) + ': thiếu họ tên'); return; }
       var cu = v.ma ? App.db.nhanVien.filter(function (x) { return String(x.ma).toLowerCase() === String(v.ma).toLowerCase(); })[0] : null;
@@ -4572,19 +4583,22 @@ body.in-doc { }
 
   function dmPC(el) {
     var db = App.db;
-    el.innerHTML = '<div class="the"><h3>Các khoản phụ cấp</h3><p class="mo" style="margin-top:0">Mức phụ cấp của từng người nhập trong hồ sơ nhân viên. ' +
-      '<b>Đơn giá × ngày đi làm</b>: vd cơm trưa 50.000 đ × số ngày đi làm thực tế (gồm ngày SP). <b>Theo ngày công</b>: mức tháng × công hưởng lương ÷ công chuẩn.</p>' +
-      '<div class="cuon"><table class="bang"><thead><tr><th>Mã</th><th style="min-width:180px">Tên phụ cấp</th><th>Cách tính</th><th>Chịu thuế TNCN</th><th>Tính vào lương đóng BH</th><th style="min-width:200px">Ghi chú</th><th></th></tr></thead><tbody>' +
+    el.innerHTML = '<div class="the"><h3>Các khoản phụ cấp</h3><p class="mo" style="margin-top:0"><b>Mức chung</b> áp dụng cho mọi nhân viên (vd cơm trưa 50.000 đ/ngày); ' +
+      'ai hưởng mức khác thì nhập mức riêng trong hồ sơ nhân viên (nhập 0 = không hưởng). ' +
+      '<b>Đơn giá × ngày đi làm</b>: mức × số ngày đi làm thực tế (gồm ngày SP, không gồm ngày nghỉ phép, lễ). <b>Theo ngày công</b>: mức tháng × công hưởng lương ÷ công chuẩn.</p>' +
+      '<div class="cuon"><table class="bang"><thead><tr><th>Mã</th><th style="min-width:180px">Tên phụ cấp</th><th>Cách tính</th><th class="so">Mức chung (đ)</th><th>Chịu thuế TNCN</th><th>Tính vào lương đóng BH</th><th style="min-width:200px">Ghi chú</th><th></th></tr></thead><tbody>' +
       db.phuCap.map(function (p, i) {
         return '<tr data-i="' + i + '"><td>' + h(p.ma) + '</td><td><input class="o-nhap chu" data-f="ten" value="' + h(p.ten) + '" style="width:100%"></td>' +
           '<td><select data-f="cachTinh">' + Object.keys(App.CACH_PC).map(function (k) { return '<option value="' + k + '"' + (p.cachTinh === k ? ' selected' : '') + '>' + App.CACH_PC[k] + '</option>'; }).join('') + '</select></td>' +
+          '<td><input class="o-nhap" data-f="mucChung" value="' + (p.mucChung ? App.tien(p.mucChung) : '') + '" placeholder="theo từng người" title="' + (p.cachTinh === 'theo_ngay' ? 'Đơn giá 1 ngày' : 'Mức 1 tháng') + '"></td>' +
           '<td class="giua"><input type="checkbox" data-f="chiuThue"' + (p.chiuThue ? ' checked' : '') + '></td><td class="giua"><input type="checkbox" data-f="dongBH"' + (p.dongBH ? ' checked' : '') + '></td>' +
           '<td><input class="o-nhap chu" data-f="ghiChu" value="' + h(p.ghiChu || '') + '" style="width:100%"></td><td><button class="nut nho nguy" data-a="xoa">' + App.icon('xoa') + '</button></td></tr>';
       }).join('') + '</tbody></table></div><div class="hang" style="margin-top:12px"><input id="pc-ten" placeholder="Tên phụ cấp mới (vd Độc hại)" style="width:280px"><button class="nut chinh" id="pc-them">' + App.icon('them') + 'Thêm phụ cấp</button></div></div>';
+    App.$$('input[data-f="mucChung"]', el).forEach(App.ganOTien);
     el.onchange = function (e) {
       var i = e.target.closest('[data-f]'); if (!i) return;
       var p = db.phuCap[+i.closest('tr').dataset.i];
-      p[i.dataset.f] = i.type === 'checkbox' ? i.checked : i.value;
+      p[i.dataset.f] = i.type === 'checkbox' ? i.checked : i.dataset.f === 'mucChung' ? (App.docSo(i.value) || '') : i.value;
       App.luu(); App.bao('Đã lưu');
     };
     el.onclick = function (e) {
