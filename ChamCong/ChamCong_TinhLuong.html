@@ -583,8 +583,8 @@ table.cc tfoot td.dinh1, table.cc tfoot td.dinh2 { z-index: 3; }
       otLamTronPhut: 30,        // làm tròn xuống giờ làm thêm theo bội số phút
       heSoOT: { thuong: 150, nghi: 200, le: 300 },
       tiLeNgungViec: 100,       // % lương cho ngày nghỉ / ngừng việc (ký hiệu nhóm "ngung")
-      heSoCongLe: 2,            // đi làm (hoặc làm SP) vào ngày lễ được tính 2 công
-      heSoCongTet: 3,           // đi làm (hoặc làm SP) vào ngày Tết được tính 3 công
+      heSoCongLe: 2,            // đi làm hưởng lương thời gian vào ngày lễ được tính 2 công (SP không nhân)
+      heSoCongTet: 3,           // đi làm hưởng lương thời gian vào ngày Tết được tính 3 công (SP không nhân)
       gioiHanCong: false,       // không trả lương thời gian quá công chuẩn
       luongSP: true,            // có lương sản phẩm (số lượng × đơn giá, danh mục Sản phẩm)
       loaiLD: loaiLDMacDinh(),
@@ -904,8 +904,9 @@ table.cc tfoot td.dinh1, table.cc tfoot td.dinh2 { z-index: 3; }
       if (k) {
         var lam = +k.lam || 0, huong = +k.huong || 0, con = Math.max(0, 1 - lam - huong);
         r.lam += lam; r.huong += huong;
-        // đi làm / làm SP vào ngày lễ ×2 công, ngày Tết ×3 công (cơm vẫn tính 1 ngày)
-        var hsl = lam > 0 && le[x.iso] ? heSoCongNgay(db, x.iso, loaiLe) : 1;
+        // đi làm hưởng lương thời gian vào ngày lễ ×2 công, ngày Tết ×3 công (cơm vẫn 1 ngày).
+        // Ngày SP chỉ hưởng lương sản phẩm (số lượng × đơn giá): không tính lương thời gian, không nhân hệ số.
+        var hsl = lam > 0 && !k.sp && le[x.iso] ? heSoCongNgay(db, x.iso, loaiLe) : 1;
         if (hsl !== 1) {
           r.congThemLe += lam * (hsl - 1);
           if (k.sp) r.congThemLeSP += lam * (hsl - 1); else r.congThemLeTG += lam * (hsl - 1);
@@ -2969,7 +2970,7 @@ table.cc tfoot td.dinh1, table.cc tfoot td.dinh2 { z-index: 3; }
         'Tháng ' + m + ' năm ' + y + ' (từ ' + TL.hienNgay(ngay[0].iso) + ' đến ' + TL.hienNgay(ngay[ngay.length - 1].iso) + ')' + (st.pb ? ' – Bộ phận: ' + TL.tenPhongBan(db, st.pb) : '')) +
       '<div class="cuon cao" id="cc-cuon" style="position:relative"><table class="cc" id="cc-bang"></table></div>' +
       '<div class="chu-giai">' + (st.che === 'kh' ? db.kyHieu.map(function (k) { return '<span><b style="background:var(--k-' + k.nhom + ')">' + h(k.ma) + '</b>' + h(k.ten) + '</span>'; }).join('') : '') +
-      '<span><b style="background:var(--ngay-nghi)">&nbsp;</b>Ngày nghỉ hằng tuần (theo loại lao động)</span><span><b style="background:var(--ngay-le)">&nbsp;</b>Ngày lễ, Tết: nghỉ (L) = 1 công; đi làm / SP = ×' + App.so(cd.heSoCongLe) + ' công ngày lễ, ×' + App.so(cd.heSoCongTet) + ' công ngày Tết (cơm 1 ngày)</span>' +
+      '<span><b style="background:var(--ngay-nghi)">&nbsp;</b>Ngày nghỉ hằng tuần (theo loại lao động)</span><span><b style="background:var(--ngay-le)">&nbsp;</b>Ngày lễ, Tết: nghỉ (L) = 1 công; đi làm (+) = ×' + App.so(cd.heSoCongLe) + ' công ngày lễ, ×' + App.so(cd.heSoCongTet) + ' công ngày Tết; SP không nhân (cơm 1 ngày)</span>' +
       '<span><b style="background:repeating-linear-gradient(45deg,#f5f6f8,#f5f6f8 4px,#eceef2 4px,#eceef2 8px)">&nbsp;</b>Chưa vào làm / đã nghỉ việc</span></div>' +
       App.kyIn();
 
@@ -3045,7 +3046,7 @@ table.cc tfoot td.dinh1, table.cc tfoot td.dinh2 { z-index: 3; }
             var k = C.kh[String(v).toUpperCase()];
             cls += k ? ' n-' + k.nhom : ' n-sai';
             txt = h(v);
-            if (k && k.lam > 0 && C.le[x.iso]) { var hsl = TL.heSoCongNgay(db, x.iso, C.loaiLe); if (hsl !== 1) { cls += ' nhan'; tip = 'Đi làm ' + (C.loaiLe[x.iso] === 'tet' ? 'ngày Tết' : 'ngày lễ') + ': ×' + App.so(hsl) + ' công, cơm 1 ngày'; txt += '<sup>×' + App.so(hsl) + '</sup>'; } }
+            if (k && k.lam > 0 && !k.sp && C.le[x.iso]) { var hsl = TL.heSoCongNgay(db, x.iso, C.loaiLe); if (hsl !== 1) { cls += ' nhan'; tip = 'Đi làm ' + (C.loaiLe[x.iso] === 'tet' ? 'ngày Tết' : 'ngày lễ') + ': ×' + App.so(hsl) + ' công, cơm 1 ngày'; txt += '<sup>×' + App.so(hsl) + '</sup>'; } }
             if (k && k.lam > 0) chan[i]++;
           } else { txt = App.so(v); cls += che === 'ot' ? ' so-ot' : ' so-muon'; chan[i] += +v || 0; }
         }
@@ -4093,7 +4094,7 @@ table.cc tfoot td.dinh1, table.cc tfoot td.dinh2 { z-index: 3; }
     m_('1. Ngày công');
     var lld = TL.loaiLDNV(db, { loaiLD: r.loaiLD });
     d_('Công chuẩn của kỳ', lld ? h(lld.ten) : 'Theo cài đặt chung', App.so(r.congChuan));
-    if (c.sp) d_('Công hưởng lương sản phẩm (SP)', 'Không tính vào lương thời gian' + (c.congThemLeSP ? '; gồm ' + App.so(c.congThemLeSP) + ' công tăng thêm làm SP ngày lễ, Tết' : ''), App.so(c.sp));
+    if (c.sp) d_('Công hưởng lương sản phẩm (SP)', 'Chỉ hưởng lương sản phẩm, không hưởng lương thời gian, không nhân hệ số ngày lễ', App.so(c.sp));
     d_('Ngày đi làm hưởng lương thời gian', '', App.so(c.lamTG - c.congThemLeTG));
     d_('Nghỉ có hưởng lương', 'Phép ' + App.so(c.phep) + ', lễ ' + App.so(c.le) + ', khác ' + App.so(c.huongKhac), App.so(c.huong - c.ngung));
     if (c.ngung) d_('Nghỉ, ngừng việc hưởng ' + (cd.tiLeNgungViec == null ? 100 : cd.tiLeNgungViec) + '% lương', '', App.so(c.ngung));
@@ -4667,7 +4668,7 @@ table.cc tfoot td.dinh1, table.cc tfoot td.dinh2 { z-index: 3; }
     var db = App.db, cd = db.caiDat;
     var opt = function (v) { return db.kyHieu.map(function (k) { return '<option' + (k.ma === v ? ' selected' : '') + '>' + h(k.ma) + '</option>'; }).join(''); };
     el.innerHTML = '<div class="the"><h3>Ký hiệu chấm công</h3><p class="mo" style="margin-top:0">Theo mẫu 01a-LĐTL. <b>Công làm việc</b> và <b>công nghỉ có lương</b> tính theo ngày (1 = cả ngày, 0,5 = nửa ngày). ' +
-      'Ký hiệu có đánh dấu <b>Lương SP</b> không tính vào lương thời gian (lương tính theo sản lượng) nhưng vẫn tính ngày ăn cơm. <b>Trừ phép</b>: trừ vào số ngày phép năm.</p>' +
+      'Ký hiệu có đánh dấu <b>Lương SP</b> chỉ hưởng lương sản phẩm (số lượng × đơn giá): không hưởng lương thời gian, không nhân hệ số ngày lễ, nhưng vẫn tính ngày ăn cơm. <b>Trừ phép</b>: trừ vào số ngày phép năm.</p>' +
       '<div class="hang" style="margin-bottom:12px">Ký hiệu đi làm cả ngày <select data-cd="khDiLam">' + opt(cd.khDiLam) + '</select> nửa ngày <select data-cd="khNuaNgay">' + opt(cd.khNuaNgay) + '</select> ngày lễ <select data-cd="khLe">' + opt(cd.khLe) + '</select>' +
       '<span class="mo nho">(dùng khi “Chấm đủ công” và khi đọc giờ vào / ra)</span></div>' +
       '<div class="cuon"><table class="bang"><thead><tr><th>Ký hiệu</th><th style="min-width:240px">Ý nghĩa</th><th>Công làm việc</th><th>Công nghỉ có lương</th><th>Nhóm</th><th>Lương SP</th><th>Trừ phép</th><th></th></tr></thead><tbody>' +
@@ -4714,7 +4715,7 @@ table.cc tfoot td.dinh1, table.cc tfoot td.dinh2 { z-index: 3; }
     var db = App.db, y = st.namLe;
     var ds = db.ngayLe.map(function (x, i) { return { x: x, i: i }; }).filter(function (o) { return o.x.ngay.slice(0, 4) === String(y); }).sort(function (a, b) { return a.x.ngay < b.x.ngay ? -1 : 1; });
     el.innerHTML = '<div class="the"><h3>Ngày lễ, Tết năm <select id="le-nam">' + [y - 2, y - 1, y, y + 1, y + 2].map(function (n) { return '<option' + (n === y ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select>' +
-      '<span class="phai">Nghỉ lễ (L) = 1 công · đi làm hoặc làm SP ngày lễ = ' + App.so(db.caiDat.heSoCongLe) + ' công, ngày Tết = ' + App.so(db.caiDat.heSoCongTet) + ' công · cơm tính 1 ngày</span></h3>' +
+      '<span class="phai">Nghỉ lễ (L) = 1 công · đi làm (+) ngày lễ = ' + App.so(db.caiDat.heSoCongLe) + ' công, ngày Tết = ' + App.so(db.caiDat.heSoCongTet) + ' công · làm SP không nhân · cơm tính 1 ngày</span></h3>' +
       '<div class="cuon"><table class="bang"><thead><tr><th>Ngày</th><th>Thứ</th><th style="min-width:320px">Tên ngày lễ</th><th>Loại</th><th></th></tr></thead><tbody>' +
       (ds.length ? ds.map(function (o) {
         var n = TL.docNgay(o.x.ngay);
@@ -4819,8 +4820,8 @@ table.cc tfoot td.dinh1, table.cc tfoot td.dinh2 { z-index: 3; }
           '<div class="the"><h3>Làm thêm giờ, ngừng việc</h3><div class="form ba">' +
           o('Làm thêm ngày thường (%)', 'caiDat.heSoOT.thuong', 'so') + o('Làm thêm ngày nghỉ tuần (%)', 'caiDat.heSoOT.nghi', 'so') + o('Làm thêm ngày lễ, Tết (%)', 'caiDat.heSoOT.le', 'so') +
           o('Lương ngày nghỉ / ngừng việc (ký hiệu N) (%)', 'caiDat.tiLeNgungViec', 'so') +
-          o('Đi làm / làm SP ngày lễ được tính (công)', 'caiDat.heSoCongLe', 'so', 'Mặc định 2 công; nghỉ lễ (L) vẫn 1 công') +
-          o('Đi làm / làm SP ngày Tết được tính (công)', 'caiDat.heSoCongTet', 'so', 'Mặc định 3 công; tiền cơm vẫn tính 1 ngày') +
+          o('Đi làm (lương thời gian) ngày lễ được tính (công)', 'caiDat.heSoCongLe', 'so', 'Mặc định 2 công; nghỉ lễ (L) vẫn 1 công; làm SP không nhân') +
+          o('Đi làm (lương thời gian) ngày Tết được tính (công)', 'caiDat.heSoCongTet', 'so', 'Mặc định 3 công; tiền cơm vẫn tính 1 ngày') +
           '</div><p class="mo nho">Theo Bộ luật Lao động 2019: làm thêm ngày thường ít nhất 150%, ngày nghỉ hằng tuần 200%, ngày lễ 300% (chưa kể lương ngày lễ). Phần chênh lệch so với lương giờ bình thường không chịu thuế TNCN.</p></div>' +
           '<div class="the"><h3>Khác</h3><div class="form ba">' +
           o('Làm tròn số tiền lãnh', 'caiDat.lamTron', [[1, 'Không làm tròn'], [100, 'Đến 100 đ'], [1000, 'Đến 1.000 đ']]) +

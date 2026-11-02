@@ -87,8 +87,8 @@
       otLamTronPhut: 30,        // làm tròn xuống giờ làm thêm theo bội số phút
       heSoOT: { thuong: 150, nghi: 200, le: 300 },
       tiLeNgungViec: 100,       // % lương cho ngày nghỉ / ngừng việc (ký hiệu nhóm "ngung")
-      heSoCongLe: 2,            // đi làm (hoặc làm SP) vào ngày lễ được tính 2 công
-      heSoCongTet: 3,           // đi làm (hoặc làm SP) vào ngày Tết được tính 3 công
+      heSoCongLe: 2,            // đi làm hưởng lương thời gian vào ngày lễ được tính 2 công (SP không nhân)
+      heSoCongTet: 3,           // đi làm hưởng lương thời gian vào ngày Tết được tính 3 công (SP không nhân)
       gioiHanCong: false,       // không trả lương thời gian quá công chuẩn
       luongSP: true,            // có lương sản phẩm (số lượng × đơn giá, danh mục Sản phẩm)
       loaiLD: loaiLDMacDinh(),
@@ -408,8 +408,9 @@
       if (k) {
         var lam = +k.lam || 0, huong = +k.huong || 0, con = Math.max(0, 1 - lam - huong);
         r.lam += lam; r.huong += huong;
-        // đi làm / làm SP vào ngày lễ ×2 công, ngày Tết ×3 công (cơm vẫn tính 1 ngày)
-        var hsl = lam > 0 && le[x.iso] ? heSoCongNgay(db, x.iso, loaiLe) : 1;
+        // đi làm hưởng lương thời gian vào ngày lễ ×2 công, ngày Tết ×3 công (cơm vẫn 1 ngày).
+        // Ngày SP chỉ hưởng lương sản phẩm (số lượng × đơn giá): không tính lương thời gian, không nhân hệ số.
+        var hsl = lam > 0 && !k.sp && le[x.iso] ? heSoCongNgay(db, x.iso, loaiLe) : 1;
         if (hsl !== 1) {
           r.congThemLe += lam * (hsl - 1);
           if (k.sp) r.congThemLeSP += lam * (hsl - 1); else r.congThemLeTG += lam * (hsl - 1);

@@ -47,7 +47,7 @@ Ký hiệu mặc định (sửa được ở Danh mục):
 |---|---|---|
 | `+` | Lương thời gian (đi làm cả ngày) | 1 công lương thời gian, 1 ngày cơm (ngày lễ 2 công, Tết 3 công, cơm vẫn 1 ngày) |
 | `+/2` | Đi làm nửa ngày | 0,5 công |
-| `SP` | Lương sản phẩm | không tính lương thời gian, vẫn tính ngày cơm; tiền = sản lượng × đơn giá |
+| `SP` | Lương sản phẩm | **chỉ hưởng lương sản phẩm** (số lượng × đơn giá): không hưởng lương thời gian, không nhân hệ số ngày lễ; vẫn tính ngày cơm |
 | `CT`, `H` | Công tác; hội nghị, học tập | như đi làm |
 | `P`, `P/2` | Nghỉ phép (trừ phép năm) | hưởng lương thời gian |
 | `L`, `NB`, `R` | Nghỉ lễ Tết (1 công, không cơm); nghỉ bù; việc riêng có lương | hưởng lương thời gian |
@@ -80,8 +80,9 @@ Cách tính chính:
   *Không trả lương thời gian quá công chuẩn* trong Cài đặt → Kỳ công.
 - Lương sản phẩm = Σ số lượng × đơn giá từng sản phẩm (vd 2.490 HĐ × 1.200 đ = 2.988.000).
   Ngày chấm `SP` không tính vào lương thời gian nhưng vẫn tính ngày cơm.
-- **Ngày lễ, Tết** (theo Danh mục → Ngày lễ, cột *Loại*): nghỉ lễ `L` = 1 công; **đi làm (`+`) hoặc làm SP vào ngày lễ = 2 công,
+- **Ngày lễ, Tết** (theo Danh mục → Ngày lễ, cột *Loại*): nghỉ lễ `L` = 1 công; **đi làm (`+`) vào ngày lễ = 2 công,
   vào ngày Tết = 3 công** (Tết Nguyên đán tự đặt loại *Tết*). Trên bảng chấm công các ô này có dấu ×2 / ×3.
+  Làm `SP` vào ngày lễ, Tết **không nhân**: chỉ hưởng lương sản phẩm.
   Hệ số sửa ở Cài đặt → Lương & làm thêm. Tiền cơm không nhân: mỗi ngày đi làm vẫn 1 suất.
 - Cơm trưa = 50.000 đ × số ngày có đi làm: ngày `+`, `SP`, công tác, học tập, **kể cả đi làm hoặc làm sản phẩm
   vào ngày lễ**; nửa ngày `+/2` tính 0,5. Ngày **nghỉ lễ `L`** vẫn tính công nhưng **không tính cơm**; nghỉ phép, ốm… cũng không tính cơm.

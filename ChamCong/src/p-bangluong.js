@@ -294,7 +294,7 @@
     m_('1. Ngày công');
     var lld = TL.loaiLDNV(db, { loaiLD: r.loaiLD });
     d_('Công chuẩn của kỳ', lld ? h(lld.ten) : 'Theo cài đặt chung', App.so(r.congChuan));
-    if (c.sp) d_('Công hưởng lương sản phẩm (SP)', 'Không tính vào lương thời gian' + (c.congThemLeSP ? '; gồm ' + App.so(c.congThemLeSP) + ' công tăng thêm làm SP ngày lễ, Tết' : ''), App.so(c.sp));
+    if (c.sp) d_('Công hưởng lương sản phẩm (SP)', 'Chỉ hưởng lương sản phẩm, không hưởng lương thời gian, không nhân hệ số ngày lễ', App.so(c.sp));
     d_('Ngày đi làm hưởng lương thời gian', '', App.so(c.lamTG - c.congThemLeTG));
     d_('Nghỉ có hưởng lương', 'Phép ' + App.so(c.phep) + ', lễ ' + App.so(c.le) + ', khác ' + App.so(c.huongKhac), App.so(c.huong - c.ngung));
     if (c.ngung) d_('Nghỉ, ngừng việc hưởng ' + (cd.tiLeNgungViec == null ? 100 : cd.tiLeNgungViec) + '% lương', '', App.so(c.ngung));

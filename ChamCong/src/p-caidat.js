@@ -182,7 +182,7 @@
     var db = App.db, cd = db.caiDat;
     var opt = function (v) { return db.kyHieu.map(function (k) { return '<option' + (k.ma === v ? ' selected' : '') + '>' + h(k.ma) + '</option>'; }).join(''); };
     el.innerHTML = '<div class="the"><h3>Ký hiệu chấm công</h3><p class="mo" style="margin-top:0">Theo mẫu 01a-LĐTL. <b>Công làm việc</b> và <b>công nghỉ có lương</b> tính theo ngày (1 = cả ngày, 0,5 = nửa ngày). ' +
-      'Ký hiệu có đánh dấu <b>Lương SP</b> không tính vào lương thời gian (lương tính theo sản lượng) nhưng vẫn tính ngày ăn cơm. <b>Trừ phép</b>: trừ vào số ngày phép năm.</p>' +
+      'Ký hiệu có đánh dấu <b>Lương SP</b> chỉ hưởng lương sản phẩm (số lượng × đơn giá): không hưởng lương thời gian, không nhân hệ số ngày lễ, nhưng vẫn tính ngày ăn cơm. <b>Trừ phép</b>: trừ vào số ngày phép năm.</p>' +
       '<div class="hang" style="margin-bottom:12px">Ký hiệu đi làm cả ngày <select data-cd="khDiLam">' + opt(cd.khDiLam) + '</select> nửa ngày <select data-cd="khNuaNgay">' + opt(cd.khNuaNgay) + '</select> ngày lễ <select data-cd="khLe">' + opt(cd.khLe) + '</select>' +
       '<span class="mo nho">(dùng khi “Chấm đủ công” và khi đọc giờ vào / ra)</span></div>' +
       '<div class="cuon"><table class="bang"><thead><tr><th>Ký hiệu</th><th style="min-width:240px">Ý nghĩa</th><th>Công làm việc</th><th>Công nghỉ có lương</th><th>Nhóm</th><th>Lương SP</th><th>Trừ phép</th><th></th></tr></thead><tbody>' +
@@ -229,7 +229,7 @@
     var db = App.db, y = st.namLe;
     var ds = db.ngayLe.map(function (x, i) { return { x: x, i: i }; }).filter(function (o) { return o.x.ngay.slice(0, 4) === String(y); }).sort(function (a, b) { return a.x.ngay < b.x.ngay ? -1 : 1; });
     el.innerHTML = '<div class="the"><h3>Ngày lễ, Tết năm <select id="le-nam">' + [y - 2, y - 1, y, y + 1, y + 2].map(function (n) { return '<option' + (n === y ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select>' +
-      '<span class="phai">Nghỉ lễ (L) = 1 công · đi làm hoặc làm SP ngày lễ = ' + App.so(db.caiDat.heSoCongLe) + ' công, ngày Tết = ' + App.so(db.caiDat.heSoCongTet) + ' công · cơm tính 1 ngày</span></h3>' +
+      '<span class="phai">Nghỉ lễ (L) = 1 công · đi làm (+) ngày lễ = ' + App.so(db.caiDat.heSoCongLe) + ' công, ngày Tết = ' + App.so(db.caiDat.heSoCongTet) + ' công · làm SP không nhân · cơm tính 1 ngày</span></h3>' +
       '<div class="cuon"><table class="bang"><thead><tr><th>Ngày</th><th>Thứ</th><th style="min-width:320px">Tên ngày lễ</th><th>Loại</th><th></th></tr></thead><tbody>' +
       (ds.length ? ds.map(function (o) {
         var n = TL.docNgay(o.x.ngay);
@@ -334,8 +334,8 @@
           '<div class="the"><h3>Làm thêm giờ, ngừng việc</h3><div class="form ba">' +
           o('Làm thêm ngày thường (%)', 'caiDat.heSoOT.thuong', 'so') + o('Làm thêm ngày nghỉ tuần (%)', 'caiDat.heSoOT.nghi', 'so') + o('Làm thêm ngày lễ, Tết (%)', 'caiDat.heSoOT.le', 'so') +
           o('Lương ngày nghỉ / ngừng việc (ký hiệu N) (%)', 'caiDat.tiLeNgungViec', 'so') +
-          o('Đi làm / làm SP ngày lễ được tính (công)', 'caiDat.heSoCongLe', 'so', 'Mặc định 2 công; nghỉ lễ (L) vẫn 1 công') +
-          o('Đi làm / làm SP ngày Tết được tính (công)', 'caiDat.heSoCongTet', 'so', 'Mặc định 3 công; tiền cơm vẫn tính 1 ngày') +
+          o('Đi làm (lương thời gian) ngày lễ được tính (công)', 'caiDat.heSoCongLe', 'so', 'Mặc định 2 công; nghỉ lễ (L) vẫn 1 công; làm SP không nhân') +
+          o('Đi làm (lương thời gian) ngày Tết được tính (công)', 'caiDat.heSoCongTet', 'so', 'Mặc định 3 công; tiền cơm vẫn tính 1 ngày') +
           '</div><p class="mo nho">Theo Bộ luật Lao động 2019: làm thêm ngày thường ít nhất 150%, ngày nghỉ hằng tuần 200%, ngày lễ 300% (chưa kể lương ngày lễ). Phần chênh lệch so với lương giờ bình thường không chịu thuế TNCN.</p></div>' +
           '<div class="the"><h3>Khác</h3><div class="form ba">' +
           o('Làm tròn số tiền lãnh', 'caiDat.lamTron', [[1, 'Không làm tròn'], [100, 'Đến 100 đ'], [1000, 'Đến 1.000 đ']]) +
