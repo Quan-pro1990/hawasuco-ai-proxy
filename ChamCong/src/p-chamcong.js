@@ -29,8 +29,11 @@
     if (st.kyUndo !== key) { st.undo = []; st.kyUndo = key; st.sel = st.act = st.anc = null; }
     var khoa = App.thangKhoa();
     var ngay = TL.ngayKy(db, y, m), le = TL.bangNgayLe(db);
+    var dvc = App.dvChamCong();
     var rows = TL.dsNhanVienKy(db, y, m).filter(function (nv) {
-      if (st.pb && TL.donViTheoKy(db, nv, y, m).phongBan !== st.pb) return false;
+      var dvk = (st.pb || dvc) ? TL.donViTheoKy(db, nv, y, m).phongBan : '';
+      if (st.pb && dvk !== st.pb) return false;
+      if (dvc && dvc.indexOf(dvk) < 0) return false;
       if (st.ld && (nv.loaiLD || '') !== (st.ld === '-' ? '' : st.ld)) return false;
       if (st.tim && !App.timKhop(nv.ma + ' ' + nv.hoTen, st.tim)) return false;
       return true;
@@ -539,7 +542,7 @@
 
   function sheetPhu(che) {
     var db = App.db, y = C.y, m = C.m, ngay = C.ngay, kho = CHE[che].kho;
-    var rows = TL.dsNhanVienKy(db, y, m).filter(function (nv) { return !st.pb || TL.donViTheoKy(db, nv, y, m).phongBan === st.pb; });
+    var dvc = App.dvChamCong(), rows = TL.dsNhanVienKy(db, y, m).filter(function (nv) { var d = TL.donViTheoKy(db, nv, y, m).phongBan; return (!st.pb || d === st.pb) && (!dvc || dvc.indexOf(d) >= 0); });
     var ctx = { kh: C.kh, le: C.le, ngay: ngay };
     var data = rows.map(function (nv) { return { nv: nv, th: TL.tongHopCong(db, y, m, nv, ctx) }; });
     var cot = [
@@ -572,13 +575,14 @@
     var db = App.db, shs = [];
     var all = TL.dsNhanVienKy(db, C.y, C.m).filter(function (nv) { return !st.ld || (nv.loaiLD || '') === (st.ld === '-' ? '' : st.ld); });
     var dvk = {}; all.forEach(function (nv) { dvk[nv.id] = TL.donViTheoKy(db, nv, C.y, C.m).phongBan; });
-    var pbs = st.pb ? db.phongBan.filter(function (p) { return p.ma === st.pb; }) : db.phongBan.slice();
+    var dvc = App.dvChamCong();
+    var pbs = st.pb ? db.phongBan.filter(function (p) { return p.ma === st.pb; }) : db.phongBan.filter(function (p) { return !dvc || dvc.indexOf(p.ma) >= 0; });
     pbs.forEach(function (p) {
       var rows = all.filter(function (nv) { return dvk[nv.id] === p.ma; });
       if (rows.length) shs.push(sheet01a(p, rows));
     });
     var khongPB = all.filter(function (nv) { return !db.phongBan.some(function (p) { return p.ma === dvk[nv.id]; }); });
-    if (!st.pb && khongPB.length) shs.push(sheet01a({ ten: 'Chưa phân phòng, đội' }, khongPB));
+    if (!st.pb && !dvc && khongPB.length) shs.push(sheet01a({ ten: 'Chưa phân phòng, đội' }, khongPB));
     if (!shs.length) { App.bao('Không có nhân viên để xuất.', 'loi'); return; }
     shs.push(sheetPhu('ot'), sheetPhu('muon'));
     App.xuatExcel('Bang_cham_cong_T' + TL.pad(C.m) + '_' + C.y, shs);

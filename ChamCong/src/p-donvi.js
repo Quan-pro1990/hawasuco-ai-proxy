@@ -13,7 +13,8 @@
   App.dsDonVi = function (o) {
     o = o || {};
     App.db.phongBan.forEach(function (p) { if (!TL.LOAI_DV[p.loai]) p.loai = TL.loaiDonVi(p); });
-    return App.db.phongBan.filter(function (p) { return (!p.ngung || o.ngung || p.ma === o.chon) && p.ma !== o.bo; });
+    var chi = o.chi === undefined ? App.dvChamCong() : o.chi;
+    return App.db.phongBan.filter(function (p) { return (!p.ngung || o.ngung || p.ma === o.chon) && p.ma !== o.bo && (!chi || chi.indexOf(p.ma) >= 0); });
   };
 
   /** <option> các đơn vị, nhóm theo loại (Phòng, Đội…) khi có nhiều loại */

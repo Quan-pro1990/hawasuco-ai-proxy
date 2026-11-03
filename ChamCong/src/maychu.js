@@ -8,6 +8,107 @@
   var App = window.App, TL = window.TL, h = App.h;
   var MC = App.mayChu = { bat: false, phienBan: 0, nguoi: '', capNhat: '', toi: null, canLuu: false, dangLuu: false, loi: '', luuLuc: null };
   var hen = null, henHoi = null;
+  var KHO_CONG = ['cc', 'ot', 'muon', 'vr'];
+  var VAI_TRO = { quan_tri: 'Quản trị', nhap_lieu: 'Nhập liệu (toàn bộ dữ liệu)', cham_cong: 'Chấm công theo phòng / đội' };
+
+  /* ---------------- phân quyền: tài khoản chấm công chỉ thấy bảng chấm công, giờ vào / ra của phòng / đội mình ---------------- */
+  function laCC() { return !!(MC.bat && MC.toi && MC.toi.vaiTro === 'cham_cong'); }
+  App.laTaiKhoanChamCong = laCC;
+  App.duocXem = function (id) { return !laCC() || id === 'chamcong' || id === 'vaora'; };
+  App.trangDau = function () { return laCC() ? 'chamcong' : 'dashboard'; };
+  App.dvChamCong = function () { return laCC() ? (MC.toi.donVi || []) : null; };
+
+  /** Phần chấm công của dữ liệu (để so ô nào vừa sửa) */
+  function phanCong(thang) {
+    var kq = {};
+    Object.keys(thang || {}).forEach(function (k) { var T = thang[k], x = {}; KHO_CONG.forEach(function (l) { x[l] = T[l] || {}; }); kq[k] = x; });
+    return JSON.parse(JSON.stringify(kq));
+  }
+  /** Dữ liệu bỏ phần ô chấm công (để biết người khác có sửa gì ngoài chấm công không) */
+  function boCong(db) {
+    var x = Object.assign({}, db), th = {};
+    Object.keys(db.thang || {}).sort().forEach(function (k) {
+      var T = db.thang[k], t = {};
+      Object.keys(T).forEach(function (f) {
+        if (KHO_CONG.indexOf(f) >= 0) return;
+        var v = T[f];
+        if (v == null || v === false || (typeof v === 'object' && !Array.isArray(v) && !Object.keys(v).length)) return;
+        t[f] = v;
+      });
+      if (Object.keys(t).length) th[k] = t;
+    });
+    x.thang = th;
+    return JSON.stringify(x);
+  }
+  /** Ghi nhớ bản gốc (lúc tải / lưu gần nhất) để chỉ gửi ô đã sửa, hoặc tự ghép khi người khác vừa chấm công */
+  function chupGoc(db) {
+    db = db || App.db;
+    MC.goc = phanCong(db.thang);
+    MC.gocKhac = laCC() ? null : boCong(db);
+  }
+  /** Áp các ô người khác vừa sửa (máy chủ khác bản gốc) vào dữ liệu đang có; ô mình cũng sửa thì giữ của mình */
+  function gopO(sv) {
+    var n = 0, goc = MC.goc || {}, ks = {}, rong = function (v) { return v == null || v === '' ? null : v; };
+    Object.keys(sv).concat(Object.keys(goc)).forEach(function (k) { ks[k] = 1; });
+    Object.keys(ks).forEach(function (k) {
+      KHO_CONG.forEach(function (l) {
+        var s = (sv[k] && sv[k][l]) || {}, g = (goc[k] && goc[k][l]) || {}, ids = {};
+        Object.keys(s).concat(Object.keys(g)).forEach(function (i) { ids[i] = 1; });
+        Object.keys(ids).forEach(function (id) {
+          var a = g[id] || {}, b = s[id] || {}, ngay = {};
+          Object.keys(a).concat(Object.keys(b)).forEach(function (d) { ngay[d] = 1; });
+          Object.keys(ngay).forEach(function (d) {
+            var vg = rong(a[d]), vs = rong(b[d]);
+            if (JSON.stringify(vg) === JSON.stringify(vs)) return;
+            var T = TL.thang(App.db, +k.slice(0, 4), +k.slice(5, 7), true), m = T[l][id], vl = rong(m && m[d]);
+            if (JSON.stringify(vl) !== JSON.stringify(vg)) return; // máy này cũng sửa ô đó: giữ của mình
+            if (vs == null) { if (m) { delete m[d]; if (!Object.keys(m).length) delete T[l][id]; } }
+            else (T[l][id] = m || {})[d] = vs;
+            n++;
+          });
+        });
+      });
+    });
+    return n;
+  }
+  /** Bị trùng phiên bản khi lưu: nếu người khác chỉ chấm công thì tự ghép rồi lưu lại, ngược lại hỏi người dùng */
+  function tuGop(tt) {
+    var pbCu = MC.phienBan;
+    if (!MC.gocKhac) { xungDot(tt); return; }
+    taiDuLieu().then(function (dl) {
+      var sv = dl && TL.chuanHoa(dl);
+      if (!sv || boCong(sv) !== MC.gocKhac) { MC.phienBan = pbCu; xungDot(tt); return; }
+      var n = gopO(sv.thang);
+      MC.goc = phanCong(sv.thang);
+      MC.canLuu = true; guiLuu();
+      var dangSua = App.$('.mo-nen') || (document.activeElement && /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName));
+      if (n && !dangSua) App.veLai();
+      if (n) App.bao('Đã tự ghép ' + n + ' ô chấm công do ' + (MC.nguoi || 'người khác') + ' vừa lưu.');
+    }).catch(function () { MC.phienBan = pbCu; xungDot(tt); });
+  }
+  /** Các ô chấm công đã đổi so với lần tải / lưu trước: { 'yyyy-mm': { cc: { nvId: { ngày: giá trị | null } } } } */
+  function taoVa() {
+    var thay = {}, n = 0, goc = MC.goc || {}, th = App.db.thang, ks = {};
+    var rong = function (v) { return v == null || v === '' ? null : v; };
+    Object.keys(th).concat(Object.keys(goc)).forEach(function (k) { ks[k] = 1; });
+    Object.keys(ks).forEach(function (k) {
+      KHO_CONG.forEach(function (l) {
+        var moi = (th[k] && th[k][l]) || {}, cu = (goc[k] && goc[k][l]) || {}, ids = {};
+        Object.keys(moi).concat(Object.keys(cu)).forEach(function (i) { ids[i] = 1; });
+        Object.keys(ids).forEach(function (id) {
+          var a = cu[id] || {}, b = moi[id] || {}, ngay = {};
+          Object.keys(a).concat(Object.keys(b)).forEach(function (d) { ngay[d] = 1; });
+          Object.keys(ngay).forEach(function (d) {
+            var va = rong(a[d]), vb = rong(b[d]);
+            if (JSON.stringify(va) === JSON.stringify(vb)) return;
+            var t = thay[k] || (thay[k] = {}), x = t[l] || (t[l] = {}), o = x[id] || (x[id] = {});
+            o[d] = vb; n++;
+          });
+        });
+      });
+    });
+    return { thay: thay, n: n };
+  }
 
   function api(duong, o) {
     o = o || {};
@@ -56,7 +157,8 @@
   function taiVaBatDau() {
     App.$('#app').innerHTML = '<div style="padding:40px;text-align:center;color:#5f6875">Đang tải dữ liệu từ máy chủ…</div>';
     taiDuLieu().then(function (dl) {
-      if (dl) { App.db = TL.chuanHoa(dl); App.batDauGiaoDien(); hoiDinhKy(); return; }
+      if (dl) { App.db = TL.chuanHoa(dl); chupGoc(); App.batDauGiaoDien(); hoiDinhKy(); return; }
+      if (laCC()) { App.$('#app').innerHTML = '<div class="the canh-bao" style="margin:40px">Máy chủ chưa có dữ liệu. Liên hệ quản trị phần mềm để nhập danh sách nhân viên trước. <a href="#" onclick="App.dangXuat();return false">Đăng xuất</a></div>'; return; }
       App.db = TL.duLieuMoi();
       App.batDauGiaoDien();
       hoiDinhKy();
@@ -167,16 +269,31 @@
   function guiLuu(ghiDe) {
     if (MC.dangLuu) { MC.lai = true; return; }
     if (!MC.canLuu && !ghiDe) return;
-    MC.canLuu = false; MC.dangLuu = true; MC.loi = ''; veTrangThai();
-    var text = JSON.stringify(App.db);
-    nen(text).then(function (n) {
+    // tài khoản chấm công: chỉ gửi các ô vừa sửa, máy chủ ghép theo từng ô (không ghi đè ô người khác)
+    var cc = laCC(), va = cc ? taoVa() : null, chup = cc ? phanCong(App.db.thang) : null;
+    MC.canLuu = false;
+    if (cc && !va.n) { veTrangThai(); return; }
+    MC.dangLuu = true; MC.loi = ''; veTrangThai();
+    var guiDi = cc ? null : JSON.stringify(App.db);
+    var yc = cc ? api('chamcong', { method: 'PUT', json: { thang: va.thay } }) : nen(guiDi).then(function (n) {
       var hd = { 'X-Phien-Ban': String(ghiDe ? ghiDe : MC.phienBan), 'Content-Type': 'application/json' };
       if (n.gzip) hd['Content-Encoding'] = 'gzip';
       return api('dulieu', { method: 'PUT', headers: hd, body: n.body });
-    }).then(function (r) {
+    });
+    yc.then(function (r) {
       MC.dangLuu = false;
-      if (r.status === 200) { MC.phienBan = r.data.phienBan; MC.nguoi = r.data.nguoi; MC.capNhat = r.data.capNhat; MC.luuLuc = new Date(); }
-      else if (r.status === 409) { MC.canLuu = true; xungDot(r.data); }
+      if (r.status === 200) {
+        if (cc) {
+          // có người khác lưu xen giữa thì để lần hỏi định kỳ tải lại bản mới
+          MC.goc = chup; MC.phienBan = r.data.phienBan === MC.phienBan + 1 ? r.data.phienBan : r.data.phienBan - 1;
+        } else { MC.phienBan = r.data.phienBan; try { chupGoc(TL.chuanHoa(JSON.parse(guiDi))); } catch (e) { MC.gocKhac = null; } }
+        MC.nguoi = r.data.nguoi; MC.capNhat = r.data.capNhat; MC.luuLuc = new Date();
+      }
+      else if (cc && (r.status === 400 || r.status === 403 || r.status === 409 || r.status === 423)) {
+        App.bao('Không lưu được chấm công: ' + ((r.data && r.data.loi) || 'lỗi ' + r.status) + ' Đã tải lại dữ liệu trên máy chủ.', 'loi');
+        taiLai(false);
+      }
+      else if (r.status === 409) { MC.canLuu = true; tuGop(r.data); }
       else if (r.status === 401) { MC.canLuu = true; MC.loi = 'Hết phiên đăng nhập'; dangNhapLai(); }
       else { MC.canLuu = true; MC.loi = (r.data && r.data.loi) || 'Lỗi ' + r.status; App.bao('Không lưu được lên máy chủ: ' + MC.loi, 'loi'); }
     }).catch(function () {
@@ -210,7 +327,7 @@
     return taiDuLieu().then(function (dl) {
       if (!dl) return;
       App.db = TL.chuanHoa(dl);
-      MC.canLuu = false;
+      MC.canLuu = false; chupGoc();
       App.veLai(); veTrangThai();
       if (bao) App.bao('Đã tải dữ liệu mới nhất' + (MC.nguoi ? ' (' + MC.nguoi + ' lưu lúc ' + new Date(MC.capNhat).toLocaleTimeString('vi-VN') + ')' : '') + '.', 'tot');
     }).catch(function (e) { if (e && e.dangNhap) dangNhapLai(); });
@@ -245,9 +362,11 @@
       : MC.dangLuu ? '<span class="tt-cham cam"></span>Đang lưu lên máy chủ…'
         : MC.canLuu ? '<span class="tt-cham cam"></span>Có thay đổi chưa lưu'
           : '<span class="tt-cham xanh"></span>Đã lưu trên máy chủ' + (MC.luuLuc ? ' ' + MC.luuLuc.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '');
-    el.innerHTML = '<div>' + tt + '</div><div class="mo">' + h(MC.toi ? MC.toi.ten : '') + (MC.toi && MC.toi.vaiTro === 'quan_tri' ? ' (quản trị)' : '') +
-      ' · <a href="#" id="dang-xuat">Đăng xuất</a></div>';
+    var vt = !MC.toi ? '' : MC.toi.vaiTro === 'quan_tri' ? ' (quản trị)' : laCC() ? ' (chấm công: ' + (MC.toi.donVi || []).map(function (m) { return TL.tenPhongBan(App.db, m) || m; }).join(', ') + ')' : '';
+    el.innerHTML = '<div>' + tt + '</div><div class="mo">' + h((MC.toi ? MC.toi.ten : '') + vt) +
+      ' · <a href="#" id="doi-mk">Đổi mật khẩu</a> · <a href="#" id="dang-xuat">Đăng xuất</a></div>';
     App.$('#dang-xuat', el).onclick = function (e) { e.preventDefault(); App.dangXuat(); };
+    App.$('#doi-mk', el).onclick = function (e) { e.preventDefault(); doiMatKhau(); };
   }
   App.veTrangThaiMayChu = veTrangThai;
 
@@ -262,8 +381,9 @@
       '<label class="nut">' + App.icon('nhap') + 'Khôi phục từ file…<input type="file" id="dl-mo" accept=".json" class="an"></label>' +
       '<button class="nut" id="mc-doimk">Đổi mật khẩu của tôi</button><button class="nut" id="mc-dx">Đăng xuất</button></div></div>' +
       (qt ? '<div class="the"><h3>Bản sao lưu hằng ngày trên máy chủ<span class="phai" id="mc-thumuc"></span></h3><div class="cuon" style="max-height:300px"><table class="bang" id="mc-sl"><tbody><tr><td class="trong">Đang tải…</td></tr></tbody></table></div></div>' +
-        '<div class="the"><h3>Tài khoản đăng nhập<span class="phai"><button class="nut nho chinh" id="mc-tk-them">' + App.icon('them') + 'Thêm tài khoản</button></span></h3><div class="cuon"><table class="bang" id="mc-tk"><tbody><tr><td class="trong">Đang tải…</td></tr></tbody></table></div>' +
-        '<p class="mo nho">Quản trị: quản lý tài khoản, sao lưu. Nhập liệu: dùng mọi chức năng chấm công, lương, nhân sự.</p></div>' +
+        '<div class="the"><h3>Tài khoản đăng nhập<span class="phai"><button class="nut nho" id="mc-tk-nhanh">Tạo tài khoản chấm công cho từng phòng / đội…</button> <button class="nut nho chinh" id="mc-tk-them">' + App.icon('them') + 'Thêm tài khoản</button></span></h3><div class="cuon"><table class="bang" id="mc-tk"><tbody><tr><td class="trong">Đang tải…</td></tr></tbody></table></div>' +
+        '<p class="mo nho"><b>Quản trị</b>: mọi chức năng, quản lý tài khoản, sao lưu. <b>Nhập liệu</b>: mọi chức năng chấm công, lương, nhân sự. ' +
+        '<b>Chấm công theo phòng / đội</b>: chỉ thấy bảng chấm công và giờ vào / ra của nhân viên thuộc phòng / đội được giao, không xem lương; máy chủ chặn sửa nhân viên ngoài đơn vị và kỳ đã chốt lương.</p></div>' +
         '<div class="the"><h3>Nhật ký máy chủ (300 dòng gần nhất)</h3><pre id="mc-nk" style="max-height:260px;overflow:auto;font-size:12px;background:#f6f8fb;padding:10px;border-radius:8px;margin:0">Đang tải…</pre></div>'
         : '<div class="the mo">Tài khoản quản trị mới xem được bản sao lưu, tài khoản và nhật ký máy chủ.</div>');
     App.$('#mc-tai', el).onclick = function () {
@@ -276,6 +396,7 @@
     veSaoLuu(el); veTaiKhoan(el);
     api('nhatky').then(function (r) { App.$('#mc-nk', el).textContent = r.ok ? r.data : 'Không đọc được.'; });
     App.$('#mc-tk-them', el).onclick = function () { formTaiKhoan(null, el); };
+    App.$('#mc-tk-nhanh', el).onclick = function () { taoNhanh(el); };
   };
 
   function veSaoLuu(el) {
@@ -304,16 +425,17 @@
   function veTaiKhoan(el) {
     api('taikhoan').then(function (r) {
       if (!r.ok) return;
-      App.$('#mc-tk', el).innerHTML = '<thead><tr><th>Tên đăng nhập</th><th>Vai trò</th><th>Tạo lúc</th><th></th></tr></thead><tbody>' +
+      dsTK = r.data;
+      App.$('#mc-tk', el).innerHTML = '<thead><tr><th>Tên đăng nhập</th><th>Vai trò</th><th>Phòng / đội được chấm công</th><th>Tạo lúc</th><th></th></tr></thead><tbody>' +
         r.data.map(function (x) {
-          return '<tr data-ten="' + h(x.ten) + '" data-vt="' + h(x.vaiTro) + '"><td class="ten">' + h(x.ten) + (MC.toi && x.ten === MC.toi.ten ? ' <span class="the-tt lam">bạn</span>' : '') + '</td>' +
-            '<td>' + (x.vaiTro === 'quan_tri' ? 'Quản trị' : 'Nhập liệu') + '</td><td class="giua">' + (x.taoLuc ? new Date(x.taoLuc).toLocaleDateString('vi-VN') : '') + '</td>' +
+          return '<tr data-ten="' + h(x.ten) + '" data-vt="' + h(x.vaiTro) + '" data-dv="' + h((x.donVi || []).join(',')) + '"><td class="ten">' + h(x.ten) + (MC.toi && x.ten === MC.toi.ten ? ' <span class="the-tt lam">bạn</span>' : '') + '</td>' +
+            '<td>' + h(VAI_TRO[x.vaiTro] || x.vaiTro) + '</td><td>' + (x.vaiTro === 'cham_cong' ? h((x.donVi || []).map(function (m) { return TL.tenPhongBan(App.db, m) || m; }).join(', ')) : '<span class="mo">Tất cả</span>') + '</td><td class="giua">' + (x.taoLuc ? new Date(x.taoLuc).toLocaleDateString('vi-VN') : '') + '</td>' +
             '<td><button class="nut nho" data-a="sua">Đặt lại mật khẩu / vai trò</button> ' + (MC.toi && x.ten === MC.toi.ten ? '' : '<button class="nut nho nguy" data-a="xoa">' + App.icon('xoa') + '</button>') + '</td></tr>';
         }).join('') + '</tbody>';
       App.$('#mc-tk', el).onclick = function (e) {
         var b = e.target.closest('[data-a]'); if (!b) return;
         var tr = b.closest('tr');
-        if (b.dataset.a === 'sua') formTaiKhoan({ ten: tr.dataset.ten, vaiTro: tr.dataset.vt }, el);
+        if (b.dataset.a === 'sua') formTaiKhoan({ ten: tr.dataset.ten, vaiTro: tr.dataset.vt, donVi: tr.dataset.dv ? tr.dataset.dv.split(',') : [] }, el);
         else App.xacNhan('Xoá tài khoản <b>' + h(tr.dataset.ten) + '</b>?', { nut: 'Xoá', nguy: true }).then(function (ok) {
           if (!ok) return;
           api('taikhoan?ten=' + encodeURIComponent(tr.dataset.ten), { method: 'DELETE' }).then(function (r2) {
@@ -331,17 +453,89 @@
       than: '<form class="form" style="grid-template-columns:1fr" onsubmit="return false">' +
         f.o('Tên đăng nhập', tk ? '<input name="ten" value="' + h(tk.ten) + '" readonly>' : f.txt('ten', '', 'autocomplete="off"')) +
         f.o(tk ? 'Mật khẩu mới (để trống = giữ nguyên)' : 'Mật khẩu (ít nhất 6 ký tự)', '<input name="matKhau" type="password" autocomplete="new-password">') +
-        f.o('Vai trò', f.sel('vaiTro', tk ? tk.vaiTro : 'nhap_lieu', [['nhap_lieu', 'Nhập liệu'], ['quan_tri', 'Quản trị']])) + '</form>',
+        f.o('Vai trò', f.sel('vaiTro', tk ? tk.vaiTro : 'nhap_lieu', f.cap(VAI_TRO))) +
+        '<div class="o" id="tk-dv">Phòng / đội được chấm công<div class="tk-dv">' + App.dsDonVi({ chi: null }).map(function (p) {
+          return '<label class="chk"><input type="checkbox" data-dv="' + h(p.ma) + '"' + (tk && (tk.donVi || []).indexOf(p.ma) >= 0 ? ' checked' : '') + '> ' + h(p.ten) + '</label>';
+        }).join('') + '</div><span class="gc">Tài khoản chỉ thấy và chấm công nhân viên thuộc các đơn vị này.</span></div></form>',
+      moRa: function (el) {
+        var fm = App.$('form', el), hien = function () { App.$('#tk-dv', el).style.display = fm.vaiTro.value === 'cham_cong' ? '' : 'none'; };
+        fm.vaiTro.onchange = hien; hien();
+      },
       nut: [{ ten: 'Huỷ' }, {
         ten: 'Lưu', loai: 'chinh', bam: function (el) {
-          var v = f.doc(el);
-          api('taikhoan', { method: 'POST', json: { ten: v.ten, matKhau: v.matKhau, vaiTro: v.vaiTro } }).then(function (r) {
+          var v = f.doc(el), dv = App.$$('[data-dv]:checked', el).map(function (c) { return c.dataset.dv; });
+          if (v.vaiTro === 'cham_cong' && !dv.length) { App.bao('Chọn ít nhất 1 phòng / đội cho tài khoản chấm công.', 'loi'); return false; }
+          api('taikhoan', { method: 'POST', json: { ten: v.ten, matKhau: v.matKhau, vaiTro: v.vaiTro, donVi: dv } }).then(function (r) {
             if (!r.ok) { App.bao((r.data && r.data.loi) || 'Không lưu được.', 'loi'); return; }
             App.bao('Đã lưu tài khoản ' + v.ten, 'tot'); App.$('.mo-nen .dong').click(); veTaiKhoan(elCha);
           });
           return false;
         }
       }]
+    });
+  }
+
+  var dsTK = [];
+  function matKhauNgauNhien() {
+    var bo = 'abcdefghjkmnpqrstuvwxyz23456789', a = new Uint32Array(8), s = '';
+    crypto.getRandomValues(a);
+    for (var i = 0; i < a.length; i++) s += bo[a[i] % bo.length];
+    return s;
+  }
+
+  /** Tạo nhanh mỗi phòng / đội một tài khoản chấm công, mật khẩu ngẫu nhiên, in danh sách để phát cho các đơn vị */
+  function taoNhanh(elCha) {
+    var daCo = {};
+    dsTK.forEach(function (t) { if (t.vaiTro === 'cham_cong') (t.donVi || []).forEach(function (m) { daCo[m] = t.ten; }); });
+    var tenDung = {}; dsTK.forEach(function (t) { tenDung[t.ten.toLowerCase()] = 1; });
+    var dem = {}; App.db.nhanVien.forEach(function (nv) { if (nv.trangThai !== 'nghi_viec') dem[nv.phongBan] = (dem[nv.phongBan] || 0) + 1; });
+    var ds = App.dsDonVi({ chi: null }).map(function (p) {
+      var goc = 'cc.' + App.boDau(p.ma).toLowerCase().replace(/[^a-z0-9]/g, ''), ten = goc, n = 2;
+      while (tenDung[ten]) ten = goc + n++;
+      return { p: p, ten: ten, co: daCo[p.ma], nv: dem[p.ma] || 0 };
+    });
+    App.hop({
+      tieuDe: 'Tạo tài khoản chấm công cho từng phòng / đội', co: 'rong',
+      than: '<p class="mo" style="margin-top:0">Mỗi đơn vị được chọn có 1 tài khoản chỉ chấm công nhân viên của đơn vị đó. Mật khẩu tạo ngẫu nhiên, hiện một lần sau khi tạo để in / phát cho người chấm công (họ nên đổi mật khẩu ở thanh bên sau khi đăng nhập).</p>' +
+        '<div class="cuon"><table class="bang"><thead><tr><th></th><th>Phòng / đội</th><th>Nhân viên</th><th>Tên đăng nhập</th><th>Ghi chú</th></tr></thead><tbody>' +
+        ds.map(function (x, i) {
+          return '<tr data-i="' + i + '"><td class="giua"><input type="checkbox" data-chon' + (!x.co && x.nv ? ' checked' : '') + '></td><td>' + h(x.p.ten) + '</td><td class="giua">' + x.nv + '</td>' +
+            '<td><input data-ten value="' + h(x.ten) + '" style="width:150px"></td><td class="mo">' + (x.co ? 'Đã có tài khoản: ' + h(x.co) : '') + '</td></tr>';
+        }).join('') + '</tbody></table></div>',
+      nut: [{ ten: 'Huỷ' }, {
+        ten: 'Tạo tài khoản', loai: 'chinh', bam: function (el) {
+          var chon = App.$$('tr[data-i]', el).filter(function (tr) { return App.$('[data-chon]', tr).checked; }).map(function (tr) {
+            return { p: ds[+tr.dataset.i].p, ten: App.$('[data-ten]', tr).value.trim(), mk: matKhauNgauNhien() };
+          });
+          if (!chon.length) { App.bao('Chọn ít nhất 1 phòng / đội.', 'loi'); return false; }
+          var kq = [], i = 0;
+          (function tiep() {
+            if (i >= chon.length) { ketQua(kq); veTaiKhoan(elCha); return; }
+            var x = chon[i++];
+            api('taikhoan', { method: 'POST', json: { ten: x.ten, matKhau: x.mk, vaiTro: 'cham_cong', donVi: [x.p.ma] } }).then(function (r) {
+              x.loi = r.ok ? '' : (r.data && r.data.loi) || 'Lỗi ' + r.status; kq.push(x); tiep();
+            }, function () { x.loi = 'Mất kết nối'; kq.push(x); tiep(); });
+          })();
+        }
+      }]
+    });
+  }
+
+  function ketQua(kq) {
+    var ct = App.db.congTy, dc = location.origin + location.pathname;
+    var bang = '<table class="bang"><thead><tr><th>STT</th><th>Phòng / đội</th><th>Tên đăng nhập</th><th>Mật khẩu</th><th>Kết quả</th></tr></thead><tbody>' +
+      kq.map(function (x, i) {
+        return '<tr><td class="giua">' + (i + 1) + '</td><td>' + h(x.p.ten) + '</td><td><b>' + h(x.ten) + '</b></td><td><code style="font-size:15px">' + (x.loi ? '' : h(x.mk)) + '</code></td><td>' + (x.loi ? '<span style="color:var(--do)">' + h(x.loi) + '</span>' : 'Đã tạo') + '</td></tr>';
+      }).join('') + '</tbody></table>';
+    App.hop({
+      tieuDe: 'Tài khoản chấm công đã tạo', co: 'rong',
+      than: '<div class="canh-bao" style="margin-bottom:10px">Mật khẩu chỉ hiện <b>một lần</b>. Hãy in hoặc ghi lại ngay.</div>' + bang +
+        '<p class="mo nho">Địa chỉ đăng nhập: <b>' + h(dc) + '</b></p>',
+      nut: [{ ten: 'In danh sách', bam: function () {
+        App.inNoiDung('<div class="vb"><p style="text-align:center"><b>' + h(ct.ten || '') + '</b></p><h2 style="text-align:center">TÀI KHOẢN CHẤM CÔNG CÁC PHÒNG, ĐỘI</h2>' +
+          '<p>Địa chỉ phần mềm: <b>' + h(dc) + '</b>. Đăng nhập rồi đổi mật khẩu (thanh bên → Đổi mật khẩu). Mỗi tài khoản chỉ chấm công nhân viên thuộc đơn vị mình.</p>' + bang + '</div>');
+        return false;
+      } }, { ten: 'Đóng', loai: 'chinh' }]
     });
   }
 

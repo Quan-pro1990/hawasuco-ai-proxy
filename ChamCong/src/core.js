@@ -429,7 +429,9 @@
   App.kyMacDinh = function () {
     var d = new Date(), k = TL.kyCuaNgay(App.db, d.getFullYear(), d.getMonth() + 1, d.getDate());
     var bd = TL.docNgay(TL.batDauKy(App.db, k.y, k.m));
-    if ((d - new Date(bd.y, bd.m - 1, bd.d)) / 864e5 < 20) { k.m--; if (k.m < 1) { k.m = 12; k.y--; } }
+    // kế toán: đầu kỳ thường còn làm lương kỳ trước; tài khoản chấm công hằng ngày: luôn mở kỳ chứa hôm nay
+    var chamHangNgay = App.laTaiKhoanChamCong && App.laTaiKhoanChamCong();
+    if (!chamHangNgay && (d - new Date(bd.y, bd.m - 1, bd.d)) / 864e5 < 20) { k.m--; if (k.m < 1) { k.m = 12; k.y--; } }
     var s = null;
     try { s = JSON.parse(sessionStorage.getItem('ChamCong_ky') || 'null'); } catch (e) { /* bỏ qua */ }
     return (s && s.y && s.m) ? s : k;
@@ -463,13 +465,22 @@
     { id: 'caidat', ten: 'Cài đặt & dữ liệu', icon: 'caidat' }
   ];
   App.MENU = MENU;
+  /** Phân quyền trang (chế độ máy chủ ghi đè cho tài khoản chấm công) */
+  App.duocXem = function () { return true; };
+  App.trangDau = function () { return 'dashboard'; };
+  /** Mã các phòng / đội tài khoản được chấm công (null = tất cả) */
+  App.dvChamCong = function () { return null; };
 
   function dungKhung() {
     var root = document.getElementById('app');
     root.className = 'app';
     root.innerHTML =
       '<aside class="sb"><div class="thuong-hieu" id="thuong-hieu"></div><nav>' +
-      MENU.map(function (x) {
+      MENU.filter(function (x, i) {
+        if (!x.nhom) return App.duocXem(x.id);
+        for (var j = i + 1; j < MENU.length && !MENU[j].nhom; j++) if (App.duocXem(MENU[j].id)) return true;
+        return false;
+      }).map(function (x) {
         if (x.nhom) return '<div class="nhom-nav">' + x.nhom + '</div>';
         return '<a href="#' + x.id + '" data-id="' + x.id + '">' + App.icon(x.icon) + '<span>' + x.ten + '</span></a>';
       }).join('') +
@@ -500,7 +511,7 @@
   App.trangHienTai = 'dashboard';
   App.veLai = function () {
     var id = (location.hash || '#dashboard').slice(1).split('?')[0];
-    if (!App.trang[id]) id = 'dashboard';
+    if (!App.trang[id] || !App.duocXem(id)) id = App.trangDau();
     if (App.trangHienTai !== id && App.trang[App.trangHienTai] && App.trang[App.trangHienTai].roi) App.trang[App.trangHienTai].roi();
     App.trangHienTai = id;
     var tg = App.trang[id], idMenu = tg.menu || id;
