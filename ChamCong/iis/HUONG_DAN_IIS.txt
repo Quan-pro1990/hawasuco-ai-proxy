@@ -16,8 +16,10 @@ Dữ liệu dùng chung nằm trên máy chủ; các phòng, đội mở bằng 
 
 2. CÀI ĐẶT (1 CLICK)
 --------------------
-a) Chép nguyên thư mục ChamCong lên máy chủ, vd D:\CaiDat\ChamCong
+a) Chép file bộ cài ChamCong_CaiDat_<ngày>.zip lên máy chủ. Chuột phải → Properties → đánh dấu Unblock → OK
+   (để Windows không chặn), rồi giải nén vào ổ D, vd D:\CaiDat\ChamCong
    (giữ nguyên cấu trúc: ChamCong_TinhLuong.html, CaiDat-MayChu-IIS.bat, thư mục iis).
+   Nếu Windows hiện "Windows protected your PC": bấm More info → Run anyway.
 b) Nhấp đúp CaiDat-MayChu-IIS.bat → bấm Yes khi Windows hỏi quyền quản trị.
 c) Bộ cài tự làm: cài IIS + Hosting Bundle (nếu thiếu) → biên dịch ChamCongMayChu.exe → chép vào
    C:\inetpub\ChamCong → tạo app pool "ChamCong" → tạo thư mục dữ liệu D:\ChamCongData và sao lưu

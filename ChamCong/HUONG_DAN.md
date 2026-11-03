@@ -199,4 +199,5 @@ Hãy đối chiếu lại với văn bản hiện hành của cơ quan thuế, B
   phân quyền, tự ghép chấm công).
 - Máy chủ: `iis/MayChuChamCong.cs` (C# 5, biên dịch bằng `csc.exe` của .NET Framework 4 – bộ cài tự làm), chạy sau IIS
   (ASP.NET Core Module V2). Bộ cài: `iis/CaiDat-IIS.ps1` (gọi qua `CaiDat-MayChu-IIS.bat`).
+- Đóng gói bộ cài: `node dong-goi.js` → `dist/ChamCong_CaiDat_<ngày>.zip` (dựng lại HTML, chạy kiểm thử, nén các file cần cài).
 - Kiểm thử cách tính: `node test/tinhluong.test.js` (có ca đối chiếu đúng 1 dòng bảng lương mẫu tháng 10/2026).
