@@ -1,10 +1,10 @@
-/* Trang Báo cáo: tổng hợp phòng ban, bảo hiểm, thuế TNCN năm, quỹ lương năm, phép năm, đi muộn – nghỉ */
+/* Trang Báo cáo: tổng hợp phòng / đội, bảo hiểm, thuế TNCN năm, quỹ lương năm, phép năm, đi muộn – nghỉ */
 (function () {
   'use strict';
   var App = window.App, TL = window.TL, h = App.h;
   var st = { tab: 'pb' };
   var TABS = [
-    ['pb', 'Tổng hợp theo phòng ban'],
+    ['pb', 'Tổng hợp theo phòng / đội'],
     ['bh', 'Bảo hiểm & công đoàn'],
     ['thue', 'Thuế TNCN cả năm'],
     ['nam', 'Quỹ lương 12 tháng'],
@@ -53,7 +53,7 @@
           tong: t.tongThuNhap, bh: t.tongBH, doanPhi: t.doanPhi, thue: t.thue, tamUng: t.tamUng, net: t.thucLinh, dn: t.dn.tong, chiPhi: t.chiPhiDN };
       });
       var cot = [
-        { t: 'STT', stt: true, w: 5, kieu: 'giua' }, { t: 'Phòng ban', k: 'ten', w: 30 }, { t: 'Số NV', k: 'soNV', kieu: 'cong', w: 7 }, { t: 'Công lương TG', k: 'congTG', kieu: 'cong', w: 9 },
+        { t: 'STT', stt: true, w: 5, kieu: 'giua' }, { t: 'Phòng / đội', k: 'ten', w: 30 }, { t: 'Số NV', k: 'soNV', kieu: 'cong', w: 7 }, { t: 'Công lương TG', k: 'congTG', kieu: 'cong', w: 9 },
         { t: 'Lương sản phẩm', k: 'luongSP', kieu: 'so', w: 13 }, { t: 'Lương thời gian, làm thêm', k: 'luongTG', kieu: 'so', w: 14 }, { t: 'Phụ cấp', k: 'phuCap', kieu: 'so', w: 12 },
         { t: 'Thưởng, khoản khác', k: 'thuong', kieu: 'so', w: 12 }, { t: 'Tổng thu nhập', k: 'tong', kieu: 'so', w: 14 }, { t: 'BH NLĐ đóng', k: 'bh', kieu: 'so', w: 12 },
         { t: 'Công đoàn', k: 'doanPhi', kieu: 'so', w: 10 }, { t: 'Thuế TNCN', k: 'thue', kieu: 'so', w: 11 }, { t: 'Tạm ứng kỳ I', k: 'tamUng', kieu: 'so', w: 12 },
@@ -115,7 +115,7 @@
         p.theoThang.forEach(function (v, i) { r['t' + (i + 1)] = v; });
         return r;
       });
-      var cot = [{ t: 'STT', stt: true, w: 5, kieu: 'giua' }, { t: 'Họ và tên', k: 'hoTen', w: 22 }, { t: 'Mã NV', k: 'ma', w: 8 }, { t: 'Phòng ban', k: 'pb', w: 22 },
+      var cot = [{ t: 'STT', stt: true, w: 5, kieu: 'giua' }, { t: 'Họ và tên', k: 'hoTen', w: 22 }, { t: 'Mã NV', k: 'ma', w: 8 }, { t: 'Phòng / đội', k: 'pb', w: 22 },
         { t: 'Phép năm', k: 'duoc', kieu: 'cong', w: 7 }, { t: 'Tồn năm trước', k: 'ton', kieu: 'cong', w: 7 }];
       for (var i = 1; i <= 12; i++) cot.push({ t: 'T' + i, k: 't' + i, kieu: 'cong', w: 5 });
       cot.push({ t: 'Đã nghỉ', k: 'daNghi', kieu: 'cong', w: 7 }, { t: 'Còn lại', k: 'conLai', kieu: 'cong', w: 7 });
@@ -128,7 +128,7 @@
         var c = r.cong;
         return { ma: r.ma, hoTen: r.hoTen, pb: r.tenPhongBan, muonLan: c.muonLan, muonPhut: c.muonPhut, phat: r.phatMuon, phep: c.phep, bhxh: c.bhxh, khong: c.khong, kp: c.kp, ot: c.otTong };
       }).filter(function (r) { return r.muonLan || r.phep || r.bhxh || r.khong || r.kp || r.ot; });
-      var cot = [{ t: 'STT', stt: true, w: 5, kieu: 'giua' }, { t: 'Họ và tên', k: 'hoTen', w: 22 }, { t: 'Mã NV', k: 'ma', w: 8 }, { t: 'Phòng ban', k: 'pb', w: 22 },
+      var cot = [{ t: 'STT', stt: true, w: 5, kieu: 'giua' }, { t: 'Họ và tên', k: 'hoTen', w: 22 }, { t: 'Mã NV', k: 'ma', w: 8 }, { t: 'Phòng / đội', k: 'pb', w: 22 },
         { t: 'Đi muộn, về sớm (lần)', k: 'muonLan', kieu: 'cong', w: 9 }, { t: 'Số phút', k: 'muonPhut', kieu: 'cong', w: 8 }, { t: 'Tiền phạt', k: 'phat', kieu: 'so', w: 10 },
         { t: 'Nghỉ phép', k: 'phep', kieu: 'cong', w: 8 }, { t: 'Ốm, thai sản (BHXH)', k: 'bhxh', kieu: 'cong', w: 9 }, { t: 'Nghỉ không lương', k: 'khong', kieu: 'cong', w: 9 },
         { t: 'Nghỉ không phép', k: 'kp', kieu: 'cong', w: 9 }, { t: 'Làm thêm (giờ)', k: 'ot', kieu: 'cong', w: 9 }];

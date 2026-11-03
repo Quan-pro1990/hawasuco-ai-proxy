@@ -1,4 +1,4 @@
-/* Trang Danh mục (phòng ban, phụ cấp, ký hiệu chấm công, ngày lễ) và Cài đặt & dữ liệu */
+/* Trang Danh mục (phòng / đội, phụ cấp, ký hiệu chấm công, ngày lễ) và Cài đặt & dữ liệu */
 (function () {
   'use strict';
   var App = window.App, TL = window.TL, h = App.h;
@@ -8,48 +8,12 @@
   function datPath(o, p, v) { var ks = p.split('.'), x = o; for (var i = 0; i < ks.length - 1; i++) { if (x[ks[i]] == null) x[ks[i]] = {}; x = x[ks[i]]; } x[ks[ks.length - 1]] = v; }
 
   /* ================= DANH MỤC ================= */
-  var TABS_DM = [['pb', 'Phòng ban / bộ phận'], ['ld', 'Loại lao động & công chuẩn'], ['sp', 'Sản phẩm (lương SP)'], ['pc', 'Phụ cấp'], ['kh', 'Ký hiệu chấm công'], ['le', 'Ngày lễ, Tết']];
+  var TABS_DM = [['pb', 'Phòng, đội'], ['ld', 'Loại lao động & công chuẩn'], ['sp', 'Sản phẩm (lương SP)'], ['pc', 'Phụ cấp'], ['kh', 'Ký hiệu chấm công'], ['le', 'Ngày lễ, Tết']];
 
   function veDM(noi) {
     noi.innerHTML = '<div class="tabs">' + TABS_DM.map(function (t) { return '<button data-t="' + t[0] + '"' + (st.tab === t[0] ? ' class="chon"' : '') + '>' + t[1] + '</button>'; }).join('') + '</div><div id="dm-noi"></div>';
     App.$('.tabs', noi).onclick = function (e) { var b = e.target.closest('[data-t]'); if (b) { st.tab = b.dataset.t; App.veLai(); } };
-    ({ pb: dmPB, ld: dmLD, sp: dmSP, pc: dmPC, kh: dmKH, le: dmLe })[st.tab](App.$('#dm-noi'));
-  }
-
-  function dmPB(el) {
-    var db = App.db;
-    var dem = {}; db.nhanVien.forEach(function (nv) { if (nv.trangThai !== 'nghi_viec') dem[nv.phongBan] = (dem[nv.phongBan] || 0) + 1; });
-    el.innerHTML = '<div class="the"><h3>Phòng ban / bộ phận<span class="phai">Thứ tự ở đây là thứ tự trên bảng chấm công, bảng lương</span></h3>' +
-      '<div class="cuon"><table class="bang"><thead><tr><th>STT</th><th>Mã</th><th style="min-width:280px">Tên phòng ban / bộ phận</th><th>Nhân viên</th><th></th></tr></thead><tbody>' +
-      db.phongBan.map(function (p, i) {
-        return '<tr data-i="' + i + '"><td class="giua">' + (i + 1) + '</td><td>' + h(p.ma) + '</td><td><input class="o-nhap chu" data-f="ten" value="' + h(p.ten) + '" style="width:100%"></td>' +
-          '<td class="giua">' + (dem[p.ma] || 0) + '</td><td><button class="nut nho" data-a="len" title="Lên">▲</button> <button class="nut nho" data-a="xuong" title="Xuống">▼</button> <button class="nut nho nguy" data-a="xoa">' + App.icon('xoa') + '</button></td></tr>';
-      }).join('') + (db.phongBan.length ? '' : '<tr><td colspan="5" class="trong">Chưa có phòng ban.</td></tr>') +
-      '</tbody></table></div><div class="hang" style="margin-top:12px"><input id="pb-ma" placeholder="Mã (vd KD)" style="width:120px"><input id="pb-ten" placeholder="Tên phòng ban" style="width:300px"><button class="nut chinh" id="pb-them">' + App.icon('them') + 'Thêm</button></div></div>';
-    el.onchange = function (e) {
-      var i = e.target.closest('[data-f]'); if (!i) return;
-      db.phongBan[+i.closest('tr').dataset.i].ten = i.value.trim(); App.luu(); App.bao('Đã lưu');
-    };
-    el.onclick = function (e) {
-      var b = e.target.closest('[data-a]');
-      if (b) {
-        var i = +b.closest('tr').dataset.i, a = b.dataset.a, ds = db.phongBan;
-        if (a === 'len' && i > 0) { ds.splice(i - 1, 0, ds.splice(i, 1)[0]); }
-        else if (a === 'xuong' && i < ds.length - 1) { ds.splice(i + 1, 0, ds.splice(i, 1)[0]); }
-        else if (a === 'xoa') {
-          if (dem[ds[i].ma]) { App.bao('Phòng ban còn ' + dem[ds[i].ma] + ' nhân viên, hãy chuyển họ sang phòng khác trước.', 'loi'); return; }
-          ds.splice(i, 1);
-        }
-        App.luu(); dmPB(el); return;
-      }
-      if (e.target.closest('#pb-them')) {
-        var ma = App.$('#pb-ma').value.trim(), ten = App.$('#pb-ten').value.trim();
-        if (!ten) { App.bao('Nhập tên phòng ban.', 'loi'); return; }
-        if (!ma) ma = App.boDau(ten).split(/\s+/).map(function (w) { return w[0] || ''; }).join('').toUpperCase().replace(/[^A-Z0-9]/g, '') || 'PB' + (db.phongBan.length + 1);
-        if (db.phongBan.some(function (p) { return p.ma.toLowerCase() === ma.toLowerCase(); })) ma += db.phongBan.length + 1;
-        db.phongBan.push({ ma: ma, ten: ten }); App.luu(); dmPB(el);
-      }
-    };
+    ({ pb: App.dmDonVi, ld: dmLD, sp: dmSP, pc: dmPC, kh: dmKH, le: dmLe })[st.tab](App.$('#dm-noi'));
   }
 
   function dmLD(el) {

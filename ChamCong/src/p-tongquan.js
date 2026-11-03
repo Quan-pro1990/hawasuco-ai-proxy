@@ -51,7 +51,7 @@
       '</div>';
 
     html += '<div class="cot3">' +
-      '<div class="the"><h3>Quỹ lương theo phòng ban</h3><div id="bd-pb"></div></div>' +
+      '<div class="the"><h3>Quỹ lương theo phòng / đội</h3><div id="bd-pb"></div></div>' +
       '<div class="the"><h3>Tình hình công kỳ tháng ' + m + '</h3><div id="bd-cong"></div></div>' +
       '<div class="the"><h3>Cần chú ý</h3><ul class="ds-gon" id="chu-y"></ul></div>' +
       '</div>';
@@ -94,10 +94,10 @@
       { nhan: 'BH + KPCĐ doanh nghiệp đóng', gt: t.dn.tong, mau: 'var(--s4)' }
     ]);
 
-    // Theo phòng ban
+    // Theo phòng / đội
     var pb = {};
     bl.rows.forEach(function (r) {
-      var k = r.tenPhongBan || '(Chưa phân phòng)';
+      var k = r.tenPhongBan || '(Chưa phân phòng / đội)';
       if (!pb[k]) pb[k] = { gt: 0, n: 0, net: 0 };
       pb[k].gt += r.tongThuNhap; pb[k].n++; pb[k].net += r.thucLinh;
     });

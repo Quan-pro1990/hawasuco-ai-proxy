@@ -28,7 +28,7 @@
     return '';
   };
 
-  var loc = { tim: '', pb: '', tt: 'dang' };
+  var loc = { tim: '', pb: '', tt: 'dang' }, chon = {};
 
   function dsLoc() {
     return App.db.nhanVien.filter(function (nv) {
@@ -45,9 +45,10 @@
     noi.innerHTML =
       '<div class="the khong-in"><div class="hang">' +
       '<input type="search" id="nv-tim" placeholder="Tìm mã, tên, chức vụ, SĐT…" value="' + h(loc.tim) + '" style="width:260px">' +
-      '<select id="nv-pb"><option value="">Tất cả phòng ban</option>' + db.phongBan.map(function (p) { return '<option value="' + h(p.ma) + '"' + (loc.pb === p.ma ? ' selected' : '') + '>' + h(p.ten) + '</option>'; }).join('') + '</select>' +
+      '<select id="nv-pb">' + App.optDonVi(loc.pb, { tatCa: 'Tất cả phòng / đội', ngung: true }) + '</select>' +
       '<select id="nv-tt"><option value="dang"' + (loc.tt === 'dang' ? ' selected' : '') + '>Đang làm việc</option><option value="nghi"' + (loc.tt === 'nghi' ? ' selected' : '') + '>Đã nghỉ việc</option><option value=""' + (loc.tt === '' ? ' selected' : '') + '>Tất cả</option></select>' +
       '<span class="gian"></span>' +
+      '<button class="nut" id="nv-chuyen" disabled title="Đánh dấu nhân viên ở cột đầu rồi bấm để chuyển sang phòng / đội khác">' + App.icon('chuyen') + 'Chuyển phòng / đội</button>' +
       '<button class="nut" id="nv-nhap">' + App.icon('nhap') + 'Nhập từ Excel</button>' +
       '<button class="nut" id="nv-xuat">' + App.icon('tai') + 'Xuất Excel</button>' +
       '<button class="nut chinh" id="nv-them">' + App.icon('them') + 'Thêm nhân viên</button>' +
@@ -66,20 +67,43 @@
       var tr = e.target.closest('tr[data-id]');
       if (!tr) return;
       var nv = App.db.nhanVien.filter(function (x) { return x.id === tr.dataset.id; })[0];
+      if (e.target.closest('.chon-nv')) return;
       if (e.target.closest('.xoa')) { xoaNV(nv); return; }
       App.moHoSo(nv.id, 'canhan');
     };
+    App.$('#nv-bang').onchange = function (e) {
+      var c = e.target;
+      if (c.id === 'nv-chon-het') { dsLoc().forEach(function (nv) { if (nv.trangThai !== 'nghi_viec') { if (c.checked) chon[nv.id] = 1; else delete chon[nv.id]; } }); veBang(); return; }
+      var tr = c.closest('tr[data-id]'); if (!tr || !c.classList.contains('chon-nv')) return;
+      if (c.checked) chon[tr.dataset.id] = 1; else delete chon[tr.dataset.id];
+      capNhatNutChuyen();
+    };
+    App.$('#nv-chuyen').onclick = function () {
+      var ds = App.db.nhanVien.filter(function (nv) { return chon[nv.id]; });
+      if (!ds.length) return;
+      App.hopChuyenDonVi(ds, { sauKhiChuyen: function () { chon = {}; App.veLai(); } });
+    };
+    capNhatNutChuyen();
+  }
+
+  function capNhatNutChuyen() {
+    var ids = Object.keys(chon).filter(function (id) { return App.timNV(id); }), b = App.$('#nv-chuyen');
+    if (!b) return;
+    b.disabled = !ids.length;
+    b.lastChild.textContent = ids.length ? 'Chuyển phòng / đội (' + ids.length + ')' : 'Chuyển phòng / đội';
   }
 
   function veBang() {
     var ds = dsLoc(), db = App.db;
-    var html = '<thead><tr><th>STT</th><th>Mã NV</th><th style="min-width:170px">Họ và tên</th><th>Phòng ban</th><th>Chức vụ</th><th>Ngày vào</th><th>Loại HĐ</th>' +
+    var conLam = ds.filter(function (nv) { return nv.trangThai !== 'nghi_viec'; });
+    var het = conLam.length && conLam.every(function (nv) { return chon[nv.id]; });
+    var html = '<thead><tr><th class="khong-in" title="Chọn để chuyển phòng / đội"><input type="checkbox" id="nv-chon-het"' + (het ? ' checked' : '') + '></th><th>STT</th><th>Mã NV</th><th style="min-width:170px">Họ và tên</th><th>Phòng / đội</th><th>Chức vụ</th><th>Ngày vào</th><th>Loại HĐ</th>' +
       '<th>Loại LĐ</th><th>Công chuẩn</th><th>Hình thức</th><th class="so">Mức lương</th><th class="so">Lương đóng BH</th><th>NPT</th><th>Hết hạn HĐ</th><th>Trạng thái</th><th class="khong-in"></th></tr></thead><tbody>';
-    if (!ds.length) html += '<tr><td colspan="16" class="trong">' + (db.nhanVien.length ? 'Không có nhân viên phù hợp bộ lọc.' : 'Chưa có nhân viên. Bấm “Thêm nhân viên” hoặc “Nhập từ Excel”.') + '</td></tr>';
+    if (!ds.length) html += '<tr><td colspan="17" class="trong">' + (db.nhanVien.length ? 'Không có nhân viên phù hợp bộ lọc.' : 'Chưa có nhân viên. Bấm “Thêm nhân viên” hoặc “Nhập từ Excel”.') + '</td></tr>';
     ds.forEach(function (nv, i) {
       var tt = nv.trangThai || 'dang_lam';
       var lbh = nv.thamGiaBH ? (+nv.luongBH > 0 ? App.tien(nv.luongBH) : ((nv.hinhThuc || 'thang') === 'thang' || nv.hinhThuc === 'khoan' ? '<span class="mo" title="Lương CB + phụ cấp đóng BH">' + App.tien(luongBHMacDinh(nv)) + '</span>' : '<span class="the-tt cam">Chưa nhập</span>')) : '<span class="mo">Không tham gia</span>';
-      html += '<tr data-id="' + nv.id + '" style="cursor:pointer"><td class="giua">' + (i + 1) + '</td><td>' + h(nv.ma) + '</td><td class="ten">' + h(nv.hoTen) + '</td>' +
+      html += '<tr data-id="' + nv.id + '" style="cursor:pointer"><td class="khong-in giua">' + (tt === 'nghi_viec' ? '' : '<input type="checkbox" class="chon-nv"' + (chon[nv.id] ? ' checked' : '') + '>') + '</td><td class="giua">' + (i + 1) + '</td><td>' + h(nv.ma) + '</td><td class="ten">' + h(nv.hoTen) + '</td>' +
         '<td>' + h(TL.tenPhongBan(db, nv.phongBan)) + '</td><td>' + h(nv.chucVu) + '</td><td class="giua">' + TL.hienNgay(nv.ngayVao) + '</td><td>' + h(nv.loaiHD || '') + '</td>' +
         '<td>' + h((TL.loaiLDNV(db, nv) || {}).ten || '') + '</td><td class="giua">' + App.so(TL.congChuan(db, App.ky.y, App.ky.m, nv)) + '</td><td>' + (App.HINH_THUC[nv.hinhThuc || 'thang']) + '</td><td class="so">' + App.tien(nv.luongCB) + (nv.tiLeHuong != null && +nv.tiLeHuong !== 100 ? ' <span class="the-tt cam">' + nv.tiLeHuong + '%</span>' : '') + '</td>' +
         '<td class="so">' + lbh + '</td><td class="giua">' + (TL.soNPTKy(nv, App.ky.y, App.ky.m) || '') + '</td>' +
@@ -89,6 +113,7 @@
     });
     html += '</tbody>';
     App.$('#nv-bang').innerHTML = html;
+    capNhatNutChuyen();
   }
 
   function luongBHMacDinh(nv) {
@@ -133,7 +158,7 @@
       ['sdt', 'Điện thoại', 12], ['email', 'Email', 18], ['thuongTru', 'Địa chỉ thường trú', 26], ['diaChi', 'Chỗ ở hiện nay', 24],
       ['trinhDoHV', 'Học vấn', 7], ['trinhDoCM', 'Trình độ chuyên môn', 14], ['chuyenNganh', 'Chuyên ngành', 16], ['truongDT', 'Trường đào tạo', 18], ['namTN', 'Năm tốt nghiệp', 8],
       ['ngoaiNgu', 'Ngoại ngữ', 10], ['dangVien', 'Đảng viên', 7, 'bool'], ['soSoBHXH', 'Số sổ BHXH', 13], ['maTheBHYT', 'Mã thẻ BHYT', 15], ['noiKCB', 'Nơi KCB ban đầu', 18],
-      ['phongBan', 'Phòng ban', 22, 'pb'], ['chucVu', 'Chức vụ', 18], ['loaiHD', 'Loại hợp đồng', 16], ['ngayVao', 'Ngày vào làm', 11, 'ngay'],
+      ['phongBan', 'Phòng / đội', 22, 'pb'], ['chucVu', 'Chức vụ', 18], ['loaiHD', 'Loại hợp đồng', 16], ['ngayVao', 'Ngày vào làm', 11, 'ngay'],
       ['ngayHetHD', 'Ngày hết hạn HĐ', 11, 'ngay'], ['trangThai', 'Trạng thái', 13, 'tt'], ['ngayNghi', 'Ngày nghỉ việc', 11, 'ngay'],
       ['loaiLD', 'Loại lao động', 16, 'lld'], ['congChuanRieng', 'Công chuẩn riêng', 8, 'so'],
       ['hinhThuc', 'Hình thức lương', 13, 'ht'], ['luongCB', 'Mức lương', 13, 'so'], ['tiLeHuong', '% hưởng lương', 8, 'so'],
@@ -204,8 +229,8 @@
   function nhapExcel() {
     App.hop({
       tieuDe: 'Nhập nhân viên từ Excel', co: '',
-      than: '<p>Chọn file <b>.xlsx</b> hoặc <b>.csv</b> có dòng tiêu đề (Mã NV, Họ và tên, Phòng ban, Lương cơ bản…). ' +
-        'Nhân viên trùng <b>Mã NV</b> sẽ được cập nhật, mã mới sẽ được thêm. Phòng ban chưa có sẽ được tự tạo.</p>' +
+      than: '<p>Chọn file <b>.xlsx</b> hoặc <b>.csv</b> có dòng tiêu đề (Mã NV, Họ và tên, Phòng / đội, Lương cơ bản…). ' +
+        'Nhân viên trùng <b>Mã NV</b> sẽ được cập nhật, mã mới sẽ được thêm. Phòng / đội chưa có sẽ được tự tạo.</p>' +
         '<div class="hang"><input type="file" id="f-nv" accept=".xlsx,.csv,.txt"><button class="nut" id="tai-mau">' + App.icon('tai') + 'Tải file mẫu</button></div>' +
         '<div id="kq-nv" style="margin-top:12px"></div>',
       moRa: function (el, dong) {
@@ -235,6 +260,7 @@
       cot.forEach(function (c) { if (khop(c[1]) === k || khop(c[0]) === k) map[ci] = c; });
       if (!map[ci]) {
         if (k === 'ma' || k === 'manhanvien') map[ci] = cot[0];
+        else if (['phongban', 'bophan', 'donvi', 'doi', 'phong'].indexOf(k) >= 0) map[ci] = cot.filter(function (c) { return c[0] === 'phongBan'; })[0];
         else if (k === 'hoten') map[ci] = cot[2];
         else if (k.indexOf('phucap') === 0 || k.indexOf('pc') === 0) {
           var ten = k.replace(/^phucap|^pc/, '');
@@ -261,7 +287,7 @@
           case 'thue': val = /10|khau|khấu/i.test(raw) ? 'khau_tru' : /khong|không/i.test(raw) ? 'khong' : 'luy_tien'; break;
           case 'pb':
             var s = String(raw).trim(), pb = App.db.phongBan.filter(function (p) { return khop(p.ten) === khop(s) || khop(p.ma) === khop(s); })[0];
-            if (!pb) { pb = pbMoi[khop(s)] || { ma: 'PB' + (App.db.phongBan.length + Object.keys(pbMoi).length + 1), ten: s }; pbMoi[khop(s)] = pb; }
+            if (!pb) { pb = pbMoi[khop(s)] || { ma: 'PB' + (App.db.phongBan.length + Object.keys(pbMoi).length + 1), ten: s, loai: TL.loaiDonVi({ ten: s }) }; pbMoi[khop(s)] = pb; }
             val = pb.ma; break;
           default: val = String(raw).trim();
         }
@@ -272,7 +298,7 @@
       if (cu) capNhat.push([cu, v]); else moi.push(v);
     });
     App.$('#kq-nv', el).innerHTML = '<div class="goi-y">Đọc được <b>' + (moi.length + capNhat.length) + '</b> nhân viên: <b>' + moi.length + '</b> thêm mới, <b>' + capNhat.length + '</b> cập nhật' +
-      (Object.keys(pbMoi).length ? ', tạo ' + Object.keys(pbMoi).length + ' phòng ban mới' : '') + '.' +
+      (Object.keys(pbMoi).length ? ', tạo ' + Object.keys(pbMoi).length + ' phòng / đội mới' : '') + '.' +
       (loi.length ? '<br><span style="color:var(--do)">' + loi.slice(0, 5).map(h).join('<br>') + (loi.length > 5 ? '<br>…' : '') + '</span>' : '') +
       '</div><div class="hang" style="margin-top:10px"><span class="gian"></span><button class="nut chinh" id="xn-nhap"' + (moi.length + capNhat.length ? '' : ' disabled') + '>Nhập vào phần mềm</button></div>';
     var b = App.$('#xn-nhap', el);

@@ -207,7 +207,7 @@
   }
 
   /* ---------- Tab: công việc & lương ---------- */
-  function tabCongViec(el, d) {
+  function tabCongViec(el, d, nv) {
     var db = App.db, chucVu = {};
     db.nhanVien.forEach(function (x) { if (x.chucVu) chucVu[x.chucVu] = 1; });
     var pc = db.phuCap.map(function (p) {
@@ -219,7 +219,7 @@
     var coQDLuong = (d.quyetDinh || []).some(function (q) { return q.loai === 'nang_luong'; });
     el.innerHTML = '<div class="the"><div class="form ba">' +
       '<h4>Công việc</h4>' +
-      F.o('Phòng ban / bộ phận', F.sel('phongBan', d.phongBan, [['', '(Chưa chọn)']].concat(db.phongBan.map(function (p) { return [p.ma, p.ten]; })))) +
+      F.o('Phòng / đội', '<select name="phongBan"><option value="">(Chưa chọn)</option>' + App.optDonVi(d.phongBan) + '</select>', nv ? '<button type="button" class="nut nho" id="hs-chuyen">Điều chuyển (lập quyết định)…</button>' : 'Chọn trực tiếp = sửa sai dữ liệu') +
       F.o('Chức vụ / chức danh', F.txt('chucVu', d.chucVu, 'list="ds-chucvu"') + '<datalist id="ds-chucvu">' + Object.keys(chucVu).map(function (c) { return '<option value="' + h(c) + '">'; }).join('') + '</datalist>') +
       F.o('Loại lao động', F.sel('loaiLD', d.loaiLD || '', [['', '(Theo cài đặt chung)']].concat((db.caiDat.loaiLD || []).map(function (l) { return [l.ma, l.ten + ' – ' + App.moTaLoaiLD(l)]; })))) +
       F.o('Trạng thái', F.sel('trangThai', d.trangThai, F.cap(App.TRANG_THAI))) + F.o('Ngày vào làm', F.ngay('ngayVao', d.ngayVao)) +
@@ -240,6 +240,12 @@
       F.o('Phép tồn năm trước', F.txt('phepTon', d.phepTon, 'type="number" min="0" step="0.5"')) + '<span></span>' +
       F.o('Ghi chú', F.vung('ghiChu', d.ghiChu), '', 'ca') +
       '</div></div>';
+    var bc = App.$('#hs-chuyen', el);
+    if (bc) bc.onclick = function (e) {
+      e.preventDefault();
+      if (st.ban && d.phongBan !== nv.phongBan) { App.bao('Phòng / đội đang được sửa trực tiếp – hãy lưu hồ sơ hoặc chọn lại như cũ trước khi điều chuyển.', 'loi'); return; }
+      App.hopChuyenDonVi([nv], { sauKhiChuyen: function () { App.veLai(); } });
+    };
   }
 
   /* ---------- Tab: bảo hiểm, thuế, người phụ thuộc ---------- */

@@ -105,10 +105,10 @@
     var khoa = bl.khoa, ngay = TL.ngayKy(db, y, m);
     noi.innerHTML =
       '<div class="the khong-in" style="padding:12px 14px"><div class="hang">' +
-      '<select id="bl-pb"><option value="">Tất cả phòng ban</option>' + db.phongBan.map(function (p) { return '<option value="' + h(p.ma) + '"' + (st.pb === p.ma ? ' selected' : '') + '>' + h(p.ten) + '</option>'; }).join('') + '</select>' +
+      '<select id="bl-pb">' + App.optDonVi(st.pb, { tatCa: 'Tất cả phòng / đội', ngung: true }) + '</select>' +
       App.chonLoaiLD('bl-ld', st.ld) +
       '<input type="search" id="bl-tim" placeholder="Tìm nhân viên…" value="' + h(st.tim) + '" style="width:170px">' +
-      '<label class="chk"><input type="checkbox" id="bl-nhom"' + (st.nhomPB ? ' checked' : '') + '> Nhóm theo phòng ban</label>' +
+      '<label class="chk"><input type="checkbox" id="bl-nhom"' + (st.nhomPB ? ' checked' : '') + '> Nhóm theo phòng / đội</label>' +
       '<span class="gian"></span>' +
       '<button class="nut" id="bl-xuat">' + App.icon('tai') + 'Xuất Excel</button>' +
       '<button class="nut" id="bl-ck">' + App.icon('ngan') + 'File chuyển khoản</button>' +
@@ -497,7 +497,7 @@
     return '<div class="phieu"><div class="p-dau"><span><b>' + h(db.congTy.ten) + '</b></span><span>Kỳ lương: ' + TL.pad(m) + '/' + y + '</span></div>' +
       '<h3>PHIẾU LƯƠNG</h3><div class="p-ky">Tháng ' + m + ' năm ' + y + '</div>' +
       '<div class="p-tt"><div>Họ tên: <b>' + h(r.hoTen) + '</b></div><div>Mã NV: <b>' + h(r.ma) + '</b></div>' +
-      '<div>Phòng ban: ' + h(r.tenPhongBan) + '</div><div>Chức danh: ' + h(r.chucVu) + '</div>' +
+      '<div>Phòng / đội: ' + h(r.tenPhongBan) + '</div><div>Chức danh: ' + h(r.chucVu) + '</div>' +
       '<div>Mức lương: <b>' + App.tien(r.luongCB) + '</b>' + (r.hinhThuc !== 'thang' ? ' ' + App.DV_LUONG[r.hinhThuc] : '') + '</div><div>Ngày công: <b>' + App.so(r.cong.congTG) + '</b> / ' + App.so(r.congChuan) + (r.cong.sp ? ' · SP: ' + App.so(r.cong.sp) : '') + '</div>' +
       (pn ? '<div>Phép năm còn lại: <b>' + App.so(pn.conLai) + '</b> ngày</div>' : '') + (r.cong.muonLan ? '<div>Đi muộn / về sớm: ' + r.cong.muonLan + ' lần</div>' : '') + '</div>' +
       '<table>' + dongPhieu(r, bl).map(function (x) { return '<tr class="' + x[0] + '"><td>' + h(x[1]) + '</td><td>' + (x[2] === '' ? '' : App.tien(x[2])) + '</td></tr>'; }).join('') + '</table>' +
@@ -512,7 +512,7 @@
       dong.push([{ v: db.congTy.ten, s: { b: true } }, { v: 'Kỳ lương: ' + TL.pad(m) + '/' + y, s: { i: true, ngang: 'right' } }]);
       dong.push([{ v: 'PHIẾU LƯƠNG THÁNG ' + m + '/' + y, s: { b: true, sz: 14, ngang: 'center' } }]); gop.push('A' + (r0 + 2) + ':B' + (r0 + 2)); cao[r0 + 1] = 22;
       dong.push(['Họ tên: ' + r.hoTen + ' – Mã NV: ' + r.ma]);
-      dong.push(['Phòng ban: ' + r.tenPhongBan + (r.chucVu ? ' – Chức danh: ' + r.chucVu : '')]);
+      dong.push(['Phòng / đội: ' + r.tenPhongBan + (r.chucVu ? ' – Chức danh: ' + r.chucVu : '')]);
       dong.push(['Mức lương: ' + App.tien(r.luongCB) + ' – Ngày công: ' + App.so(r.cong.congTG) + '/' + App.so(r.congChuan) + (r.cong.sp ? ' – SP: ' + App.so(r.cong.sp) : '')]);
       dongPhieu(r, bl).forEach(function (x) {
         var s1 = x[0] === 'c' ? K.chu : K.tong, s2 = x[0] === 'c' ? K.so : K.tongSo;

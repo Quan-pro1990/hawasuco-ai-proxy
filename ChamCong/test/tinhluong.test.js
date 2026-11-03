@@ -245,6 +245,26 @@ t('Nhân sự: tuổi nghỉ hưu theo lộ trình, thâm niên', function () {
   assert.deepStrictEqual(TL.thamNien('2019-05-06', '2026-11-02'), { nam: 7, thang: 5, tongThang: 89 });
 });
 
+t('Phòng / đội: chuyển qua lại có hiệu lực theo kỳ, kỳ cũ vẫn thuộc đơn vị cũ', function () {
+  var db = dbMau(), nv = db.nhanVien[0];
+  db.phongBan = [{ ma: 'KD', ten: 'Phòng Kinh doanh - Vật tư' }, { ma: 'D1', ten: 'Đội Cấp nước số 1' }];
+  db = TL.chuanHoa(db);
+  assert.strictEqual(db.phongBan[1].loai, 'doi');
+  // chuyển sang đội từ 1/10/2026, rồi chuyển về phòng từ 1/12/2026
+  nv.phongBan = 'KD'; nv.chucVu = 'Nhân viên';
+  nv.quyetDinh = [
+    { loai: 'dieu_chuyen', hieuLuc: '2026-10-01', phongBanCu: 'KD', phongBanMoi: 'D1', chucVuCu: 'Nhân viên', chucVuMoi: 'Tổ trưởng' },
+    { loai: 'dieu_chuyen', hieuLuc: '2026-12-01', phongBanCu: 'D1', phongBanMoi: 'KD', chucVuCu: 'Tổ trưởng', chucVuMoi: 'Nhân viên' }
+  ];
+  assert.strictEqual(TL.donViTheoKy(db, nv, 2026, 9).phongBan, 'KD');      // kỳ 21/8 – 20/9
+  assert.strictEqual(TL.donViTheoKy(db, nv, 2026, 10).phongBan, 'D1');     // kỳ 21/9 – 20/10
+  assert.strictEqual(TL.donViTheoKy(db, nv, 2026, 10).chucVu, 'Tổ trưởng');
+  assert.strictEqual(TL.donViTheoKy(db, nv, 2026, 12).phongBan, 'KD');
+  TL.thang(db, 2026, 10, true).cc[nv.id] = { 1: '+' };
+  var r = TL.tinhBangLuong(db, 2026, 10).rows[0];
+  assert.strictEqual(r.phongBan, 'D1'); assert.strictEqual(r.tenPhongBan, 'Đội Cấp nước số 1');
+});
+
 t('Nghỉ phép tính vào công thời gian; nghỉ không lương ≥ 14 ngày thì không đóng BH', function () {
   var db = dbMau(), nv = db.nhanVien[0];
   var T = TL.thang(db, 2026, 10, true);

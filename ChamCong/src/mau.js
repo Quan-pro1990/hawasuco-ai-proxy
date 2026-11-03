@@ -23,12 +23,16 @@
       nguoiLap: 'Bùi Thị Lan', keToan: 'Trần Thị Bình', giamDoc: 'Nguyễn Văn An', nguoiChamCong: 'Bùi Thị Lan', phuTrachBP: '', nguoiDuyet: 'Nguyễn Văn An'
     });
     db.phongBan = [
-      { ma: 'BGD', ten: 'Ban Giám đốc' },
-      { ma: 'TCHC', ten: 'Phòng Tổ chức - Hành chính' },
-      { ma: 'KTTV', ten: 'Phòng Kế toán - Tài vụ' },
-      { ma: 'KDVT', ten: 'Phòng Kinh doanh - Vật tư' },
-      { ma: 'KTH', ten: 'Phòng Kỹ thuật' }
+      { ma: 'BGD', ten: 'Ban Giám đốc', loai: 'ban' },
+      { ma: 'TCHC', ten: 'Phòng Tổ chức - Hành chính', loai: 'phong' },
+      { ma: 'KTTV', ten: 'Phòng Kế toán - Tài vụ', loai: 'phong' },
+      { ma: 'KDVT', ten: 'Phòng Kinh doanh - Vật tư', loai: 'phong' },
+      { ma: 'KTH', ten: 'Phòng Kỹ thuật', loai: 'phong' },
+      { ma: 'D1', ten: 'Đội Cấp nước số 1', loai: 'doi' },
+      { ma: 'D2', ten: 'Đội Cấp nước số 2', loai: 'doi' },
+      { ma: 'DTC', ten: 'Đội Thi công – Sửa chữa', loai: 'doi' }
     ];
+    var kyThuat = function (nv) { return ['KTH', 'D1', 'D2', 'DTC'].indexOf(nv.phongBan) >= 0; };
     function lui(thang) { var t = new Date(Y, M - 1 - thang, 1); return { y: t.getFullYear(), m: t.getMonth() + 1 }; }
     var vaoTV = lui(1), nghiNV = lui(4);
     db.sanPham = [
@@ -45,9 +49,9 @@
       ['NV006', 'Vũ Thị Hà', 'Nữ', '1993-05-18', 'KTTV', 'Kế toán viên', '2020-07-01', 9000000, {}, 0, 'VP'],
       ['NV007', 'Đặng Quốc Huy', 'Nam', '1995-12-05', 'KDVT', 'Nhân viên ghi thu', '2021-02-22', 8040000, {}, 0, 'CN'],
       ['NV008', 'Bùi Thị Lan', 'Nữ', '1996-08-08', 'TCHC', 'Chuyên viên nhân sự', '2021-10-11', 9000000, {}, 0, 'VP'],
-      ['NV009', 'Đỗ Văn Long', 'Nam', '1992-04-25', 'KTH', 'CN LĐ-SC', '2019-05-06', 9000000, {}, 1, 'CN'],
-      ['NV010', 'Ngô Thị Mai', 'Nữ', '1997-' + TL.pad(M) + '-25', 'KDVT', 'Nhân viên ghi thu', '2022-03-01', 7320000, {}, 0, 'CN'],
-      ['NV011', 'Dương Văn Nam', 'Nam', '1994-06-11', 'KTH', 'CN LĐ-SC', '2020-11-16', 8000000, {}, 1, 'CN'],
+      ['NV009', 'Đỗ Văn Long', 'Nam', '1992-04-25', 'DTC', 'CN LĐ-SC', '2019-05-06', 9000000, {}, 1, 'CN'],
+      ['NV010', 'Ngô Thị Mai', 'Nữ', '1997-' + TL.pad(M) + '-25', 'D2', 'Nhân viên ghi thu', '2022-03-01', 7320000, {}, 0, 'CN'],
+      ['NV011', 'Dương Văn Nam', 'Nam', '1994-06-11', 'D1', 'CN LĐ-SC', '2020-11-16', 8000000, {}, 1, 'CN'],
       ['NV012', 'Lý Thị Oanh', 'Nữ', '1999-10-03', 'KDVT', 'Thủ kho', '2023-02-13', 8000000, {}, 0, 'VP'],
       ['NV013', 'Phan Thanh Phong', 'Nam', '1998-03-27', 'KDVT', 'Tài xế', '2024-08-05', 9000000, {}, 0, 'CN'],
       ['NV014', 'Trịnh Thị Quỳnh', 'Nữ', '2000-12-12', 'KDVT', 'Nhân viên ghi thu', TL.iso(vaoTV.y, vaoTV.m, 1), 7000000, {}, 0, 'CN'],
@@ -107,7 +111,7 @@
       }
       var cuoi = nv.hopDong[nv.hopDong.length - 1];
       nv.loaiHD = cuoi.loai; nv.ngayHetHD = cuoi.denNgay || '';
-      nv.quyetDinh.push({ id: 'qd' + i + '_0', loai: 'tiep_nhan', so: TL.pad(i + 1) + '/QĐ-TN', ngay: nv.ngayVao, hieuLuc: nv.ngayVao, noiDung: 'Tiếp nhận vào làm việc tại ' + TL.tenPhongBan(db, nv.phongBan) });
+      nv.quyetDinh.push({ id: 'qd' + i + '_0', loai: 'tiep_nhan', so: TL.pad(i + 1) + '/QĐ-TN', ngay: nv.ngayVao, hieuLuc: nv.ngayVao, noiDung: 'Tiếp nhận vào làm việc tại ' + TL.tenPhongBan(db, { NV009: 'KDVT', NV010: 'KDVT', NV011: 'KTH' }[nv.ma] || nv.phongBan) });
     });
     function qd(ma, q) { var nv = db.nhanVien.filter(function (x) { return x.ma === ma; })[0]; q.id = App.uid(); nv.quyetDinh.push(q); return nv; }
     var dau = function (k) { return TL.iso(k.y, k.m, 1); };
@@ -115,6 +119,11 @@
     qd('NV001', { loai: 'bo_nhiem', so: '01/QĐ-HĐTV', ngay: '2019-12-20', hieuLuc: '2020-01-01', phongBanCu: 'BGD', phongBanMoi: 'BGD', chucVuCu: 'Phó Giám đốc', chucVuMoi: 'Giám đốc', noiDung: 'Bổ nhiệm Giám đốc công ty' });
     qd('NV001', { loai: 'khen_thuong', so: '120/QĐ-UBND', ngay: (Y - 1) + '-12-28', hieuLuc: (Y - 1) + '-12-28', hinhThuc: 'Bằng khen', noiDung: 'Hoàn thành xuất sắc nhiệm vụ năm ' + (Y - 1) });
     qd('NV009', { loai: 'dieu_chuyen', so: '45/QĐ-CT', ngay: '2023-02-25', hieuLuc: '2023-03-01', phongBanCu: 'KDVT', phongBanMoi: 'KTH', chucVuCu: 'CN LĐ-SC', chucVuMoi: 'CN LĐ-SC', noiDung: 'Điều chuyển về Phòng Kỹ thuật' });
+    qd('NV009', { loai: 'dieu_chuyen', so: '12/QĐ-CT', ngay: '2025-01-20', hieuLuc: '2025-02-01', phongBanCu: 'KTH', phongBanMoi: 'DTC', chucVuCu: 'CN LĐ-SC', chucVuMoi: 'CN LĐ-SC', noiDung: 'Điều chuyển đến Đội Thi công – Sửa chữa' });
+    // kỳ hiện tại mới chuyển: các kỳ trước vẫn thuộc đơn vị cũ
+    var dauKy = (function () { var k = TL.kyCuaNgay(db, Y, M, D); return TL.batDauKy(db, k.y, k.m); })();
+    qd('NV011', { loai: 'dieu_chuyen', so: '98/QĐ-CT', ngay: TL.congNgay(+dauKy.slice(0, 4), +dauKy.slice(5, 7), +dauKy.slice(8), -5), hieuLuc: dauKy, phongBanCu: 'KTH', phongBanMoi: 'D1', chucVuCu: 'CN LĐ-SC', chucVuMoi: 'CN LĐ-SC', noiDung: 'Điều chuyển đến Đội Cấp nước số 1' });
+    qd('NV010', { loai: 'dieu_chuyen', so: '99/QĐ-CT', ngay: TL.congNgay(+dauKy.slice(0, 4), +dauKy.slice(5, 7), +dauKy.slice(8), -5), hieuLuc: dauKy, phongBanCu: 'KDVT', phongBanMoi: 'D2', chucVuCu: 'Nhân viên ghi thu', chucVuMoi: 'Nhân viên ghi thu', noiDung: 'Điều chuyển đến Đội Cấp nước số 2' });
     var nl1 = qd('NV006', { loai: 'nang_luong', so: '88/QĐ-CT', ngay: dau(lui(2)), hieuLuc: dau(lui(2)), luongCu: 8500000, luongMoi: 9000000, noiDung: 'Nâng bậc lương thường xuyên' });
     var nl2 = qd('NV011', { loai: 'nang_luong', so: '61/QĐ-CT', ngay: dau(lui(5)), hieuLuc: dau(lui(5)), luongCu: 7500000, luongMoi: 8000000, noiDung: 'Nâng bậc lương thường xuyên' });
     [nl1, nl2].forEach(function (nv) { nv.hopDong[nv.hopDong.length - 1].luongCB = nv.quyetDinh[nv.quyetDinh.length - 1].luongCu; });
@@ -152,7 +161,7 @@
           // công nhân lắp đặt – sửa chữa: vài ngày khoán theo sản phẩm
           if (congNhanSC(nv) && loai === 'thuong' && d >= 18 && d <= 20 && R() < 0.7) { cc[d] = 'SP'; continue; }
           if (loai === 'nghi') {
-            if (nv.phongBan === 'KTH' && TL.thuTrongTuan(y, m, d) === 0 && R() < 0.15) {
+            if (kyThuat(nv) && TL.thuTrongTuan(y, m, d) === 0 && R() < 0.15) {
               ot[d] = 4;
               if (coVaoRa) vr[d] = { v: '07:5' + Math.floor(R() * 9), r: TL.hhmm(13 * 60 + Math.floor(R() * 12)) };
             }
@@ -171,7 +180,7 @@
           cc[d] = kh;
           if (kh === '+' || kh === '+/2' || kh === 'P/2') {
             var muon = R() < 0.06 ? 6 + Math.floor(R() * 35) : 0;
-            var gioOT = nv.phongBan === 'KTH' && kh === '+' && R() < 0.14 ? 1 + Math.floor(R() * 5) * 0.5 : 0;
+            var gioOT = kyThuat(nv) && kh === '+' && R() < 0.14 ? 1 + Math.floor(R() * 5) * 0.5 : 0;
             if (muon) mu[d] = muon;
             if (gioOT) ot[d] = gioOT;
             if (coVaoRa) {

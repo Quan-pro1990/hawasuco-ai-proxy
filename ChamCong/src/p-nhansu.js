@@ -203,7 +203,7 @@
       var hl = '<label class="o">' + (loai === 'thoi_viec' ? 'Nghỉ việc kể từ ngày' : 'Ngày hiệu lực') + f.ngay('hieuLuc', q.hieuLuc) + '</label>';
       var x = hl;
       if (loai === 'bo_nhiem' || loai === 'dieu_chuyen') {
-        x += f.o('Phòng ban / bộ phận mới', f.sel('phongBanMoi', q.phongBanMoi || (nvx && nvx.phongBan), db.phongBan.map(function (p) { return [p.ma, p.ten]; }))) +
+        x += f.o('Phòng / đội mới', '<select name="phongBanMoi">' + App.optDonVi(q.phongBanMoi || (nvx && nvx.phongBan)) + '</select>') +
           f.o('Chức vụ mới', f.txt('chucVuMoi', q.chucVuMoi != null ? q.chucVuMoi : (nvx && nvx.chucVu)));
       } else if (loai === 'nang_luong') {
         x += f.o('Mức lương mới (đ)', f.tien('luongMoi', q.luongMoi || (nvx && nvx.luongCB)), moi && nvx ? 'Hiện tại: ' + App.tien(nvx.luongCB) : 'Lương cũ: ' + App.tien(q.luongCu)) +
@@ -257,7 +257,7 @@
               if (v.loai === 'bo_nhiem' || v.loai === 'dieu_chuyen') {
                 Object.assign(x, { phongBanCu: nvx.phongBan, chucVuCu: nvx.chucVu, phongBanMoi: v.phongBanMoi, chucVuMoi: v.chucVuMoi.trim() });
                 nvx.phongBan = v.phongBanMoi; if (x.chucVuMoi) nvx.chucVu = x.chucVuMoi;
-                tb.push('đã cập nhật phòng ban, chức vụ');
+                tb.push('đã cập nhật phòng / đội, chức vụ');
               }
               if (v.loai === 'khen_thuong' || v.loai === 'ky_luat') {
                 Object.assign(x, { hinhThuc: v.hinhThuc, soTien: App.docSo(v.soTien), kyLuong: v.kyLuong });
@@ -301,7 +301,7 @@
     var moiNhat = !nv.quyetDinh.some(function (z) { return z !== q && z.loai === q.loai && (z.hieuLuc || '') > (q.hieuLuc || ''); });
     var them = q.loai === 'nang_luong' && moiNhat ? '<br>Mức lương sẽ trở về ' + App.tien(q.luongCu) + ' đ.' :
       q.loai === 'thoi_viec' ? '<br>Nhân viên sẽ được chuyển lại trạng thái đang làm việc.' :
-        (q.loai === 'bo_nhiem' || q.loai === 'dieu_chuyen') && moiNhat ? '<br>Phòng ban, chức vụ trở về như trước quyết định.' : '';
+        (q.loai === 'bo_nhiem' || q.loai === 'dieu_chuyen') && moiNhat ? '<br>Phòng / đội, chức vụ trở về như trước quyết định.' : '';
     App.xacNhan('Xoá quyết định <b>' + h(TL.LOAI_QD[q.loai]) + '</b> ' + h(q.so || '') + '?' + them, { nut: 'Xoá', nguy: true }).then(function (ok) {
       if (!ok) return;
       if (q.loai === 'nang_luong' && moiNhat) { nv.luongCB = +q.luongCu || 0; if (q.luongBHCu != null && q.luongBHCu !== '') nv.luongBH = +q.luongBHCu; }
@@ -319,7 +319,7 @@
 
   App.bangDonNghi = function (ds, anTen) {
     var kh = TL.bangKyHieu(App.db);
-    return '<div class="cuon"><table class="bang"><thead><tr>' + (anTen ? '' : '<th>Nhân viên</th><th>Phòng ban</th>') +
+    return '<div class="cuon"><table class="bang"><thead><tr>' + (anTen ? '' : '<th>Nhân viên</th><th>Phòng / đội</th>') +
       '<th>Loại nghỉ</th><th>Từ ngày</th><th>Đến ngày</th><th class="so">Số ngày làm việc</th><th style="min-width:180px">Lý do</th><th>Trạng thái</th><th></th></tr></thead><tbody>' +
       (ds.length ? ds.map(function (d) {
         var nv = App.timNV(d.nvId) || {}, k = kh[String(d.kyHieu).toUpperCase()], t = TT_DON[d.trangThai] || TT_DON.cho;
@@ -418,7 +418,7 @@
       r('Trường, năm tốt nghiệp', h([nv.truongDT, nv.namTN].filter(Boolean).join(', '))) + r('Ngoại ngữ / Tin học', h([nv.ngoaiNgu, nv.tinHoc].filter(Boolean).join(' / '))) +
       r('Lý luận chính trị', h(nv.lyLuanCT)) + '</table>' +
       '<p class="dieu">III. CÔNG VIỆC HIỆN TẠI</p><table class="kb">' +
-      r('Phòng ban / chức vụ', h(TL.tenPhongBan(db, nv.phongBan)) + ' – ' + h(nv.chucVu)) + r('Ngày vào làm', TL.hienNgay(nv.ngayVao)) +
+      r('Phòng / đội, chức vụ', h(TL.tenPhongBan(db, nv.phongBan)) + ' – ' + h(nv.chucVu)) + r('Ngày vào làm', TL.hienNgay(nv.ngayVao)) +
       r('Hợp đồng lao động', hdHL ? h(hdHL.loai) + ' số ' + h(hdHL.so || '') + ', từ ' + TL.hienNgay(hdHL.tuNgay) + (hdHL.denNgay ? ' đến ' + TL.hienNgay(hdHL.denNgay) : '') : '') +
       r('Mã số BHXH / thẻ BHYT', h([nv.soSoBHXH, nv.maTheBHYT].filter(Boolean).join(' / '))) + r('Mã số thuế cá nhân', h(nv.mst)) + '</table>' +
       '<p class="dieu">IV. QUÁ TRÌNH CÔNG TÁC, KHEN THƯỞNG, KỶ LUẬT</p><table class="kb"><tr><th style="width:18%">Từ ngày</th><th style="width:24%">Quyết định</th><th>Nội dung</th></tr>' +
@@ -463,12 +463,12 @@
       '<div class="kpi"><div class="nhan">Chưa có hợp đồng</div><div class="gt">' + dem.chua + '</div><div class="phu">nhân viên đang làm việc</div></div></div>' +
       '<div class="the khong-in" style="padding:12px 14px"><div class="hang">' +
       '<select id="hd-loc"><option value="">Hợp đồng của nhân viên đang làm</option><option value="hl"' + (stHD.loc === 'hl' ? ' selected' : '') + '>Còn hiệu lực</option><option value="sap"' + (stHD.loc === 'sap' ? ' selected' : '') + '>Sắp hết hạn (30 ngày)</option><option value="het"' + (stHD.loc === 'het' ? ' selected' : '') + '>Đã hết hạn</option><option value="chua"' + (stHD.loc === 'chua' ? ' selected' : '') + '>Chưa có hợp đồng</option></select>' +
-      '<select id="hd-pb"><option value="">Tất cả phòng ban</option>' + db.phongBan.map(function (p) { return '<option value="' + h(p.ma) + '"' + (stHD.pb === p.ma ? ' selected' : '') + '>' + h(p.ten) + '</option>'; }).join('') + '</select>' +
+      '<select id="hd-pb">' + App.optDonVi(stHD.pb, { tatCa: 'Tất cả phòng / đội', ngung: true }) + '</select>' +
       '<input type="search" id="hd-tim" placeholder="Tìm nhân viên…" value="' + h(stHD.tim) + '" style="width:170px">' +
       '<label class="chk"><input type="checkbox" id="hd-tatca"' + (stHD.tatCa ? ' checked' : '') + '> Hiện cả hợp đồng cũ</label><span class="gian"></span>' +
       '<button class="nut" id="hd-xuat">' + App.icon('tai') + 'Xuất Excel</button><button class="nut chinh" id="hd-moi">' + App.icon('them') + 'Ký hợp đồng mới</button></div></div>' +
       App.dauIn('DANH SÁCH HỢP ĐỒNG LAO ĐỘNG', 'Ngày ' + new Date().toLocaleDateString('vi-VN')) +
-      '<div class="cuon cao"><table class="bang"><thead><tr><th>STT</th><th>Mã NV</th><th style="min-width:160px">Họ và tên</th><th>Phòng ban</th><th>Số HĐ</th><th>Loại hợp đồng</th><th>Ngày ký</th><th>Từ ngày</th><th>Đến ngày</th><th class="so">Mức lương</th><th>Tình trạng</th><th class="khong-in"></th></tr></thead><tbody>' +
+      '<div class="cuon cao"><table class="bang"><thead><tr><th>STT</th><th>Mã NV</th><th style="min-width:160px">Họ và tên</th><th>Phòng / đội</th><th>Số HĐ</th><th>Loại hợp đồng</th><th>Ngày ký</th><th>Từ ngày</th><th>Đến ngày</th><th class="so">Mức lương</th><th>Tình trạng</th><th class="khong-in"></th></tr></thead><tbody>' +
       (dong.length ? dong.map(function (o, i) {
         var x = o.hd;
         return '<tr data-nv="' + o.nv.id + '" data-hd="' + (x ? x.id || '' : '') + '"><td class="giua">' + (i + 1) + '</td><td>' + h(o.nv.ma) + '</td><td class="ten"><span class="lk" data-hs="' + o.nv.id + '">' + h(o.nv.hoTen) + '</span></td><td>' + h(TL.tenPhongBan(db, o.nv.phongBan)) + '</td>' +
@@ -490,7 +490,7 @@
       App.xuatExcel('Danh_sach_hop_dong', [App.sheetBang({
         ten: 'Hợp đồng', tieuDe: 'DANH SÁCH HỢP ĐỒNG LAO ĐỘNG', phuDe: 'Ngày ' + new Date().toLocaleDateString('vi-VN'), chuKy: false, coCot: 3,
         cot: [{ t: 'STT', stt: true, w: 5, kieu: 'giua' }, { t: 'Mã NV', w: 8, f: function (o) { return o.nv.ma; } }, { t: 'Họ và tên', w: 24, f: function (o) { return o.nv.hoTen; } },
-          { t: 'Phòng ban', w: 24, f: function (o) { return TL.tenPhongBan(db, o.nv.phongBan); } }, { t: 'Số HĐ', w: 16, f: function (o) { return o.hd ? o.hd.so : ''; } },
+          { t: 'Phòng / đội', w: 24, f: function (o) { return TL.tenPhongBan(db, o.nv.phongBan); } }, { t: 'Số HĐ', w: 16, f: function (o) { return o.hd ? o.hd.so : ''; } },
           { t: 'Loại hợp đồng', w: 22, f: function (o) { return o.hd ? o.hd.loai : 'Chưa có hợp đồng'; } }, { t: 'Ngày ký', w: 11, kieu: 'giua', f: function (o) { return o.hd ? TL.hienNgay(o.hd.ngayKy) : ''; } },
           { t: 'Từ ngày', w: 11, kieu: 'giua', f: function (o) { return o.hd ? TL.hienNgay(o.hd.tuNgay) : ''; } }, { t: 'Đến ngày', w: 11, kieu: 'giua', f: function (o) { return o.hd ? TL.hienNgay(o.hd.denNgay) : ''; } },
           { t: 'Mức lương', w: 13, kieu: 'so', f: function (o) { return o.hd ? o.hd.luongCB : 0; } },
@@ -534,7 +534,7 @@
       '<div class="mo nho" style="margin-top:8px">' + ds.length + ' quyết định' + (tong.khen_thuong ? ' · tiền thưởng ' + App.tien(tong.khen_thuong) + ' đ' : '') + (tong.ky_luat ? ' · tiền phạt / bồi thường ' + App.tien(tong.ky_luat) + ' đ' : '') +
       '. Nâng lương tự áp dụng từ kỳ có ngày hiệu lực; thưởng / phạt có tiền tự vào bảng lương kỳ đã chọn.</div></div>' +
       App.dauIn('DANH SÁCH QUYẾT ĐỊNH', nam === 'all' ? '' : 'Năm ' + nam) +
-      '<div class="cuon cao"><table class="bang"><thead><tr><th>Hiệu lực</th><th>Loại</th><th>Số QĐ</th><th>Ngày ký</th><th style="min-width:160px">Nhân viên</th><th>Phòng ban</th><th style="min-width:300px">Nội dung</th><th class="khong-in"></th></tr></thead><tbody>' +
+      '<div class="cuon cao"><table class="bang"><thead><tr><th>Hiệu lực</th><th>Loại</th><th>Số QĐ</th><th>Ngày ký</th><th style="min-width:160px">Nhân viên</th><th>Phòng / đội</th><th style="min-width:300px">Nội dung</th><th class="khong-in"></th></tr></thead><tbody>' +
       (ds.length ? ds.map(function (o) {
         return '<tr data-nv="' + o.nv.id + '" data-i="' + o.i + '"><td class="giua">' + TL.hienNgay(o.q.hieuLuc) + '</td><td><span class="the-tt ' + App.mauQD(o.q.loai) + '">' + h(TL.LOAI_QD[o.q.loai]) + '</span></td><td>' + h(o.q.so) + '</td><td class="giua">' + TL.hienNgay(o.q.ngay) + '</td>' +
           '<td class="ten"><span class="lk" data-hs="' + o.nv.id + '">' + h(o.nv.hoTen) + '</span></td><td>' + h(TL.tenPhongBan(db, o.nv.phongBan)) + '</td><td style="white-space:normal">' + App.tomTatQD(o.q) + '</td>' +
@@ -623,7 +623,7 @@
         kpi: [['Tổng số lao động', ds.length], ['Lao động nữ', ds.filter(function (x) { return /n[ữu]/i.test(x.gioiTinh || ''); }).length], ['Tuổi bình quân', coTuoi ? Math.round(tongTuoi / coTuoi * 10) / 10 : 0],
           ['Thâm niên bình quân (năm)', ds.length ? Math.round(tongTN / ds.length / 12 * 10) / 10 : 0], ['Đảng viên', ds.filter(function (x) { return x.dangVien; }).length], ['Đoàn viên công đoàn', ds.filter(function (x) { return x.doanVien; }).length]],
         nhom: [
-          ['Theo phòng ban', nhom(function (nv) { return TL.tenPhongBan(App.db, nv.phongBan); }, App.db.phongBan.map(function (p) { return p.ten; }))],
+          ['Theo phòng / đội', nhom(function (nv) { return TL.tenPhongBan(App.db, nv.phongBan); }, App.dsDonVi().map(function (p) { return p.ten; }))],
           ['Theo giới tính', nhom(function (nv) { return nv.gioiTinh; }, ['Nam', 'Nữ'])],
           ['Theo độ tuổi', nhom(tuoiNhom, ['Dưới 30', '30 – 39', '40 – 49', 'Từ 50 trở lên'])],
           ['Theo trình độ chuyên môn', nhom(function (nv) { return nv.trinhDoCM; }, App.TRINH_DO_CM.slice().reverse())],
@@ -659,7 +659,7 @@
         cot: [{ t: 'STT', stt: true, w: 5 }, { t: 'Mã NV', w: 8, f: function (r) { return r.nv.ma; } }, { t: 'Họ và tên', w: 22, f: function (r) { return r.nv.hoTen; } },
           { t: 'Giới tính', w: 7, f: function (r) { return r.nv.gioiTinh; } }, { t: 'Ngày sinh', w: 11, f: function (r) { return TL.hienNgay(r.nv.ngaySinh); } },
           { t: 'Quê quán', w: 18, f: function (r) { return r.nv.queQuan || ''; } }, { t: 'Số CCCD', w: 14, f: function (r) { return r.nv.cccd || ''; } },
-          { t: 'Phòng ban', w: 22, f: function (r) { return TL.tenPhongBan(db, r.nv.phongBan); } }, { t: 'Chức vụ', w: 16, f: function (r) { return r.nv.chucVu || ''; } },
+          { t: 'Phòng / đội', w: 22, f: function (r) { return TL.tenPhongBan(db, r.nv.phongBan); } }, { t: 'Chức vụ', w: 16, f: function (r) { return r.nv.chucVu || ''; } },
           { t: 'Trình độ', w: 18, f: function (r) { return [r.nv.trinhDoCM, r.nv.chuyenNganh].filter(Boolean).join(' – '); } },
           { t: 'Ngày vào', w: 11, f: function (r) { return TL.hienNgay(r.nv.ngayVao); } }, { t: 'Thâm niên', w: 9, f: function (r) { var t = TL.thamNien(r.nv.ngayVao, d); return r.nv.ngayVao ? t.nam + 'n ' + t.thang + 't' : ''; } },
           { t: 'Loại HĐ', w: 18, f: function (r) { var x = App.hdHieuLuc(r.nv); return x ? x.loai : r.nv.loaiHD || ''; } }, { t: 'Mức lương', w: 12, kieu: 'so', f: function (r) { return r.nv.luongCB; } },
@@ -674,7 +674,7 @@
       return {
         tieuDe: 'DANH SÁCH SINH NHẬT THÁNG ' + m, phuDe: '', chonThang: true,
         cot: [{ t: 'STT', stt: true, w: 5 }, { t: 'Ngày', w: 8, f: function (r) { return r.nv.ngaySinh.slice(8) + '/' + TL.pad(m); } }, { t: 'Họ và tên', w: 22, f: function (r) { return r.nv.hoTen; } },
-          { t: 'Tuổi', w: 6, kieu: 'cong', f: function (r) { return y - +r.nv.ngaySinh.slice(0, 4); } }, { t: 'Phòng ban', w: 24, f: function (r) { return TL.tenPhongBan(App.db, r.nv.phongBan); } },
+          { t: 'Tuổi', w: 6, kieu: 'cong', f: function (r) { return y - +r.nv.ngaySinh.slice(0, 4); } }, { t: 'Phòng / đội', w: 24, f: function (r) { return TL.tenPhongBan(App.db, r.nv.phongBan); } },
           { t: 'Chức vụ', w: 18, f: function (r) { return r.nv.chucVu || ''; } }, { t: 'Điện thoại', w: 12, f: function (r) { return r.nv.sdt || ''; } }],
         rows: rows
       };
@@ -689,7 +689,7 @@
       rows.sort(function (a, b) { return a.con - b.con; });
       return {
         tieuDe: 'HỢP ĐỒNG LAO ĐỘNG HẾT HẠN TRONG 60 NGÀY', phuDe: 'Tính đến ngày ' + new Date().toLocaleDateString('vi-VN'),
-        cot: [{ t: 'STT', stt: true, w: 5 }, { t: 'Họ và tên', w: 22, f: function (r) { return r.nv.hoTen; } }, { t: 'Phòng ban', w: 22, f: function (r) { return TL.tenPhongBan(App.db, r.nv.phongBan); } },
+        cot: [{ t: 'STT', stt: true, w: 5 }, { t: 'Họ và tên', w: 22, f: function (r) { return r.nv.hoTen; } }, { t: 'Phòng / đội', w: 22, f: function (r) { return TL.tenPhongBan(App.db, r.nv.phongBan); } },
           { t: 'Số HĐ', w: 14, f: function (r) { return r.hd.so || ''; } }, { t: 'Loại', w: 20, f: function (r) { return r.hd.loai; } }, { t: 'Hết hạn', w: 11, f: function (r) { return TL.hienNgay(r.hd.denNgay); } },
           { t: 'Còn (ngày)', w: 9, kieu: 'cong', f: function (r) { return r.con < 0 ? 'Đã hết' : r.con; } }],
         rows: rows
@@ -706,7 +706,7 @@
       return {
         tieuDe: 'DANH SÁCH LAO ĐỘNG ĐẾN TUỔI NGHỈ HƯU TRONG 24 THÁNG TỚI', phuDe: 'Điều kiện lao động bình thường, theo lộ trình Nghị định 135/2020/NĐ-CP',
         cot: [{ t: 'STT', stt: true, w: 5 }, { t: 'Họ và tên', w: 22, f: function (r) { return r.nv.hoTen; } }, { t: 'Giới tính', w: 8, f: function (r) { return r.nv.gioiTinh; } },
-          { t: 'Ngày sinh', w: 11, f: function (r) { return TL.hienNgay(r.nv.ngaySinh); } }, { t: 'Phòng ban', w: 22, f: function (r) { return TL.tenPhongBan(App.db, r.nv.phongBan); } },
+          { t: 'Ngày sinh', w: 11, f: function (r) { return TL.hienNgay(r.nv.ngaySinh); } }, { t: 'Phòng / đội', w: 22, f: function (r) { return TL.tenPhongBan(App.db, r.nv.phongBan); } },
           { t: 'Đủ tuổi nghỉ hưu', w: 13, f: function (r) { return TL.hienNgay(r.nh); } }, { t: 'Còn (ngày)', w: 9, kieu: 'cong', f: function (r) { return r.con < 0 ? 'Đã đủ' : r.con; } }],
         rows: rows
       };

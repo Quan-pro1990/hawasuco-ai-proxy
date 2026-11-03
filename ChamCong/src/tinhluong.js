@@ -147,6 +147,7 @@
     if (!Array.isArray(db.kyHieu) || !db.kyHieu.length) db.kyHieu = md.kyHieu;
     if (!Array.isArray(db.phuCap)) db.phuCap = md.phuCap;
     if (!Array.isArray(db.phongBan)) db.phongBan = [];
+    db.phongBan.forEach(function (p) { p.loai = loaiDonVi(p); });
     if (!Array.isArray(db.nhanVien)) db.nhanVien = [];
     if (!Array.isArray(db.ngayLe)) db.ngayLe = md.ngayLe;
     db.ngayLe.forEach(function (x) { if (!x.loai) x.loai = loaiNgayLe(x); });
@@ -375,10 +376,12 @@
   }
 
   function dsNhanVienKy(db, y, m) {
-    var thuTu = {};
+    var thuTu = {}, dv = {};
     db.phongBan.forEach(function (p, i) { thuTu[p.ma] = i; });
-    return db.nhanVien.filter(function (nv) { return nvTrongKy(nv, y, m, db); }).sort(function (a, b) {
-      var pa = thuTu[a.phongBan], pb = thuTu[b.phongBan];
+    var ds = db.nhanVien.filter(function (nv) { return nvTrongKy(nv, y, m, db); });
+    ds.forEach(function (nv) { dv[nv.id] = donViTheoKy(db, nv, y, m).phongBan; });
+    return ds.sort(function (a, b) {
+      var pa = thuTu[dv[a.id]], pb = thuTu[dv[b.id]];
       pa = pa == null ? 999 : pa; pb = pb == null ? 999 : pb;
       if (pa !== pb) return pa - pb;
       return String(a.ma).localeCompare(String(b.ma), 'vi', { numeric: true });
@@ -484,6 +487,28 @@
     return kq;
   }
 
+  /* ----- Phòng, đội ----- */
+  var LOAI_DV = { phong: 'Phòng', doi: 'Đội', ban: 'Ban', to: 'Tổ', xn: 'Xí nghiệp / chi nhánh' };
+  function loaiDonVi(p) {
+    if (p.loai && LOAI_DV[p.loai]) return p.loai;
+    var t = String(p.ten || '');
+    return /^đội/i.test(t) ? 'doi' : /^ban/i.test(t) ? 'ban' : /^tổ/i.test(t) ? 'to' : /xí nghiệp|chi nhánh/i.test(t) ? 'xn' : 'phong';
+  }
+
+  /** Phòng / đội và chức vụ của nhân viên trong kỳ: nếu có quyết định điều chuyển / bổ nhiệm hiệu lực SAU kỳ này
+      thì kỳ này vẫn thuộc đơn vị cũ (ghi trong quyết định sớm nhất đó). */
+  function donViTheoKy(db, nv, y, m) {
+    var cuoi = ketThucKy(db, y, m), kq = { phongBan: nv.phongBan || '', chucVu: nv.chucVu || '' };
+    var ds = (nv.quyetDinh || []).filter(function (q) { return (q.loai === 'dieu_chuyen' || q.loai === 'bo_nhiem') && q.hieuLuc && q.hieuLuc > cuoi; })
+      .sort(function (a, b) { return a.hieuLuc < b.hieuLuc ? -1 : 1; });
+    if (ds.length) {
+      var q = ds[0];
+      if (q.phongBanCu) kq.phongBan = q.phongBanCu;
+      if (q.chucVuMoi && q.chucVuCu != null) kq.chucVu = q.chucVuCu;
+    }
+    return kq;
+  }
+
   /** Số người phụ thuộc được giảm trừ trong tháng (theo danh sách có từ tháng – đến tháng) */
   function soNPTKy(nv, y, m) {
     var ds = nv.nguoiPhuThuoc;
@@ -584,7 +609,7 @@
     var c = tongHopCong(db, y, m, nv, ctx);
     var cc = c.congChuan || 1;
     var tl = (nv.tiLeHuong == null || nv.tiLeHuong === '' ? 100 : +nv.tiLeHuong) / 100;
-    var lk = luongTheoKy(db, nv, y, m);
+    var lk = luongTheoKy(db, nv, y, m), dvk = donViTheoKy(db, nv, y, m);
     var cb = lk.luongCB;
     var gio = +cd.gioLamNgay || 8;
     var hinhThuc = nv.hinhThuc || 'thang';
@@ -702,8 +727,8 @@
     thucLinh = Math.round(thucLinh / lt) * lt;
 
     return {
-      nvId: nv.id, ma: nv.ma, hoTen: nv.hoTen, phongBan: nv.phongBan, tenPhongBan: tenPhongBan(db, nv.phongBan),
-      chucVu: nv.chucVu || '', mst: nv.mst || '', nganHang: nv.nganHang || '', soTK: nv.soTK || '',
+      nvId: nv.id, ma: nv.ma, hoTen: nv.hoTen, phongBan: dvk.phongBan, tenPhongBan: tenPhongBan(db, dvk.phongBan),
+      chucVu: dvk.chucVu, mst: nv.mst || '', nganHang: nv.nganHang || '', soTK: nv.soTK || '',
       hinhThuc: hinhThuc, cachTinhThue: cachThue, tiLeHuong: tl * 100,
       cong: c, congChuan: c.congChuan,
       luongCB: cb, luongNgay: r0(luongNgay), luongGio: r0(luongGio),
@@ -869,7 +894,7 @@
     thueLuyTien: thueLuyTien, tinhLuongNV: tinhLuongNV, tinhBangLuong: tinhBangLuong, congTong: cong,
     chotThang: chotThang, moKhoaThang: moKhoaThang,
     tinhVaoRa: tinhVaoRa, phepNam: phepNam, docSo: docSo,
-    LOAI_QD: LOAI_QD, luongTheoKy: luongTheoKy, soNPTKy: soNPTKy, thuongPhatQD: thuongPhatQD,
+    LOAI_QD: LOAI_QD, luongTheoKy: luongTheoKy, LOAI_DV: LOAI_DV, loaiDonVi: loaiDonVi, donViTheoKy: donViTheoKy, soNPTKy: soNPTKy, thuongPhatQD: thuongPhatQD,
     ngayLamTrongKhoang: ngayLamTrongKhoang, apDungDonNghi: apDungDonNghi, boDonNghi: boDonNghi, ngayNghiHuu: ngayNghiHuu, thamNien: thamNien
   };
 });

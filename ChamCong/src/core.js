@@ -72,6 +72,8 @@
     ngan: '<path d="M3 10l9-6 9 6M5 10v8M19 10v8M9 10v8M15 10v8M3 20h18"/>',
     quyetdinh: '<path d="M7 3h10v18H7z"/><path d="M10 7h4M10 11h4M10 15h2"/><circle cx="16.5" cy="17.5" r="2.5"/>',
     nghiphep: '<rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4M9 14l6 4M15 14l-6 4"/>',
+    chuyen: '<path d="M4 8h13l-3-3M20 16H7l3 3"/>',
+    bac: '<path d="M4 20h4v-5h4v-5h4V5h4"/>',
     cocau: '<circle cx="12" cy="12" r="9"/><path d="M12 3v9l7 5"/>'
   };
   App.icon = function (ten) {
