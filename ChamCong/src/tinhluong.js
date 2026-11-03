@@ -121,7 +121,7 @@
     var nam = new Date().getFullYear();
     var db = {
       phienBan: 1,
-      congTy: { ten: 'CÔNG TY CỦA BẠN', diaChi: '', mst: '', dienThoai: '', diaDanh: '', thongTu: '133', tieuDeBangLuong: 'BẢNG THANH TOÁN TIỀN LƯƠNG',
+      congTy: { ten: 'CÔNG TY TNHH MTV CẤP NƯỚC HẬU GIANG', diaChi: '', mst: '', dienThoai: '', diaDanh: '', thongTu: '133', tieuDeBangLuong: 'BẢNG THANH TOÁN TIỀN LƯƠNG',
         nguoiLap: '', keToan: '', giamDoc: '', nguoiChamCong: '', phuTrachBP: '', nguoiDuyet: '' },
       caiDat: caiDatMacDinh(),
       kyHieu: kyHieuMacDinh(),
@@ -142,6 +142,7 @@
     var md = duLieuMoi();
     if (!db || typeof db !== 'object') return md;
     db.congTy = Object.assign({}, md.congTy, db.congTy || {});
+    if (/^(CÔNG TY CỦA BẠN|Công ty TNHH ABC \(dữ liệu mẫu\))$/.test(db.congTy.ten || '')) db.congTy.ten = md.congTy.ten;
     db.caiDat = honHop(md.caiDat, db.caiDat || {});
     if (!Array.isArray(db.kyHieu) || !db.kyHieu.length) db.kyHieu = md.kyHieu;
     if (!Array.isArray(db.phuCap)) db.phuCap = md.phuCap;

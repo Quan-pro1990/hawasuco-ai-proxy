@@ -19,7 +19,7 @@
     db.laMau = true;
     db.caiDat.ngayDauKy = 21; // kỳ công từ ngày 21 tháng trước đến ngày 20 tháng này
     db.congTy = Object.assign(db.congTy, {
-      ten: 'Công ty TNHH ABC (dữ liệu mẫu)', diaChi: 'Số 1 đường Mẫu, phường Mẫu, tỉnh Mẫu', mst: '0100000000', diaDanh: 'Cần Thơ',
+      ten: 'CÔNG TY TNHH MTV CẤP NƯỚC HẬU GIANG', diaChi: 'Số 1 đường Mẫu, phường Mẫu, tỉnh Mẫu', mst: '0100000000', diaDanh: 'Cần Thơ',
       nguoiLap: 'Bùi Thị Lan', keToan: 'Trần Thị Bình', giamDoc: 'Nguyễn Văn An', nguoiChamCong: 'Bùi Thị Lan', phuTrachBP: '', nguoiDuyet: 'Nguyễn Văn An'
     });
     db.phongBan = [

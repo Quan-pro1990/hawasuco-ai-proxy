@@ -465,12 +465,12 @@
     var root = document.getElementById('app');
     root.className = 'app';
     root.innerHTML =
-      '<aside class="sb"><div class="logo"><div class="bieu">' + App.icon('nhanvien') + '</div><div><b>Nhân sự</b><span>Chấm công – Tiền lương</span></div></div><nav>' +
+      '<aside class="sb"><div class="thuong-hieu" id="thuong-hieu"></div><nav>' +
       MENU.map(function (x) {
         if (x.nhom) return '<div class="nhom-nav">' + x.nhom + '</div>';
         return '<a href="#' + x.id + '" data-id="' + x.id + '">' + App.icon(x.icon) + '<span>' + x.ten + '</span></a>';
       }).join('') +
-      '</nav><div class="chan" id="chan-sb"></div></aside>' +
+      '</nav><div class="tt-mc" id="tt-maychu"></div><div class="chan" id="chan-sb"></div></aside>' +
       '<div class="chinh-khung"><header class="tb"><button class="menu" aria-label="Menu">' + App.icon('menu') + '</button><h1 id="tieu-de"></h1>' +
       '<div class="ky" id="chon-ky"></div></header><main class="noi" id="noi"></main></div>';
     App.$('.menu', root).onclick = function () { root.classList.toggle('mo-menu'); };
@@ -512,15 +512,49 @@
     try { tg.ve(noi); }
     catch (e) { console.error(e); noi.innerHTML = '<div class="the canh-bao">Có lỗi khi hiển thị trang: ' + App.h(e.message) + '</div>'; }
     var chan = App.$('#chan-sb');
-    if (chan) chan.innerHTML = App.h(App.db.congTy.ten || '') + '<br>' + App.db.nhanVien.filter(function (n) { return n.trangThai !== 'nghi_viec'; }).length + ' nhân viên';
+    if (chan) chan.innerHTML = App.db.nhanVien.filter(function (n) { return n.trangThai !== 'nghi_viec'; }).length + ' nhân viên đang làm việc';
+    var th = App.$('#thuong-hieu');
+    if (th) th.innerHTML = App.khoiThuongHieu(App.db.congTy, false);
+    App.datFavicon();
+    if (App.veTrangThaiMayChu) App.veTrangThaiMayChu();
   };
 
-  App.khoiDong = function () {
-    App.taiDuLieu();
+  /* ================= Logo, tên công ty ================= */
+  App.TEN_PHAN_MEM = 'Nhân sự – Chấm công – Tiền lương';
+  /** Logo đang dùng: logo tải lên trong Cài đặt, logo mặc định, hoặc null nếu đã chọn "không dùng logo" */
+  App.logoCongTy = function (ct) {
+    ct = ct || App.db.congTy;
+    if (ct.logo === '') return null;
+    return ct.logo || window.LOGO_MAC_DINH || null;
+  };
+  /** Tên công ty chia 2 dòng như phần mềm Thất thoát nước: "CÔNG TY TNHH MTV" / "CẤP NƯỚC HẬU GIANG" */
+  App.tenHaiDong = function (ten) {
+    var s = String(ten || '').trim().toUpperCase();
+    var m = s.match(/^(CÔNG TY (?:TNHH(?: MTV| MỘT THÀNH VIÊN| HAI THÀNH VIÊN TRỞ LÊN)?|CỔ PHẦN|CP))\s+(.+)$/);
+    return m ? [m[1], m[2]] : [s];
+  };
+  App.khoiThuongHieu = function (ct, lon) {
+    var logo = App.logoCongTy(ct), dong = App.tenHaiDong(ct.ten);
+    return (logo ? '<img class="logo-cty" src="' + logo + '" alt="Logo">' : '') +
+      '<div class="ten-cty">' + dong.map(App.h).join('<br>') + '</div><div class="ten-pm">' + App.TEN_PHAN_MEM + '</div>' + (lon ? '' : '');
+  };
+  App.datFavicon = function () {
+    var logo = App.logoCongTy();
+    var l = document.querySelector('link[rel="icon"]');
+    if (logo && l && l.getAttribute('href') !== logo) l.setAttribute('href', logo);
+  };
+
+  var daGanHash = false;
+  /** Dựng giao diện sau khi đã có dữ liệu (App.db) */
+  App.batDauGiaoDien = function () {
     App.ky = App.kyMacDinh();
     dungKhung();
-    window.addEventListener('hashchange', App.veLai);
+    if (!daGanHash) { window.addEventListener('hashchange', App.veLai); daGanHash = true; }
     App.veLai();
   };
-  document.addEventListener('DOMContentLoaded', App.khoiDong);
+  App.khoiDong = function () {
+    App.taiDuLieu();
+    App.batDauGiaoDien();
+  };
+  document.addEventListener('DOMContentLoaded', function () { App.khoiDong(); });
 })();

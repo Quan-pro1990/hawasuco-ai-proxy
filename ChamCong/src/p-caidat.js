@@ -288,7 +288,14 @@
     var el = App.$('#cd-noi'), db = App.db, cd = db.caiDat, html = '';
     switch (st.tabCD) {
       case 'cty':
-        html = '<div class="the"><h3>Thông tin đơn vị</h3><div class="form">' +
+        var lg = App.logoCongTy(db.congTy);
+        html = '<div class="the"><h3>Logo và tên hiển thị trên phần mềm</h3><div class="hang" style="gap:16px">' +
+          '<div class="thuong-hieu xem-truoc">' + App.khoiThuongHieu(db.congTy) + '</div>' +
+          '<div style="display:grid;gap:8px;align-content:start"><label class="nut">' + App.icon('nhap') + 'Chọn logo khác…<input type="file" accept="image/*" id="cty-logo" class="an"></label>' +
+          (db.congTy.logo ? '<button class="nut" id="cty-logo-goc">Dùng logo mặc định</button>' : '') +
+          (lg ? '<button class="nut nguy" id="cty-logo-bo">Không dùng logo</button>' : (db.congTy.logo === '' ? '<button class="nut" id="cty-logo-goc">Dùng logo mặc định</button>' : '')) +
+          '<div class="mo nho">Logo hiện ở thanh bên trái và màn hình đăng nhập; tên lấy từ ô “Tên đơn vị” bên dưới (tự chia 2 dòng: “CÔNG TY TNHH MTV” / phần tên).</div></div></div></div>' +
+          '<div class="the"><h3>Thông tin đơn vị</h3><div class="form">' +
           o('Tên đơn vị', 'congTy.ten', 'chu') + o('Mã số thuế', 'congTy.mst', 'chu') +
           o('Địa chỉ', 'congTy.diaChi', 'chu') + o('Điện thoại', 'congTy.dienThoai', 'chu') +
           o('Địa danh (nơi lập biểu)', 'congTy.diaDanh', 'chu', 'In ở dòng “…, ngày … tháng … năm …”, vd Cần Thơ') +
@@ -366,6 +373,7 @@
           '<p class="mo nho">Mặc định theo Luật Thuế TNCN số 109/2025/QH15, áp dụng cho thu nhập từ tiền lương, tiền công từ kỳ tính thuế 2026: đến 10 triệu 5%, 10–30 triệu 10%, 30–60 triệu 20%, 60–100 triệu 30%, trên 100 triệu 35%; giảm trừ bản thân 15,5 triệu, người phụ thuộc 6,2 triệu. Bậc cuối để trống ô “Đến”.</p></div>';
         break;
       case 'dl':
+        if (App.mayChu && App.mayChu.bat) { html = ''; break; }
         var kb = Math.round(JSON.stringify(db).length / 1024);
         html = '<div class="the"><h3>Sao lưu & khôi phục</h3><p style="margin-top:0">Dữ liệu được lưu tự động trong trình duyệt của máy này (' + App.so(kb) + ' KB). Nếu xoá lịch sử trình duyệt hoặc đổi máy sẽ mất, nên <b>sao lưu ra file mỗi tuần</b> (chép vào USB, Google Drive…). ' +
           (db.lanSaoLuu ? 'Lần sao lưu gần nhất: <b>' + new Date(db.lanSaoLuu).toLocaleString('vi-VN') + '</b>.' : '<b style="color:var(--do)">Chưa sao lưu lần nào.</b>') + '</p>' +
@@ -376,6 +384,25 @@
         break;
     }
     el.innerHTML = html;
+    if (st.tabCD === 'dl' && App.mayChu && App.mayChu.bat) App.veMayChuCaiDat(el);
+    var fLogo = App.$('#cty-logo', el);
+    if (fLogo) fLogo.onchange = function () {
+      var f = this.files[0]; if (!f) return;
+      var r = new FileReader();
+      r.onload = function () {
+        var img = new Image();
+        img.onload = function () {
+          var k = 256, tl = Math.min(1, k / Math.max(img.width, img.height)), c = document.createElement('canvas');
+          c.width = Math.round(img.width * tl); c.height = Math.round(img.height * tl);
+          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+          db.congTy.logo = c.toDataURL('image/png'); App.luu(); App.veLai(); App.bao('Đã đổi logo', 'tot');
+        };
+        img.src = r.result;
+      };
+      r.readAsDataURL(f);
+    };
+    var bLogoGoc = App.$('#cty-logo-goc', el); if (bLogoGoc) bLogoGoc.onclick = function () { delete db.congTy.logo; App.luu(); App.veLai(); };
+    var bLogoBo = App.$('#cty-logo-bo', el); if (bLogoBo) bLogoBo.onclick = function () { db.congTy.logo = ''; App.luu(); App.veLai(); };
     App.$$('input.tien', el).forEach(App.ganOTien);
     el.onchange = function (e) {
       var i = e.target;

@@ -377,3 +377,26 @@ table.cc tfoot td.dinh1, table.cc tfoot td.dinh2 { z-index: 3; }
   .in-rieng .trang { page-break-after: always; }
   .in-rieng .trang:last-child { page-break-after: auto; }
 }
+
+/* ============ Logo, tên công ty (như phần mềm Thất thoát nước) ============ */
+.thuong-hieu { padding: 18px 14px 14px; text-align: center; border-bottom: 1px solid rgba(255,255,255,.08); }
+.thuong-hieu .logo-cty { width: 84px; height: 84px; object-fit: contain; display: block; margin: 0 auto 10px; border-radius: 50%; background: #fff; }
+.thuong-hieu .ten-cty { color: #fff; font-weight: 700; font-size: 13.5px; line-height: 1.35; letter-spacing: .01em; }
+.thuong-hieu .ten-pm { color: #a9bcd3; font-size: 12px; margin-top: 6px; }
+.tt-mc { padding: 10px 16px; font-size: 12px; color: var(--sb-chu); border-top: 1px solid rgba(255,255,255,.08); }
+.tt-mc:empty { display: none; }
+.tt-mc .mo { color: #8a9bb0; margin-top: 2px; }
+.tt-mc a { color: #cfe0f3; }
+.tt-cham { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
+.tt-cham.xanh { background: #2fbf71; } .tt-cham.cam { background: #f0a73a; } .tt-cham.do { background: #e35d5d; }
+/* màn hình đăng nhập */
+.dn-nen { min-height: 100vh; display: grid; place-items: center; background: linear-gradient(160deg, #15324d 0%, #1d5f95 100%); padding: 20px; }
+.dn-hop { background: #fff; border-radius: 16px; padding: 28px 28px 22px; width: 380px; max-width: 100%; box-shadow: 0 24px 60px rgba(0,0,0,.3); display: grid; gap: 12px; }
+.dn-hop .logo-cty { width: 96px; height: 96px; display: block; margin: 0 auto; }
+.dn-hop .ten-cty { text-align: center; font-weight: 700; color: var(--chinh-dam); font-size: 15px; line-height: 1.35; }
+.dn-hop .ten-pm { text-align: center; color: var(--mo); font-size: 13px; margin-top: -6px; margin-bottom: 4px; }
+.dn-hop label.o { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--mo); }
+.dn-hop input { width: 100%; }
+.dn-loi { color: var(--do); font-size: 13px; min-height: 18px; }
+@media print { .thuong-hieu, .tt-mc { display: none; } }
+.thuong-hieu.xem-truoc { background: var(--sb); border-radius: 12px; width: 240px; border-bottom: 0; }
