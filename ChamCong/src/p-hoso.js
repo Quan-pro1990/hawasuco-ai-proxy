@@ -9,7 +9,7 @@
     o: function (nhan, input, gc, cls) { return '<label class="o ' + (cls || '') + '">' + nhan + input + (gc ? '<span class="gc">' + gc + '</span>' : '') + '</label>'; },
     txt: function (ten, v, attr) { return '<input name="' + ten + '" value="' + h(v == null ? '' : v) + '" ' + (attr || '') + '>'; },
     ngay: function (ten, v) { return '<input type="date" name="' + ten + '" value="' + h(v || '') + '">'; },
-    tien: function (ten, v, ph) { return '<input name="' + ten + '" class="so tien" inputmode="numeric" value="' + (v || v === 0 && v !== '' ? App.tien(v) : '') + '"' + (ph ? ' placeholder="' + h(ph) + '"' : '') + '>'; },
+    tien: function (ten, v, ph) { if (typeof v === 'string' && v.trim() !== '') v = App.docSo(v); return '<input name="' + ten + '" class="so tien" inputmode="numeric" value="' + (v || v === 0 && v !== '' ? App.tien(v) : '') + '"' + (ph ? ' placeholder="' + h(ph) + '"' : '') + '>'; },
     sel: function (ten, v, opts) {
       return '<select name="' + ten + '">' + opts.map(function (x) {
         var k = Array.isArray(x) ? x[0] : x, t = Array.isArray(x) ? x[1] : x;
@@ -225,7 +225,7 @@
       F.o('Trạng thái', F.sel('trangThai', d.trangThai, F.cap(App.TRANG_THAI))) + F.o('Ngày vào làm', F.ngay('ngayVao', d.ngayVao)) +
       F.o('Ngày nghỉ việc', F.ngay('ngayNghi', d.ngayNghi), 'Ngày làm việc cuối cùng (hoặc dùng quyết định thôi việc)') +
       F.o('Loại hợp đồng hiện tại', F.sel('loaiHD', d.loaiHD, App.LOAI_HD), 'Tự cập nhật khi thêm hợp đồng mới') + F.o('Hết hạn HĐ / thử việc', F.ngay('ngayHetHD', d.ngayHetHD)) + '<span></span>' +
-      '<h4>Lương</h4>' +
+      '<h4>Lương</h4>' + oBacLuong(db, d) +
       F.o('Hình thức trả lương', F.sel('hinhThuc', d.hinhThuc || 'thang', F.cap(App.HINH_THUC))) +
       F.o('Mức lương / HĐ <span id="dv-luong">(' + App.DV_LUONG[d.hinhThuc || 'thang'] + ')</span>', F.tien('luongCB', d.luongCB),
         coQDLuong ? 'Mức hiện hành. Các kỳ trước ngày hiệu lực quyết định nâng lương vẫn tính lương cũ.' : 'Nâng lương có hiệu lực từ 1 ngày: dùng tab Quá trình công tác → Quyết định nâng lương') +
@@ -240,12 +240,36 @@
       F.o('Phép tồn năm trước', F.txt('phepTon', d.phepTon, 'type="number" min="0" step="0.5"')) + '<span></span>' +
       F.o('Ghi chú', F.vung('ghiChu', d.ghiChu), '', 'ca') +
       '</div></div>';
+    el.addEventListener('change', function (e) {
+      var i = e.target; if (!i.dataset || !i.dataset.xl || !st.d) return;
+      var cu = st.d.xepLuong, moi = App.docChonBac(cu, i.dataset.xl, i.value);
+      if (moi === cu) { App.veLai(); return; }
+      if (moi) st.d.xepLuong = moi; else delete st.d.xepLuong;
+      st.d.luongCB = App.docSo(st.d.luongCB); st.d.luongBH = App.docSo(st.d.luongBH);
+      var dd = TL.apXepLuong(db, st.d);
+      st.ban = true; App.veLai();
+      if (dd.luongCB || dd.luongBH) App.bao('Theo bảng lương: ' + [dd.luongCB ? 'mức lương ' + App.tien(dd.luongCB[1]) : '', dd.luongBH ? 'lương đóng BH ' + App.tien(dd.luongBH[1]) : ''].filter(Boolean).join(', ') + ' (bấm Lưu hồ sơ)');
+    });
     var bc = App.$('#hs-chuyen', el);
     if (bc) bc.onclick = function (e) {
       e.preventDefault();
       if (st.ban && d.phongBan !== nv.phongBan) { App.bao('Phòng / đội đang được sửa trực tiếp – hãy lưu hồ sơ hoặc chọn lại như cũ trước khi điều chuyển.', 'loi'); return; }
       App.hopChuyenDonVi([nv], { sauKhiChuyen: function () { App.veLai(); } });
     };
+  }
+
+  /** Ô xếp bảng lương – chức danh – bậc trong tab Công việc & lương */
+  function oBacLuong(db, d) {
+    if (!db.thangLuong.length) return '<div class="o ca"><span class="gc">Chưa có thang, bảng lương (Danh mục → Thang, bảng lương). Khi có, chọn bậc ở đây để tự điền mức lương.</span></div>';
+    var xl = TL.xepLuongNV(db, d), gc = '';
+    if (xl) {
+      gc = 'Mức theo bảng: <b>' + App.tien(xl.tien) + ' đ</b> – dùng cho ' + h(TL.AP_DUNG_BL[xl.apDung]).toLowerCase() + '. ' +
+        (xl.bacCuoi ? 'Đã ở bậc cuối.' : xl.ngayNang ? 'Nâng bậc tiếp: <b>' + TL.hienNgay(xl.ngayNang) + '</b>' + (xl.keoDai ? ' (kéo dài ' + xl.keoDai + ' tháng do kỷ luật)' : '') + '.' : 'Nhập ngày hưởng bậc để tính hạn nâng bậc.') +
+        ' Nâng bậc có hiệu lực từ một ngày: tab Quá trình công tác → Quyết định nâng lương.';
+    } else gc = 'Chọn bảng lương để xếp bậc; mức theo bảng sẽ tự điền vào mức lương / lương đóng BH.';
+    return '<div class="o ca">Thang, bảng lương · chức danh · bậc<div class="chon-bac">' + App.oChonBac(d.xepLuong) +
+      '<label class="nho" style="display:flex;align-items:center;gap:6px">hưởng từ <input type="date" data-xl="ngayHuong" value="' + h(xl ? xl.ngayHuong : '') + '"' + (xl ? '' : ' disabled') + '></label></div>' +
+      '<span class="gc">' + gc + '</span></div>';
   }
 
   /* ---------- Tab: bảo hiểm, thuế, người phụ thuộc ---------- */
@@ -281,7 +305,7 @@
   }
   function thangHien(k) { return k ? k.slice(5, 7) + '/' + k.slice(0, 4) : ''; }
   function dongBoDS(nv) { if (st.d) { st.d.nguoiPhuThuoc = JSON.parse(JSON.stringify(nv.nguoiPhuThuoc)); st.d.hopDong = JSON.parse(JSON.stringify(nv.hopDong)); st.d.quyetDinh = JSON.parse(JSON.stringify(nv.quyetDinh)); } }
-  App.dongBoHoSo = function (nv) { if (st.d && st.d.id === nv.id) { var ban = st.ban; dongBoDS(nv); ['luongCB', 'luongBH', 'phongBan', 'chucVu', 'loaiHD', 'ngayHetHD', 'trangThai', 'ngayNghi', 'ngayVao', 'tiLeHuong'].forEach(function (k) { st.d[k] = nv[k]; }); st.ban = ban; } };
+  App.dongBoHoSo = function (nv) { if (st.d && st.d.id === nv.id) { var ban = st.ban; dongBoDS(nv); ['luongCB', 'luongBH', 'phongBan', 'chucVu', 'loaiHD', 'ngayHetHD', 'trangThai', 'ngayNghi', 'ngayVao', 'tiLeHuong', 'xepLuong'].forEach(function (k) { if (k in nv) st.d[k] = nv[k] && typeof nv[k] === 'object' ? JSON.parse(JSON.stringify(nv[k])) : nv[k]; else delete st.d[k]; }); st.ban = ban; } };
 
   function formNPT(nv, i) {
     var p = i == null ? { tuThang: TL.khoaKy(App.ky.y, App.ky.m) } : nv.nguoiPhuThuoc[i];

@@ -400,3 +400,18 @@ table.cc tfoot td.dinh1, table.cc tfoot td.dinh2 { z-index: 3; }
 .dn-loi { color: var(--do); font-size: 13px; min-height: 18px; }
 @media print { .thuong-hieu, .tt-mc { display: none; } }
 .thuong-hieu.xem-truoc { background: var(--sb); border-radius: 12px; width: 240px; border-bottom: 0; }
+
+/* Thang, bảng lương */
+.form div.o { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--mo); }
+.chon-bac { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.chon-bac select { color: var(--chu); max-width: 100%; }
+.chon-bac select[data-xl="bang"] { min-width: 180px; }
+.chon-bac select[data-xl="ngach"] { min-width: 170px; }
+.chon-bac select[data-xl="bac"] { min-width: 200px; }
+td > .chon-bac { flex-wrap: nowrap; }
+td > .chon-bac select { font-size: 12.5px; padding: 4px 6px; min-width: 0; }
+td > .chon-bac select[data-xl="bang"] { width: 170px; }
+td > .chon-bac select[data-xl="ngach"] { width: 170px; }
+td > .chon-bac select[data-xl="bac"] { width: 165px; }
+.bang-bac input.o-nhap.so { text-align: right; }
+@media print { .chon-bac select { border: 0; appearance: none; -webkit-appearance: none; padding: 0; background: none; } }

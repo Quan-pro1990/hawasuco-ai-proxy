@@ -449,6 +449,7 @@
     { id: 'nhanvien', ten: 'Hồ sơ nhân viên', icon: 'nhanvien' },
     { id: 'hopdong', ten: 'Hợp đồng lao động', icon: 'phieuluong' },
     { id: 'quyetdinh', ten: 'Quyết định', icon: 'quyetdinh' },
+    { id: 'nangbac', ten: 'Xếp lương, nâng bậc', icon: 'bac' },
     { id: 'nghiphep', ten: 'Đơn nghỉ phép', icon: 'nghiphep' },
     { id: 'bcnhansu', ten: 'Báo cáo nhân sự', icon: 'cocau' },
     { nhom: 'Chấm công – tiền lương' },

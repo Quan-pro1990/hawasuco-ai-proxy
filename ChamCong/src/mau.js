@@ -52,7 +52,7 @@
       ['NV009', 'Đỗ Văn Long', 'Nam', '1992-04-25', 'DTC', 'CN LĐ-SC', '2019-05-06', 9000000, {}, 1, 'CN'],
       ['NV010', 'Ngô Thị Mai', 'Nữ', '1997-' + TL.pad(M) + '-25', 'D2', 'Nhân viên ghi thu', '2022-03-01', 7320000, {}, 0, 'CN'],
       ['NV011', 'Dương Văn Nam', 'Nam', '1994-06-11', 'D1', 'CN LĐ-SC', '2020-11-16', 8000000, {}, 1, 'CN'],
-      ['NV012', 'Lý Thị Oanh', 'Nữ', '1999-10-03', 'KDVT', 'Thủ kho', '2023-02-13', 8000000, {}, 0, 'VP'],
+      ['NV012', 'Lý Thị Oanh', 'Nữ', '1999-10-03', 'KDVT', 'Thủ kho', '2023-02-13', 8040000, {}, 0, 'VP'],
       ['NV013', 'Phan Thanh Phong', 'Nam', '1998-03-27', 'KDVT', 'Tài xế', '2024-08-05', 9000000, {}, 0, 'CN'],
       ['NV014', 'Trịnh Thị Quỳnh', 'Nữ', '2000-12-12', 'KDVT', 'Nhân viên ghi thu', TL.iso(vaoTV.y, vaoTV.m, 1), 7000000, {}, 0, 'CN'],
       ['NV015', 'Mai Văn Sơn', 'Nam', '1979-07-07', 'TCHC', 'Bảo vệ', '2019-01-02', 300000, {}, 1, ''],
@@ -127,6 +127,31 @@
     var nl1 = qd('NV006', { loai: 'nang_luong', so: '88/QĐ-CT', ngay: dau(lui(2)), hieuLuc: dau(lui(2)), luongCu: 8500000, luongMoi: 9000000, noiDung: 'Nâng bậc lương thường xuyên' });
     var nl2 = qd('NV011', { loai: 'nang_luong', so: '61/QĐ-CT', ngay: dau(lui(5)), hieuLuc: dau(lui(5)), luongCu: 7500000, luongMoi: 8000000, noiDung: 'Nâng bậc lương thường xuyên' });
     [nl1, nl2].forEach(function (nv) { nv.hopDong[nv.hopDong.length - 1].luongCB = nv.quyetDinh[nv.quyetDinh.length - 1].luongCu; });
+
+    // ---- Thang, bảng lương (mức tiền) và xếp bậc ----
+    db.thangLuong = [TL.chuanBangLuong({
+      ma: 'BL1', ten: 'Thang lương, bảng lương của công ty', kieu: 'tien', apDung: 'cb', namNang: 3, soBac: 8,
+      ngach: [
+        { ma: 'GD', ten: 'Giám đốc', bac: [28000000, 30000000] },
+        { ma: 'PGD', ten: 'Phó Giám đốc, Kế toán trưởng', bac: [17000000, 18000000] },
+        { ma: 'TP', ten: 'Trưởng phòng, Đội trưởng', bac: [14000000, 14500000, 15000000, 15500000] },
+        { ma: 'CV', ten: 'Chuyên viên, kỹ sư, kế toán viên', bac: [7500000, 8000000, 8500000, 9000000, 9500000, 10000000, 10500000, 11000000] },
+        { ma: 'NV', ten: 'Nhân viên nghiệp vụ (ghi thu, thủ kho)', namNang: 2, bac: [6600000, 7000000, 7320000, 7680000, 8040000, 8400000, 8800000] },
+        { ma: 'CN', ten: 'Công nhân lắp đặt – sửa chữa, lái xe', namNang: 2, bac: [7000000, 7500000, 8000000, 8500000, 9000000, 9500000, 10000000] }
+      ]
+    })];
+    var xep = {
+      NV001: ['GD', 2, '2023-01-01'], NV002: ['PGD', 2, '2022-03-01'], NV003: ['TP', 4, '2021-07-01'], NV004: ['TP', 1, '2024-04-01'], NV005: ['TP', 3, '2023-09-01'],
+      NV006: ['CV', 4, dau(lui(2))], NV007: ['NV', 5, TL.themThangISO(TL.iso(Y, M, 1), -24)], NV008: ['CV', 4, '2024-01-10'], NV009: ['CN', 5, '2025-02-01'],
+      NV010: ['NV', 3, TL.themThangISO(TL.iso(Y, M, 1), -23)], NV011: ['CN', 3, dau(lui(5))], NV012: ['NV', 5, '2025-06-01'], NV013: ['CN', 5, '2025-08-05'],
+      NV014: ['NV', 2, null], NV017: ['NV', 3, '2023-05-01']
+    };
+    db.nhanVien.forEach(function (nv) { var x = xep[nv.ma]; if (x) nv.xepLuong = { bang: 'BL1', ngach: x[0], bac: x[1], ngayHuong: x[2] || nv.ngayVao }; });
+    [nl1, nl2].forEach(function (nv) {
+      var q = nv.quyetDinh[nv.quyetDinh.length - 1];
+      q.xepLuongMoi = Object.assign({}, nv.xepLuong); q.xepLuongCu = Object.assign({}, nv.xepLuong, { bac: nv.xepLuong.bac - 1, ngayHuong: '' });
+      q.noiDung = 'Nâng bậc lương thường xuyên: bậc ' + (nv.xepLuong.bac - 1) + ' lên bậc ' + nv.xepLuong.bac;
+    });
     qd('NV010', { loai: 'khen_thuong', so: '95/QĐ-CT', ngay: TL.congNgay(Y, M, D, -10), hieuLuc: TL.congNgay(Y, M, D, -10), hinhThuc: 'Tiền thưởng', soTien: 1000000, kyLuong: kyTruoc, noiDung: 'Hoàn thành vượt chỉ tiêu thu tiền nước' });
     qd('NV013', { loai: 'ky_luat', so: '96/QĐ-CT', ngay: TL.congNgay(Y, M, D, -8), hieuLuc: TL.congNgay(Y, M, D, -8), hinhThuc: 'Khiển trách', soTien: 300000, kyLuong: kyTruoc, noiDung: 'Bồi thường chi phí sửa xe do vi phạm quy định vận hành' });
     var nv17q = db.nhanVien[16];

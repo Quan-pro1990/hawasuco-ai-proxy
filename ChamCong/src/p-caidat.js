@@ -8,12 +8,14 @@
   function datPath(o, p, v) { var ks = p.split('.'), x = o; for (var i = 0; i < ks.length - 1; i++) { if (x[ks[i]] == null) x[ks[i]] = {}; x = x[ks[i]]; } x[ks[ks.length - 1]] = v; }
 
   /* ================= DANH MỤC ================= */
-  var TABS_DM = [['pb', 'Phòng, đội'], ['ld', 'Loại lao động & công chuẩn'], ['sp', 'Sản phẩm (lương SP)'], ['pc', 'Phụ cấp'], ['kh', 'Ký hiệu chấm công'], ['le', 'Ngày lễ, Tết']];
+  var TABS_DM = [['pb', 'Phòng, đội'], ['ld', 'Loại lao động & công chuẩn'], ['bl', 'Thang, bảng lương'], ['sp', 'Sản phẩm (lương SP)'], ['pc', 'Phụ cấp'], ['kh', 'Ký hiệu chấm công'], ['le', 'Ngày lễ, Tết']];
+
+  App.moDanhMuc = function (t) { st.tab = t; if (location.hash !== '#danhmuc') location.hash = '#danhmuc'; else App.veLai(); };
 
   function veDM(noi) {
     noi.innerHTML = '<div class="tabs">' + TABS_DM.map(function (t) { return '<button data-t="' + t[0] + '"' + (st.tab === t[0] ? ' class="chon"' : '') + '>' + t[1] + '</button>'; }).join('') + '</div><div id="dm-noi"></div>';
     App.$('.tabs', noi).onclick = function (e) { var b = e.target.closest('[data-t]'); if (b) { st.tab = b.dataset.t; App.veLai(); } };
-    ({ pb: App.dmDonVi, ld: dmLD, sp: dmSP, pc: dmPC, kh: dmKH, le: dmLe })[st.tab](App.$('#dm-noi'));
+    ({ pb: App.dmDonVi, bl: App.dmThangLuong, ld: dmLD, sp: dmSP, pc: dmPC, kh: dmKH, le: dmLe })[st.tab](App.$('#dm-noi'));
   }
 
   function dmLD(el) {
@@ -386,6 +388,7 @@
       datPath(App.db, p, v);
       if (p === 'caiDat.vung' && LTTV[v]) { cd.luongToiThieuVung = LTTV[v]; }
       App.luu(); App.bao('Đã lưu');
+      if (p === 'caiDat.luongCoSo' && App.apDungBangLuong) App.apDungBangLuong();
       if (p === 'caiDat.ngayDauKy') { try { sessionStorage.removeItem('ChamCong_ky'); } catch (er) { /* bỏ qua */ } App.ky = App.kyMacDinh(); }
       if (/^caiDat\.(vung|ngayDauKy|congChuan|luongCoSo|luongToiThieuVung)/.test(p) || p === 'congTy.ten') App.veLai();
     };

@@ -128,6 +128,7 @@
       phuCap: phuCapMacDinh(),
       sanPham: sanPhamMacDinh(),
       phongBan: [],
+      thangLuong: [],
       nhanVien: [],
       ngayLe: [],
       donNghi: [],
@@ -149,6 +150,8 @@
     if (!Array.isArray(db.phongBan)) db.phongBan = [];
     db.phongBan.forEach(function (p) { p.loai = loaiDonVi(p); });
     if (!Array.isArray(db.nhanVien)) db.nhanVien = [];
+    if (!Array.isArray(db.thangLuong)) db.thangLuong = [];
+    db.thangLuong.forEach(chuanBangLuong);
     if (!Array.isArray(db.ngayLe)) db.ngayLe = md.ngayLe;
     db.ngayLe.forEach(function (x) { if (!x.loai) x.loai = loaiNgayLe(x); });
     if (!db.thang || typeof db.thang !== 'object') db.thang = {};
@@ -485,6 +488,63 @@
       kq.qd = q;
     }
     return kq;
+  }
+
+  /* ----- Thang, bảng lương: bảng → chức danh (nhóm) → bậc ----- */
+  var KIEU_BL = { tien: 'Mức tiền (đồng / tháng)', he_so: 'Hệ số × mức lương cơ sở' };
+  var AP_DUNG_BL = { cb: 'Mức lương (tính lương)', bh: 'Lương đóng bảo hiểm', ca_hai: 'Mức lương và lương đóng BH' };
+  var KL_KEO_DAI = /kéo dài thời hạn nâng lương/i;
+
+  function chuanBangLuong(b) {
+    if (!KIEU_BL[b.kieu]) b.kieu = 'tien';
+    if (!AP_DUNG_BL[b.apDung]) b.apDung = 'cb';
+    if (!(+b.namNang > 0)) b.namNang = 3;
+    if (!Array.isArray(b.ngach)) b.ngach = [];
+    var n = +b.soBac || 0;
+    b.ngach.forEach(function (g) { if (!Array.isArray(g.bac)) g.bac = []; n = Math.max(n, g.bac.length); });
+    b.soBac = Math.max(1, n);
+    b.ngach.forEach(function (g) { while (g.bac.length < b.soBac) g.bac.push(''); });
+    return b;
+  }
+  function timBangLuong(db, ma) { return (db.thangLuong || []).filter(function (b) { return b.ma === ma; })[0] || null; }
+  function timNgach(b, ma) { return b ? (b.ngach || []).filter(function (g) { return g.ma === ma; })[0] || null : null; }
+  function mucCoSoBL(db, b) { return +b.mucCoSo || +db.caiDat.luongCoSo || 0; }
+  /** Số bậc thực có của một chức danh (đến ô cuối cùng có giá trị) */
+  function soBacNgach(g) { var n = 0; (g.bac || []).forEach(function (v, i) { if (+v > 0) n = i + 1; }); return n; }
+  /** Giá trị một bậc: { heSo, tien } (bậc tính từ 1) */
+  function giaTriBac(db, b, g, bac) {
+    var v = g && g.bac ? +g.bac[bac - 1] : 0;
+    if (!(v > 0)) return null;
+    return b.kieu === 'he_so' ? { heSo: v, tien: Math.round(v * mucCoSoBL(db, b)) } : { heSo: null, tien: Math.round(v) };
+  }
+  function themThangISO(ngay, th) {
+    var n = docNgay(ngay), t = new Date(n.y, n.m - 1 + th, 1), y = t.getFullYear(), m = t.getMonth() + 1;
+    return iso(y, m, Math.min(n.d, soNgay(y, m)));
+  }
+  /** Xếp lương hiện tại của nhân viên và hạn nâng bậc tiếp theo */
+  function xepLuongNV(db, nv) {
+    var x = nv.xepLuong;
+    if (!x || !x.bang) return null;
+    var b = timBangLuong(db, x.bang), g = timNgach(b, x.ngach);
+    if (!b || !g) return null;
+    var bac = Math.max(1, +x.bac || 1), soBac = soBacNgach(g), gt = giaTriBac(db, b, g, bac);
+    var namNang = +g.namNang || +b.namNang || 3, keoDai = 0;
+    if (x.ngayHuong) (nv.quyetDinh || []).forEach(function (q) { if (q.loai === 'ky_luat' && KL_KEO_DAI.test(q.hinhThuc || '') && q.hieuLuc >= x.ngayHuong) keoDai += 6; });
+    return {
+      bang: b, ngach: g, bac: bac, soBac: soBac, bacCuoi: bac >= soBac, heSo: gt ? gt.heSo : null, tien: gt ? gt.tien : 0,
+      ngayHuong: x.ngayHuong || '', namNang: namNang, keoDai: keoDai, apDung: b.apDung,
+      ngayNang: x.ngayHuong && bac < soBac ? themThangISO(x.ngayHuong, namNang * 12 + keoDai) : '',
+      bacSau: bac < soBac ? giaTriBac(db, b, g, bac + 1) : null
+    };
+  }
+  /** Ghi mức lương theo bảng vào nhân viên (mức lương và / hoặc lương đóng BH). Trả về các trường đã đổi. */
+  function apXepLuong(db, nv) {
+    var xl = xepLuongNV(db, nv), doi = {};
+    if (!xl || !xl.tien) return doi;
+    var ht = nv.hinhThuc || 'thang';
+    if ((xl.apDung === 'cb' || xl.apDung === 'ca_hai') && (ht === 'thang' || ht === 'khoan') && +nv.luongCB !== xl.tien) { doi.luongCB = [+nv.luongCB || 0, xl.tien]; nv.luongCB = xl.tien; }
+    if ((xl.apDung === 'bh' || xl.apDung === 'ca_hai') && +nv.luongBH !== xl.tien) { doi.luongBH = [+nv.luongBH || 0, xl.tien]; nv.luongBH = xl.tien; }
+    return doi;
   }
 
   /* ----- Phòng, đội ----- */
@@ -894,6 +954,8 @@
     thueLuyTien: thueLuyTien, tinhLuongNV: tinhLuongNV, tinhBangLuong: tinhBangLuong, congTong: cong,
     chotThang: chotThang, moKhoaThang: moKhoaThang,
     tinhVaoRa: tinhVaoRa, phepNam: phepNam, docSo: docSo,
+    KIEU_BL: KIEU_BL, AP_DUNG_BL: AP_DUNG_BL, chuanBangLuong: chuanBangLuong, timBangLuong: timBangLuong, timNgach: timNgach, mucCoSoBL: mucCoSoBL,
+    soBacNgach: soBacNgach, giaTriBac: giaTriBac, xepLuongNV: xepLuongNV, apXepLuong: apXepLuong, themThangISO: themThangISO,
     LOAI_QD: LOAI_QD, luongTheoKy: luongTheoKy, LOAI_DV: LOAI_DV, loaiDonVi: loaiDonVi, donViTheoKy: donViTheoKy, soNPTKy: soNPTKy, thuongPhatQD: thuongPhatQD,
     ngayLamTrongKhoang: ngayLamTrongKhoang, apDungDonNghi: apDungDonNghi, boDonNghi: boDonNghi, ngayNghiHuu: ngayNghiHuu, thamNien: thamNien
   };

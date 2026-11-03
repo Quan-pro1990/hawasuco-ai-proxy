@@ -167,6 +167,7 @@
   App.mauQD = function (l) { return { nang_luong: 'xanh', khen_thuong: 'xanh', ky_luat: 'do', thoi_viec: 'do', bo_nhiem: 'lam', dieu_chuyen: 'lam', tiep_nhan: 'lam' }[l] || ''; };
   App.tomTatQD = function (q) {
     var s = [], db = App.db;
+    if (q.loai === 'nang_luong' && q.xepLuongMoi) s.push('Bậc ' + (q.xepLuongCu && q.xepLuongCu.ngach === q.xepLuongMoi.ngach ? q.xepLuongCu.bac + ' → ' : '') + '<b>' + q.xepLuongMoi.bac + '</b>');
     if (q.loai === 'nang_luong') s.push('Lương: ' + App.tien(q.luongCu) + ' → <b>' + App.tien(q.luongMoi) + '</b>' + (q.luongBHMoi ? '; lương đóng BH → ' + App.tien(q.luongBHMoi) : ''));
     if (q.loai === 'bo_nhiem' || q.loai === 'dieu_chuyen') {
       if (q.phongBanMoi && q.phongBanMoi !== q.phongBanCu) s.push(h(TL.tenPhongBan(db, q.phongBanCu) || '—') + ' → <b>' + h(TL.tenPhongBan(db, q.phongBanMoi)) + '</b>');
@@ -187,6 +188,7 @@
     if (sau.length) return 'Đã có quyết định nâng lương hiệu lực ' + TL.hienNgay(sau[0].hieuLuc) + ' (sau ngày ' + TL.hienNgay(q.hieuLuc) + '). Hãy sửa quyết định đó thay vì thêm mới.';
     var x = Object.assign({ id: App.uid(), loai: 'nang_luong', luongCu: +nv.luongCB || 0 }, q);
     if (x.luongBHMoi) x.luongBHCu = +nv.luongBH || 0;
+    if (x.xepLuongMoi) { x.xepLuongCu = nv.xepLuong ? Object.assign({}, nv.xepLuong) : null; nv.xepLuong = Object.assign({}, x.xepLuongMoi); }
     nv.quyetDinh.push(x);
     nv.luongCB = +x.luongMoi;
     if (x.luongBHMoi) nv.luongBH = +x.luongBHMoi;
@@ -195,9 +197,15 @@
 
   function kyKhoa(k) { if (!k) return false; var T = App.db.thang[k]; return !!(T && T.khoa); }
 
-  App.formQuyetDinh = function (nv, i, loaiMacDinh, sauKhiLuu) {
+  /** Bảng lương / chức danh để chọn bậc trong quyết định nâng lương */
+  function xlQD(q, nvx) {
+    var x = q.xepLuongMoi || (nvx && nvx.xepLuong), b = x && TL.timBangLuong(App.db, x.bang), g = b && TL.timNgach(b, x.ngach);
+    return g ? { x: x, b: b, g: g } : null;
+  }
+
+  App.formQuyetDinh = function (nv, i, loaiMacDinh, sauKhiLuu, macDinh) {
     var db = App.db, moi = i == null, f = F();
-    var q = moi ? { loai: loaiMacDinh || 'khen_thuong', ngay: hn(), hieuLuc: hn(), kyLuong: TL.khoaKy(App.ky.y, App.ky.m) } : JSON.parse(JSON.stringify(nv.quyetDinh[i]));
+    var q = moi ? Object.assign({ loai: loaiMacDinh || 'khen_thuong', ngay: hn(), hieuLuc: hn(), kyLuong: TL.khoaKy(App.ky.y, App.ky.m) }, macDinh || {}) : JSON.parse(JSON.stringify(nv.quyetDinh[i]));
     function phan(loai, nvx) {
       nvx = nvx || nv;
       var hl = '<label class="o">' + (loai === 'thoi_viec' ? 'Nghỉ việc kể từ ngày' : 'Ngày hiệu lực') + f.ngay('hieuLuc', q.hieuLuc) + '</label>';
@@ -206,6 +214,17 @@
         x += f.o('Phòng / đội mới', '<select name="phongBanMoi">' + App.optDonVi(q.phongBanMoi || (nvx && nvx.phongBan)) + '</select>') +
           f.o('Chức vụ mới', f.txt('chucVuMoi', q.chucVuMoi != null ? q.chucVuMoi : (nvx && nvx.chucVu)));
       } else if (loai === 'nang_luong') {
+        var bx = xlQD(q, nvx);
+        if (bx) {
+          var bacMoi = q.bacMoi != null ? +q.bacMoi : q.xepLuongMoi ? +q.xepLuongMoi.bac : '', ob = '<option value="">(Không đổi bậc)</option>';
+          for (var k = 1; k <= TL.soBacNgach(bx.g); k++) ob += '<option value="' + k + '"' + (k === bacMoi ? ' selected' : '') + '>' + h(App.moTaBac(bx.b, bx.g, k)) + '</option>';
+          var gtm = bacMoi ? TL.giaTriBac(db, bx.b, bx.g, bacMoi) : null;
+          if (moi && gtm && q.luongMoi == null && q.luongBHMoi == null) {
+            if (bx.b.apDung !== 'bh') q.luongMoi = gtm.tien;
+            if (bx.b.apDung !== 'cb') q.luongBHMoi = gtm.tien;
+          }
+          x += f.o('Bậc lương mới', '<select name="bacMoi">' + ob + '</select>', h(bx.b.ten) + ' – ' + h(bx.g.ten) + (moi ? ', đang bậc ' + bx.x.bac : '') + '. Dùng cho: ' + h(TL.AP_DUNG_BL[bx.b.apDung]).toLowerCase());
+        }
         x += f.o('Mức lương mới (đ)', f.tien('luongMoi', q.luongMoi || (nvx && nvx.luongCB)), moi && nvx ? 'Hiện tại: ' + App.tien(nvx.luongCB) : 'Lương cũ: ' + App.tien(q.luongCu)) +
           f.o('Lương đóng BH mới (nếu đặt riêng)', f.tien('luongBHMoi', q.luongBHMoi, 'Không đổi'));
       } else if (loai === 'khen_thuong' || loai === 'ky_luat') {
@@ -236,7 +255,14 @@
           App.$$('#qd-phan input.tien', el).forEach(App.ganOTien);
         };
         if (fm.loai.tagName === 'SELECT') fm.loai.onchange = function () { q.loai = this.value; ve2(); };
-        if (fm.nvId) fm.nvId.onchange = function () { q.luongMoi = ''; q.phongBanMoi = ''; q.chucVuMoi = null; ve2(); };
+        if (fm.nvId) fm.nvId.onchange = function () { q.luongMoi = null; q.luongBHMoi = null; q.bacMoi = null; q.phongBanMoi = ''; q.chucVuMoi = null; ve2(); };
+        App.$('#qd-phan', el).addEventListener('change', function (e) {
+          if (e.target.name !== 'bacMoi') return;
+          var bx = xlQD(q, nvHT()), gt = bx && +e.target.value ? TL.giaTriBac(db, bx.b, bx.g, +e.target.value) : null;
+          if (!gt) return;
+          if (bx.b.apDung !== 'bh') fm.luongMoi.value = App.tien(gt.tien);
+          if (bx.b.apDung !== 'cb') fm.luongBHMoi.value = App.tien(gt.tien);
+        });
         ve2();
       },
       nut: [{ ten: 'Huỷ' }, {
@@ -250,6 +276,7 @@
             if (v.loai === 'nang_luong') {
               var lm = App.docSo(v.luongMoi);
               if (!lm) { App.bao('Nhập mức lương mới.', 'loi'); return false; }
+              if (+v.bacMoi && nvx.xepLuong) x.xepLuongMoi = Object.assign({}, nvx.xepLuong, { bac: +v.bacMoi, ngayHuong: v.hieuLuc });
               var loi = App.themNangLuong(nvx, Object.assign(x, { luongMoi: lm, luongBHMoi: App.docSo(v.luongBHMoi) || '' }));
               if (loi) { App.bao(loi, 'loi'); return false; }
               tb.push('mức lương mới áp dụng từ kỳ có ngày ' + TL.hienNgay(v.hieuLuc));
@@ -280,7 +307,8 @@
               var laMoiNhat = !nvx.quyetDinh.some(function (z) { return z !== y0 && z.loai === 'nang_luong' && z.hieuLuc > y0.hieuLuc; });
               if (laMoiNhat && sau.length) { App.bao('Ngày hiệu lực mới nằm trước quyết định nâng lương khác – không đổi được.', 'loi'); return false; }
               y0.hieuLuc = v.hieuLuc; y0.luongMoi = lm2; y0.luongBHMoi = App.docSo(v.luongBHMoi) || '';
-              if (laMoiNhat) { nvx.luongCB = lm2; if (y0.luongBHMoi) nvx.luongBH = y0.luongBHMoi; }
+              if (y0.xepLuongMoi) { if (+v.bacMoi) y0.xepLuongMoi.bac = +v.bacMoi; y0.xepLuongMoi.ngayHuong = v.hieuLuc; }
+              if (laMoiNhat) { nvx.luongCB = lm2; if (y0.luongBHMoi) nvx.luongBH = y0.luongBHMoi; if (y0.xepLuongMoi) nvx.xepLuong = Object.assign({}, y0.xepLuongMoi); }
             } else {
               y0.hieuLuc = v.hieuLuc;
               if (y0.loai === 'khen_thuong' || y0.loai === 'ky_luat') Object.assign(y0, { hinhThuc: v.hinhThuc, soTien: App.docSo(v.soTien), kyLuong: v.kyLuong });
@@ -304,7 +332,10 @@
         (q.loai === 'bo_nhiem' || q.loai === 'dieu_chuyen') && moiNhat ? '<br>Phòng / đội, chức vụ trở về như trước quyết định.' : '';
     App.xacNhan('Xoá quyết định <b>' + h(TL.LOAI_QD[q.loai]) + '</b> ' + h(q.so || '') + '?' + them, { nut: 'Xoá', nguy: true }).then(function (ok) {
       if (!ok) return;
-      if (q.loai === 'nang_luong' && moiNhat) { nv.luongCB = +q.luongCu || 0; if (q.luongBHCu != null && q.luongBHCu !== '') nv.luongBH = +q.luongBHCu; }
+      if (q.loai === 'nang_luong' && moiNhat) {
+        nv.luongCB = +q.luongCu || 0; if (q.luongBHCu != null && q.luongBHCu !== '') nv.luongBH = +q.luongBHCu;
+        if ('xepLuongCu' in q) { if (q.xepLuongCu) nv.xepLuong = Object.assign({}, q.xepLuongCu); else delete nv.xepLuong; }
+      }
       if (q.loai === 'thoi_viec') { nv.ngayNghi = q.ngayNghiCu || ''; nv.trangThai = q.trangThaiCu && q.trangThaiCu !== 'nghi_viec' ? q.trangThaiCu : 'dang_lam'; }
       if ((q.loai === 'bo_nhiem' || q.loai === 'dieu_chuyen') && moiNhat) { if (q.phongBanCu) nv.phongBan = q.phongBanCu; if (q.chucVuCu != null) nv.chucVu = q.chucVuCu; }
       nv.quyetDinh.splice(i, 1);

@@ -265,6 +265,40 @@ t('Phòng / đội: chuyển qua lại có hiệu lực theo kỳ, kỳ cũ vẫ
   assert.strictEqual(r.phongBan, 'D1'); assert.strictEqual(r.tenPhongBan, 'Đội Cấp nước số 1');
 });
 
+t('Thang, bảng lương: bậc theo mức tiền / hệ số, áp vào mức lương, hạn nâng bậc', function () {
+  var db = dbMau(), nv = db.nhanVien[0];
+  db.caiDat.luongCoSo = 2340000;
+  db.thangLuong = [
+    { ma: 'T', ten: 'Bảng lương công ty', kieu: 'tien', apDung: 'cb', namNang: 3, ngach: [{ ma: 'CV', ten: 'Chuyên viên', bac: [7500000, 8000000, 8500000] }, { ma: 'CN', ten: 'Công nhân', namNang: 2, bac: [7000000, 7500000] }] },
+    { ma: 'H', ten: 'Bảng hệ số', kieu: 'he_so', apDung: 'bh', ngach: [{ ma: 'KS', ten: 'Kỹ sư', bac: [2.34, 2.67, 3.0] }] }
+  ];
+  db = TL.chuanHoa(db);
+  assert.strictEqual(db.thangLuong[0].soBac, 3);
+  assert.deepStrictEqual(db.thangLuong[0].ngach[1].bac, [7000000, 7500000, '']);
+  assert.strictEqual(TL.soBacNgach(db.thangLuong[0].ngach[1]), 2);
+  // mức tiền, dùng cho mức lương
+  nv.hinhThuc = 'thang'; nv.luongCB = 1; nv.luongBH = 0;
+  nv.xepLuong = { bang: 'T', ngach: 'CV', bac: 2, ngayHuong: '2024-02-29' };
+  var xl = TL.xepLuongNV(db, nv);
+  assert.strictEqual(xl.tien, 8000000); assert.strictEqual(xl.ngayNang, '2027-02-28'); assert.strictEqual(xl.bacSau.tien, 8500000);
+  assert.deepStrictEqual(TL.apXepLuong(db, nv), { luongCB: [1, 8000000] });
+  assert.strictEqual(nv.luongCB, 8000000); assert.strictEqual(nv.luongBH, 0);
+  // kỷ luật kéo dài thời hạn nâng lương: +6 tháng
+  nv.quyetDinh = [{ loai: 'ky_luat', hieuLuc: '2025-05-01', hinhThuc: 'Kéo dài thời hạn nâng lương không quá 6 tháng' }];
+  assert.strictEqual(TL.xepLuongNV(db, nv).ngayNang, '2027-08-29');
+  // bậc cuối: không còn hạn nâng
+  nv.xepLuong.bac = 3; assert.strictEqual(TL.xepLuongNV(db, nv).ngayNang, ''); assert.ok(TL.xepLuongNV(db, nv).bacCuoi);
+  // hệ số × lương cơ sở, chỉ dùng cho lương đóng BH
+  nv.quyetDinh = []; nv.xepLuong = { bang: 'H', ngach: 'KS', bac: 2, ngayHuong: '2025-01-01' };
+  xl = TL.xepLuongNV(db, nv);
+  assert.strictEqual(xl.heSo, 2.67); assert.strictEqual(xl.tien, 6247800); assert.strictEqual(xl.ngayNang, '2028-01-01');
+  TL.apXepLuong(db, nv);
+  assert.strictEqual(nv.luongCB, 8000000); assert.strictEqual(nv.luongBH, 6247800);
+  // lương ngày / giờ: không ghi đè mức lương bằng mức tháng
+  db.thangLuong[1].apDung = 'ca_hai'; nv.hinhThuc = 'ngay'; nv.luongCB = 300000;
+  TL.apXepLuong(db, nv); assert.strictEqual(nv.luongCB, 300000);
+});
+
 t('Nghỉ phép tính vào công thời gian; nghỉ không lương ≥ 14 ngày thì không đóng BH', function () {
   var db = dbMau(), nv = db.nhanVien[0];
   var T = TL.thang(db, 2026, 10, true);
