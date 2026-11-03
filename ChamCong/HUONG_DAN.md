@@ -1,8 +1,11 @@
 # Phần mềm Nhân sự – Chấm công – Tiền lương
 
 Mở file **`ChamCong_TinhLuong.html`** bằng trình duyệt (Chrome, Edge, Cốc Cốc, Firefox) là dùng được ngay:
-không cần cài đặt, không cần Internet, không cần máy chủ. Có thể chép file này sang máy khác, USB, hoặc đặt lên IIS
-như các phần mềm khác trong thư mục này.
+không cần cài đặt, không cần Internet, không cần máy chủ. Có thể chép file này sang máy khác, USB.
+
+**Dùng chung trên máy chủ IIS** (nhiều phòng, đội cùng làm, tài khoản đăng nhập, phân quyền, sao lưu tự động sang ổ D):
+nhấp đúp **`CaiDat-MayChu-IIS.bat`** trên máy chủ – xem [`iis/HUONG_DAN_IIS.txt`](iis/HUONG_DAN_IIS.txt).
+Địa chỉ mặc định: **https://qlns.capnuochaugiang.vn/**
 
 Lần mở đầu tiên phần mềm nạp **dữ liệu mẫu** (17 nhân viên, 13 tháng chấm công) để xem thử mọi chức năng.
 Khi dùng thật: trang **Tổng quan** → bấm **Xoá dữ liệu mẫu, bắt đầu nhập thật** (giữ lại cài đặt, ký hiệu, phụ cấp, ngày lễ).
@@ -22,7 +25,9 @@ Khi dùng thật: trang **Tổng quan** → bấm **Xoá dữ liệu mẫu, bắ
      đếm số ngày làm việc thực tế trong kỳ. Thêm loại khác được (vd bảo vệ, trực ca).
    - **Sản phẩm (lương SP)**: tên, đơn vị tính, đơn giá – vd *Hoá đơn ghi thu 1.200 đ/HĐ*, *Lắp đặt đồng hồ … đ/cái*.
    - **Phụ cấp**: *Cơm trưa* mặc định **50.000 đ/ngày** áp dụng cho mọi nhân viên (cột *Mức chung*).
-   - Phòng ban / bộ phận (thứ tự in trên bảng), ký hiệu chấm công, ngày lễ (bấm *Tạo tự động* cho từng năm).
+   - **Phòng, đội**: thêm / đổi tên / sắp xếp (thứ tự in trên bảng), chọn loại *Phòng, Đội, Ban, Tổ, Xí nghiệp*.
+   - **Thang, bảng lương**: các bảng lương, chức danh và từng bậc (mức tiền hoặc hệ số × lương cơ sở) – xem mục *Xếp lương, nâng bậc*.
+   - Ký hiệu chấm công, ngày lễ (bấm *Tạo tự động* cho từng năm).
 4. **Hồ sơ nhân viên**: thêm từng người hoặc **Nhập từ Excel** (bấm *Tải file mẫu* để có đúng các cột). Mỗi người cần:
    - **Loại lao động** (văn phòng 22 công / công nhân 26 công). Ai khác thì nhập *Công chuẩn riêng*.
    - **Sản phẩm chính** nếu có lương sản phẩm (có thể đặt đơn giá riêng cho người đó).
@@ -39,7 +44,7 @@ chấm công, bảng lương tự cập nhật theo.
 Bấm 1 người trong danh sách để mở hồ sơ gồm các tab:
 - **Thông tin cá nhân**: ảnh 3×4, ngày sinh, nơi sinh, quê quán, dân tộc, tôn giáo, CCCD (ngày cấp, nơi cấp), địa chỉ thường trú,
   chỗ ở, liên hệ khẩn cấp, trình độ học vấn – chuyên môn – ngoại ngữ – tin học – lý luận chính trị, Đảng viên.
-- **Công việc & lương**: phòng ban, chức vụ, loại lao động, trạng thái, ngày vào / nghỉ, mức lương, phụ cấp, sản phẩm, ngân hàng, phép năm.
+- **Công việc & lương**: phòng / đội (nút *Điều chuyển* lập quyết định), chức vụ, bảng lương – chức danh – bậc, loại lao động, trạng thái, ngày vào / nghỉ, mức lương, phụ cấp, sản phẩm, ngân hàng, phép năm.
 - **Bảo hiểm, thuế & người phụ thuộc**: lương đóng BH, số sổ BHXH, mã thẻ BHYT, nơi KCB; MST; danh sách **người phụ thuộc**
   có *từ tháng – đến tháng* để giảm trừ gia cảnh đúng từng tháng.
 - **Hợp đồng lao động**, **Quá trình công tác**, **Nghỉ phép** (phép năm theo tháng, đơn nghỉ), **Lương các kỳ** (12 kỳ gần nhất).
@@ -59,8 +64,24 @@ Tiếp nhận, bổ nhiệm, điều chuyển, **nâng lương**, **khen thưở
   có ngày hiệu lực trở đi tính lương mới (không phải sửa tay từng tháng).
 - **Khen thưởng / kỷ luật** có số tiền và *kỳ lương*: tiền thưởng tự cộng vào thu nhập (chịu thuế), tiền phạt / bồi thường
   tự vào khấu trừ của bảng lương kỳ đó (kỳ đã chốt thì cần mở khoá).
-- **Bổ nhiệm, điều chuyển** cập nhật phòng ban, chức vụ; **Thôi việc** đặt ngày nghỉ việc = ngày trước ngày hiệu lực.
-- Xoá quyết định mới nhất thì lương / phòng ban / trạng thái trở về như trước.
+- **Nâng lương** cho người đã xếp bảng lương: chọn *bậc mới*, phần mềm tự điền mức lương theo bảng.
+- **Bổ nhiệm, điều chuyển** cập nhật phòng / đội, chức vụ; **Thôi việc** đặt ngày nghỉ việc = ngày trước ngày hiệu lực.
+- Xoá quyết định mới nhất thì lương, bậc / phòng, đội / trạng thái trở về như trước.
+
+### Phòng, đội – chuyển nhân viên qua lại
+- Mỗi nhân viên trực thuộc 1 phòng hoặc đội. Thêm, đổi tên, xoá ở **Danh mục → Phòng, đội**.
+- Chuyển nhân viên: trang **Hồ sơ nhân viên** đánh dấu nhiều người → **Chuyển phòng / đội**; hoặc ở dòng đơn vị bấm *Chuyển NV*;
+  hoặc trong hồ sơ bấm *Điều chuyển*. Nên để đánh dấu *Lập quyết định điều chuyển* với ngày hiệu lực: **các kỳ trước ngày
+  hiệu lực vẫn tính ở đơn vị cũ** (bảng chấm công, mẫu 01a, bảng lương nhóm theo đơn vị của từng kỳ). Bỏ đánh dấu khi chỉ sửa sai.
+- **Xoá phòng / đội còn nhân viên**: phần mềm cảnh báo và **bắt buộc chuyển hết nhân viên sang đơn vị khác rồi mới xoá**.
+  Đơn vị còn trong lịch sử (quyết định cũ, người đã nghỉ, bảng lương đã chốt) được chuyển vào mục *Đã giải thể* (khôi phục được).
+
+### Xếp lương, nâng bậc
+- **Danh mục → Thang, bảng lương**: tạo bảng (vd *Thang lương, bảng lương của công ty*), chọn kiểu **mức tiền** hoặc **hệ số ×
+  mức lương cơ sở**, *Dùng cho* mức lương, lương đóng BH hoặc cả hai, thời gian nâng bậc (năm). Thêm chức danh / nhóm công việc
+  rồi nhập từng bậc; *+ Bậc / − Bậc* thêm bớt cột. Sửa giá trị bậc hoặc lương cơ sở thì lương người đang xếp bậc đó cập nhật ngay.
+- Menu **Xếp lương, nâng bậc**: chọn bảng – chức danh – bậc, ngày hưởng bậc cho từng người; tab **Đến hạn nâng bậc** liệt kê
+  người đã / sắp đến hạn (kỷ luật *kéo dài thời hạn nâng lương* cộng 6 tháng), bấm **Nâng bậc…** để lập quyết định, xuất Excel, in.
 
 ### Đơn nghỉ phép
 Tạo đơn (nhân viên, loại nghỉ `P`, `P/2`, `Ô`, `Cô`, `TS`, `KL`, `R`…, từ ngày – đến ngày, lý do); phần mềm báo số ngày làm việc và
@@ -68,7 +89,7 @@ số phép năm còn lại. **Duyệt** thì tự chấm ký hiệu vào bảng 
 thay ô đang chấm `+`, giữ nguyên ô đã chấm nghỉ khác). **Huỷ duyệt** hoặc **xoá đơn** thì xoá lại các ô đó.
 
 ### Báo cáo nhân sự
-Cơ cấu lao động (phòng ban, giới tính, độ tuổi, trình độ, loại HĐ, loại lao động, thâm niên), biến động lao động 12 tháng
+Cơ cấu lao động (phòng / đội, giới tính, độ tuổi, trình độ, loại HĐ, loại lao động, thâm niên), biến động lao động 12 tháng
 (tăng, giảm, đầu – cuối tháng), danh sách trích ngang, sinh nhật theo tháng, hợp đồng hết hạn trong 60 ngày,
 lao động đến tuổi nghỉ hưu trong 24 tháng (lộ trình Nghị định 135/2020/NĐ-CP), khen thưởng – kỷ luật trong năm. Xuất Excel, in.
 
@@ -111,7 +132,7 @@ BHXH 8% · BHYT 1,5% · BHTN 1% · Công đoàn 0,5% · Thuế TNCN · Khấu tr
 
 - Ô nền vàng nhập trực tiếp: **số lượng sản phẩm chính**, thưởng, khoản cộng khác, **tạm ứng kỳ I**, khấu trừ khác, ghi chú.
   Người làm nhiều loại sản phẩm trong tháng: bấm nút **…** cạnh ô số lượng để nhập từng loại.
-- Lọc theo **phòng ban** và **loại lao động** (vd chỉ in bảng lương công nhân); bảng chấm công cũng lọc được như vậy.
+- Lọc theo **phòng / đội** và **loại lao động** (vd chỉ in bảng lương công nhân); bảng chấm công cũng lọc được như vậy.
 - Bấm tên nhân viên để xem **chi tiết cách tính** từng con số.
 - **Xuất Excel** (kèm trang *Bảo hiểm*), **File chuyển khoản** cho ngân hàng, **In**.
 - **Chốt lương tháng**: khoá chấm công và bảng lương của kỳ, lưu cố định số liệu (không đổi khi sau này sửa mức lương,
@@ -139,8 +160,18 @@ Cách tính chính:
 
 ### 4. Phiếu lương, báo cáo
 - **Phiếu lương**: in 2 phiếu / trang A4 (hoặc *Lưu thành PDF* để gửi Zalo), xuất Excel.
-- **Báo cáo**: tổng hợp theo phòng ban, bảo hiểm & công đoàn, thuế TNCN cả năm (theo từng tháng, để quyết toán),
+- **Báo cáo**: tổng hợp theo phòng / đội, bảo hiểm & công đoàn, thuế TNCN cả năm (theo từng tháng, để quyết toán),
   quỹ lương 12 tháng, theo dõi phép năm, đi muộn – nghỉ – làm thêm. Báo cáo nào cũng xuất Excel / in được.
+
+## Dùng chung trên máy chủ, phân quyền
+
+Cài máy chủ: xem [`iis/HUONG_DAN_IIS.txt`](iis/HUONG_DAN_IIS.txt). Tài khoản quản trị vào **Cài đặt & dữ liệu → Dữ liệu**:
+- **Quản trị** / **Nhập liệu**: toàn bộ chức năng (quản trị thêm: tài khoản, sao lưu, khôi phục, nhật ký).
+- **Chấm công theo phòng / đội**: chỉ thấy *Bảng chấm công* và *Giờ vào / ra* của nhân viên thuộc đơn vị được giao, mở sẵn kỳ
+  chứa hôm nay để chấm hằng ngày; không thấy lương; máy chủ chặn sửa người ngoài đơn vị và kỳ đã chốt lương.
+- **Tạo tài khoản chấm công cho từng phòng / đội…**: mỗi đơn vị 1 tài khoản, mật khẩu ngẫu nhiên, in danh sách để phát.
+- Dữ liệu tự lưu lên máy chủ; ô chấm công của các đội được ghép từng ô nên không ghi đè lẫn nhau. Máy chủ tự sao lưu mỗi ngày
+  vào ổ D (giữ 120 bản).
 
 ## Tham số pháp lý mặc định (sửa ở Cài đặt khi Nhà nước thay đổi)
 
@@ -163,5 +194,9 @@ Hãy đối chiếu lại với văn bản hiện hành của cơ quan thuế, B
   thành `ChamCong_TinhLuong.html` (1 file duy nhất, không dùng thư viện ngoài).
 - `src/tinhluong.js`: toàn bộ cách tính (kỳ công, công chuẩn, lương, BH, thuế, lương theo quyết định, người phụ thuộc,
   đơn nghỉ, tuổi nghỉ hưu). `src/amlich.js`: lịch âm để tạo ngày lễ. `src/xlsx.js`: đọc / ghi Excel.
-  Các trang giao diện: `src/p-*.js` (`p-hoso.js` hồ sơ nhân viên, `p-nhansu.js` hợp đồng – quyết định – đơn nghỉ – báo cáo nhân sự).
+  Các trang giao diện: `src/p-*.js` (`p-hoso.js` hồ sơ nhân viên, `p-nhansu.js` hợp đồng – quyết định – đơn nghỉ – báo cáo nhân sự,
+  `p-donvi.js` phòng / đội, `p-thangluong.js` thang bảng lương – nâng bậc). `src/maychu.js`: chế độ máy chủ (đăng nhập, lưu,
+  phân quyền, tự ghép chấm công).
+- Máy chủ: `iis/MayChuChamCong.cs` (C# 5, biên dịch bằng `csc.exe` của .NET Framework 4 – bộ cài tự làm), chạy sau IIS
+  (ASP.NET Core Module V2). Bộ cài: `iis/CaiDat-IIS.ps1` (gọi qua `CaiDat-MayChu-IIS.bat`).
 - Kiểm thử cách tính: `node test/tinhluong.test.js` (có ca đối chiếu đúng 1 dòng bảng lương mẫu tháng 10/2026).

@@ -14,6 +14,8 @@
 //   ChamCongMayChu.exe --kiem-tra              kiểm tra mở được thư mục dữ liệu
 // Biến môi trường: CHAMCONG_DULIEU = thư mục dữ liệu (mặc định %ProgramData%\ChamCong\MayChu);
 //                  CHAMCONG_SAOLUU = thư mục chứa bản sao lưu hằng ngày (mặc định <dữ liệu>\SaoLuu), vd ổ D.
+//                  CHAMCONG_CHI_HTTPS = 1: yêu cầu http được chuyển sang https (site có tên miền, cổng 80 → 443).
+//                  CHAMCONG_HSTS = 1: gửi Strict-Transport-Security (chỉ bật khi dùng chứng chỉ thật, không tự ký).
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -46,6 +48,8 @@ namespace ChamCong
         static Kho kho;
         static string tokenIis = "";
         static string duongUngDung = "";
+        static readonly bool chiHttps = Environment.GetEnvironmentVariable("CHAMCONG_CHI_HTTPS") == "1";
+        static readonly bool hsts = Environment.GetEnvironmentVariable("CHAMCONG_HSTS") == "1";
 
         public static string ThuMucDuLieu()
         {
@@ -200,6 +204,23 @@ namespace ChamCong
                 Https = string.Equals(yc.Header("X-Forwarded-Proto"), "https", StringComparison.OrdinalIgnoreCase),
                 DuongCookie = (duongUngDung.Length > 0 ? duongUngDung : "") + "/"
             };
+            if (chiHttps && !ctx.Https && !duong.StartsWith("/.well-known/acme-challenge/", StringComparison.Ordinal))
+            {
+                // truy cập bằng http: trang web chuyển sang https; API thì từ chối (không gửi mật khẩu qua http)
+                string host = (yc.Header("Host") ?? "").Trim();
+                int hc = host.LastIndexOf(':');
+                if (hc > 0 && host.IndexOf(']') < hc) host = host.Substring(0, hc);
+                bool doc0 = yc.PhuongThuc == "GET" || yc.PhuongThuc == "HEAD";
+                TraLoi cv;
+                if (doc0 && host.Length > 0 && Regex.IsMatch(host, "^[A-Za-z0-9.\\-\\[\\]:]+$"))
+                {
+                    cv = TraLoi.ChuyenHuong("https://" + host + yc.Dich);
+                    cv.Status = 301;
+                }
+                else cv = TraLoi.Loi(403, "Hãy dùng địa chỉ https://");
+                Gui(ra, cv, yc.PhuongThuc == "HEAD", giu, false);
+                return giu;
+            }
             TraLoi tl;
             try
             {
@@ -214,6 +235,7 @@ namespace ChamCong
                 kho.Ghi("(lỗi)", ctx.Ip, yc.PhuongThuc + " " + duong + ": " + exx);
                 tl = TraLoi.Loi(500, "Lỗi máy chủ: " + exx.Message);
             }
+            if (hsts && ctx.Https) tl.Header["Strict-Transport-Security"] = "max-age=31536000";
             string ae = yc.Header("Accept-Encoding") ?? "";
             Gui(ra, tl, yc.PhuongThuc == "HEAD", giu, ae.IndexOf("gzip", StringComparison.OrdinalIgnoreCase) >= 0);
             return giu;
@@ -235,6 +257,15 @@ namespace ChamCong
                 return tl;
             }
             if (d == "/favicon.ico") return new TraLoi { Status = 404, Than = new byte[0], Loai = "image/x-icon" };
+            if (d.StartsWith("/.well-known/acme-challenge/", StringComparison.Ordinal))
+            {
+                // xác minh tên miền khi xin chứng chỉ Let's Encrypt (win-acme ghi file vào thư mục site)
+                string ten = d.Substring("/.well-known/acme-challenge/".Length);
+                string tep = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".well-known", "acme-challenge", ten);
+                if (Regex.IsMatch(ten, "^[A-Za-z0-9_-]{8,200}$") && File.Exists(tep))
+                    return new TraLoi { Status = 200, Than = File.ReadAllBytes(tep), Loai = "text/plain" };
+                return TraLoi.Loi(404, "Không có.");
+            }
             return TraLoi.Loi(404, "Không có trang này.");
         }
 
@@ -275,6 +306,7 @@ namespace ChamCong
             {
                 case 200: return "OK";
                 case 202: return "Accepted";
+                case 301: return "Moved Permanently";
                 case 302: return "Found";
                 case 400: return "Bad Request";
                 case 401: return "Unauthorized";

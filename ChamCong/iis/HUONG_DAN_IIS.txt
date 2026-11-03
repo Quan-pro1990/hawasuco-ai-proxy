@@ -1,0 +1,103 @@
+﻿HƯỚNG DẪN CÀI MÁY CHỦ IIS – PHẦN MỀM NHÂN SỰ – CHẤM CÔNG – TIỀN LƯƠNG
+=====================================================================
+
+Địa chỉ mặc định: https://qlns.capnuochaugiang.vn/
+Dữ liệu dùng chung nằm trên máy chủ; các phòng, đội mở bằng trình duyệt (Chrome, Edge, Cốc Cốc…),
+đăng nhập bằng tài khoản do quản trị cấp. Không cần cài gì trên máy người dùng.
+
+1. YÊU CẦU
+----------
+- Windows Server 2012 R2 trở lên (khuyên 2016 / 2019 / 2022), đăng nhập bằng tài khoản quản trị.
+- Có ổ D (ổ cứng) để chứa dữ liệu và bản sao lưu – tránh đầy ổ C. Không có ổ D thì bộ cài dùng ổ C.
+- Máy chủ ra được internet trong lúc cài (để tải ASP.NET Core Hosting Bundle nếu chưa có).
+  Không có internet: tải "ASP.NET Core Runtime – Hosting Bundle" tại https://dotnet.microsoft.com/download/dotnet
+  trên máy khác, chép sang máy chủ, cài trước, rồi chạy bộ cài.
+- IIS: bộ cài tự cài nếu máy chưa có.
+
+2. CÀI ĐẶT (1 CLICK)
+--------------------
+a) Chép nguyên thư mục ChamCong lên máy chủ, vd D:\CaiDat\ChamCong
+   (giữ nguyên cấu trúc: ChamCong_TinhLuong.html, CaiDat-MayChu-IIS.bat, thư mục iis).
+b) Nhấp đúp CaiDat-MayChu-IIS.bat → bấm Yes khi Windows hỏi quyền quản trị.
+c) Bộ cài tự làm: cài IIS + Hosting Bundle (nếu thiếu) → biên dịch ChamCongMayChu.exe → chép vào
+   C:\inetpub\ChamCong → tạo app pool "ChamCong" → tạo thư mục dữ liệu D:\ChamCongData và sao lưu
+   D:\ChamCongData\SaoLuu → tạo site "ChamCong" cho tên miền qlns.capnuochaugiang.vn
+   (https cổng 443, http cổng 80 tự chuyển sang https) → gắn chứng chỉ → mở tường lửa → gọi thử.
+d) Lần đầu, bộ cài hỏi tên và mật khẩu tài khoản QUẢN TRỊ phần mềm (ít nhất 6 ký tự). Ghi nhớ lại.
+e) Mở https://qlns.capnuochaugiang.vn/ → đăng nhập quản trị → chọn dữ liệu ban đầu:
+   - "Đưa dữ liệu đang có trên máy này lên" (nếu trước đây dùng bản 1 file trên chính trình duyệt này),
+   - "Nhập từ file sao lưu (.json)" (file tải ở Cài đặt & dữ liệu của bản cũ),
+   - hoặc bắt đầu trống.
+
+Các tuỳ chọn (thêm sau tên file .bat, chạy trong cửa sổ cmd):
+   CaiDat-MayChu-IIS.bat -TenMien qlns.capnuochaugiang.vn     đổi tên miền
+   CaiDat-MayChu-IIS.bat -DuLieu E:\ChamCongData               đặt dữ liệu ở ổ khác
+   CaiDat-MayChu-IIS.bat -SaoLuu E:\SaoLuuChamCong             đặt bản sao lưu hằng ngày ở ổ khác
+   CaiDat-MayChu-IIS.bat -ChungChi <thumbprint>                dùng chứng chỉ có sẵn trong máy
+   CaiDat-MayChu-IIS.bat -TenMien khong -CongHttps 8443        không dùng tên miền, truy cập https://<IP>:8443/
+   CaiDat-MayChu-IIS.bat -SiteCha "Default Web Site" -DuongDan /chamcong   cài thành ứng dụng con của site có sẵn
+   CaiDat-MayChu-IIS.bat -DatMatKhau      đặt lại mật khẩu quản trị (quên mật khẩu)
+   CaiDat-MayChu-IIS.bat -KiemTra         gọi thử máy chủ
+   CaiDat-MayChu-IIS.bat -GoBo            gỡ site khỏi IIS (giữ nguyên dữ liệu và bản sao lưu)
+Bộ cài nhớ lựa chọn của lần trước (C:\inetpub\ChamCong\caidat.txt), lần sau chỉ cần nhấp đúp.
+
+3. TÊN MIỀN VÀ CHỨNG CHỈ HTTPS
+------------------------------
+a) DNS: tạo bản ghi A:  qlns.capnuochaugiang.vn  →  IP công cộng của máy chủ
+   (trong trang quản lý tên miền capnuochaugiang.vn). Nếu máy chủ nằm sau modem / tường lửa:
+   chuyển (NAT) cổng 443 và 80 về máy chủ. Trong mạng nội bộ có thể thêm bản ghi DNS nội bộ trỏ IP LAN.
+b) Chứng chỉ:
+   - Nếu máy chủ đã có chứng chỉ thật của tên miền (hoặc chứng chỉ *.capnuochaugiang.vn) trong
+     Local Computer\Personal, bộ cài tự dùng.
+   - Nếu chưa, bộ cài tạo chứng chỉ TỰ KÝ để chạy ngay; trình duyệt sẽ cảnh báo "không an toàn".
+     Lấy chứng chỉ miễn phí Let's Encrypt (tự gia hạn) bằng win-acme:
+       1) Sau khi DNS trỏ đúng và mở cổng 80, tải win-acme tại https://www.win-acme.com, giải nén.
+       2) Chạy wacs.exe (quyền quản trị) → N (tạo chứng chỉ) → chọn site "ChamCong" → chọn tên miền
+          qlns.capnuochaugiang.vn → đồng ý điều khoản, nhập email. win-acme tự tạo tác vụ gia hạn.
+       3) Chạy lại CaiDat-MayChu-IIS.bat: bộ cài nhận chứng chỉ thật và bật HSTS.
+     Hoặc mua chứng chỉ: nhập file .pfx vào Local Computer\Personal (certlm.msc) rồi chạy lại bộ cài.
+
+4. TÀI KHOẢN VÀ PHÂN QUYỀN
+-------------------------
+Vào Cài đặt & dữ liệu → Dữ liệu (tài khoản quản trị):
+- Quản trị: mọi chức năng, quản lý tài khoản, sao lưu, khôi phục, nhật ký.
+- Nhập liệu: mọi chức năng nhân sự, chấm công, tiền lương (kế toán, tổ chức – hành chính).
+- Chấm công theo phòng / đội: chỉ thấy Bảng chấm công và Giờ vào / ra của nhân viên thuộc
+  phòng / đội được giao, không xem lương; không sửa được kỳ đã chốt lương.
+- Nút "Tạo tài khoản chấm công cho từng phòng / đội…": mỗi đơn vị 1 tài khoản (vd cc.d1, cc.kdvt),
+  mật khẩu ngẫu nhiên hiện 1 lần – bấm "In danh sách" để phát cho người chấm công.
+  Người dùng tự đổi mật khẩu ở thanh bên (Đổi mật khẩu).
+Nhiều người làm cùng lúc: phần mềm tự lưu lên máy chủ; tổ chấm công lưu từng ô nên không ghi đè
+lẫn nhau; máy kế toán đang sửa mà tổ vừa chấm công thì phần mềm tự ghép.
+
+5. DỮ LIỆU VÀ SAO LƯU (KHÔNG LÀM ĐẦY Ổ C)
+-----------------------------------------
+- Dữ liệu:             D:\ChamCongData\dulieu.json, tài khoản: taikhoan.json
+- Sao lưu tự động:      D:\ChamCongData\SaoLuu\dulieu_yyyy-MM-dd.json – mỗi ngày 1 bản (lần lưu đầu tiên
+                        trong ngày), giữ 120 ngày gần nhất.
+- Nhật ký phần mềm:     D:\ChamCongData\NhatKy\yyyy-MM.txt (đăng nhập, lưu, chấm công, tài khoản…)
+- Nhật ký truy cập IIS: D:\ChamCongData\IISLogs
+- Trên C chỉ có chương trình (C:\inetpub\ChamCong, vài trăm KB).
+Tải bản sao lưu về máy / khôi phục: Cài đặt & dữ liệu → Dữ liệu.
+Nên chép thêm thư mục SaoLuu ra ổ khác / NAS hằng tuần, vd tạo tác vụ trong Task Scheduler chạy:
+   robocopy D:\ChamCongData\SaoLuu \\NAS\SaoLuu\ChamCong /MIR /R:2 /W:5
+
+6. CẬP NHẬT PHIÊN BẢN MỚI
+-------------------------
+Chép thư mục ChamCong mới đè lên thư mục cũ, nhấp đúp CaiDat-MayChu-IIS.bat. Dữ liệu, tài khoản,
+chứng chỉ, tên miền giữ nguyên. Người dùng tải lại trang (F5).
+
+7. KHI CÓ SỰ CỐ
+---------------
+- CaiDat-MayChu-IIS.bat -KiemTra    gọi thử https và http.
+- Xem D:\ChamCongData\loi-khoi-dong.txt và D:\ChamCongData\NhatKy.
+- Lỗi 502.5 / 500.30: thường do thiếu quyền thư mục dữ liệu hoặc thiếu Hosting Bundle → chạy lại bộ cài.
+- Trình duyệt báo chứng chỉ không hợp lệ: xem mục 3.
+- Quên mật khẩu quản trị: CaiDat-MayChu-IIS.bat -DatMatKhau
+
+8. BẢO MẬT
+----------
+- Chỉ mở cổng 443 (và 80 để chuyển sang https / xin chứng chỉ). Mọi lệnh gọi dữ liệu bắt buộc https.
+- Mật khẩu lưu dạng băm PBKDF2; phiên đăng nhập 12 giờ (cookie HttpOnly, SameSite); sai mật khẩu
+  nhiều lần bị khoá 10 phút.
+- Thư mục dữ liệu chỉ quản trị máy chủ và app pool ChamCong đọc / ghi được.
