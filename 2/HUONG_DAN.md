@@ -163,6 +163,8 @@ Dữ liệu chuyển lên máy chủ IIS của công ty (cổng 8080, ASP.NET Co
    Chép thư mục gói sang máy chủ, nhấp đúp `CaiDat-IIS.bat` (xem `HUONG_DAN_IIS.txt` trong gói): script tạo site
    https cổng 8080 (hoặc ứng dụng con `/thatthoat` nếu cổng 8080 đã có site khác), hỏi mật khẩu tài khoản **quản trị**,
    in ra địa chỉ và **mã nhận dạng** chứng chỉ.
+   Máy chủ chưa có IIS / ASP.NET Core Hosting Bundle: nhấp đúp `TrienKhai-IIS.bat` (cũng có trong gói) — xem mục
+   *Triển khai tự động* bên dưới.
 2. **Nối máy tính**: Cài đặt → Máy chủ dữ liệu → **Kết nối máy chủ…** → nhập địa chỉ (vd `tenmien.vn:8080`) → Kiểm tra
    (mã nhận dạng phải giống mã script in ra) → tài khoản quản trị → lần đầu chọn đưa dữ liệu trên máy này lên.
    Từ đó mỗi lần sửa vẫn lưu ngay trên máy và tự gửi lên máy chủ sau ~1 giây; số điện thoại nhập tự tải về
@@ -175,6 +177,35 @@ Dữ liệu chuyển lên máy chủ IIS của công ty (cổng 8080, ASP.NET Co
    nhập địa chỉ, so mã nhận dạng, đăng nhập. Điện thoại xem tỷ lệ thất thoát tháng / cả năm, nhập chỉ số đồng hồ cấp 1
    (tự tính sản lượng, tổng giếng / nước mặt, tạo tháng mới), tải Excel, in / lưu PDF (app in thẳng qua máy in của điện thoại).
 5. **Ngắt kết nối**: phần mềm quay lại dùng bản dữ liệu trên máy này; điện thoại vẫn dùng dữ liệu máy chủ.
+
+### Triển khai tự động máy chủ IIS (`iis\TrienKhai-IIS.bat`)
+
+Công cụ một lần nhấp cho máy Windows Server (hoặc Windows 10/11) **chưa cài gì**. Chạy với quyền quản trị
+(tự xin quyền), chỉ cài phần còn thiếu, chạy lại bao nhiêu lần cũng được:
+
+1. **Cài nền**: .NET Framework 4.8 (khi máy còn bản cũ hơn 4.6.2), IIS (Web Server, Request Filtering, IIS Manager).
+2. **Tải và cài ASP.NET Core Hosting Bundle** bản LTS mới nhất thẳng từ Microsoft (đọc danh sách phát hành chính thức,
+   kiểm tra mã băm SHA-512 và chữ ký số Microsoft trước khi cài), khởi động lại IIS để nạp ASP.NET Core Module V2.
+3. **Lấy phần mềm và biên dịch**: chạy trong thư mục mã nguồn thì biên dịch lại `ThatThoatNuoc.exe` bằng `build.ps1`;
+   không có mã nguồn thì tự tải mã nguồn mới nhất từ GitHub rồi biên dịch; nằm trong gói cài IIS thì dùng luôn gói.
+   Chạy thử `ThatThoatNuoc.exe` ở chế độ máy chủ trước khi cài.
+4. **Đóng gói** `ThatThoatNuoc-MayChu-IIS` (thư mục + `.zip`, giống nút **Tạo gói cài IIS…**).
+5. **Cấu hình IIS**: gọi `CaiDat-IIS.ps1` của gói (site https cổng 8080, chứng chỉ, tường lửa, tài khoản quản trị).
+
+Khi Windows cần khởi động lại (vd sau khi cài .NET Framework), công cụ dừng và báo: khởi động lại rồi chạy lại.
+
+| Lệnh | Việc làm |
+|---|---|
+| `TrienKhai-IIS.bat` | làm đủ các bước trên |
+| `TrienKhai-IIS.bat -ChiTaoGoi` | chỉ biên dịch + tạo gói (`.zip`) trên Desktop; chạy ở máy bất kỳ, không cần quyền quản trị |
+| `TrienKhai-IIS.bat -ChiCaiNen` | chỉ cài IIS + Hosting Bundle (+ .NET Framework nếu thiếu) |
+| `TrienKhai-IIS.bat -Nguon GitHub` | luôn tải mã nguồn mới nhất từ GitHub (cập nhật máy chủ); `-Nhanh <tên>` chọn nhánh khác `main` |
+| `TrienKhai-IIS.bat -KhongBienDich` | dùng `ThatThoatNuoc.exe` có sẵn trong mã nguồn |
+| `TrienKhai-IIS.bat -DotNet 8.0` | chọn dòng Hosting Bundle (mặc định: bản LTS mới nhất; Windows Server 2012 R2 dùng 8.0) |
+| `TrienKhai-IIS.bat -Ra D:\Goi` | nơi đặt gói |
+
+Các tham số của `CaiDat-IIS.bat` (`-Cong`, `-DuLieu`, `-DuongDan`, `-ChungChi`, `-TenMien`, `-DatMatKhau`) được chuyển
+nguyên vẹn. Tệp tải về, gói và nhật ký nằm ở `%LOCALAPPDATA%\ThatThoatNuoc-TrienKhai` của tài khoản quản trị đã chạy.
 
 ## Cài đặt
 

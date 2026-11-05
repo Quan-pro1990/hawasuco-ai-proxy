@@ -476,7 +476,8 @@ namespace ThatThoatNuoc
                 }
                 bool coApk = File.Exists(Path.Combine(goc, "web", "ThatThoatNuoc-DienThoai.apk"));
                 if (MessageBox.Show(owner.FindForm(), "Đã tạo gói cài máy chủ:\n" + goc + "\n\n" +
-                                    "Chép cả thư mục sang máy chủ IIS, nhấp đúp CaiDat-IIS.bat (xem HUONG_DAN_IIS.txt)." +
+                                    "Chép cả thư mục sang máy chủ IIS, nhấp đúp CaiDat-IIS.bat (xem HUONG_DAN_IIS.txt).\n" +
+                                    "Máy chủ chưa có IIS / ASP.NET Core Hosting Bundle: nhấp đúp TrienKhai-IIS.bat để tự cài." +
                                     (coApk ? "\nGói có kèm app Android — điện thoại tải tại https://<máy chủ>:8080/tai-app" : "") + "\n\nMở thư mục?",
                                     UngDung.Ten, MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
                     Ui.OpenFile(owner, goc);
@@ -489,7 +490,8 @@ namespace ThatThoatNuoc
             Directory.CreateDirectory(web);
             File.Copy(Application.ExecutablePath, Path.Combine(web, "ThatThoatNuoc.exe"), true);
             ChepTaiNguyen("web.config", Path.Combine(web, "web.config"));
-            foreach (string t in new[] { "CaiDat-IIS.bat", "CaiDat-IIS.ps1", "HUONG_DAN_IIS.txt" }) ChepTaiNguyen(t, Path.Combine(goc, t));
+            foreach (string t in new[] { "CaiDat-IIS.bat", "CaiDat-IIS.ps1", "HUONG_DAN_IIS.txt", "TrienKhai-IIS.bat", "TrienKhai-IIS.ps1" })
+                ChepTaiNguyen(t, Path.Combine(goc, t));
             string apk = Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "ThatThoatNuoc-DienThoai.apk");
             if (File.Exists(apk)) File.Copy(apk, Path.Combine(web, "ThatThoatNuoc-DienThoai.apk"), true);
         }
