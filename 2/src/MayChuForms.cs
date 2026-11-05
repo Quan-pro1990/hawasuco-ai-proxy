@@ -490,7 +490,7 @@ namespace ThatThoatNuoc
             Directory.CreateDirectory(web);
             File.Copy(Application.ExecutablePath, Path.Combine(web, "ThatThoatNuoc.exe"), true);
             ChepTaiNguyen("web.config", Path.Combine(web, "web.config"));
-            foreach (string t in new[] { "CaiDat-IIS.bat", "CaiDat-IIS.ps1", "HUONG_DAN_IIS.txt", "TrienKhai-IIS.bat", "TrienKhai-IIS.ps1" })
+            foreach (string t in new[] { "CaiDat-IIS.bat", "CaiDat-IIS.ps1", "HUONG_DAN_IIS.txt", "HUONG_DAN_CHI_TIET.html", "TrienKhai-IIS.bat", "TrienKhai-IIS.ps1" })
                 ChepTaiNguyen(t, Path.Combine(goc, t));
             string apk = Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "ThatThoatNuoc-DienThoai.apk");
             if (File.Exists(apk)) File.Copy(apk, Path.Combine(web, "ThatThoatNuoc-DienThoai.apk"), true);

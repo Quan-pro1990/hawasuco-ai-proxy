@@ -207,6 +207,10 @@ Khi Windows cần khởi động lại (vd sau khi cài .NET Framework), công c
 Các tham số của `CaiDat-IIS.bat` (`-Cong`, `-DuLieu`, `-DuongDan`, `-ChungChi`, `-TenMien`, `-DatMatKhau`) được chuyển
 nguyên vẹn. Tệp tải về, gói và nhật ký nằm ở `%LOCALAPPDATA%\ThatThoatNuoc-TrienKhai` của tài khoản quản trị đã chạy.
 
+Hướng dẫn đầy đủ cho người quản trị máy chủ (chuẩn bị, mở cổng router, kết nối, cập nhật, sao lưu / khôi phục,
+xử lý sự cố): `iis\HUONG_DAN_CHI_TIET.html` — có sẵn trong mọi gói cài IIS.
+Gói dựng sẵn để chép sang máy chủ: `ThatThoatNuoc-MayChu-IIS.zip` ở thư mục gốc của repo (nội dung giống thư mục `1`).
+
 ## Cài đặt
 
 - Tên công ty, địa danh ghi ngày lập, người ký mặc định, ngưỡng nhắc sản lượng tăng / giảm.

@@ -1,5 +1,7 @@
 CÀI MÁY CHỦ IIS CHO PHẦN MỀM "QUẢN LÝ THẤT THOÁT NƯỚC"
 =====================================================
+Hướng dẫn chi tiết từng bước, mở cổng, sao lưu / khôi phục, xử lý sự cố:
+mở tệp HUONG_DAN_CHI_TIET.html (cùng thư mục) bằng trình duyệt. Tệp này là bản tóm tắt.
 
   Máy tính (phần mềm)  ─┐
   Điện thoại (Chrome)  ─┼─ HTTPS cổng 8080 ─>  IIS trên máy chủ  ─>  ThatThoatNuoc.exe (chế độ máy chủ)  ─>  dữ liệu C:\ThatThoatNuocData

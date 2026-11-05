@@ -1,6 +1,7 @@
 ﻿# Cài máy chủ IIS cho phần mềm "Quản lý thất thoát nước".
 # Dữ liệu nằm trên máy chủ; phần mềm trên máy tính và điện thoại (trình duyệt / app Android) kết nối vào qua HTTPS.
-# Máy chủ cần có sẵn IIS + ASP.NET Core Hosting Bundle (script KHÔNG cài thêm tính năng Windows nào).
+# Máy chủ cần có sẵn IIS + ASP.NET Core Hosting Bundle (script KHÔNG cài thêm tính năng Windows nào;
+# máy chưa có thì dùng TrienKhai-IIS.bat: tự cài IIS, tải + cài Hosting Bundle rồi gọi script này).
 #
 # Chạy bằng CaiDat-IIS.bat (tự xin quyền quản trị). Tham số tuỳ chọn, vd:
 #   CaiDat-IIS.bat -Cong 8080                        cổng (mặc định 8080)
@@ -62,6 +63,10 @@ $caiTruoc = @{}
 if (Test-Path $tepCaiDat) {
     Get-Content $tepCaiDat -Encoding UTF8 | ForEach-Object { if ($_ -match '^\s*([A-Za-z]+)\s*=\s*(.*)$') { $caiTruoc[$Matches[1]] = $Matches[2].Trim() } }
 }
+# Cập nhật mà không ghi lại -Cong / -DuLieu: dùng lựa chọn của lần cài trước
+# (không thì máy chủ bị trỏ sang cổng mặc định / thư mục dữ liệu trống C:\ThatThoatNuocData)
+if (-not $PSBoundParameters.ContainsKey('Cong') -and $caiTruoc['Cong'] -match '^\d+$') { $Cong = [int]$caiTruoc['Cong'] }
+if (-not $PSBoundParameters.ContainsKey('DuLieu') -and $caiTruoc['DuLieu']) { $DuLieu = $caiTruoc['DuLieu'] }
 
 # Gọi https://127.0.0.1:cổng/đường-dẫn/api/ping, lấy cả chứng chỉ máy chủ đưa ra
 function GoiThu([int]$cong, [string]$duong) {
@@ -91,7 +96,7 @@ function GoiThu([int]$cong, [string]$duong) {
 $laQuanTri = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(
     [Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $laQuanTri) { Dung 'Cần quyền quản trị: hãy chạy CaiDat-IIS.bat (tự xin quyền).' }
-if (-not (Test-Path $appcmd)) { Dung 'Máy này chưa có IIS.' }
+if (-not (Test-Path $appcmd)) { Dung 'Máy này chưa có IIS. Chạy TrienKhai-IIS.bat để tự cài IIS + ASP.NET Core Hosting Bundle.' }
 
 if ($KiemTra) {
     $duong = if ($caiTruoc['DuongDan']) { $caiTruoc['DuongDan'] } else { $DuongDan }
@@ -139,7 +144,7 @@ if (-not (Test-Path $exeGoi)) { Dung 'Thiếu web\ThatThoatNuoc.exe trong gói. 
 
 Buoc 'Kiểm tra IIS và ASP.NET Core Hosting Bundle'
 if ((Chay $appcmd @('list', 'config', '-section:system.webServer/globalModules')).Ra -notmatch 'AspNetCoreModuleV2') {
-    Dung 'IIS chưa có ASP.NET Core Module V2. Hãy cài ASP.NET Core Hosting Bundle rồi chạy lại.'
+    Dung 'IIS chưa có ASP.NET Core Module V2. Chạy TrienKhai-IIS.bat để tự tải và cài ASP.NET Core Hosting Bundle (hoặc cài bằng tay rồi chạy lại).'
 }
 Write-Host 'IIS + ASP.NET Core Module V2: có.'
 

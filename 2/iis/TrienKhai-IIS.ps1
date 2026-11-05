@@ -55,7 +55,7 @@ try { [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::S
 $goc = Split-Path -Parent $MyInvocation.MyCommand.Path
 $appcmd = "$env:windir\system32\inetsrv\appcmd.exe"
 $tenGoi = 'ThatThoatNuoc-MayChu-IIS'
-$tepGoi = @('CaiDat-IIS.bat', 'CaiDat-IIS.ps1', 'HUONG_DAN_IIS.txt', 'TrienKhai-IIS.bat', 'TrienKhai-IIS.ps1')
+$tepGoi = @('CaiDat-IIS.bat', 'CaiDat-IIS.ps1', 'HUONG_DAN_IIS.txt', 'HUONG_DAN_CHI_TIET.html', 'TrienKhai-IIS.bat', 'TrienKhai-IIS.ps1')
 $nguonPhatHanh = @('https://builds.dotnet.microsoft.com/dotnet/release-metadata',
                    'https://dotnetcli.blob.core.windows.net/dotnet/release-metadata')
 $netFx48 = 'https://go.microsoft.com/fwlink/?linkid=2088631'   # .NET Framework 4.8, bản cài offline
@@ -219,11 +219,13 @@ function TaiMaNguon {
 function ThuChayExe([string]$exe) {
     $thu = Join-Path $lam 'KiemTraExe'
     if (Test-Path -LiteralPath $thu) { Remove-Item -LiteralPath $thu -Recurse -Force }
-    $cu = $env:THATTHOAT_DULIEU
-    $env:THATTHOAT_DULIEU = $thu
     try {
-        $p = Start-Process -FilePath $exe -ArgumentList '--kiem-tra-may-chu' -PassThru -WindowStyle Hidden
-        $null = $p.Handle   # giữ handle để đọc được ExitCode
+        $psi = New-Object Diagnostics.ProcessStartInfo($exe, '--kiem-tra-may-chu')
+        # chạy thẳng (không qua Explorer): tệp mang dấu "tải từ Internet" không bị hộp thoại cảnh báo chặn lại
+        $psi.UseShellExecute = $false
+        $psi.CreateNoWindow = $true
+        $psi.EnvironmentVariables['THATTHOAT_DULIEU'] = $thu
+        $p = [Diagnostics.Process]::Start($psi)
         if (-not $p.WaitForExit(60000)) { try { $p.Kill() } catch { }; return 'quá 60 giây không trả lời' }
         if ($p.ExitCode -eq 0) { return '' }
         $tepLoi = Join-Path $thu 'loi-khoi-dong.txt'
@@ -231,7 +233,6 @@ function ThuChayExe([string]$exe) {
         return "mã $($p.ExitCode)"
     }
     finally {
-        $env:THATTHOAT_DULIEU = $cu
         Remove-Item -LiteralPath $thu -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
@@ -411,6 +412,9 @@ if ($Nguon -ne 'GitHub') {
         if ($ChiTaoGoi) { Dung "Công cụ đang nằm trong gói cài IIS ($goc): gói đã sẵn sàng, chép cả thư mục sang máy chủ." }
         $goi = $goc
         Buoc "Dùng gói cài IIS có sẵn: $goi"
+        # Gói giải nén từ tệp .zip tải trên mạng: gỡ dấu "tải từ Internet" để Windows không chặn / hỏi lại khi chạy
+        try { Get-ChildItem -LiteralPath $goi -Recurse -File | Unblock-File }
+        catch { CanhBao "Không gỡ được dấu tải từ Internet (không bắt buộc): $($_.Exception.Message)" }
     }
     else {
         foreach ($d in @($goc, (Split-Path -Parent $goc))) {

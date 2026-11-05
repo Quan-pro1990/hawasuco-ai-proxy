@@ -63,6 +63,10 @@ $caiTruoc = @{}
 if (Test-Path $tepCaiDat) {
     Get-Content $tepCaiDat -Encoding UTF8 | ForEach-Object { if ($_ -match '^\s*([A-Za-z]+)\s*=\s*(.*)$') { $caiTruoc[$Matches[1]] = $Matches[2].Trim() } }
 }
+# Cập nhật mà không ghi lại -Cong / -DuLieu: dùng lựa chọn của lần cài trước
+# (không thì máy chủ bị trỏ sang cổng mặc định / thư mục dữ liệu trống C:\ThatThoatNuocData)
+if (-not $PSBoundParameters.ContainsKey('Cong') -and $caiTruoc['Cong'] -match '^\d+$') { $Cong = [int]$caiTruoc['Cong'] }
+if (-not $PSBoundParameters.ContainsKey('DuLieu') -and $caiTruoc['DuLieu']) { $DuLieu = $caiTruoc['DuLieu'] }
 
 # Gọi https://127.0.0.1:cổng/đường-dẫn/api/ping, lấy cả chứng chỉ máy chủ đưa ra
 function GoiThu([int]$cong, [string]$duong) {

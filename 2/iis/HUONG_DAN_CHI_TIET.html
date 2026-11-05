@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hướng dẫn cài máy chủ IIS</title>
+<style>
+  :root {
+    --bg: #f4f6f9; --paper: #ffffff; --ink: #1c2330; --muted: #5a6476; --line: #dfe4ec;
+    --accent: #0a62b8; --accent-soft: #e7f0fa; --on-accent: #ffffff;
+    --ok: #17713f; --ok-soft: #e6f4ec; --warn: #8a5300; --warn-soft: #fff3dc; --bad: #a8261b; --bad-soft: #fcebea;
+    --code-bg: #f0f2f6; --term-bg: #0c1622; --term-ink: #d9e2ec;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #10141b; --paper: #171c25; --ink: #e3e8ef; --muted: #9aa5b6; --line: #2b3342;
+      --accent: #6cb0f5; --accent-soft: #16273b; --on-accent: #0b1420;
+      --ok: #6fd39d; --ok-soft: #12291d; --warn: #f0b85a; --warn-soft: #2e2412; --bad: #f38b80; --bad-soft: #321716;
+      --code-bg: #212836; --term-bg: #070b11; --term-ink: #d9e2ec;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.6 "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+  }
+  .trang { max-width: 900px; margin: 0 auto; padding: 24px 16px 64px; }
+  header.dau { padding: 8px 0 20px; border-bottom: 1px solid var(--line); margin-bottom: 24px; }
+  .nhan { display: inline-block; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+  h1 { font-size: 30px; line-height: 1.25; margin: 6px 0 8px; }
+  .phu { color: var(--muted); margin: 0; }
+  h2 { font-size: 23px; line-height: 1.3; margin: 44px 0 12px; padding-top: 8px; scroll-margin-top: 12px; }
+  h2 .so { color: var(--accent); margin-right: 8px; }
+  h3 { font-size: 18px; margin: 28px 0 8px; scroll-margin-top: 12px; }
+  p, li { max-width: 72ch; }
+  a { color: var(--accent); }
+  code, kbd {
+    font-family: Consolas, "Cascadia Mono", "Courier New", monospace; font-size: .92em;
+    background: var(--code-bg); border-radius: 4px; padding: 1px 5px; overflow-wrap: anywhere;
+  }
+  kbd { border: 1px solid var(--line); border-bottom-width: 2px; }
+  pre {
+    font-family: Consolas, "Cascadia Mono", "Courier New", monospace; font-size: 14px; line-height: 1.5;
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px;
+    overflow-x: auto; margin: 10px 0 16px;
+  }
+  pre code { background: none; padding: 0; }
+  pre.tram { background: var(--term-bg); color: var(--term-ink); border-color: var(--term-bg); }
+  .tram .b { color: #5fd3f3; } .tram .x { color: #7ee2a8; } .tram .v { color: #f5c76b; } .tram .m { color: #8b98a9; }
+  .the { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; margin: 16px 0; }
+  .nhanh { border-left: 4px solid var(--accent); }
+  .nhanh h2 { margin-top: 0; font-size: 20px; }
+  .nhanh ol { margin-bottom: 0; }
+  nav.muc ol { columns: 2; column-gap: 32px; margin: 0; padding-left: 22px; }
+  nav.muc li { break-inside: avoid; margin: 2px 0; }
+  nav.muc h2 { margin: 0 0 8px; font-size: 18px; }
+  .chu-y { border-radius: 10px; padding: 12px 16px; margin: 14px 0; border: 1px solid transparent; }
+  .chu-y > :first-child { margin-top: 0; } .chu-y > :last-child { margin-bottom: 0; }
+  .chu-y strong.t { display: block; margin-bottom: 2px; }
+  .chu-y.tin { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 25%, transparent); }
+  .chu-y.tot { background: var(--ok-soft); border-color: color-mix(in srgb, var(--ok) 25%, transparent); }
+  .chu-y.tot strong.t { color: var(--ok); }
+  .chu-y.canh { background: var(--warn-soft); border-color: color-mix(in srgb, var(--warn) 30%, transparent); }
+  .chu-y.canh strong.t { color: var(--warn); }
+  .chu-y.nguy { background: var(--bad-soft); border-color: color-mix(in srgb, var(--bad) 30%, transparent); }
+  .chu-y.nguy strong.t { color: var(--bad); }
+  .bang { overflow-x: auto; margin: 12px 0 18px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+  th { background: var(--code-bg); font-weight: 600; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td code { white-space: nowrap; }
+  ol.buoc { list-style: none; padding: 0; counter-reset: b; }
+  ol.buoc > li { counter-increment: b; position: relative; padding: 0 0 18px 48px; max-width: none; }
+  ol.buoc > li::before {
+    content: counter(b); position: absolute; left: 0; top: -2px; width: 32px; height: 32px; border-radius: 50%;
+    background: #0a62b8; background: var(--accent); color: #fff; color: var(--on-accent);
+    font-weight: 700; font-size: 15px; line-height: 32px; text-align: center;
+  }
+  ol.buoc > li > strong:first-child { display: block; font-size: 17px; }
+  .so-do { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 14px 0; }
+  .o { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 14px; line-height: 1.4; }
+  .o b { display: block; font-size: 15px; }
+  .o.chinh { border-color: var(--accent); background: var(--accent-soft); }
+  .mui { color: var(--muted); font-size: 13px; text-align: center; line-height: 1.2; }
+  .mui::after { content: "→"; display: block; font-size: 22px; color: var(--accent); }
+  footer { margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+  @media (max-width: 640px) {
+    h1 { font-size: 25px; } h2 { font-size: 20px; }
+    nav.muc ol { columns: 1; }
+    .the { padding: 14px 14px; }
+    ol.buoc > li { padding-left: 42px; }
+    .so-do { flex-direction: column; align-items: stretch; }
+    .mui::after { content: "↓"; }
+    th, td { padding: 8px 9px; font-size: 14px; }
+    th, td code { white-space: normal; }
+  }
+  @media print {
+    :root { --bg: #fff; --paper: #fff; --term-bg: #f3f3f3; --term-ink: #111; }
+    body { font-size: 12pt; }
+    .trang { max-width: none; padding: 0; }
+    .tram .b, .tram .x, .tram .v, .tram .m { color: #111; }
+    pre, .chu-y, .the, ol.buoc > li, tr, .so-do { break-inside: avoid; }
+    h2, h3 { break-after: avoid; }
+    nav.muc { break-after: page; }
+    a { color: inherit; text-decoration: none; }
+  }
+</style>
+</head>
+<body>
+<div class="trang">
+
+<header class="dau">
+  <span class="nhan">Phần mềm Quản lý thất thoát nước · Gói ThatThoatNuoc-MayChu-IIS</span>
+  <h1>Hướng dẫn chi tiết cài đặt máy chủ IIS</h1>
+  <p class="phu">Dành cho người quản trị máy chủ: chuẩn bị, cài một lần nhấp, mở cổng, kết nối máy tính và điện thoại,
+  cập nhật, sao lưu, xử lý sự cố.</p>
+</header>
+
+<section class="the nhanh" aria-labelledby="tom-tat">
+  <h2 id="tom-tat">Làm nhanh trong 5 bước</h2>
+  <ol>
+    <li>Chép tệp <code>ThatThoatNuoc-MayChu-IIS.zip</code> lên máy chủ, <strong>bỏ chặn</strong> (Properties → Unblock) rồi giải nén.</li>
+    <li>Nhấp đúp <code>TrienKhai-IIS.bat</code> → bấm <strong>Yes</strong>. Công cụ tự cài IIS, ASP.NET Core Hosting Bundle (nếu thiếu) và phần mềm.</li>
+    <li>Khi được hỏi, đặt <strong>tên và mật khẩu tài khoản quản trị</strong>.</li>
+    <li>Ghi lại <strong>Địa chỉ</strong> và <strong>Mã nhận dạng</strong> in ở cuối. Mở cổng <strong>8080</strong> trên router về máy chủ.</li>
+    <li>Trên máy tính: phần mềm → <strong>Cài đặt → Máy chủ dữ liệu → Kết nối máy chủ…</strong></li>
+  </ol>
+</section>
+
+<nav class="the muc" aria-labelledby="muc-luc">
+  <h2 id="muc-luc">Mục lục</h2>
+  <ol>
+    <li><a href="#goi">Gói gồm những gì</a></li>
+    <li><a href="#hoat-dong">Hệ thống hoạt động thế nào</a></li>
+    <li><a href="#yeu-cau">Yêu cầu máy chủ</a></li>
+    <li><a href="#chuan-bi">Chuẩn bị</a></li>
+    <li><a href="#cai-dat">Cài đặt một lần nhấp</a></li>
+    <li><a href="#truong-hop">Các trường hợp cài khác</a></li>
+    <li><a href="#mo-cong">Mở cổng ra Internet</a></li>
+    <li><a href="#ket-noi">Kết nối máy tính và điện thoại</a></li>
+    <li><a href="#cap-nhat">Cập nhật phiên bản mới</a></li>
+    <li><a href="#sao-luu">Dữ liệu, sao lưu, khôi phục</a></li>
+    <li><a href="#quan-tri">Kiểm tra, đặt lại mật khẩu, gỡ cài đặt</a></li>
+    <li><a href="#tham-so">Bảng tham số</a></li>
+    <li><a href="#su-co">Xử lý sự cố</a></li>
+    <li><a href="#bao-mat">Bảo mật</a></li>
+    <li><a href="#tao-goi">Tạo gói mới (người phát triển)</a></li>
+  </ol>
+</nav>
+
+<!-- ============================================================ 1 -->
+<h2 id="goi"><span class="so">1</span>Gói gồm những gì</h2>
+<div class="bang"><table>
+  <thead><tr><th>Tệp</th><th>Công dụng</th></tr></thead>
+  <tbody>
+    <tr><td><code>TrienKhai-IIS.bat</code></td><td><strong>Nên dùng.</strong> Cài một lần nhấp: cài phần nền còn thiếu (IIS, ASP.NET Core Hosting Bundle, .NET Framework 4.8) rồi cài phần mềm.</td></tr>
+    <tr><td><code>CaiDat-IIS.bat</code></td><td>Cài / cập nhật phần mềm khi máy chủ <em>đã có</em> IIS và Hosting Bundle; kiểm tra, đặt lại mật khẩu, gỡ cài đặt.</td></tr>
+    <tr><td><code>TrienKhai-IIS.ps1</code>, <code>CaiDat-IIS.ps1</code></td><td>Mã PowerShell của hai tệp trên. Không cần mở; luôn chạy qua tệp <code>.bat</code>.</td></tr>
+    <tr><td><code>HUONG_DAN_CHI_TIET.html</code></td><td>Tài liệu này.</td></tr>
+    <tr><td><code>HUONG_DAN_IIS.txt</code></td><td>Hướng dẫn tóm tắt dạng văn bản.</td></tr>
+    <tr><td><code>web\ThatThoatNuoc.exe</code></td><td>Phần mềm. Trên máy chủ chạy ở chế độ máy chủ: IIS tự khởi chạy, không có cửa sổ.</td></tr>
+    <tr><td><code>web\web.config</code></td><td>Cấu hình IIS của site.</td></tr>
+    <tr><td><code>web\ThatThoatNuoc-DienThoai.apk</code></td><td>App Android. Điện thoại tải tại <code>https://&lt;máy chủ&gt;:8080/tai-app</code>.</td></tr>
+  </tbody>
+</table></div>
+
+<!-- ============================================================ 2 -->
+<h2 id="hoat-dong"><span class="so">2</span>Hệ thống hoạt động thế nào</h2>
+<div class="so-do" role="img" aria-label="Máy tính, điện thoại và app Android kết nối HTTPS cổng 8080 tới IIS trên máy chủ; IIS chạy ThatThoatNuoc.exe; dữ liệu nằm ở C:\ThatThoatNuocData">
+  <div class="o"><b>Máy tính</b>phần mềm ThatThoatNuoc.exe</div>
+  <div class="o"><b>Điện thoại</b>Chrome hoặc app Android</div>
+  <div class="mui">HTTPS<br>cổng 8080</div>
+  <div class="o chinh"><b>IIS trên máy chủ</b>ASP.NET Core Module V2</div>
+  <div class="mui">127.0.0.1</div>
+  <div class="o chinh"><b>ThatThoatNuoc.exe</b>chế độ máy chủ</div>
+  <div class="mui"></div>
+  <div class="o"><b>C:\ThatThoatNuocData</b>dữ liệu, tài khoản, sao lưu</div>
+</div>
+<p>Dữ liệu nằm trên máy chủ chạy 24/7 và tự sao lưu mỗi ngày. Máy tính và điện thoại vào thẳng địa chỉ máy chủ qua cổng đã mở,
+không cần ZeroTier hay VPN. Kết nối được mã hoá HTTPS; máy tính và app kiểm tra máy chủ bằng <strong>mã nhận dạng</strong> chứng chỉ.</p>
+<p>Sau khi cài, máy chủ có:</p>
+<div class="bang"><table>
+  <thead><tr><th>Thành phần</th><th>Ghi chú</th></tr></thead>
+  <tbody>
+    <tr><td><code>C:\inetpub\ThatThoatNuoc</code></td><td>Chương trình. Được thay mỗi lần cập nhật.</td></tr>
+    <tr><td><code>C:\ThatThoatNuocData</code></td><td>Số liệu, tài khoản (mật khẩu đã băm), nhật ký <code>NhatKy</code>, sao lưu <code>SaoLuu</code>. Chỉ quản trị và app pool truy cập được. <strong>Giữ nguyên</strong> khi cập nhật hay gỡ.</td></tr>
+    <tr><td>Site và app pool IIS <code>ThatThoatNuoc</code></td><td>Site https cổng 8080; app pool <em>No Managed Code</em>, chạy thường trực.</td></tr>
+    <tr><td>Chứng chỉ <code>That thoat nuoc (IIS)</code></td><td>Chứng chỉ tự ký 10 năm trong <em>LocalMachine\My</em> (hoặc chứng chỉ thật của bạn, xem 6.4).</td></tr>
+    <tr><td>Quy tắc tường lửa <code>Quan ly that thoat nuoc (IIS)</code></td><td>Cho phép cổng TCP 8080 đi vào.</td></tr>
+  </tbody>
+</table></div>
+
+<!-- ============================================================ 3 -->
+<h2 id="yeu-cau"><span class="so">3</span>Yêu cầu máy chủ</h2>
+<div class="bang"><table>
+  <thead><tr><th>Hạng mục</th><th>Yêu cầu</th></tr></thead>
+  <tbody>
+    <tr><td>Hệ điều hành</td><td>Windows Server 2016, 2019, 2022 hoặc 2025 (khuyên dùng). Windows Server 2012 R2 vẫn dùng được: công cụ cài .NET Framework 4.8 và Hosting Bundle dòng 8.0 (máy cần bản cập nhật KB2919355). Windows 10/11 dùng để chạy thử.</td></tr>
+    <tr><td>Tài khoản</td><td>Tài khoản thuộc nhóm <strong>Administrators</strong> của máy chủ.</td></tr>
+    <tr><td>Internet</td><td>Cần trong lần cài đầu để tải ASP.NET Core Hosting Bundle (và .NET Framework 4.8 nếu thiếu) từ Microsoft. Không có Internet: xem <a href="#offline">6.2</a>.</td></tr>
+    <tr><td>Cổng</td><td>Cổng 8080 (hoặc cổng bạn chọn) chưa bị chương trình khác ngoài IIS chiếm.</td></tr>
+    <tr><td>Địa chỉ</td><td>Tên miền hoặc IP công cộng cố định trỏ về mạng có máy chủ; router chuyển cổng về máy chủ (mục <a href="#mo-cong">7</a>).</td></tr>
+    <tr><td>Ổ đĩa</td><td>Ổ C còn trống ít nhất 2 GB.</td></tr>
+  </tbody>
+</table></div>
+
+<!-- ============================================================ 4 -->
+<h2 id="chuan-bi"><span class="so">4</span>Chuẩn bị</h2>
+<ol class="buoc">
+  <li><strong>Chép gói lên máy chủ</strong>
+    Chép tệp <code>ThatThoatNuoc-MayChu-IIS.zip</code> sang máy chủ (qua Remote Desktop, USB hoặc tải từ GitHub).</li>
+  <li><strong>Bỏ chặn tệp tải về</strong>
+    Chuột phải tệp <code>.zip</code> → <strong>Properties</strong> → đánh dấu <strong>Unblock</strong> (Bỏ chặn) ở cuối thẻ General → <strong>OK</strong>.
+    Không thấy ô này nghĩa là tệp không bị chặn, bỏ qua bước này.
+    <div class="chu-y tin"><strong class="t">Vì sao?</strong>Windows đánh dấu tệp tải từ Internet và hỏi lại mỗi lần chạy. Bỏ chặn tệp .zip trước khi giải nén là gỡ cho tất cả tệp bên trong.</div></li>
+  <li><strong>Giải nén</strong>
+    Chuột phải → <strong>Extract All…</strong> → chọn vd <code>C:\CaiDat</code>. Được thư mục <code>C:\CaiDat\ThatThoatNuoc-MayChu-IIS</code>.
+    <div class="chu-y canh"><strong class="t">Lưu ý</strong>Không chạy công cụ ngay bên trong tệp .zip (nhấp đúp mở .zip rồi chạy): phải giải nén ra thư mục trước.</div></li>
+  <li><strong>Đăng nhập máy chủ bằng tài khoản quản trị</strong>
+    Đóng các chương trình đang cài đặt dở (Windows Update đang chạy có thể làm việc cài IIS phải chờ).</li>
+</ol>
+
+<!-- ============================================================ 5 -->
+<h2 id="cai-dat"><span class="so">5</span>Cài đặt một lần nhấp (TrienKhai-IIS.bat)</h2>
+<ol class="buoc">
+  <li><strong>Chạy công cụ</strong>
+    Trong thư mục gói, nhấp đúp <code>TrienKhai-IIS.bat</code>. Windows hỏi <em>“Do you want to allow this app to make changes to your device?”</em> → <strong>Yes</strong>.
+    Nếu hiện <em>“Windows protected your PC”</em>: bấm <strong>More info</strong> → <strong>Run anyway</strong>.</li>
+  <li><strong>Theo dõi các bước</strong>
+    Cửa sổ màu đen chạy lần lượt; mỗi bước bắt đầu bằng dòng <code>== …</code> màu xanh. Phần đã có trên máy được bỏ qua.
+    <div class="bang"><table>
+      <thead><tr><th>Dòng hiện ra</th><th>Công cụ làm gì</th><th>Thời gian</th></tr></thead>
+      <tbody>
+        <tr><td><code>== .NET Framework 4</code></td><td>Kiểm tra phiên bản; cài 4.8 nếu máy còn bản cũ hơn 4.6.2.</td><td>0–10 phút</td></tr>
+        <tr><td><code>== IIS (Web Server)</code></td><td>Cài vai trò Web Server (IIS) và IIS Manager nếu thiếu; bật dịch vụ.</td><td>1–5 phút</td></tr>
+        <tr><td><code>== ASP.NET Core Hosting Bundle…</code></td><td>Tìm bản LTS mới nhất trên trang phát hành của Microsoft, tải về, kiểm tra mã băm SHA-512 và chữ ký số Microsoft, cài, khởi động lại IIS.</td><td>2–10 phút</td></tr>
+        <tr><td><code>== Dùng gói cài IIS có sẵn</code></td><td>Dùng chương trình trong gói, gỡ dấu “tải từ Internet”.</td><td>vài giây</td></tr>
+        <tr><td><code>== Chạy thử ThatThoatNuoc.exe…</code></td><td>Chạy thử chương trình ở chế độ máy chủ với thư mục tạm.</td><td>vài giây</td></tr>
+        <tr><td><code>== Cấu hình IIS…</code></td><td>Gọi <code>CaiDat-IIS.ps1</code>: chép chương trình, app pool, thư mục dữ liệu, tài khoản quản trị, chứng chỉ, site, tường lửa, gọi thử.</td><td>1 phút</td></tr>
+      </tbody>
+    </table></div></li>
+  <li><strong>Đặt tài khoản quản trị (chỉ lần cài đầu)</strong>
+<pre class="tram"><span class="b">== Tài khoản quản trị (dùng trên máy tính để kết nối, quản lý tài khoản điện thoại)</span>
+Tên đăng nhập quản trị [admin]: <span class="m">← Enter để dùng "admin", hoặc gõ tên khác</span>
+Mật khẩu (ít nhất 6 ký tự): ************
+Nhập lại mật khẩu: ************
+<span class="x">Đã đặt tài khoản quản trị 'admin'.</span></pre>
+    <div class="chu-y canh"><strong class="t">Mật khẩu</strong>Đây là tài khoản toàn quyền. Dùng mật khẩu mạnh (từ 12 ký tự, có chữ hoa, chữ thường, số) và cất giữ cẩn thận. Quên thì đặt lại theo mục <a href="#quan-tri">11</a>.</div></li>
+  <li><strong>Ghi lại địa chỉ và mã nhận dạng</strong>
+    Cuối cùng cửa sổ in ra:
+<pre class="tram"><span class="x">==============================================================
+ ĐÃ CÀI XONG máy chủ Quản lý thất thoát nước — HTTPS cổng 8080</span>
+ Địa chỉ:              https://&lt;tên miền hoặc IP công cộng của máy chủ&gt;:8080/
+ Mã nhận dạng:         <span class="v">7F3A-91C2-0B5E-D4A8</span>   (máy tính / app điện thoại phải hiện đúng mã này)
+ Dữ liệu:              C:\ThatThoatNuocData   (tự sao lưu mỗi ngày trong SaoLuu)
+ ...
+<span class="x">==============================================================
+ TRIỂN KHAI XONG</span>
+ Gói đã cài:  C:\CaiDat\ThatThoatNuoc-MayChu-IIS
+ Kiểm tra lại: C:\CaiDat\ThatThoatNuoc-MayChu-IIS\CaiDat-IIS.bat -KiemTra
+ Nhật ký:     C:\Users\Administrator\AppData\Local\ThatThoatNuoc-TrienKhai\NhatKy-*.txt</pre>
+    Ghi lại <strong>Mã nhận dạng</strong> (4 nhóm, mỗi nhóm 4 ký tự; mã trên chỉ là ví dụ). Khi máy tính hoặc điện thoại kết nối lần đầu, mã hiện ra phải giống hệt mã này.
+    Chạy với <code>-TenMien tenmien.vn</code> thì dòng Địa chỉ ghi sẵn tên miền. Bấm phím bất kỳ để đóng cửa sổ.</li>
+  <li><strong>Nếu được yêu cầu khởi động lại</strong>
+    Khi Windows cần khởi động lại (thường sau khi cài .NET Framework 4.8), công cụ dừng và báo màu vàng
+    <em>“Cần KHỞI ĐỘNG LẠI máy để hoàn tất cài đặt”</em>. Khởi động lại máy chủ rồi nhấp đúp <code>TrienKhai-IIS.bat</code> lần nữa; phần đã cài được bỏ qua.</li>
+</ol>
+<div class="chu-y tot"><strong class="t">Chạy lại luôn an toàn</strong>Chạy lại công cụ bao nhiêu lần cũng được: phần đã cài được bỏ qua; dữ liệu, tài khoản, cổng và thư mục dữ liệu của lần cài trước được giữ nguyên.</div>
+<div class="chu-y canh"><strong class="t">Máy chủ đang chạy site khác</strong>Lần đầu cài Hosting Bundle, IIS được khởi động lại: các site khác trên máy chủ gián đoạn vài giây. Nên cài ngoài giờ làm việc.</div>
+
+<!-- ============================================================ 6 -->
+<h2 id="truong-hop"><span class="so">6</span>Các trường hợp cài khác</h2>
+
+<h3 id="da-co">6.1 Máy chủ đã có IIS và ASP.NET Core Hosting Bundle</h3>
+<p>Dùng <code>TrienKhai-IIS.bat</code> như trên (công cụ thấy đủ và bỏ qua phần tải), hoặc nhấp đúp thẳng <code>CaiDat-IIS.bat</code>. Cả hai đều không cần Internet trong trường hợp này.</p>
+
+<h3 id="offline">6.2 Máy chủ không có Internet</h3>
+<ol>
+  <li>Trên máy khác có Internet: vào <code>https://dotnet.microsoft.com/download/dotnet/10.0</code>, mục <strong>ASP.NET Core Runtime</strong> → Windows → <strong>Hosting Bundle</strong>, tải tệp <code>dotnet-hosting-…-win.exe</code> và chép sang máy chủ.</li>
+  <li>Cài IIS trên máy chủ: Server Manager → <strong>Add Roles and Features</strong> → <strong>Web Server (IIS)</strong>, hoặc mở PowerShell (Run as administrator):
+<pre><code>Install-WindowsFeature Web-Server -IncludeManagementTools</code></pre></li>
+  <li>Sau khi đã có IIS, chạy tệp Hosting Bundle vừa chép sang và cài bình thường. <strong>Thứ tự quan trọng</strong>: cài Hosting Bundle trước IIS thì phải chạy lại tệp đó và chọn <strong>Repair</strong>.</li>
+  <li>Nhấp đúp <code>TrienKhai-IIS.bat</code> (hoặc <code>CaiDat-IIS.bat</code>).</li>
+</ol>
+
+<h3 id="cong-co-site">6.3 Cổng 8080 đã có site IIS khác</h3>
+<p>Nếu cổng 8080 đang dùng cho site IIS khác (vd site Quản lý công văn), công cụ tự cài phần mềm thành <strong>ứng dụng con</strong> <code>/thatthoat</code> của site đó.
+Địa chỉ khi đó là <code>https://&lt;máy chủ&gt;:8080/thatthoat/</code> và dùng chứng chỉ của site đó. Muốn site riêng ở cổng khác:</p>
+<pre><code>TrienKhai-IIS.bat -Cong 9443</code></pre>
+<div class="chu-y canh"><strong class="t">Site cha dùng http</strong>Công cụ cảnh báo nếu site cha không mã hoá (http): mật khẩu và số liệu đi qua Internet không được bảo vệ. Nên đổi binding của site đó sang https, hoặc cài site riêng bằng <code>-Cong</code>.</div>
+
+<h3 id="chung-chi">6.4 Dùng chứng chỉ thật của tên miền</h3>
+<ol>
+  <li>Nhập chứng chỉ (.pfx) vào máy chủ: IIS Manager → <strong>Server Certificates</strong> → <strong>Import…</strong></li>
+  <li>Lấy mã thumbprint, trong PowerShell:
+<pre><code>Get-ChildItem Cert:\LocalMachine\My | Format-List Subject, Thumbprint, NotAfter</code></pre></li>
+  <li>Chạy: <code>TrienKhai-IIS.bat -ChungChi &lt;thumbprint&gt;</code></li>
+</ol>
+<p>Mỗi khi gia hạn chứng chỉ, mã nhận dạng đổi: chạy lại lệnh trên với thumbprint mới, rồi kết nối lại trên máy tính / điện thoại và chấp nhận mã mới.</p>
+
+<h3 id="o-khac">6.5 Đặt dữ liệu ở ổ khác</h3>
+<p>Ngay từ lần cài đầu: <code>TrienKhai-IIS.bat -DuLieu D:\ThatThoatNuocData</code>. Các lần cập nhật sau tự dùng lại thư mục này.
+Chuyển dữ liệu đang có sang ổ khác: dừng app pool <code>ThatThoatNuoc</code>, chép cả thư mục dữ liệu sang chỗ mới, rồi chạy lại công cụ với <code>-DuLieu</code> chỗ mới.</p>
+
+<!-- ============================================================ 7 -->
+<h2 id="mo-cong"><span class="so">7</span>Mở cổng ra Internet</h2>
+<ul>
+  <li><strong>Tường lửa Windows</strong>: công cụ đã tự mở cổng 8080.</li>
+  <li><strong>Router / tường lửa của công ty</strong>: tạo quy tắc chuyển cổng (NAT / Port Forwarding) TCP <code>8080</code> bên ngoài → IP nội bộ của máy chủ, cổng <code>8080</code>. Máy chủ nên đặt IP nội bộ cố định.</li>
+  <li><strong>Tên miền</strong>: bản ghi A trỏ về IP công cộng của công ty; hoặc dùng thẳng IP công cộng. IP công cộng hay đổi thì dùng dịch vụ DDNS của router.</li>
+  <li><strong>Trong mạng nội bộ</strong> có thể dùng IP nội bộ, vd <code>192.168.1.10:8080</code>.</li>
+  <li><strong>Kiểm tra từ ngoài</strong>: trên điện thoại tắt Wi-Fi (dùng 4G), mở <code>https://&lt;địa chỉ&gt;:8080/</code>. Thấy cảnh báo chứng chỉ là bình thường (chứng chỉ tự ký): bấm <strong>Nâng cao → Tiếp tục</strong> sẽ ra trang đăng nhập.</li>
+</ul>
+<div class="chu-y nguy"><strong class="t">Không dùng đường hầm thay chứng chỉ</strong>Không đặt Cloudflare Tunnel hay proxy kiểu tương tự trước IIS: chúng thay chứng chỉ nên mã nhận dạng không khớp và phần mềm sẽ từ chối kết nối.</div>
+
+<!-- ============================================================ 8 -->
+<h2 id="ket-noi"><span class="so">8</span>Kết nối máy tính và điện thoại</h2>
+<h3>8.1 Máy tính làm báo cáo (máy thứ nhất)</h3>
+<ol class="buoc">
+  <li><strong>Mở hộp thoại kết nối</strong>Mở phần mềm → <strong>Cài đặt</strong> → thẻ <strong>Máy chủ dữ liệu</strong> → <strong>Kết nối máy chủ…</strong></li>
+  <li><strong>Nhập địa chỉ</strong>Không cần gõ <code>https://</code>, vd <code>tenmien.vn:8080</code> hoặc <code>tenmien.vn:8080/thatthoat</code> (khi cài thành ứng dụng con). Không ghi cổng thì phần mềm dùng 8080.</li>
+  <li><strong>Bấm “Kiểm tra” và so mã nhận dạng</strong>Mã hiện ra phải giống mã đã ghi ở mục 5. Khác thì <strong>dừng lại, không nhập mật khẩu</strong>.</li>
+  <li><strong>Đăng nhập tài khoản quản trị</strong>Tên và mật khẩu đặt khi cài.</li>
+  <li><strong>Đưa dữ liệu lên máy chủ</strong>Lần đầu, phần mềm hỏi <em>“Máy chủ chưa có dữ liệu. Đưa dữ liệu trên máy này lên máy chủ?”</em> → <strong>Yes</strong>.
+    Từ đó mỗi lần sửa vẫn lưu ngay trên máy và tự gửi lên máy chủ sau khoảng 1 giây (trạng thái ● ở chân thanh menu). Mất mạng thì thay đổi được giữ lại và tự gửi khi có mạng.</li>
+</ol>
+<p><strong>Máy tính khác</strong>: kết nối giống vậy. Máy chủ đã có dữ liệu nên phần mềm hỏi: chọn <strong>CÓ</strong> (dùng dữ liệu trên máy chủ, dữ liệu cũ trên máy đó được sao lưu lại).</p>
+
+<h3>8.2 Tài khoản cho người dùng</h3>
+<p>Trên máy tính đã kết nối bằng tài khoản quản trị: <strong>Cài đặt → Máy chủ dữ liệu → Tài khoản người dùng (máy tính, điện thoại)…</strong>. Mỗi người một tài khoản, chọn quyền:</p>
+<div class="bang"><table>
+  <thead><tr><th>Quyền</th><th>Được làm gì</th></tr></thead>
+  <tbody>
+    <tr><td>Chỉ xem</td><td>Xem số liệu, tải Excel, in. Mở phần mềm máy tính ở chế độ chỉ xem.</td></tr>
+    <tr><td>Nhập đồng hồ cấp 1 (điện thoại / web)</td><td>Nhập chỉ số đồng hồ cấp 1 trên điện thoại / web; có thể giới hạn trong 1 đội.</td></tr>
+    <tr><td>Admin (toàn quyền)</td><td>Sửa mọi số liệu trên máy tính, quản lý tài khoản.</td></tr>
+  </tbody>
+</table></div>
+
+<h3>8.3 Điện thoại</h3>
+<ul>
+  <li><strong>Trình duyệt Chrome</strong>: mở <code>https://&lt;địa chỉ&gt;:8080/</code> → lần đầu bấm <strong>Nâng cao → Tiếp tục</strong> → đăng nhập. Menu ⋮ → <strong>Thêm vào màn hình chính</strong> để mở nhanh như app.</li>
+  <li><strong>App Android</strong>: mở <code>https://&lt;địa chỉ&gt;:8080/tai-app</code> để tải <code>ThatThoatNuoc-DienThoai.apk</code>, cài (cho phép cài từ nguồn này khi Android hỏi), nhập địa chỉ, so mã nhận dạng, đăng nhập. App in thẳng qua máy in của điện thoại.</li>
+</ul>
+
+<!-- ============================================================ 9 -->
+<h2 id="cap-nhat"><span class="so">9</span>Cập nhật phiên bản mới</h2>
+<ul>
+  <li><strong>Có gói mới</strong> (tệp .zip mới): bỏ chặn, giải nén (sang thư mục mới hoặc ghi đè thư mục cũ), nhấp đúp <code>TrienKhai-IIS.bat</code>.
+    Không mất dữ liệu, không hỏi lại mật khẩu; cổng, thư mục dữ liệu, chứng chỉ của lần cài trước được giữ. Site gián đoạn vài giây.</li>
+  <li><strong>Cập nhật thẳng từ mã nguồn trên GitHub</strong> (máy chủ có Internet): mở cmd tại thư mục gói và chạy
+<pre><code>TrienKhai-IIS.bat -Nguon GitHub</code></pre>
+    Công cụ tải mã nguồn mới nhất, biên dịch bằng trình biên dịch C# có sẵn trong Windows, chạy thử rồi cài.</li>
+  <li><strong>Bản vá bảo mật của Hosting Bundle / .NET</strong>: bật Windows Update kèm <em>“Receive updates for other Microsoft products”</em> (Microsoft Update) để .NET được vá tự động.</li>
+</ul>
+<div class="chu-y tin"><strong class="t">Mở cmd tại thư mục gói</strong>Trong cửa sổ thư mục gói, bấm vào thanh địa chỉ, gõ <code>cmd</code> rồi <kbd>Enter</kbd>. Lệnh <code>.bat</code> kèm tham số tự xin quyền quản trị như khi nhấp đúp.</div>
+
+<!-- ============================================================ 10 -->
+<h2 id="sao-luu"><span class="so">10</span>Dữ liệu, sao lưu, khôi phục</h2>
+<ul>
+  <li>Số liệu nằm ở <code>C:\ThatThoatNuocData\thatthoat.xml</code>; bản ngay trước lần lưu gần nhất là <code>thatthoat.xml.bak</code>.</li>
+  <li>Mỗi ngày máy chủ tự giữ một bản trong <code>C:\ThatThoatNuocData\SaoLuu</code> (<code>thatthoat_năm-tháng-ngày.xml</code>, giữ 90 bản gần nhất).</li>
+  <li><strong>Nên chép SaoLuu ra ngoài máy chủ định kỳ</strong> (ổ mạng, máy khác) để phòng hỏng ổ cứng. Ví dụ đặt trong Task Scheduler chạy hằng đêm:
+<pre><code>robocopy C:\ThatThoatNuocData\SaoLuu \\MAY-SAO-LUU\ThatThoatNuoc /E /R:2 /W:5</code></pre></li>
+</ul>
+<h3>Khôi phục về một ngày cũ</h3>
+<p>Làm qua phần mềm trên máy tính, để các máy khác và điện thoại nhận đúng bản khôi phục:</p>
+<ol class="buoc">
+  <li><strong>Lấy bản sao lưu</strong>Chép tệp cần khôi phục (vd <code>thatthoat_2026-11-04.xml</code>) từ <code>C:\ThatThoatNuocData\SaoLuu</code> sang máy tính của quản trị.</li>
+  <li><strong>Ngắt kết nối</strong>Phần mềm → Cài đặt → Máy chủ dữ liệu → <strong>Ngắt kết nối</strong>, rồi đóng phần mềm.</li>
+  <li><strong>Thay tệp dữ liệu trên máy tính</strong>Trong thư mục <code>DuLieu</code> cạnh <code>ThatThoatNuoc.exe</code>: đổi tên <code>thatthoat.xml</code> thành <code>thatthoat.xml.cu</code>, chép tệp sao lưu vào và đổi tên thành <code>thatthoat.xml</code>.</li>
+  <li><strong>Kiểm tra số liệu</strong>Mở phần mềm, xem các tháng đã đúng bản cần khôi phục.</li>
+  <li><strong>Ghi đè máy chủ</strong><strong>Kết nối máy chủ…</strong> → đăng nhập quản trị → khi hỏi <em>“Máy chủ đã có dữ liệu”</em> chọn <strong>KHÔNG</strong> (ghi đè máy chủ bằng dữ liệu trên máy này) → xác nhận. Máy chủ tự giữ 1 bản sao lưu trước khi ghi đè.</li>
+</ol>
+
+<!-- ============================================================ 11 -->
+<h2 id="quan-tri"><span class="so">11</span>Kiểm tra, đặt lại mật khẩu, gỡ cài đặt</h2>
+<p>Mở cmd tại thư mục gói (xem mục 9) rồi chạy:</p>
+<div class="bang"><table>
+  <thead><tr><th>Lệnh</th><th>Việc làm</th></tr></thead>
+  <tbody>
+    <tr><td><code>CaiDat-IIS.bat -KiemTra</code></td><td>Gọi thử máy chủ trên chính máy chủ, in mã nhận dạng hiện tại.</td></tr>
+    <tr><td><code>CaiDat-IIS.bat -DatMatKhau</code></td><td>Chạy lại cài đặt và hỏi đặt lại tên / mật khẩu tài khoản quản trị (dữ liệu giữ nguyên).</td></tr>
+    <tr><td><code>CaiDat-IIS.bat -GoBo</code></td><td>Gỡ site / ứng dụng, app pool, chứng chỉ tự tạo, quy tắc tường lửa và <code>C:\inetpub\ThatThoatNuoc</code>. <strong>Giữ nguyên</strong> thư mục dữ liệu.</td></tr>
+  </tbody>
+</table></div>
+<p>IIS Hosting Bundle và IIS không bị gỡ (có thể đang dùng cho site khác). Gỡ trong <em>Apps &amp; features</em> / Server Manager nếu không cần nữa.</p>
+
+<!-- ============================================================ 12 -->
+<h2 id="tham-so"><span class="so">12</span>Bảng tham số</h2>
+<h3>TrienKhai-IIS.bat</h3>
+<div class="bang"><table>
+  <thead><tr><th>Tham số</th><th>Ý nghĩa</th></tr></thead>
+  <tbody>
+    <tr><td>(không tham số)</td><td>Làm đủ: cài nền còn thiếu, lấy phần mềm, chạy thử, cấu hình IIS.</td></tr>
+    <tr><td><code>-ChiCaiNen</code></td><td>Chỉ cài nền: IIS, Hosting Bundle, .NET Framework 4.8 nếu thiếu.</td></tr>
+    <tr><td><code>-ChiTaoGoi</code></td><td>Chỉ biên dịch từ mã nguồn và tạo gói (thư mục + .zip) trên Desktop. Không cần quyền quản trị. Dùng trong thư mục mã nguồn.</td></tr>
+    <tr><td><code>-Nguon GitHub</code></td><td>Luôn tải mã nguồn mới nhất từ GitHub để biên dịch (vd cập nhật máy chủ). Mặc định <code>TuDong</code>: dùng gói / mã nguồn có sẵn, không có mới tải.</td></tr>
+    <tr><td><code>-Nhanh &lt;tên&gt;</code></td><td>Nhánh GitHub để tải (mặc định <code>main</code>).</td></tr>
+    <tr><td><code>-KhongBienDich</code></td><td>Dùng <code>ThatThoatNuoc.exe</code> có sẵn trong mã nguồn, không biên dịch lại.</td></tr>
+    <tr><td><code>-DotNet 8.0</code></td><td>Chọn dòng Hosting Bundle. Mặc định: bản LTS mới nhất; Windows Server 2012 R2 tự dùng 8.0.</td></tr>
+    <tr><td><code>-Ra D:\Goi</code></td><td>Nơi đặt gói tạo ra.</td></tr>
+  </tbody>
+</table></div>
+<h3>Chung cho TrienKhai-IIS.bat và CaiDat-IIS.bat</h3>
+<div class="bang"><table>
+  <thead><tr><th>Tham số</th><th>Ý nghĩa</th></tr></thead>
+  <tbody>
+    <tr><td><code>-Cong 9443</code></td><td>Cổng https (mặc định 8080). Cập nhật không ghi tham số này thì dùng cổng của lần cài trước.</td></tr>
+    <tr><td><code>-DuLieu D:\ThatThoatNuocData</code></td><td>Thư mục dữ liệu (mặc định <code>C:\ThatThoatNuocData</code>). Cập nhật không ghi thì dùng thư mục của lần cài trước.</td></tr>
+    <tr><td><code>-DuongDan /thatthoat</code></td><td>Tên ứng dụng con khi cổng đã có site IIS khác.</td></tr>
+    <tr><td><code>-ChungChi &lt;thumbprint&gt;</code></td><td>Dùng chứng chỉ có sẵn thay vì tự tạo.</td></tr>
+    <tr><td><code>-TenMien tenmien.vn</code></td><td>Tên miền / IP ghi vào chứng chỉ tự tạo và vào địa chỉ in ra.</td></tr>
+    <tr><td><code>-DatMatKhau</code></td><td>Đặt lại tài khoản quản trị.</td></tr>
+  </tbody>
+</table></div>
+<p>Chỉ có ở CaiDat-IIS.bat: <code>-KiemTra</code>, <code>-GoBo</code> (mục 11). Có thể ghép nhiều tham số, vd <code>TrienKhai-IIS.bat -Cong 9443 -TenMien tenmien.vn</code>.</p>
+
+<!-- ============================================================ 13 -->
+<h2 id="su-co"><span class="so">13</span>Xử lý sự cố</h2>
+<p>Nhật ký đầy đủ của mỗi lần chạy công cụ: <code>%LOCALAPPDATA%\ThatThoatNuoc-TrienKhai\NhatKy-*.txt</code> (gõ đường dẫn này vào thanh địa chỉ của File Explorer).
+Nhật ký của máy chủ: <code>C:\ThatThoatNuocData\NhatKy</code> và <code>C:\ThatThoatNuocData\loi-khoi-dong.txt</code>.</p>
+<div class="bang"><table>
+  <thead><tr><th>Hiện tượng</th><th>Nguyên nhân và cách xử lý</th></tr></thead>
+  <tbody>
+    <tr><td>“Windows protected your PC” hoặc “Do you want to run this file?” khi nhấp đúp</td><td>Tệp mang dấu tải từ Internet. Bấm More info → Run anyway, hoặc bỏ chặn tệp .zip rồi giải nén lại (mục 4).</td></tr>
+    <tr><td><code>LỖI: Cần quyền quản trị</code></td><td>Bấm Yes ở hộp thoại UAC; tài khoản phải thuộc nhóm Administrators.</td></tr>
+    <tr><td><code>Không tải được … Kiểm tra mạng Internet / proxy</code></td><td>Máy chủ không ra được Internet hoặc proxy chặn. Kiểm tra mạng / proxy (Internet Options), hoặc cài không cần Internet theo <a href="#offline">6.2</a>.</td></tr>
+    <tr><td><code>Mã băm SHA-512 … khác</code> hoặc <code>không có chữ ký số hợp lệ của Microsoft</code></td><td>Tệp tải về bị hỏng hoặc bị thay giữa đường; công cụ đã xoá tệp đó. Chạy lại. Lặp lại nhiều lần: kiểm tra thiết bị lọc mạng / proxy, hoặc tải tay từ trang Microsoft.</td></tr>
+    <tr><td><code>Cài IIS không thành công</code></td><td>Windows thiếu tệp cài đặt của tính năng. Gắn đĩa / ISO cài Windows Server (vd ổ D:) rồi chạy trong PowerShell (Run as administrator):<br><code>Install-WindowsFeature Web-Server -IncludeManagementTools -Source D:\sources\sxs</code><br>sau đó chạy lại công cụ.</td></tr>
+    <tr><td><code>Cần KHỞI ĐỘNG LẠI máy</code></td><td>Khởi động lại máy chủ rồi chạy lại công cụ.</td></tr>
+    <tr><td><code>Máy chưa đủ điều kiện cài .NET Framework 4.8</code></td><td>Windows Server 2012 R2 thiếu bản cập nhật KB2919355: chạy Windows Update rồi chạy lại.</td></tr>
+    <tr><td><code>Cổng 8080 đang bị chương trình '…' (không phải IIS) dùng</code></td><td>Dừng chương trình đó, hoặc cài ở cổng khác: <code>-Cong 9443</code>.</td></tr>
+    <tr><td><code>ThatThoatNuoc.exe không chạy được trên máy này</code></td><td>Xem nội dung lỗi in kèm. Thường do phần mềm diệt virus chặn: thêm ngoại lệ cho thư mục gói và <code>C:\inetpub\ThatThoatNuoc</code>, rồi chạy lại.</td></tr>
+    <tr><td><code>Gọi thử CHƯA thành công</code> ở cuối</td><td>Xem <code>loi-khoi-dong.txt</code> và thư mục <code>NhatKy</code>, rồi chạy <code>CaiDat-IIS.bat -KiemTra</code>.</td></tr>
+    <tr><td>Trình duyệt báo lỗi 500.19</td><td>IIS chưa nạp ASP.NET Core Module V2: chạy lại <code>TrienKhai-IIS.bat</code> (tự cài / sửa Hosting Bundle).</td></tr>
+    <tr><td>Trình duyệt báo lỗi 502.5 hoặc 500.30</td><td>Chương trình không khởi động được: xem <code>C:\ThatThoatNuocData\loi-khoi-dong.txt</code>.</td></tr>
+    <tr><td>Trên máy chủ vào được, từ ngoài không vào được</td><td>Router chưa chuyển cổng, nhà mạng chặn cổng, hoặc IP công cộng đã đổi. Kiểm tra theo mục <a href="#mo-cong">7</a>.</td></tr>
+    <tr><td>Phần mềm / app báo “mã nhận dạng khác”</td><td>Chứng chỉ trên máy chủ đã đổi (tạo lại, gia hạn). Nếu chính bạn vừa đổi: kết nối lại và chấp nhận mã mới. Nếu không: có thể đang bị chặn giữa đường, <strong>không nhập mật khẩu</strong>.</td></tr>
+    <tr><td>“Địa chỉ này không phải máy chủ Thất thoát nước”</td><td>Sai đường dẫn: khi cài thành ứng dụng con phải thêm <code>/thatthoat</code>, vd <code>tenmien.vn:8080/thatthoat</code>.</td></tr>
+    <tr><td>Quên mật khẩu quản trị</td><td>Trên máy chủ chạy <code>CaiDat-IIS.bat -DatMatKhau</code>.</td></tr>
+    <tr><td><code>Biên dịch thất bại</code> (khi chạy từ mã nguồn)</td><td>Xem lỗi của trình biên dịch in ở trên. Cần gấp thì chạy với <code>-KhongBienDich</code> để dùng bản <code>ThatThoatNuoc.exe</code> có sẵn.</td></tr>
+  </tbody>
+</table></div>
+
+<!-- ============================================================ 14 -->
+<h2 id="bao-mat"><span class="so">14</span>Bảo mật</h2>
+<ul>
+  <li>Đặt mật khẩu quản trị mạnh; tài khoản điện thoại chỉ cấp quyền vừa đủ (Chỉ xem / Nhập đồng hồ cấp 1, giới hạn đội nếu được).</li>
+  <li>Luôn so <strong>mã nhận dạng</strong> khi kết nối lần đầu. Đây là cách phần mềm chống giả mạo máy chủ khi dùng chứng chỉ tự ký.</li>
+  <li>Chỉ mở ra Internet cổng của phần mềm (8080). Không mở Remote Desktop (3389) ra Internet.</li>
+  <li>Bật Windows Update và Microsoft Update để Windows, IIS và .NET được vá.</li>
+  <li>Không chia sẻ thư mục <code>C:\ThatThoatNuocData</code> qua mạng; sao lưu ra ngoài bằng tài khoản quản trị (mục 10).</li>
+  <li>Công cụ chỉ cài tệp tải từ Microsoft sau khi mã băm SHA-512 khớp với số Microsoft công bố và chữ ký số Microsoft hợp lệ. Tệp tải về được giữ trong hồ sơ của tài khoản quản trị nên người dùng khác không tráo được.</li>
+</ul>
+
+<!-- ============================================================ 15 -->
+<h2 id="tao-goi"><span class="so">15</span>Tạo gói mới (dành cho người phát triển)</h2>
+<ul>
+  <li><strong>Từ phần mềm</strong>: Cài đặt → Máy chủ dữ liệu → <strong>Tạo gói cài IIS…</strong> → chọn nơi lưu. Gói chứa chính bản phần mềm đang chạy.</li>
+  <li><strong>Từ mã nguồn</strong>: trong thư mục <code>iis</code> của mã nguồn (cạnh <code>build.ps1</code>), chạy
+<pre><code>TrienKhai-IIS.bat -ChiTaoGoi</code></pre>
+    Công cụ biên dịch <code>ThatThoatNuoc.exe</code> bằng trình biên dịch C# có sẵn trong Windows (.NET Framework 4, không cần Visual Studio), chạy thử, rồi tạo thư mục <code>ThatThoatNuoc-MayChu-IIS</code> và tệp <code>ThatThoatNuoc-MayChu-IIS.zip</code> trên Desktop.</li>
+  <li>Chạy <code>TrienKhai-IIS.bat</code> (không tham số) ngay trên máy chủ có mã nguồn thì công cụ biên dịch, đóng gói vào <code>%LOCALAPPDATA%\ThatThoatNuoc-TrienKhai</code> và cài luôn.</li>
+  <li>Sửa script cài (<code>CaiDat-IIS.ps1</code>, <code>TrienKhai-IIS.ps1</code>) hay tài liệu trong thư mục <code>iis</code>: chạy lại <code>build.bat</code> để chúng được nhúng vào <code>ThatThoatNuoc.exe</code> (nút “Tạo gói cài IIS…” lấy tệp từ đó).</li>
+</ul>
+
+<footer>
+  Hướng dẫn kèm gói cài máy chủ IIS của phần mềm Quản lý thất thoát nước · cập nhật 11/2026.
+  Bản tóm tắt: <code>HUONG_DAN_IIS.txt</code>.
+</footer>
+
+</div>
+</body>
+</html>

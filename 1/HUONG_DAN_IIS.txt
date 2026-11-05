@@ -1,5 +1,7 @@
 CÀI MÁY CHỦ IIS CHO PHẦN MỀM "QUẢN LÝ THẤT THOÁT NƯỚC"
 =====================================================
+Hướng dẫn chi tiết từng bước, mở cổng, sao lưu / khôi phục, xử lý sự cố:
+mở tệp HUONG_DAN_CHI_TIET.html (cùng thư mục) bằng trình duyệt. Tệp này là bản tóm tắt.
 
   Máy tính (phần mềm)  ─┐
   Điện thoại (Chrome)  ─┼─ HTTPS cổng 8080 ─>  IIS trên máy chủ  ─>  ThatThoatNuoc.exe (chế độ máy chủ)  ─>  dữ liệu C:\ThatThoatNuocData
@@ -9,7 +11,26 @@ Dữ liệu nằm trên máy chủ (chạy 24/7, tự sao lưu mỗi ngày). Kh�
 vào thẳng địa chỉ máy chủ qua cổng 8080 đã mở.
 
 Cần có trên máy chủ: IIS + ASP.NET Core Hosting Bundle (bản 6 trở lên, vd 9.0) + .NET Framework 4.x (có sẵn trong Windows Server).
-Không cài thêm gì.
+Không cài thêm gì. Máy chủ còn thiếu IIS / Hosting Bundle: dùng TrienKhai-IIS.bat (ngay dưới đây), công cụ tự cài.
+
+
+TRIỂN KHAI TỰ ĐỘNG TỪ MÁY CHƯA CÓ GÌ (TrienKhai-IIS.bat)
+---------------------------------------------------------
+Nhấp đúp TrienKhai-IIS.bat -> đồng ý quyền quản trị. Công cụ chỉ cài phần còn thiếu, rồi cài phần mềm:
+   1. .NET Framework 4.8 (khi máy còn bản cũ hơn 4.6.2) và IIS (Web Server + IIS Manager);
+   2. ASP.NET Core Hosting Bundle bản LTS mới nhất: tải thẳng từ Microsoft, kiểm tra mã băm SHA-512
+      và chữ ký số Microsoft rồi mới cài; khởi động lại IIS để nạp module;
+   3. chạy thử ThatThoatNuoc.exe trên máy chủ, rồi gọi CaiDat-IIS (các bước ở phần "CÀI TỰ ĐỘNG" bên dưới).
+   Khi cần khởi động lại máy, công cụ báo: khởi động lại xong chạy lại TrienKhai-IIS.bat (phần đã cài được bỏ qua).
+Đặt trong thư mục mã nguồn (thư mục iis, cạnh build.ps1): công cụ BIÊN DỊCH lại ThatThoatNuoc.exe từ mã nguồn
+và tạo gói mới trước khi cài. Không có mã nguồn lẫn gói: tự TẢI mã nguồn mới nhất từ GitHub.
+   TrienKhai-IIS.bat -ChiTaoGoi        chỉ biên dịch + tạo gói (thư mục và tệp .zip) trên Desktop, ở máy bất kỳ
+   TrienKhai-IIS.bat -ChiCaiNen        chỉ cài IIS + Hosting Bundle (+ .NET Framework nếu thiếu)
+   TrienKhai-IIS.bat -Nguon GitHub     tải mã nguồn mới nhất từ GitHub, biên dịch và cập nhật máy chủ
+   TrienKhai-IIS.bat -KhongBienDich    dùng ThatThoatNuoc.exe có sẵn trong mã nguồn
+   TrienKhai-IIS.bat -DotNet 8.0       chọn dòng Hosting Bundle (mặc định: bản LTS mới nhất)
+   Các tham số -Cong, -DuLieu, -DuongDan, -ChungChi, -TenMien, -DatMatKhau được chuyển nguyên cho CaiDat-IIS.
+Tệp tải về, gói và nhật ký: %LOCALAPPDATA%\ThatThoatNuoc-TrienKhai (của tài khoản quản trị đã chạy).
 
 
 CÀI TỰ ĐỘNG (khuyên dùng)
