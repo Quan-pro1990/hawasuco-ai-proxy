@@ -49,6 +49,8 @@ import java.util.concurrent.Executors;
 public final class MainActivity extends Activity
         implements CameraController.Listener, LocationTracker.Listener, Views.OverlayView.Source {
     private static final int REQ_PERMS = 7;
+    /** Dòng ghi công tác giả, cố định trong mã (không có trong cài đặt nên người dùng không sửa được). */
+    static final String DEVELOPER = "App Developer by Hoang Quan";
     private static final int GREEN = 0xE01E9E4A, ORANGE = 0xE0E08A00, RED = 0xE0D33A2C;
 
     private final Handler main = new Handler(Looper.getMainLooper());
@@ -174,6 +176,16 @@ public final class MainActivity extends Activity
         FrameLayout.LayoutParams sl = new FrameLayout.LayoutParams(dp(54), dp(54), Gravity.CENTER_VERTICAL | Gravity.RIGHT);
         sl.rightMargin = dp(32);
         bottom.addView(btnSwitch, sl);
+        TextView credit = new TextView(this);
+        credit.setText(DEVELOPER);
+        credit.setTextColor(0xCCFFFFFF);
+        credit.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+        credit.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        credit.setSingleLine(true);
+        FrameLayout.LayoutParams cl = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
+        cl.bottomMargin = dp(6);
+        bottom.addView(credit, cl);
 
         root.setParts(top, frame, bottom, dp(56), dp(120));
         setContentView(root);

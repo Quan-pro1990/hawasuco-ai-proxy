@@ -148,6 +148,16 @@ final class Dialogs {
         saveBig.setBackground(rounded(BLUE, 0, 0, 12, c));
         box.addView(saveBig, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(c, 54)));
 
+        TextView credit = new TextView(c);
+        credit.setText(MainActivity.DEVELOPER);
+        credit.setTextColor(BLUE);
+        credit.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
+        credit.setTypeface(Typeface.DEFAULT_BOLD);
+        credit.setGravity(Gravity.CENTER);
+        credit.setPadding(0, dp(c, 18), 0, dp(c, 4));
+        box.addView(credit, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT));
+
         View.OnClickListener doSave = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
