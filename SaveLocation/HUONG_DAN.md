@@ -3,8 +3,12 @@
 Viết lại toàn bộ (Kotlin) theo chức năng và bố cục của app "Save Location GPS" v12.7.
 Phân tích chi tiết app gốc và đối chiếu từng màn hình: xem [PHAN_TICH_APP_GOC.md](PHAN_TICH_APP_GOC.md).
 
-- File cài đặt: **`LuuViTri.apk`** (Android 7.0 trở lên). Chép vào điện thoại, mở để cài
-  (cho phép "Cài ứng dụng không rõ nguồn gốc" nếu máy hỏi). Cài bản mới đè lên bản cũ được, dữ liệu vẫn giữ.
+- **Bộ cài: `LuuViTri-CaiDat.zip`** (Android 7.0 trở lên) — giải nén rồi nhấp đúp:
+  - `CaiDat-DienThoai.bat`: cài app lên điện thoại qua cáp USB hoặc Wi-Fi, có hướng dẫn từng bước
+    (tự tải công cụ adb, cài / cập nhật giữ dữ liệu, cấp sẵn quyền, tắt tối ưu pin, mở app, cài liên tiếp nhiều máy);
+  - `CaiDat-MayChu.bat`: cài máy chủ chia sẻ vị trí trực tiếp trên Windows (tự cài Node.js, tự chạy khi bật máy, mở tường lửa);
+  - `HUONG_DAN_CAI_DAT.txt`: hướng dẫn chi tiết, lỗi thường gặp.
+  Không có máy tính: gửi `LuuViTri.apk` (trong thư mục `CaiDat`) sang điện thoại rồi mở để cài.
 - Không quảng cáo, không cần tài khoản, không cần khoá API; mọi tính năng mở sẵn.
 - Giao diện tiếng Việt (theo ngôn ngữ máy) và tiếng Anh; đổi trong Cài đặt → Ngôn ngữ.
 - Bản đồ cần Internet. Định vị, vùng cảnh báo dùng Google Play services (máy Android thông thường đều có).
@@ -67,7 +71,7 @@ Báo khi **đến gần hoặc rời khỏi** vị trí đã chọn (tối đa 1
 Người nhận mở link trên trình duyệt để xem vị trí của bạn di chuyển theo thời gian thực (30 phút – 8 giờ).
 Tính năng này cần một máy chủ nhỏ (app gốc dùng máy chủ của hãng):
 
-1. Cài máy chủ theo [server/README.md](server/README.md) (Node.js, không cần cài thêm gì).
+1. Cài máy chủ: nhấp đúp `CaiDat-MayChu.bat` trong bộ cài (hoặc làm tay theo [server/README.md](server/README.md)).
 2. Trong app: Cài đặt → **Máy chủ vị trí trực tiếp** → nhập địa chỉ, ví dụ `https://vitri.congty.vn`.
 3. Chia sẻ vị trí → Vị trí trực tiếp → chọn thời gian → **Bắt đầu chia sẻ trực tiếp** → gửi link.
    Khi đang chia sẻ, tấm thông tin hiện "● Đang chia sẻ trực tiếp" – chạm để xem thời gian còn lại, đổi tần suất, dừng.
@@ -79,7 +83,11 @@ Chỉ đường · Tự cập nhật GPS · Chế độ lái xe · Chế độ n
 Nội dung khi chia sẻ · Định dạng tọa độ DD / DMS / DDM / UTM · App dẫn đường mặc định · Máy chủ vị trí trực tiếp ·
 Xoá toàn bộ dữ liệu.
 
-## Biên dịch lại từ mã nguồn
+## Đóng gói lại / biên dịch lại từ mã nguồn
+
+Nhấp đúp **`DongGoi.bat`** (Windows, cần Android Studio): build APK release → chép vào `CaiDat\` → tạo
+`LuuViTri-CaiDat.zip`. `DongGoi.bat -BoQuaBuild` chỉ đóng gói lại. Linux / macOS: `./donggoi.sh`.
+
 
 Cần JDK 17+ và Android SDK (platform 35). Cách dễ nhất: mở thư mục `SaveLocation` bằng **Android Studio** → Build → Build APK.
 Dòng lệnh (máy đã có Android SDK, đặt `sdk.dir` trong `local.properties` hoặc biến `ANDROID_HOME`):

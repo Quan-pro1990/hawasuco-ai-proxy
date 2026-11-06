@@ -2,6 +2,9 @@
 
 Một file Node.js, **không cần cài thư viện**. Lưu phiên chia sẻ vào `data/live.json`, tự xoá phiên hết hạn sau 2 giờ.
 
+Trên Windows dùng bộ cài: nhấp đúp `CaiDat-MayChu.bat` (trong `LuuViTri-CaiDat.zip`) — tự cài Node.js,
+tạo tác vụ tự chạy khi bật máy, mở tường lửa. Phần dưới dành cho cài tay / Linux.
+
 ## Chạy thử
 
 ```bash

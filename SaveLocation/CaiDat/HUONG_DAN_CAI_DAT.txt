@@ -1,0 +1,90 @@
+﻿CÀI ĐẶT ỨNG DỤNG "LƯU VỊ TRÍ"
+=============================
+
+Trong gói:
+  LuuViTri.apk            ứng dụng Android (Android 7.0 trở lên)
+  CaiDat-DienThoai.bat    NHẤP ĐÚP để cài app lên điện thoại (cáp USB hoặc Wi-Fi), có hướng dẫn từng bước
+  CaiDat-MayChu.bat       NHẤP ĐÚP để cài máy chủ "Chia sẻ vị trí trực tiếp" trên Windows (chỉ cần nếu dùng tính năng này)
+  MayChu\                 chương trình máy chủ (Node.js)
+
+Giải nén cả thư mục ra (vd ra Desktop) trước khi nhấp đúp, đừng chạy thẳng trong file .zip.
+
+
+A. CÀI APP LÊN ĐIỆN THOẠI
+-------------------------
+
+CÁCH 1 — BẰNG MÁY TÍNH WINDOWS (nhấp đúp, tiện khi cài nhiều máy)
+
+1. Nhấp đúp CaiDat-DienThoai.bat -> chọn 1 (cáp USB) và làm theo chữ hiện trên màn hình:
+   a) Trên điện thoại bật "Gỡ lỗi USB" (chỉ làm 1 lần):
+        Cài đặt -> Thông tin điện thoại -> bấm 7 lần vào "Số hiệu bản dựng"
+        (Samsung: Thông tin phần mềm -> Số hiệu bản dựng; Xiaomi: Phiên bản MIUI/HyperOS)
+        -> quay lại Cài đặt -> Hệ thống (hoặc Cài đặt bổ sung) -> Tùy chọn nhà phát triển -> bật "Gỡ lỗi USB".
+        Xiaomi: bật thêm "Cài đặt qua USB".
+   b) Cắm cáp USB, mở khoá điện thoại, nếu hỏi thì chọn "Truyền tệp".
+   c) Điện thoại hỏi "Cho phép gỡ lỗi USB?" -> tick "Luôn cho phép từ máy tính này" -> Cho phép.
+2. Script tự làm phần còn lại:
+   - lần đầu tự tải công cụ adb của Google (khoảng 7 MB) vào thư mục platform-tools bên cạnh;
+   - cài (hoặc cập nhật, GIỮ NGUYÊN dữ liệu) app Lưu Vị Trí;
+   - cấp sẵn quyền vị trí (kể cả chạy nền cho Vùng cảnh báo), camera, thông báo;
+   - hỏi tắt "tối ưu hoá pin" cho app (nên đồng ý);
+   - mở app trên điện thoại; hỏi có cài cho điện thoại khác không (rút máy này, cắm máy tiếp theo).
+3. Cài xong có thể tắt "Gỡ lỗi USB" trên điện thoại.
+
+   Không có cáp? Chọn 2 (Wi-Fi, Android 11+): Tùy chọn nhà phát triển -> "Gỡ lỗi không dây" -> bật ->
+   "Ghép nối thiết bị bằng mã ghép nối", nhập địa chỉ IP:cổng và mã 6 số vào cửa sổ cài đặt.
+
+   Tham số (mở cmd tại thư mục này):
+     CaiDat-DienThoai.bat -Usb              bỏ qua bước chọn, dùng cáp
+     CaiDat-DienThoai.bat -WiFi             dùng Wi-Fi
+     CaiDat-DienThoai.bat -KhongCapQuyen    không cấp sẵn quyền (app sẽ tự hỏi khi mở)
+
+CÁCH 2 — KHÔNG CẦN MÁY TÍNH
+
+1. Gửi LuuViTri.apk sang điện thoại (Zalo "Truyền file", Google Drive, email...).
+2. Mở file trên điện thoại -> Cài đặt. Nếu bị chặn: cho phép "Cài ứng dụng không rõ nguồn gốc" cho ứng dụng
+   đang mở file (Zalo, Tệp...) rồi bấm Cài đặt lại. Google Play Protect cảnh báo -> "Thông tin chi tiết" -> "Vẫn cài đặt".
+3. Mở Lưu Vị Trí -> Bắt đầu -> cho phép vị trí, bật định vị.
+
+LỖI THƯỜNG GẶP
+  "Đang chờ điện thoại..." mãi    -> cáp chỉ sạc (đổi cáp/cổng USB), chưa bật Gỡ lỗi USB, hoặc máy Samsung đời cũ
+                                    cần cài "Samsung USB Driver" trên Windows.
+  Điện thoại "chưa cho phép"       -> mở khoá màn hình, bấm Cho phép; không thấy bảng thì rút cáp cắm lại.
+  "Điện thoại từ chối cài qua USB" -> Xiaomi: bật "Cài đặt qua USB" (cần SIM + tài khoản Mi);
+                                    Oppo/Vivo: bấm "Cài đặt" trên điện thoại trong vài giây khi được hỏi.
+  "ký bằng khoá khác"              -> máy đang có bản Lưu Vị Trí build từ nơi khác; phải gỡ bản cũ (MẤT dữ liệu bản cũ,
+                                    nên Sao lưu trong app trước). Script hỏi trước khi gỡ.
+
+
+B. MÁY CHỦ "CHIA SẺ VỊ TRÍ TRỰC TIẾP" (không bắt buộc)
+-----------------------------------------------------
+
+Cần khi muốn gửi link cho người khác xem vị trí của mình di chuyển theo thời gian thực.
+Cài trên một máy Windows bật 24/7 (máy chủ công ty).
+
+1. Chép cả thư mục này sang máy đó, nhấp đúp CaiDat-MayChu.bat -> đồng ý quyền quản trị. Script sẽ:
+   - kiểm tra Node.js, chưa có thì tự cài bản LTS (winget hoặc tải từ nodejs.org);
+   - chép máy chủ vào C:\LuuViTriMayChu (dữ liệu ở C:\LuuViTriMayChu\data, nhật ký data\log.txt);
+   - tạo tác vụ tự chạy khi bật máy (Task Scheduler, tự chạy lại nếu lỗi);
+   - mở tường lửa cổng 3000, chạy thử và in ra địa chỉ, vd  http://192.168.1.10:3000
+2. Trên mỗi điện thoại: Lưu Vị Trí -> Cài đặt -> "Máy chủ vị trí trực tiếp" -> nhập địa chỉ đó.
+3. Dùng: Chia sẻ vị trí -> Vị trí trực tiếp -> chọn thời gian -> Bắt đầu -> gửi link.
+
+Địa chỉ 192.168.x.x chỉ dùng được trong mạng nội bộ. Để người ở ngoài mở được link:
+   - Cách đơn giản: trên modem/router mở cổng (port forwarding) 3000 về máy chủ, rồi nhập vào app
+     http://<IP tĩnh hoặc tên miền của công ty>:3000
+   - Cách có HTTPS (máy chủ đã có IIS + tên miền): cài thêm IIS "URL Rewrite" và "Application Request Routing",
+     bật Proxy trong ARR, tạo quy tắc Reverse Proxy từ https://tenmien.vn/vitri/ -> http://localhost:3000/ ,
+     rồi nhập vào app  https://tenmien.vn/vitri
+
+Tham số:
+   CaiDat-MayChu.bat -Cong 3100                 dùng cổng khác (khi 3000 đã bị chiếm)
+   CaiDat-MayChu.bat -ThuMuc D:\LuuViTriMayChu   cài vào thư mục khác
+   CaiDat-MayChu.bat -KiemTra                    gọi thử máy chủ, in lại địa chỉ
+   CaiDat-MayChu.bat -GoBo                       gỡ tác vụ + tường lửa (giữ thư mục dữ liệu)
+
+
+C. CẬP NHẬT PHIÊN BẢN MỚI
+-------------------------
+   - App: chạy lại CaiDat-DienThoai.bat (hoặc mở file APK mới trên điện thoại) — cài đè, giữ nguyên dữ liệu.
+   - Máy chủ: chạy lại CaiDat-MayChu.bat — giữ nguyên cổng, thư mục và dữ liệu.
