@@ -17,7 +17,7 @@ Google Photos / Thư viện vẫn xem được vị trí. Giờ trên ảnh lấ
 2. Mở tệp APK. Lần đầu Android hỏi **"Cho phép cài ứng dụng không rõ nguồn gốc"** → bật cho ứng dụng đang mở tệp
    (Zalo / Chrome / Quản lý tệp) → quay lại bấm **Cài đặt**.
    Nếu Google Play Protect cảnh báo "ứng dụng chưa được xác minh" → **Thêm chi tiết → Vẫn cài đặt**.
-3. Mở **HAWASUCO Camera** → cho phép **Camera** và **Vị trí** (chọn **"Vị trí chính xác"**, "Khi dùng ứng dụng").
+3. Mở app **CAMERA HAWASUCO** → cho phép **Camera** và **Vị trí** (chọn **"Vị trí chính xác"**, "Khi dùng ứng dụng").
    Android 9 trở xuống hỏi thêm quyền **Bộ nhớ** để lưu ảnh.
 4. Lần đầu mở, app hiện bảng nhập **Nhân viên** và **Đội** (bấm **Chọn ▾** để lấy Đội Cấp nước số 1–6, hoặc gõ tay).
 5. Bật **Vị trí (GPS)** của điện thoại. Chấm trên cùng chuyển xanh "GPS ±5 m" là có tọa độ.
