@@ -28,6 +28,8 @@ final class Watermark {
     private static final String[] THU = {"Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"};
     private static final Locale VI = new Locale("vi", "VN");
     private static final int SHADOW = 0xE6000000;
+    /** Màu tên nhân viên và tên đội. */
+    private static final int VALUE_BLUE = 0xFF2196F3;
 
     private final Bitmap logo;
     private final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
@@ -109,7 +111,16 @@ final class Watermark {
             Line line = lines.get(i);
             if (i > 0) y += pitch(line, u);
             textStyle(line.strong, u);
-            c.drawText(line.text, textX, y, p);
+            if (line.labelLen > 0) {
+                // nhãn ("Nhân viên: ", "Đội: ") màu trắng, phần tên màu xanh dương
+                String label = line.text.substring(0, line.labelLen);
+                c.drawText(label, textX, y, p);
+                p.setColor(VALUE_BLUE);
+                c.drawText(line.text, line.labelLen, line.text.length(), textX + p.measureText(label), y, p);
+                p.setColor(Color.WHITE);
+            } else {
+                c.drawText(line.text, textX, y, p);
+            }
             textRight = Math.max(textRight, textX + p.measureText(line.text));
         }
         noShadow();
@@ -125,15 +136,24 @@ final class Watermark {
         return d.addressFull;
     }
 
-    /** Một dòng chữ; strong = chữ to in đậm (Nhân viên, Đội); start = dòng đầu của một mục. */
+    /**
+     * Một dòng chữ; strong = chữ to in đậm (Nhân viên, Đội); start = dòng đầu của một mục;
+     * labelLen &gt; 0: số ký tự đầu là nhãn màu trắng, phần sau tô xanh dương.
+     */
     private static final class Line {
         final String text;
         final boolean strong, start;
+        final int labelLen;
 
         Line(String text, boolean strong, boolean start) {
+            this(text, strong, start, 0);
+        }
+
+        Line(String text, boolean strong, boolean start, int labelLen) {
             this.text = text;
             this.strong = strong;
             this.start = start;
+            this.labelLen = labelLen;
         }
     }
 
@@ -185,8 +205,8 @@ final class Watermark {
 
     /** Dòng bắt buộc nên điền (chữ to đậm): chưa điền thì khung ngắm nhắc "chạm để nhập", ảnh lưu bỏ qua. */
     private static void addField(List<Line> out, String label, String value, boolean preview) {
-        if (notEmpty(value)) out.add(new Line(label + value.trim(), true, true));
-        else if (preview) out.add(new Line(label + "(chạm để nhập)", true, true));
+        if (notEmpty(value)) out.add(new Line(label + value.trim(), true, true, label.length()));
+        else if (preview) out.add(new Line(label + "(chạm để nhập)", true, true, label.length()));
     }
 
     private static boolean notEmpty(String v) {
