@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_sheet">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="18dp"
+        android:paddingEnd="18dp"
+        android:paddingBottom="18dp">
+
+        <View
+            android:id="@+id/dragHandle"
+            android:layout_width="40dp"
+            android:layout_height="5dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_drag_handle" />
+
+        <TextView
+            android:id="@+id/tvTitle"
+            style="@style/SheetTitle"
+            android:layout_marginTop="12dp"
+            android:text="@string/share_location" />
+
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/layoutLocationTypeToggle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            app:selectionRequired="true"
+            app:singleSelection="true">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/segmentCurrentLocation"
+                style="@style/AppButton.Outlined"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/current_location_tab"
+                android:textAllCaps="false"
+                app:icon="@drawable/ic_place" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/segmentLiveLocation"
+                style="@style/AppButton.Outlined"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/live_location"
+                android:textAllCaps="false"
+                app:icon="@drawable/ic_broadcast" />
+        </com.google.android.material.button.MaterialButtonToggleGroup>
+
+        <!-- Vị trí hiện tại (một lần) -->
+        <LinearLayout
+            android:id="@+id/layoutCurrentLocationSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView style="@style/SectionLabel" android:text="@string/location_name_optional" />
+
+            <EditText
+                android:id="@+id/etLocationName"
+                style="@style/commonEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:drawableStart="@drawable/ic_place"
+                android:drawablePadding="10dp"
+                android:drawableTint="@color/text_secondary"
+                android:hint="@string/title"
+                android:importantForAutofill="no"
+                android:inputType="textCapWords"
+                android:maxLines="1" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_rounded_card"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+                    <FrameLayout android:layout_width="36dp" android:layout_height="36dp" android:background="@drawable/bg_icon_circle_tint">
+                        <ImageView android:layout_width="20dp" android:layout_height="20dp" android:layout_gravity="center" android:contentDescription="@null" android:src="@drawable/ic_globe" app:tint="@color/colorAccent" />
+                    </FrameLayout>
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:layout_weight="1" android:orientation="vertical">
+                        <TextView android:id="@+id/tvCurrentLatitude" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="@color/text_primary" android:textSize="14sp" />
+                        <TextView android:id="@+id/tvCurrentLongitude" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="@color/text_primary" android:textSize="14sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <View style="@style/Divider" android:layout_marginTop="10dp" android:layout_marginBottom="10dp" />
+
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+                    <FrameLayout android:layout_width="36dp" android:layout_height="36dp" android:background="@drawable/bg_icon_circle_tint">
+                        <ImageView android:layout_width="20dp" android:layout_height="20dp" android:layout_gravity="center" android:contentDescription="@null" android:src="@drawable/ic_place" app:tint="@color/colorAccent" />
+                    </FrameLayout>
+                    <TextView android:id="@+id/tvCurrentAddress" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:layout_weight="1" android:maxLines="3" android:textColor="@color/text_primary" android:textSize="14sp" />
+                </LinearLayout>
+
+                <View style="@style/Divider" android:layout_marginTop="10dp" android:layout_marginBottom="10dp" />
+
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+                    <FrameLayout android:layout_width="36dp" android:layout_height="36dp" android:background="@drawable/bg_icon_circle_tint">
+                        <ImageView android:layout_width="20dp" android:layout_height="20dp" android:layout_gravity="center" android:contentDescription="@null" android:src="@drawable/ic_link" app:tint="@color/colorAccent" />
+                    </FrameLayout>
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:layout_weight="1" android:orientation="vertical">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/shareable_location_link" android:textColor="@color/text_secondary" android:textSize="12sp" />
+                        <TextView android:id="@+id/tvCurrentLocationLink" android:layout_width="match_parent" android:layout_height="wrap_content" android:maxLines="2" android:ellipsize="end" android:textColor="@color/colorAccent" android:textSize="13sp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Vị trí trực tiếp -->
+        <LinearLayout
+            android:id="@+id/layoutLiveSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView style="@style/SectionLabel" android:text="@string/display_name" />
+
+            <EditText
+                android:id="@+id/etDisplayName"
+                style="@style/commonEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:drawableStart="@drawable/ic_person"
+                android:drawablePadding="10dp"
+                android:drawableTint="@color/text_secondary"
+                android:hint="@string/hint_your_name"
+                android:importantForAutofill="no"
+                android:inputType="textPersonName|textCapWords"
+                android:maxLines="1" />
+
+            <TextView
+                android:id="@+id/tvChooseDuration"
+                style="@style/SectionLabel"
+                android:text="@string/choose_duration" />
+
+            <LinearLayout
+                android:id="@+id/layoutDurationList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_rounded_card"
+                android:orientation="vertical" />
+
+            <TextView
+                android:id="@+id/tvServerWarning"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="@string/live_server_not_configured"
+                android:textColor="@color/danger"
+                android:textSize="13sp"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/btnStartLiveSharing"
+            style="@style/homeActionButton"
+            android:layout_width="match_parent"
+            android:layout_marginTop="18dp"
+            android:background="@drawable/bg_button_primary"
+            android:paddingTop="14dp"
+            android:paddingBottom="14dp">
+
+            <ImageView
+                android:id="@+id/ivStartLiveSharing"
+                style="@style/homeActionButtonIcon"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_share"
+                app:tint="@color/white" />
+
+            <TextView
+                android:id="@+id/tvStartLiveSharing"
+                style="@style/homeActionButtonLabel"
+                android:layout_marginStart="8dp"
+                android:text="@string/share_location"
+                android:textColor="@color/white" />
+
+            <ProgressBar
+                android:id="@+id/progressStart"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_marginStart="10dp"
+                android:indeterminateTint="@color/white"
+                android:visibility="gone" />
+        </LinearLayout>
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

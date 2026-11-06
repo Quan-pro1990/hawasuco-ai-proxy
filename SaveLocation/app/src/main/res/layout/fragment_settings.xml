@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/screen_bg">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/card_bg"
+            android:orientation="vertical">
+
+            <LinearLayout android:id="@+id/ll_location_accuracy" style="@style/SettingsRow">
+                <TextView style="@style/SettingsLabel" android:text="@string/location_accuracy" />
+                <ImageView android:layout_width="20dp" android:layout_height="20dp" android:contentDescription="@null" android:src="@drawable/ic_chevron_right" app:tint="@color/text_secondary" />
+            </LinearLayout>
+            <View style="@style/Divider" />
+            <LinearLayout android:id="@+id/ll_distance_unit" style="@style/SettingsRow">
+                <TextView style="@style/SettingsLabel" android:text="@string/distance_unit" />
+                <TextView android:id="@+id/tv_distance_unit" style="@style/SettingsValue" />
+            </LinearLayout>
+            <View style="@style/Divider" />
+            <LinearLayout android:id="@+id/ll_sharing_mode" style="@style/SettingsRow">
+                <TextView style="@style/SettingsLabel" android:text="@string/sharing_type" />
+                <TextView android:id="@+id/tv_sharing_mode" style="@style/SettingsValue" />
+            </LinearLayout>
+            <View style="@style/Divider" />
+            <LinearLayout android:id="@+id/ll_datetime_format" style="@style/SettingsRow">
+                <TextView style="@style/SettingsLabel" android:text="@string/datetime_format" />
+                <TextView android:id="@+id/tv_datetime_format" style="@style/SettingsValue" />
+            </LinearLayout>
+            <View style="@style/Divider" />
+            <LinearLayout android:id="@+id/ll_show_direction" style="@style/SettingsRow">
+                <TextView style="@style/SettingsLabel" android:text="@string/show_direction" />
+                <androidx.appcompat.widget.SwitchCompat android:id="@+id/switch_show_direction" android:layout_width="wrap_content" android:layout_height="wrap_content" android:clickable="false" android:focusable="false" />
+            </LinearLayout>
+            <View style="@style/Divider" />
+            <LinearLayout android:id="@+id/ll_gps_update" style="@style/SettingsRow">
+                <TextView style="@style/SettingsLabel" android:text="@string/automatic_gps_update" />
+                <androidx.appcompat.widget.SwitchCompat android:id="@+id/switch_gps_update" android:layout_width="wrap_content" android:layout_height="wrap_content" android:clickable="false" android:focusable="false" />
+            </LinearLayout>
+            <View style="@style/Divider" />
+            <LinearLayout android:id="@+id/ll_driving_mode" style="@style/SettingsRow">
+                <TextView style="@style/SettingsLabel" android:text="@string/drive_mode" />
+                <androidx.appcompat.widget.SwitchCompat android:id="@+id/switch_driving_mode" android:layout_width="wrap_content" android:layout_height="wrap_content" android:clickable="false" android:focusable="false" />
+            </LinearLayout>
+            <View style="@style/Divider" />
+            <LinearLayout android:id="@+id/ll_group_mode" style="@style/SettingsRow">
+                <TextView style="@style/SettingsLabel" android:text="@string/group_mode" />
+                <androidx.appcompat.widget.SwitchCompat android:id="@+id/switch_group_mode" android:layout_width="wrap_content" android:layout_height="wrap_content" android:clickable="false" android:focusable="false" />
+            </LinearLayout>
+            <View style="@style/Divider" />
+            <LinearLayout android:id="@+id/ll_dark_mode" style="@style/SettingsRow">
+                <TextView style="@style/SettingsLabel" android:text="@string/select_theme" />
+                <TextView android:id="@+id/tv_theme_mode" style="@style/SettingsValue" />
+            </LinearLayout>
+            <View style="@style/Divider" />
+            <LinearLayout android:id="@+id/ll_language" style="@style/SettingsRow">
+                <TextView style="@style/SettingsLabel" android:text="@string/language" />
+                <TextView android:id="@+id/tv_language" style="@style/SettingsValue" />
+            </LinearLayout>
+            <View style="@style/Divider" />
+            <LinearLayout android:id="@+id/ll_share_preference" style="@style/SettingsRow">
+                <TextView style="@style/SettingsLabel" android:text="@string/share_preferences" />
+                <ImageView android:layout_width="20dp" android:layout_height="20dp" android:contentDescription="@null" android:src="@drawable/ic_chevron_right" app:tint="@color/text_secondary" />
+            </LinearLayout>
+            <View style="@style/Divider" />
+            <LinearLayout android:id="@+id/ll_latlng_format" style="@style/SettingsRow">
+                <TextView style="@style/SettingsLabel" android:text="@string/latlng_format_label" />
+                <TextView android:id="@+id/tv_latlng_format" style="@style/SettingsValue" />
+            </LinearLayout>
+            <View style="@style/Divider" />
+            <LinearLayout android:id="@+id/ll_navigation_app" style="@style/SettingsRow">
+                <TextView style="@style/SettingsLabel" android:text="@string/default_navigation_app_label" />
+                <TextView android:id="@+id/tv_navigation_app" style="@style/SettingsValue" />
+            </LinearLayout>
+            <View style="@style/Divider" />
+            <LinearLayout android:id="@+id/ll_live_server" style="@style/SettingsRow">
+                <TextView style="@style/SettingsLabel" android:text="@string/live_server_label" />
+                <TextView android:id="@+id/tv_live_server" style="@style/SettingsValue" />
+            </LinearLayout>
+            <View style="@style/Divider" />
+            <LinearLayout android:id="@+id/ll_delete_all" style="@style/SettingsRow">
+                <TextView style="@style/SettingsLabel" android:text="@string/delete_all_label" android:textColor="@color/danger" />
+            </LinearLayout>
+            <View style="@style/Divider" />
+
+            <TextView
+                android:id="@+id/tv_version"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:padding="20dp"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
+        </LinearLayout>
+</ScrollView>

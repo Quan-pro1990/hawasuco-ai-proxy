@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingBottom="12dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="20dp"
+        android:paddingTop="12dp"
+        android:paddingEnd="8dp"
+        android:paddingBottom="8dp">
+
+        <TextView
+            style="@style/SheetTitle"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:text="@string/choose_map_type" />
+
+        <ImageView
+            android:id="@+id/iv_close"
+            style="@style/ListItemIcon"
+            android:contentDescription="@string/close"
+            android:src="@drawable/ic_close"
+            app:tint="@color/text_secondary" />
+    </LinearLayout>
+
+    <View style="@style/Divider" />
+
+    <GridLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:columnCount="2"
+        android:padding="12dp">
+
+        <LinearLayout android:id="@+id/ll_type_normal" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" android:layout_margin="6dp" android:background="@drawable/bg_row_selected" android:clickable="true" android:focusable="true" android:gravity="center" android:orientation="vertical" android:padding="14dp">
+            <ImageView android:layout_width="40dp" android:layout_height="40dp" android:contentDescription="@null" android:src="@drawable/ic_map" app:tint="@color/colorAccent" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="@string/roadmap" android:textColor="@color/text_primary" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/ll_type_satellite" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" android:layout_margin="6dp" android:background="@drawable/bg_row_selected" android:clickable="true" android:focusable="true" android:gravity="center" android:orientation="vertical" android:padding="14dp">
+            <ImageView android:layout_width="40dp" android:layout_height="40dp" android:contentDescription="@null" android:src="@drawable/ic_satellite" app:tint="@color/colorAccent" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="@string/satellite" android:textColor="@color/text_primary" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/ll_type_hybrid" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" android:layout_margin="6dp" android:background="@drawable/bg_row_selected" android:clickable="true" android:focusable="true" android:gravity="center" android:orientation="vertical" android:padding="14dp">
+            <ImageView android:layout_width="40dp" android:layout_height="40dp" android:contentDescription="@null" android:src="@drawable/ic_layers" app:tint="@color/colorAccent" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="@string/hybrid" android:textColor="@color/text_primary" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/ll_type_terrain" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_columnWeight="1" android:layout_margin="6dp" android:background="@drawable/bg_row_selected" android:clickable="true" android:focusable="true" android:gravity="center" android:orientation="vertical" android:padding="14dp">
+            <ImageView android:layout_width="40dp" android:layout_height="40dp" android:contentDescription="@null" android:src="@drawable/ic_terrain" app:tint="@color/colorAccent" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="@string/terrain" android:textColor="@color/text_primary" />
+        </LinearLayout>
+    </GridLayout>
+</LinearLayout>

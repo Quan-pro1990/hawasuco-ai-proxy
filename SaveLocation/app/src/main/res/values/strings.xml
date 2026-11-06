@@ -1,0 +1,387 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Location Saver</string>
+
+    <!-- Drawer -->
+    <string name="nav_open">Open navigation drawer</string>
+    <string name="nav_close">Close navigation drawer</string>
+    <string name="current_location">Current Location</string>
+    <string name="saved_locations">Saved Locations</string>
+    <string name="add_new_location">Add New Location</string>
+    <string name="manage_geofence">Manage Geofence</string>
+    <string name="add_geofence">Add Geofence</string>
+    <string name="favourites">Favourites</string>
+    <string name="backup_restore">Backup &amp; Restore</string>
+    <string name="import_export_data">Import/Export Data</string>
+    <string name="settings">Settings</string>
+    <string name="contact_us">Contact Us</string>
+    <string name="nav_header_subtitle">%d saved locations</string>
+    <string name="live_location">Live Location</string>
+
+    <!-- Common -->
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="yes">Yes</string>
+    <string name="done">Done</string>
+    <string name="label_save">Save</string>
+    <string name="edit">Edit</string>
+    <string name="delete">Delete</string>
+    <string name="share">Share</string>
+    <string name="copy">Copy</string>
+    <string name="search">Search</string>
+    <string name="got_it">Got it</string>
+    <string name="apply">Apply</string>
+    <string name="change">Change</string>
+    <string name="close">Close</string>
+    <string name="all">All</string>
+    <string name="list">List</string>
+    <string name="map">Map</string>
+    <string name="sort">Sort</string>
+    <string name="sort_by">Sort by</string>
+    <string name="map_type">Map Type</string>
+    <string name="version">ver %s</string>
+    <string name="separator" translatable="false">:</string>
+    <string name="select_all">Select all</string>
+    <string name="no_data_to_display">No data to display</string>
+    <string name="no_internet_connection">No internet connection</string>
+    <string name="unknown_error">An unknown error occurred</string>
+    <string name="open_settings">Open Settings</string>
+
+    <!-- Location fields -->
+    <string name="title">Location Name</string>
+    <string name="address">Address</string>
+    <string name="contact_number">Contact Number</string>
+    <string name="note">Note</string>
+    <string name="date">Date</string>
+    <string name="group">Group</string>
+    <string name="image">Image</string>
+    <string name="coordinates">Coordinates</string>
+    <string name="distance">Distance</string>
+    <string name="latitude">Latitude</string>
+    <string name="longitude">Longitude</string>
+    <string name="utm_northing">UTM Northing</string>
+    <string name="utm_easting">UTM Easting</string>
+    <string name="utm_zone">UTM Zone</string>
+    <string name="distance_with_colon">Distance:</string>
+    <string name="group_with_colon">Group:</string>
+    <string name="north">N</string>
+    <string name="south">S</string>
+    <string name="east">E</string>
+    <string name="west">W</string>
+    <string name="degree_character" translatable="false">°</string>
+    <string name="minute_character" translatable="false">′</string>
+    <string name="seconds_character" translatable="false">″</string>
+    <string name="enter_dms">Enter DMS?</string>
+    <string name="select_group">Select Group</string>
+    <string name="no_group">No group</string>
+
+    <!-- Home -->
+    <string name="share_location">Share Location</string>
+    <string name="save_location">Save Location</string>
+    <string name="accuracy_title_text">Accurate to %d meters</string>
+    <string name="finding_location">Finding location…</string>
+    <string name="msg_intro">Current location is selected by default. To choose another location, tap and hold on the map to place a pin.</string>
+    <string name="location_permission_required">Location permission required to use map and location features. Tap here to allow.</string>
+    <string name="msg_location_copied_to_clipboard">Location copied to clipboard</string>
+    <string name="msg_nothing_to_copy">Nothing to copy!</string>
+    <string name="msg_no_location_to_save">No location to save!</string>
+    <string name="msg_no_location_to_share">No location to share!</string>
+    <string name="location_saved">Location saved.</string>
+    <string name="location_updated">Location updated.</string>
+    <string name="gps_not_enabled">GPS is not enabled</string>
+    <string name="my_location">My Location</string>
+    <string name="live_location_is_active_home">● Live sharing ON ›</string>
+    <string name="geocoder_not_available">Geocoder is not available</string>
+    <string name="drive_mode_saved">Saved (Drive Mode): %s</string>
+    <string name="untitled_location">Location %s</string>
+
+    <!-- Map types -->
+    <string name="choose_map_type">Choose Map Type</string>
+    <string name="roadmap">Road Map</string>
+    <string name="satellite">Satellite</string>
+    <string name="hybrid">Hybrid</string>
+    <string name="terrain">Terrain</string>
+
+    <!-- Save dialog -->
+    <string name="msg_title_must_not_empty">Location name must not be empty</string>
+    <string name="msg_latlng_must_not_empty">Latitude and Longitude must not be empty</string>
+    <string name="msg_improper_latlng">Please enter a valid latitude (-90 to 90) and longitude (-180 to 180)</string>
+    <string name="change_location">Change Location</string>
+    <string name="location_image">Location Image</string>
+    <string name="add_images">Add Images</string>
+    <string name="image_n">Image %d</string>
+    <string name="take_photo">Take Photo</string>
+    <string name="choose_from_gallery">Choose from Gallery</string>
+    <string name="remove_photo">Remove photo</string>
+    <string name="view_photo">View photo</string>
+    <string name="msg_image_not_found">Image not found</string>
+    <string name="upload_image_sequence">Please add images in sequence</string>
+
+    <!-- Groups -->
+    <string name="add_new_group">Add New Group</string>
+    <string name="update_group">Update Group</string>
+    <string name="group_name">Group Name</string>
+    <string name="group_colour">Group Colour</string>
+    <string name="group_already_added">Group already added</string>
+    <string name="group_name_empty">Group name must not be empty</string>
+    <string name="ask_delete_group">Are you sure you want to delete this group? Locations in it will be kept (without group).</string>
+    <string name="delete_group">Delete Group</string>
+    <string name="click_plus_to_add_group">Click + to add new group</string>
+    <string name="alphabetic">Alphabetic</string>
+
+    <!-- List -->
+    <string name="search_locations_by_title">Search by location name, address, note</string>
+    <string name="date_descending">Date (Descending)</string>
+    <string name="date_ascending">Date (Ascending)</string>
+    <string name="ask_delete_location_title">Delete Location</string>
+    <string name="ask_delete_location">Are you sure you want to delete this location?</string>
+    <string name="ask_delete_multiple_location">Are you sure you want to delete %d location(s)?</string>
+    <string name="nothing_to_delete">No item to delete</string>
+    <string name="added_to_favourites">Added to favourites</string>
+    <string name="removed_from_favourites">Removed from favourites</string>
+    <string name="set_customization">Set Customization</string>
+    <string name="set_radius">Set Radius</string>
+    <string name="radius_hint">Radius (%s), 0 = show all</string>
+    <string name="cluster_markers">Cluster Markers</string>
+    <string name="show_on_map">Show on map</string>
+    <string name="n_locations">%d locations</string>
+
+    <!-- Show on map -->
+    <string name="show_direction">Show Direction</string>
+    <string name="msg_no_route_found">No route found, showing straight-line distance</string>
+    <string name="select_navigation_app">Select Navigation App</string>
+    <string name="msg_try_other_navigation_apps">See route in below apps</string>
+    <string name="google_maps" translatable="false">Google Maps</string>
+    <string name="waze" translatable="false">Waze</string>
+    <string name="here_map" translatable="false">HERE WeGo</string>
+    <string name="sygic_map" translatable="false">Sygic</string>
+    <string name="other_map_app">Other map app…</string>
+    <string name="ask_every_time">Ask every time</string>
+    <string name="no_navigation_app">No navigation app found</string>
+    <string name="route_distance">Distance: %1$s</string>
+    <string name="route_distance_time">Distance: %1$s • %2$s</string>
+
+    <!-- Change location -->
+    <string name="update_location_msg_intro">Move the map to edit location</string>
+
+    <!-- Search -->
+    <string name="search_hint">Search…</string>
+    <string name="search_guideline_text">For better search results, please include place name, area, city and country.</string>
+    <string name="no_results">No Results</string>
+
+    <!-- Permission onboarding -->
+    <string name="title_turn_on_location">Turn On Location</string>
+    <string name="desc_turn_on_location">Allow location access to save places easily</string>
+    <string name="title_location_access">Location Access</string>
+    <string name="desc_location_access">Needed to save your location.</string>
+    <string name="title_device_gps">Location Services</string>
+    <string name="desc_gps_access">Turn on location services to find your current location.</string>
+    <string name="btn_start">Start</string>
+    <string name="btn_continue">Continue</string>
+    <string name="privacy_note">Your location is used only to save locations on this device and is never shared without your action.</string>
+    <string name="msg_permission_denied_settings">Location permission is required for this app to function. Please enable it in Settings.</string>
+    <string name="skip">Skip</string>
+
+    <!-- Geofence -->
+    <string name="geofence_enable_disable_message">Enable/Disable background permission for Geofence</string>
+    <string name="optimize_usability_underline"><u>Optimize Geofence Usability</u></string>
+    <string name="add_location_to_geofence_message">Tap + button to add locations to Geofence to get notified when you enter or leave the location</string>
+    <string name="geofence_radius">Select Geofence Radius</string>
+    <string name="search_by_name">Search by location name</string>
+    <string name="geofence_limit_message">Only 100 locations allowed</string>
+    <string name="geofence_permission_warning">To use Geofence you need to grant background location access: please select \"Allow all the time\" and enable precise location in Settings.</string>
+    <string name="grant_access_to_background_location">To enable geofence alerts, the app needs access to your location in the background, even when the app is not in use.</string>
+    <string name="geofence_enter_title">You arrived at %s</string>
+    <string name="geofence_exit_title">You left %s</string>
+    <string name="geofence_notification_text">Geofence radius %d m</string>
+    <string name="channel_geofence">Geofence alerts</string>
+    <string name="ask_remove_geofence">Remove this location from Geofence?</string>
+    <string name="remove">Remove</string>
+    <string name="geofence_saved">Geofence updated (%d locations)</string>
+    <string name="geofence_play_services_missing">Geofence requires Google Play services.</string>
+
+    <!-- Optimize usability -->
+    <string name="optimize_usability">Optimize Geofence Usability</string>
+    <string name="optimize_title">Checklist for better Geofence usage</string>
+    <string name="optimize_description">Please check these settings before using the Geofence feature</string>
+    <string name="optimize_point1">1. Exclude from Battery Optimization</string>
+    <string name="optimize_point1_description1">• Exclude this app from battery optimization.</string>
+    <string name="battery_optimization_settings"><u>Battery optimization settings</u></string>
+    <string name="optimize_point2">2. Prevent Geofence stopping due to device changes</string>
+    <string name="optimize_point2_description1">• If the app or Android is updated, open the app at least once.</string>
+    <string name="optimize_point2_description2">• After rebooting the device, open the app once as well.</string>
+    <string name="optimize_point3">3. Allow Notification Permission</string>
+    <string name="optimize_point3_description1">• On Android 13+ allow notifications to receive Geofence alerts.</string>
+    <string name="notification_settings"><u>Notification settings</u></string>
+
+    <!-- Export / Import -->
+    <string name="export_gpx">Export GPX</string>
+    <string name="export_kml">Export KML</string>
+    <string name="export_csv">Export CSV</string>
+    <string name="import_csv">Import CSV</string>
+    <string name="share_csv">Share CSV</string>
+    <string name="export_pdf">Export PDF</string>
+    <string name="export_images">Export Images</string>
+    <string name="download_share_csv"><u>Download/Share sample CSV</u></string>
+    <string name="exported_file_path">Exported file: %s</string>
+    <string name="sample_csv_file_path">Sample CSV file: %s</string>
+    <string name="exporting">Exporting…</string>
+    <string name="no_data_to_export">No data to export</string>
+    <string name="export_done">%s exported</string>
+    <string name="export_failed">Export failed: %s</string>
+    <string name="msg_csv_import_success">CSV imported successfully (%d locations)</string>
+    <string name="msg_incorrect_csv_format">CSV file is not in correct format</string>
+    <string name="import_errors_title">Some rows were skipped</string>
+    <string name="msg_import_csv_title_empty">Row %d: location name is empty.</string>
+    <string name="msg_import_csv_latitude_range_error">Row %d: latitude must be -90 to 90.</string>
+    <string name="msg_import_csv_longitude_range_error">Row %d: longitude must be -180 to 180.</string>
+    <string name="msg_import_csv_date_format_error">Row %d: date is not in a known format, current time used.</string>
+    <string name="select_file">Select File</string>
+    <string name="instructions_for_import_csv">1. The CSV file must have the same columns as the sample file:\n   location name, latitude, longitude, address, contact number, note, date, group name\n2. The first row is the header row.\n3. Location name, latitude and longitude are required.\n4. Latitude range: -90 to 90. Longitude range: -180 to 180.\n5. Date format: yyyy-MM-dd HH:mm:ss (other common formats are also accepted).\n6. Groups that don\'t exist yet are created automatically.</string>
+    <string name="sample_csv_title">Sample:</string>
+    <string name="export_groupwise">Choose locations to export</string>
+    <string name="must_select_group">You must select at least one group.</string>
+    <string name="download">Download</string>
+    <string name="share_file_chooser_title">Share file</string>
+    <string name="export_hint">Files are saved to the Download/%s folder.</string>
+    <string name="exporting_images">Exporting images…</string>
+
+    <!-- Backup -->
+    <string name="backup_title">Back up your locations</string>
+    <string name="backup_desc">All locations, groups and photos are stored only on this device. Create a backup file and keep it in a safe place (Google Drive, computer, memory card…) to move to a new phone.</string>
+    <string name="backup_now">Create backup file…</string>
+    <string name="restore_now">Restore from backup file…</string>
+    <string name="backup_done">Backup created: %1$d locations, %2$d photos</string>
+    <string name="restore_done">Restored %1$d locations, %2$d groups</string>
+    <string name="restore_mode_title">Restore backup</string>
+    <string name="restore_mode_msg">Merge the backup with current data, or replace all current data?</string>
+    <string name="restore_merge">Merge</string>
+    <string name="restore_replace">Replace</string>
+    <string name="last_backup">Last backup: %s</string>
+    <string name="backup_invalid">This is not a valid backup file</string>
+
+    <!-- Settings -->
+    <string name="location_accuracy">Improve Location\'s accuracy</string>
+    <string name="distance_unit">Distance Unit</string>
+    <string name="select_distance_unit">Select Distance Unit</string>
+    <string name="km">KM</string>
+    <string name="mile">Mile</string>
+    <string name="sharing_type">Location Sharing Option</string>
+    <string name="select_sharing_type">Choose Location Sharing Option</string>
+    <string name="share_live_location">Share Live Location</string>
+    <string name="datetime_format">DateTime format</string>
+    <string name="select_datetime_format">Select DateTime format</string>
+    <string name="automatic_gps_update">Automatic GPS update</string>
+    <string name="drive_mode">Drive Mode</string>
+    <string name="group_mode">Group Mode</string>
+    <string name="select_theme">Select Theme</string>
+    <string name="system_default_theme">System Default</string>
+    <string name="light_theme">Light</string>
+    <string name="dark_theme">Dark</string>
+    <string name="language">Language</string>
+    <string name="select_language">Select Language</string>
+    <string name="language_system">System default</string>
+    <string name="share_preferences">Share preferences</string>
+    <string name="latlng_format_label">Coordinates format</string>
+    <string name="select_latlng_format">Choose Coordinates format</string>
+    <string name="default_navigation_app_label">Default Navigation App</string>
+    <string name="live_server_label">Live location server</string>
+    <string name="live_server_hint" translatable="false">https://your-server:3000</string>
+    <string name="live_server_desc">Address of the live-location server (see server/README in the project). Leave empty to disable live sharing.</string>
+    <string name="not_set">Not set</string>
+    <string name="delete_all_label">Delete all data</string>
+    <string name="ask_delete_all">Delete ALL saved locations, groups and photos on this device? This cannot be undone.</string>
+    <string name="all_data_deleted">All data deleted</string>
+    <string name="msg_dialog_driving_mode">Drive Mode gives hassle-free saving: one tap on \"Save Location\" saves immediately (no form), so you can save while driving.</string>
+    <string name="msg_dialog_gps_update">If ON, GPS data is updated automatically.\nIf OFF, GPS data is not updated; press the \"My Location\" button on the map to go to your current location.</string>
+    <string name="msg_dialog_group_mode">Group Mode neatly arranges saved locations in groups of your choice.</string>
+    <string name="google_maps_url" translatable="false">Google Maps URL</string>
+    <string name="waze_url" translatable="false">Waze URL</string>
+    <string name="osm_url" translatable="false">OpenStreetMap URL</string>
+    <string name="location_accuracy_link" translatable="false">https://support.google.com/maps/answer/2839911</string>
+
+    <!-- Sharing -->
+    <string name="share_via">Share via…</string>
+    <string name="current_location_tab">Current Location</string>
+    <string name="location_name_optional">Location name (optional)</string>
+    <string name="shareable_location_link">Shareable Location Link</string>
+    <string name="display_name">Display Name</string>
+    <string name="hint_your_name">Your name</string>
+    <string name="choose_duration">Choose duration</string>
+    <string name="duration_30_min">30 min</string>
+    <string name="duration_1_hour">1 hour</string>
+    <string name="duration_4_hours">4 hours</string>
+    <string name="duration_8_hours">8 hours</string>
+    <string name="share_until_time">Share until %1$s</string>
+    <string name="start_live_sharing">Start Live Sharing</string>
+    <string name="live_location_is_active">Live location is being shared</string>
+    <string name="live_location_remaining">%1$s remaining</string>
+    <string name="sharing_for_duration">Sharing for %1$s</string>
+    <string name="update_settings">Update Settings</string>
+    <string name="update_settings_summary">Every %1$s • After %2$s</string>
+    <string name="live_location_link">Live location link</string>
+    <string name="copy_link">Copy Link</string>
+    <string name="share_link">Share Link</string>
+    <string name="stop_sharing_btn">Stop Sharing</string>
+    <string name="stop_sharing">Stop sharing your live location?</string>
+    <string name="ask_stop_live_location_sharing">Others with your link will no longer see your location.</string>
+    <string name="share_current_location_one_time">Share Current Location (One-Time)</string>
+    <string name="update_every">Update every</string>
+    <string name="update_after_moving">Update after moving</string>
+    <string name="update_settings_battery_hint_title">Faster updates may use more battery.</string>
+    <string name="update_settings_battery_hint_subtitle">Choose higher values to save battery.</string>
+    <string name="heartbeat_updates_subtitle">An update is still sent every 60 seconds if you haven\'t moved, so others know you\'re still live.</string>
+    <string name="save_settings">Save Settings</string>
+    <string name="advised">Advised</string>
+    <string name="seconds_short">%d sec</string>
+    <string name="minutes_short">%d min</string>
+    <string name="meters_short" translatable="false">%d m</string>
+    <string name="msg_live_location_link_copied">Link copied to clipboard</string>
+    <string name="live_share_message_with_name">📍 %1$s is sharing their live location with you (until %2$s):\n%3$s</string>
+    <string name="live_share_message_anonymous">📍 My live location (until %1$s):\n%2$s</string>
+    <string name="live_server_not_configured">Live sharing needs a live-location server. Set its address in Settings → Live location server.</string>
+    <string name="live_start_failed">Could not start live sharing: %s</string>
+    <string name="foreground_location_service_notification_text">Sharing your live location until %s</string>
+    <string name="channel_live">Live location sharing</string>
+    <string name="msg_location_permission_live_location">Location permission is required to share your live location.</string>
+    <string name="feature_announcement_badge">NEW FEATURE</string>
+    <string name="feature_announcement_live_location_title">Live Location Sharing</string>
+    <string name="feature_announcement_live_location_benefit_link">Share your live location with others using a link.</string>
+    <string name="feature_announcement_live_location_benefit_duration">Choose how long to share, send the link, and stop anytime.</string>
+    <string name="feature_announcement_live_location_benefit_privacy">No location is shared until you start.</string>
+    <string name="feature_announcement_see_how_it_works">Try It Now</string>
+    <string name="feature_announcement_footer_hint">You can find this anytime via \"Share Location\".</string>
+
+    <!-- Customize / share prefs -->
+
+    <!-- Contact -->
+    <string name="contact_us_dialog_title">Contact Us</string>
+    <string name="contact_us_dialog_subtitle">Choose a topic below</string>
+    <string name="contact_us_feedback">Feedback &amp; Suggestions</string>
+    <string name="contact_us_report_issue">Report an Issue</string>
+    <string name="contact_us_feature_request">Feature Request</string>
+    <string name="contact_us_business">Business &amp; Team Solutions</string>
+    <string name="contact_name">Name*</string>
+    <string name="email">Email*</string>
+    <string name="phonenumber">Phone Number</string>
+    <string name="message">Message*</string>
+    <string name="send">Send</string>
+    <string name="msg_all_fields_are_compulsory">Please fill in all required (*) fields</string>
+    <string name="valid_email">Enter a valid email address</string>
+    <string name="error_no_email_client">There is no email client installed.</string>
+    <!-- Địa chỉ nhận góp ý: đổi thành email của đơn vị bạn -->
+    <string name="support_email" translatable="false"></string>
+
+    <!-- Camera -->
+    <string name="camera_permission_required">Camera permission is required to take photos</string>
+    <string name="camera_error">Could not take photo</string>
+
+    <!-- Widgets / tile -->
+    <string name="widget_save_share_name">Save &amp; Share</string>
+    <string name="widget_save_name">Save Location</string>
+    <string name="widget_share_name">Share Location</string>
+    <string name="quick_widget_name">Quick Save</string>
+    <string name="location_permission_needed">Location permission needed. Open the app to allow it.</string>
+    <string name="getting_location">Getting current location…</string>
+    <string name="location_unavailable">Could not get current location</string>
+</resources>

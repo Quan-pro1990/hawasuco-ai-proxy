@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/scrollView"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_sheet">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="16dp">
+
+        <View
+            android:id="@+id/drag_handle"
+            android:layout_width="40dp"
+            android:layout_height="5dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="10dp"
+            android:background="@drawable/bg_drag_handle" />
+
+        <LinearLayout
+            android:id="@+id/latLongContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <FrameLayout
+                android:id="@+id/fl_location_image"
+                android:layout_width="84dp"
+                android:layout_height="84dp"
+                android:layout_marginEnd="12dp">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cv_location_image"
+                    android:layout_width="78dp"
+                    android:layout_height="78dp"
+                    app:cardCornerRadius="14dp"
+                    app:cardElevation="0dp"
+                    app:strokeColor="@color/input_stroke"
+                    app:strokeWidth="1dp">
+
+                    <ImageView
+                        android:id="@+id/iv_location_image"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@color/chip_bg"
+                        android:contentDescription="@string/location_image"
+                        android:scaleType="centerInside"
+                        android:src="@drawable/ic_add_photo"
+                        app:tint="@color/text_secondary" />
+                </com.google.android.material.card.MaterialCardView>
+
+                <ImageView
+                    android:id="@+id/iv_camera_fab"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_gravity="bottom|end"
+                    android:background="@drawable/bg_chip_selected"
+                    android:contentDescription="@string/take_photo"
+                    android:padding="5dp"
+                    android:src="@drawable/ic_camera"
+                    app:tint="@color/white" />
+
+                <TextView
+                    android:id="@+id/tvImagesCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="top|end"
+                    android:background="@drawable/bg_badge_count"
+                    android:paddingStart="6dp"
+                    android:paddingEnd="6dp"
+                    android:textColor="@color/white"
+                    android:textSize="11sp"
+                    android:visibility="gone" />
+            </FrameLayout>
+
+            <LinearLayout
+                android:id="@+id/coordinatesContainer"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <!-- Nhập vĩ độ / kinh độ (thập phân hoặc độ-phút-giây) -->
+                <LinearLayout
+                    android:id="@+id/llDdContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tvDmsLabel"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/enter_dms"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="13sp" />
+
+                        <androidx.appcompat.widget.SwitchCompat
+                            android:id="@+id/switchLatLongDMS"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/llLatLong"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/SaveDialog.CoordinateLabel"
+                                android:layout_width="wrap_content"
+                                android:minWidth="64dp"
+                                android:layout_marginEnd="6dp"
+                                android:text="@string/latitude"
+                                android:maxLines="1" />
+
+                            <EditText
+                                android:id="@+id/et_lat"
+                                style="@style/SaveDialog.CoordinateValue"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:importantForAutofill="no"
+                                android:hint="@string/latitude"
+                                android:inputType="numberDecimal|numberSigned" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/SaveDialog.CoordinateLabel"
+                                android:layout_width="wrap_content"
+                                android:minWidth="64dp"
+                                android:layout_marginEnd="6dp"
+                                android:text="@string/longitude"
+                                android:maxLines="1" />
+
+                            <EditText
+                                android:id="@+id/et_lng"
+                                style="@style/SaveDialog.CoordinateValue"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:importantForAutofill="no"
+                                android:hint="@string/longitude"
+                                android:inputType="numberDecimal|numberSigned" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/llDMS"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/btnNS"
+                                style="@style/SaveDialog.CoordinateLabel"
+                                android:layout_width="36dp"
+                                android:background="@drawable/bg_chip"
+                                android:gravity="center"
+                                android:text="@string/north"
+                                android:textStyle="bold" />
+
+                            <EditText android:id="@+id/etNSDegree" style="@style/SaveDialog.CoordinateValue" android:layout_width="0dp" android:layout_weight="1" android:layout_marginStart="4dp" android:hint="@string/degree_character" android:importantForAutofill="no" android:inputType="number" android:maxLength="2" />
+                            <EditText android:id="@+id/etNSMinute" style="@style/SaveDialog.CoordinateValue" android:layout_width="0dp" android:layout_weight="1" android:layout_marginStart="4dp" android:hint="@string/minute_character" android:importantForAutofill="no" android:inputType="number" android:maxLength="2" />
+                            <EditText android:id="@+id/etNSSecond" style="@style/SaveDialog.CoordinateValue" android:layout_width="0dp" android:layout_weight="1.4" android:layout_marginStart="4dp" android:hint="@string/seconds_character" android:importantForAutofill="no" android:inputType="numberDecimal" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/btnEW"
+                                style="@style/SaveDialog.CoordinateLabel"
+                                android:layout_width="36dp"
+                                android:background="@drawable/bg_chip"
+                                android:gravity="center"
+                                android:text="@string/east"
+                                android:textStyle="bold" />
+
+                            <EditText android:id="@+id/etEWDegree" style="@style/SaveDialog.CoordinateValue" android:layout_width="0dp" android:layout_weight="1" android:layout_marginStart="4dp" android:hint="@string/degree_character" android:importantForAutofill="no" android:inputType="number" android:maxLength="3" />
+                            <EditText android:id="@+id/etEWMinute" style="@style/SaveDialog.CoordinateValue" android:layout_width="0dp" android:layout_weight="1" android:layout_marginStart="4dp" android:hint="@string/minute_character" android:importantForAutofill="no" android:inputType="number" android:maxLength="2" />
+                            <EditText android:id="@+id/etEWSecond" style="@style/SaveDialog.CoordinateValue" android:layout_width="0dp" android:layout_weight="1.4" android:layout_marginStart="4dp" android:hint="@string/seconds_character" android:importantForAutofill="no" android:inputType="numberDecimal" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Hiển thị UTM (chỉ đọc) -->
+                <LinearLayout
+                    android:id="@+id/llUtmContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView android:id="@+id/tvUtmNorthing" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="@color/text_primary" android:textSize="15sp" />
+                    <TextView android:id="@+id/tvUtmEasting" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:textColor="@color/text_primary" android:textSize="15sp" />
+                    <TextView android:id="@+id/tvUtmZone" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:textColor="@color/text_primary" android:textSize="15sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <ImageView
+                android:id="@+id/imgChangeLocation"
+                style="@style/ListItemIcon"
+                android:layout_gravity="center_vertical"
+                android:layout_marginStart="4dp"
+                android:contentDescription="@string/change_location"
+                android:src="@drawable/ic_edit" />
+        </LinearLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/til_title"
+            style="@style/SaveDialog.TextInputLayout"
+            android:layout_marginTop="12dp"
+            android:hint="@string/title">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textCapSentences"
+                android:maxLines="1" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/til_date"
+            style="@style/SaveDialog.TextInputLayout"
+            android:hint="@string/date"
+            android:visibility="gone"
+            app:endIconDrawable="@drawable/ic_calendar"
+            app:endIconMode="custom">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_date"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:focusable="false"
+                android:inputType="none" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/til_address"
+            style="@style/SaveDialog.TextInputLayout"
+            android:hint="@string/address">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_address"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textCapSentences|textMultiLine"
+                android:maxLines="4" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/til_contact_number"
+            style="@style/SaveDialog.TextInputLayout"
+            android:hint="@string/contact_number">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_contact_number"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="phone"
+                android:maxLines="1" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/til_note"
+            style="@style/SaveDialog.TextInputLayout"
+            android:hint="@string/note">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_note"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textCapSentences|textMultiLine"
+                android:maxLines="5"
+                android:minLines="2" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/til_group"
+            style="@style/SaveDialog.TextInputLayout"
+            android:hint="@string/select_group"
+            app:endIconDrawable="@drawable/ic_chevron_right"
+            app:endIconMode="custom">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:focusable="false"
+                android:inputType="none" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <LinearLayout
+            android:id="@+id/save_dialog_button_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:id="@+id/btn_cancel"
+                style="@style/homeActionButton"
+                android:layout_weight="1"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/bg_button_outline">
+
+                <ImageView style="@style/homeActionButtonIcon" android:contentDescription="@null" android:src="@drawable/ic_close" app:tint="@color/colorAccent" />
+                <TextView style="@style/homeActionButtonLabel" android:layout_marginStart="6dp" android:text="@string/cancel" android:textColor="@color/colorAccent" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/btn_save"
+                style="@style/homeActionButton"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                android:background="@drawable/bg_button_primary">
+
+                <ImageView style="@style/homeActionButtonIcon" android:contentDescription="@null" android:src="@drawable/ic_save" app:tint="@color/white" />
+                <TextView style="@style/homeActionButtonLabel" android:layout_marginStart="6dp" android:text="@string/label_save" android:textColor="@color/white" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

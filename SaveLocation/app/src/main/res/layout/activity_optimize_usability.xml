@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/screen_bg">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/optimize_title" android:textColor="@color/text_primary" android:textSize="20sp" android:textStyle="bold" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="@string/optimize_description" android:textColor="@color/text_secondary" android:textSize="15sp" />
+
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="22dp" android:text="@string/optimize_point1" android:textColor="@color/text_primary" android:textSize="17sp" android:textStyle="bold" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="@string/optimize_point1_description1" android:textColor="@color/text_primary" android:textSize="15sp" />
+        <TextView android:id="@+id/tvBatteryOptimizationSettings" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:background="?attr/selectableItemBackground" android:paddingTop="6dp" android:paddingBottom="6dp" android:text="@string/battery_optimization_settings" android:textColor="@color/colorAccent" android:textSize="15sp" />
+
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="22dp" android:text="@string/optimize_point2" android:textColor="@color/text_primary" android:textSize="17sp" android:textStyle="bold" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="@string/optimize_point2_description1" android:textColor="@color/text_primary" android:textSize="15sp" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="@string/optimize_point2_description2" android:textColor="@color/text_primary" android:textSize="15sp" />
+
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="22dp" android:text="@string/optimize_point3" android:textColor="@color/text_primary" android:textSize="17sp" android:textStyle="bold" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="@string/optimize_point3_description1" android:textColor="@color/text_primary" android:textSize="15sp" />
+        <TextView android:id="@+id/tvNotificationSettings" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:background="?attr/selectableItemBackground" android:paddingTop="6dp" android:paddingBottom="6dp" android:text="@string/notification_settings" android:textColor="@color/colorAccent" android:textSize="15sp" />
+    </LinearLayout>
+</ScrollView>
