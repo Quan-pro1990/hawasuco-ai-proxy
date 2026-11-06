@@ -30,6 +30,8 @@ final class Watermark {
     private static final int SHADOW = 0xE6000000;
     /** Màu tên nhân viên và tên đội. */
     private static final int VALUE_BLUE = 0xFF2196F3;
+    /** Màu nội dung công việc. */
+    private static final int VALUE_RED = 0xFFF44336;
 
     private final Bitmap logo;
     private final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
@@ -85,7 +87,12 @@ final class Watermark {
             }
             textStyle(false, u);
             List<String> wrapped = wrap(item.text, maxW, 3);
-            for (int i = 0; i < wrapped.size(); i++) lines.add(new Line(wrapped.get(i), false, i == 0));
+            for (int i = 0; i < wrapped.size(); i++) {
+                String t = wrapped.get(i);
+                // dòng đầu giữ nhãn màu trắng; các dòng xuống tiếp theo tô hết màu của mục
+                int label = i == 0 ? Math.min(item.labelLen, t.length()) : 0;
+                lines.add(new Line(t, false, i == 0, label, item.color));
+            }
         }
         float span = 0;
         for (int i = 1; i < lines.size(); i++) span += pitch(lines.get(i), u);
@@ -111,11 +118,11 @@ final class Watermark {
             Line line = lines.get(i);
             if (i > 0) y += pitch(line, u);
             textStyle(line.strong, u);
-            if (line.labelLen > 0) {
-                // nhãn ("Nhân viên: ", "Đội: ") màu trắng, phần tên màu xanh dương
+            if (line.color != 0) {
+                // nhãn ("Nhân viên: ", "Đội: ", "Nội dung: ") màu trắng, phần sau theo màu của mục
                 String label = line.text.substring(0, line.labelLen);
                 c.drawText(label, textX, y, p);
-                p.setColor(VALUE_BLUE);
+                p.setColor(line.color);
                 c.drawText(line.text, line.labelLen, line.text.length(), textX + p.measureText(label), y, p);
                 p.setColor(Color.WHITE);
             } else {
@@ -138,22 +145,24 @@ final class Watermark {
 
     /**
      * Một dòng chữ; strong = chữ to in đậm (Nhân viên, Đội); start = dòng đầu của một mục;
-     * labelLen &gt; 0: số ký tự đầu là nhãn màu trắng, phần sau tô xanh dương.
+     * color != 0: labelLen ký tự đầu là nhãn màu trắng, phần sau tô màu color.
      */
     private static final class Line {
         final String text;
         final boolean strong, start;
         final int labelLen;
+        final int color;
 
         Line(String text, boolean strong, boolean start) {
-            this(text, strong, start, 0);
+            this(text, strong, start, 0, 0);
         }
 
-        Line(String text, boolean strong, boolean start, int labelLen) {
+        Line(String text, boolean strong, boolean start, int labelLen, int color) {
             this.text = text;
             this.strong = strong;
             this.start = start;
             this.labelLen = labelLen;
+            this.color = color;
         }
     }
 
@@ -195,7 +204,9 @@ final class Watermark {
         if (s.showTeam) addField(out, "Đội: ", s.team, preview);
         if (s.showEquipment && notEmpty(s.equipment)) add(out, "Thiết bị: " + s.equipment.trim());
         if (s.showWorkplace && notEmpty(s.workplace)) add(out, "Nơi làm việc: " + s.workplace.trim());
-        if (s.showNote && notEmpty(s.note)) add(out, "Nội dung: " + s.note.trim());
+        if (s.showNote && notEmpty(s.note)) {
+            out.add(new Line("Nội dung: " + s.note.trim(), false, true, "Nội dung: ".length(), VALUE_RED));
+        }
         return out;
     }
 
@@ -205,8 +216,8 @@ final class Watermark {
 
     /** Dòng bắt buộc nên điền (chữ to đậm): chưa điền thì khung ngắm nhắc "chạm để nhập", ảnh lưu bỏ qua. */
     private static void addField(List<Line> out, String label, String value, boolean preview) {
-        if (notEmpty(value)) out.add(new Line(label + value.trim(), true, true, label.length()));
-        else if (preview) out.add(new Line(label + "(chạm để nhập)", true, true, label.length()));
+        if (notEmpty(value)) out.add(new Line(label + value.trim(), true, true, label.length(), VALUE_BLUE));
+        else if (preview) out.add(new Line(label + "(chạm để nhập)", true, true, label.length(), VALUE_BLUE));
     }
 
     private static boolean notEmpty(String v) {
