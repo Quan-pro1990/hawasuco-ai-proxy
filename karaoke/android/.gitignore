@@ -1,0 +1,7 @@
+build/
+.gradle/
+local.properties
+*.iml
+.idea/
+# khóa ký app: giữ riêng, không đưa lên GitHub
+keystore/

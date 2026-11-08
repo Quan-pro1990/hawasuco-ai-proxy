@@ -15,22 +15,22 @@ html, body {
   cursor: none;
 }
 body.show-cursor { cursor: default; }
-#stage { position: fixed; inset: 0; overflow: hidden; background: #000; }
+#stage { position: fixed; top: 0; right: 0; bottom: 0; left: 0; overflow: hidden; background: #000; }
 
-#player-wrap { position: absolute; inset: 0; z-index: 1; }
-#player-wrap iframe, #player { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+#player-wrap { position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 1; }
+#player-wrap iframe, #player { position: absolute; top: 0; right: 0; bottom: 0; left: 0; width: 100%; height: 100%; border: 0; }
 /* chặn chuột lên khung YouTube để không lộ thanh điều khiển */
-#player-wrap::after { content: ""; position: absolute; inset: 0; }
+#player-wrap::after { content: ""; position: absolute; top: 0; right: 0; bottom: 0; left: 0; }
 
 /* ---------------- Màn hình chờ ---------------- */
 #standby {
-  position: absolute; inset: 0; z-index: 2;
+  position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 2;
   opacity: 0; visibility: hidden;
   transition: opacity .6s ease, visibility 0s linear .6s;
   background: #050816;
 }
 #standby.on { opacity: 1; visibility: visible; transition: opacity .6s ease; }
-.sb-default, .sb-image, .sb-video { position: absolute; inset: 0; width: 100%; height: 100%; display: none; }
+.sb-default, .sb-image, .sb-video { position: absolute; top: 0; right: 0; bottom: 0; left: 0; width: 100%; height: 100%; display: none; }
 #standby[data-type="default"] .sb-default { display: block; }
 #standby[data-type="image"] .sb-image { display: block; object-fit: cover; }
 #standby[data-type="video"] .sb-video { display: block; object-fit: cover; }
@@ -63,7 +63,7 @@ body.show-cursor { cursor: default; }
 @keyframes gridmove { to { background-position: 0 6vmin; } }
 
 .sb-content {
-  position: absolute; inset: 0;
+  position: absolute; top: 0; right: 0; bottom: 0; left: 0;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   text-align: center; padding: 6vh 6vw;
   gap: 2.5vh;
@@ -107,7 +107,7 @@ body.show-cursor { cursor: default; }
 .sb-qr[hidden] { display: none; }
 
 /* ---------------- Hiệu ứng ---------------- */
-#fx { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; }
+#fx { position: absolute; top: 0; right: 0; bottom: 0; left: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; }
 
 /* ---------------- Băng thông tin bài ---------------- */
 #banner {
@@ -127,7 +127,7 @@ body.show-cursor { cursor: default; }
 .bn-sub:empty { display: none; }
 
 #announce {
-  position: absolute; inset: 0; z-index: 5;
+  position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 5;
   display: flex; align-items: center; justify-content: center; pointer-events: none;
   opacity: 0; transition: opacity .5s;
 }
@@ -165,12 +165,12 @@ body.show-cursor { cursor: default; }
 }
 @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-100%); } }
 
-#blackout { position: absolute; inset: 0; z-index: 7; background: #000; display: none; }
+#blackout { position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 7; background: #000; display: none; }
 #blackout.on { display: block; }
 
 /* ---------------- Lớp bấm để bắt đầu / trạng thái ---------------- */
 #start {
-  position: absolute; inset: 0; z-index: 9; display: none; cursor: pointer;
+  position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 9; display: none; cursor: pointer;
   align-items: center; justify-content: center; background: rgba(0, 0, 0, .72);
 }
 #start.on { display: flex; }

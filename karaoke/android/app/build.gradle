@@ -1,0 +1,47 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'vn.karaled'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'vn.karaled'
+        minSdk 21
+        targetSdk 34
+        versionCode 1
+        versionName '1.0'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            // Ký bằng khóa trong android/keystore (tạo bởi build-apk.sh) nếu có, để cài đè lên bản cũ được
+            if (file('../keystore/karaled.jks').exists()) {
+                signingConfig signingConfigs.create('karaled') {
+                    storeFile file('../keystore/karaled.jks')
+                    storePassword System.getenv('KS_PASS') ?: 'karaled'
+                    keyAlias 'karaled'
+                    keyPassword System.getenv('KS_PASS') ?: 'karaled'
+                }
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    // Giao diện web dùng chung với bản máy tính: chép từ karaoke/public vào assets/web khi build
+    sourceSets {
+        main.assets.srcDirs += [layout.buildDirectory.dir('generated/karaled-assets').get().asFile]
+    }
+}
+
+def copyWebAssets = tasks.register('copyWebAssets', Sync) {
+    from '../../public'
+    into layout.buildDirectory.dir('generated/karaled-assets/web')
+}
+tasks.named('preBuild') { dependsOn copyWebAssets }

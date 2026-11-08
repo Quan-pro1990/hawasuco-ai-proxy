@@ -67,7 +67,9 @@ async function main() {
   probe.close();
 
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'karaled-test-'));
-  const child = spawn(process.execPath, [path.join(__dirname, '..', 'server.js')], {
+  // SERVER_CMD: chạy thử máy chủ khác cùng giao diện, vd máy chủ Java của app Android (xem android/build-apk.sh)
+  const cmd = process.env.SERVER_CMD ? process.env.SERVER_CMD.split(' ') : [process.execPath, path.join(__dirname, '..', 'server.js')];
+  const child = spawn(cmd[0], cmd.slice(1), {
     env: {
       ...process.env,
       PORT: String(port),

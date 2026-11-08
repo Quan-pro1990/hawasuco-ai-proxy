@@ -724,6 +724,11 @@
 
   /* Mở cửa sổ màn hình LED */
   function openLed() {
+    // trong app Android: chuyển máy này sang màn hình LED toàn màn hình
+    if (window.AndroidApp && window.AndroidApp.openLed) {
+      window.AndroidApp.openLed();
+      return;
+    }
     if (window.matchMedia('(max-width: 760px)').matches) {
       openConnect();
       return;

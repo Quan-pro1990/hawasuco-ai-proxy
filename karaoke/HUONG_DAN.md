@@ -1,8 +1,9 @@
 # KaraLED – Phần mềm karaoke YouTube miễn phí cho màn hình LED / TV
 
-Một máy tính nối màn hình LED (hoặc TV) chạy phần mềm; điện thoại của khách quét mã QR để tìm và chọn bài
-trên YouTube; người quản lý điều khiển phát / dừng / âm lượng / hiệu ứng từ điện thoại hoặc máy tính.
-Không cài app, không tốn phí, phần mềm không chèn quảng cáo.
+Một máy nối màn hình LED (hoặc TV) chạy phần mềm — **máy tính Windows** hoặc **thiết bị Android** (TV box,
+máy tính bảng, điện thoại). Điện thoại của khách quét mã QR để tìm và chọn bài trên YouTube; người quản lý điều khiển
+phát / dừng / âm lượng / hiệu ứng từ điện thoại hoặc máy tính. Khách không cần cài app; không tốn phí;
+phần mềm không chèn quảng cáo.
 
 ```
   Điện thoại khách ─┐                       ┌─> Màn hình LED / TV  (trang /led, trình phát YouTube chính thức)
@@ -26,6 +27,41 @@ Không cài app, không tốn phí, phần mềm không chèn quảng cáo.
 - **Nhiều thiết bị cùng lúc**, tự đồng bộ tức thì; mất mạng tự nối lại; tắt máy mở lại vẫn còn danh sách.
 - **Mã quản lý**: đặt mã thì khách chỉ tìm và thêm bài; điều khiển / xóa / đổi thứ tự cần mã.
 - Video chủ kênh cấm phát ngoài YouTube được tự lọc khỏi kết quả, lỡ gặp thì tự bỏ qua sang bài sau.
+
+## Chạy trên Android (không cần máy tính)
+
+File cài: **`karaoke/KaraLED.apk`** (khoảng 170 KB). Chạy được trên Android 5.0 trở lên: TV box, Android TV,
+máy tính bảng, điện thoại. Cả máy chủ lẫn màn hình LED đều nằm trong app.
+
+**Cài đặt**
+1. Chép `KaraLED.apk` vào máy Android (USB, Zalo, Google Drive…) rồi mở file để cài. Máy hỏi
+   *"Cho phép cài ứng dụng không rõ nguồn gốc"* → cho phép với ứng dụng đang mở file (Trình quản lý file / Chrome).
+   TV box: dùng app *File Commander*, *X-plore* hoặc *Downloader* để mở file APK.
+2. Mở **KaraLED**. Lần đầu cho phép hiện thông báo (để app chạy nền ổn định).
+3. Vào **Cài đặt** trên trang điều khiển → dán khóa YouTube API (xem mục *Lấy khóa YouTube API*).
+
+**Các cách dùng**
+
+| Thiết bị chạy app | Cách dùng |
+|---|---|
+| **TV box / Android TV** cắm HDMI vào màn hình LED | App mở thẳng **màn hình LED toàn màn hình**, tự phát có tiếng (không cần bấm). Điện thoại khách cùng Wi-Fi quét mã QR trên màn hình chờ để chọn bài. Nút **Back / Menu** trên điều khiển TV: chuyển sang trang điều khiển, tải lại, thoát. |
+| **Điện thoại / máy tính bảng** cắm cáp HDMI (hoặc chiếu Miracast) ra màn hình LED | Màn hình LED **tự hiện trên màn hình ngoài**, còn máy trong tay là bàn điều khiển. |
+| **Điện thoại / máy tính bảng** làm máy chủ, Smart TV làm màn hình | Mở trình duyệt trên Smart TV, vào địa chỉ trong **Kết nối thiết bị** thêm `/led` (vd `http://192.168.1.20:3000/led`). |
+| **Máy tính bảng** đặt làm màn hình | Bấm **MỞ LED** trên trang điều khiển → máy chuyển sang màn hình LED toàn màn hình. Vuốt / bấm Quay lại để về trang điều khiển. |
+
+- Điện thoại phát Wi-Fi (điểm phát sóng) cho khách bắt vào cũng được: khách vào địa chỉ hiện trên mã QR.
+- Thông báo **"KaraLED đang chạy"** cho biết địa chỉ để điện thoại vào; nút **Tắt hẳn** trên thông báo để tắt máy chủ.
+- Nên tắt chế độ tiết kiệm pin cho KaraLED (Cài đặt Android → Ứng dụng → KaraLED → Pin → Không hạn chế) để
+  điện thoại khách không bị mất kết nối khi màn hình máy chủ tắt.
+- App dùng **Android System WebView** để phát YouTube: TV box đời cũ nên cập nhật *Android System WebView* /
+  *Chrome* trong CH Play, nếu không video có thể không phát.
+- Về YouTube Premium: Google không cho đăng nhập tài khoản bên trong app (WebView), nên màn hình LED trong app không
+  dùng được Premium. Muốn dùng Premium: để app chạy nền làm máy chủ, mở **Chrome** (đã đăng nhập Premium) trên chính
+  máy đó vào `http://127.0.0.1:3000/led`, bấm vào màn hình một lần để bật tiếng.
+
+**Cập nhật app**: cài file APK mới đè lên là được, danh sách phát và cài đặt vẫn giữ — với điều kiện bản mới được ký
+cùng khóa (`android/keystore/karaled.jks`). Nếu Android báo *"Xung đột gói"*, gỡ bản cũ rồi cài lại (phải nhập lại
+khóa API trong Cài đặt).
 
 ## Cài đặt (Windows)
 
@@ -90,7 +126,9 @@ của bàn phím (trình duyệt chỉ cho dùng micro trực tiếp trên trang
 | "Khóa YouTube API bị từ chối" | Chưa **Enable** YouTube Data API v3 cho dự án, hoặc giới hạn khóa sai loại. |
 | Bài bị bỏ qua: "chủ kênh không cho phát ngoài YouTube" | Chọn bản khác của bài đó (kênh khác). |
 | Cổng 3000 bị dùng | Ghi `PORT=3001` vào file `.env` rồi chạy lại. |
-| Quên mã quản lý | Tắt phần mềm, mở `data/settings.json` bằng Notepad, sửa `"pin": "…"` thành `"pin": ""` (và để trống `CONTROL_PIN` trong `.env`), chạy lại. |
+| Quên mã quản lý | Tắt phần mềm, mở `data/settings.json` bằng Notepad, sửa `"pin": "…"` thành `"pin": ""` (và để trống `CONTROL_PIN` trong `.env`), chạy lại. Trên Android: Cài đặt → Ứng dụng → KaraLED → Bộ nhớ → Xóa dữ liệu (mất cả danh sách phát và khóa API). |
+| Android: màn LED đen / video không phát | Cập nhật *Android System WebView* trong CH Play; kiểm tra Internet của TV box. |
+| Android: điện thoại khách mất kết nối khi máy chủ tắt màn hình | Tắt tiết kiệm pin cho KaraLED (xem mục Android). |
 
 ## Thư mục và kỹ thuật
 
@@ -104,7 +142,18 @@ karaoke/
   ChayKaraoke.bat      chạy phần mềm trên Windows
   MoManHinhLED.bat     mở màn hình LED toàn màn hình (kiosk), tự phát tiếng
   test/test.js         kiểm tra máy chủ với YouTube giả lập: node test/test.js
+  KaraLED.apk          file cài app Android
+  android/             mã nguồn app Android (Java, không dùng thư viện ngoài)
+    app/src/main/java/vn/karaled/KaraServer.java   máy chủ viết lại bằng Java, làm đúng như server.js
+    app/src/main/java/vn/karaled/MainActivity.java màn hình LED / trang điều khiển (WebView), màn hình ngoài HDMI
+    app/src/main/java/vn/karaled/ServerService.java chạy máy chủ ở nền
+    build-apk.sh       đóng gói APK bằng Android SDK (không cần Gradle)
+    test-server.sh     chạy test/test.js với máy chủ Java trên máy tính
 ```
+
+Giao diện web (`public/`) dùng chung cho cả hai bản: khi build APK, thư mục này được chép vào `assets/web` của app.
+Sửa giao diện thì build lại APK. Mở thư mục `android` bằng **Android Studio** để build như dự án thường
+(Build → Generate Signed APK), hoặc chạy `ANDROID_HOME=… android/build-apk.sh`.
 
 - Tìm bài: YouTube Data API v3 (`search` + `videos` để lấy thời lượng, lượt xem; chỉ lấy video cho phép nhúng).
   Thông tin link từng bài khi không có khóa: YouTube oEmbed.
