@@ -5,6 +5,8 @@ máy tính bảng, điện thoại). Điện thoại của khách quét mã QR �
 phát / dừng / âm lượng / hiệu ứng từ điện thoại hoặc máy tính. Khách không cần cài app; không tốn phí;
 phần mềm không chèn quảng cáo.
 
+**Cài đặt từng bước (kèm link tải, cách lấy khóa YouTube, xử lý lỗi): xem [HUONG_DAN_CAI_DAT.md](HUONG_DAN_CAI_DAT.md).**
+
 ```
   Điện thoại khách ─┐                       ┌─> Màn hình LED / TV  (trang /led, trình phát YouTube chính thức)
   Điện thoại quản lý ┼─ Wi-Fi ─> Máy chạy ──┤
