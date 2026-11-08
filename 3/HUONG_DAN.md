@@ -22,6 +22,7 @@ Dùng trình biên dịch C# có sẵn của Windows (`csc.exe` trong .NET Frame
 | **Tạo USB cài Windows** | Chọn USB + ISO → xóa, định dạng FAT32 (MBR chạy cả UEFI và Legacy, hoặc GPT), chép bộ cài, tự chia `install.wim` > 4 GB, ghi boot code Legacy. Tạo `autounattend.xml`: tài khoản cục bộ, bỏ tài khoản Microsoft, múi giờ Việt Nam, tùy chọn bỏ kiểm tra TPM / Secure Boot / RAM. Chỉ nhận ổ USB, không nhận ổ đang chứa Windows, phải gõ `XOA` để xác nhận. |
 | **Driver - Thiết bị** | Liệt kê thiết bị thiếu driver / báo lỗi (mã lỗi Device Manager), tìm driver theo Hardware ID trên Microsoft Update Catalog. Sao lưu toàn bộ driver (`pnputil /export-driver`), cài lại cả thư mục driver 1 lần. Liên kết trang driver chính hãng. |
 | **Sao lưu - Phục hồi** | Tạo điểm khôi phục (tự bật System Protection), mở System Restore. Sao lưu / phục hồi dữ liệu người dùng (Desktop, Documents, Downloads, trình duyệt Chrome / Edge / Cốc Cốc / Firefox, Zalo PC, Outlook...) bằng `robocopy`. Sao lưu / phục hồi Wi-Fi kèm mật khẩu. |
+| **Ghost - Acronis** | Sao lưu / bung tệp **.gho** bằng Ghost qua WinPE tự dựng (không cần USB), kiểm tra tệp .gho, Ghost Explorer. Mở / bung tệp **.tib / .tibx** bằng Acronis True Image. Khởi động 1 lần vào WinPE cứu hộ của bạn (.wim / .iso). Xem mục bên dưới. |
 | **Cài đặt Office** | Office Deployment Tool chính hãng của Microsoft: Microsoft 365, Office LTSC 2024 / 2021 / 2019, Home 2024; chọn 32/64-bit, tiếng Việt / Anh, chọn ứng dụng; cài ngay, tải bộ cài offline (kèm `CaiDat.cmd`), gỡ sạch Office. |
 | **Bản quyền - Gỡ crack** | Trạng thái kích hoạt Windows & Office (kênh Retail / OEM / Volume, 5 ký tự cuối key, máy chủ KMS). Nhập key Windows / Office hợp lệ và kích hoạt online. **Gỡ crack**: quét và gỡ dấu vết KMSpico, KMSAuto, AAct, KMS_VL_ALL... (tác vụ hẹn giờ, dịch vụ, thư mục, hook SppExtComObj, loại trừ Defender, máy chủ KMS lạ). |
 | **Tiện ích - Sửa lỗi Win** | DISM / SFC, reset Windows Update, sửa Microsoft Store, chkdsk, đồng bộ giờ, .NET 3.5; dọn Temp / thùng rác / WinSxS; flush DNS, xin lại IP, reset Winsock, đặt DNS; hiện đuôi tệp, tệp ẩn, This PC, menu chuột phải kiểu cũ Win 11, tắt Fast Startup, nguồn hiệu suất cao; mở nhanh 16 công cụ hệ thống. |
@@ -79,9 +80,43 @@ Dùng trình biên dịch C# có sẵn của Windows (`csc.exe` trong .NET Frame
 > nói chuyện được với nhau — chỉ dùng trong mạng nội bộ tin cậy. Nút **Khôi phục bảo mật mặc định** đưa mọi thứ về như cũ.
 > Sau khi sửa lỗi chia sẻ nên khởi động lại máy.
 
+### Ghost - Acronis (.gho / .tib)
+
+`.gho` (Symantec / Broadcom Ghost) và `.tib` (Acronis True Image) là định dạng riêng — chỉ chính các phần mềm đó đọc / ghi được,
+nên IT Toolkit **điều khiển ghost64.exe / Acronis của bạn** chứ không tự đọc tệp. Phần mềm không kèm sẵn Ghost / Acronis
+(có bản quyền): chọn đường dẫn ở thẻ *Công cụ*, hoặc đặt `ghost64.exe` vào thư mục `Tools` cạnh `ITToolkit.exe` để tự nhận.
+
+**Sao lưu / bung .gho (kể cả ổ Windows đang chạy, không cần USB boot):**
+
+1. Chọn phân vùng trong bảng, chọn *Sao lưu* hoặc *Bung*, chọn tệp `.gho` (nằm ở phân vùng **khác**; đường dẫn không dấu,
+   không khoảng trắng, vd `D:\Ghost\Win10.gho`). Bung phải gõ `BUNG` để xác nhận.
+2. Bấm **Chuẩn bị & khởi động lại vào WinPE**: phần mềm lấy `winre.wim` có sẵn của máy, chép `ghost64.exe` + kịch bản vào,
+   tạo mục khởi động ramdisk (bcdedit) và đặt khởi động **1 lần** — lần sau nữa máy tự về Windows.
+3. Trong WinPE, kịch bản tìm đúng ổ theo tệp đánh dấu (chữ ổ trong WinPE thường khác Windows) rồi:
+   - **Chọn tay (mặc định, an toàn nhất)**: hiện hướng dẫn chọn ổ / phân vùng nào (số đĩa, nhãn, dung lượng) rồi mở Ghost.
+   - **Tự động** (tích ô *Tự động chạy lệnh Ghost*): kiểm tra lại số Disk / Partition bằng `diskpart`; khớp thì chạy
+     `ghost64 -clone,mode=pdump|pload,...`, không khớp thì quay về chọn tay. Khi bung, Ghost vẫn hỏi xác nhận lần cuối.
+4. Xong: sao lưu thì kiểm tra tệp (`-chkimg`); bung vào ổ Windows thì chạy `bcdboot` cập nhật khởi động; xóa tệp đánh dấu,
+   xóa mục khởi động, khởi động lại. Khi Ghost báo xong hãy chọn **Continue** (không chọn *Reset Computer*).
+
+Lưu ý:
+- WinPE không đọc được ổ đang mã hóa **BitLocker** — phần mềm chặn trước, tắt BitLocker ở trang BitLocker - EFS.
+- Máy dùng Intel RST / VMD hoặc RAID mà Windows RE thiếu driver thì WinPE không thấy ổ: kịch bản báo lỗi, cho mở Ghost chọn tay hoặc khởi động lại.
+- Cách Ghost đánh số phân vùng có thể khác Windows trên ổ có phân vùng logical / MSR: hãy chạy chế độ **chọn tay** trước trên loại máy đó.
+- Cần `ghost64.exe` (WinPE của Windows 64-bit không chạy được `ghost32.exe`). Máy không có Windows RE: dùng *WinPE của bạn*.
+- Sau khi xong việc, bấm **Hủy lịch / dọn tệp WinPE** để xóa `C:\ITToolkitPE` (khoảng 1 GB).
+
+**.tib / .tibx (Acronis True Image):** *Mở / bung tệp .tib* mở tệp bằng Acronis đã cài (bung toàn bộ, bung từng tệp, xem nội dung);
+khi phục hồi ổ Windows đang chạy, Acronis tự khởi động lại vào môi trường riêng của nó. Máy chưa cài Acronis: tạo WinPE có Acronis
+bằng *Acronis Media Builder* (WinPE-based) rồi dùng *Khởi động 1 lần vào WinPE cứu hộ của bạn*.
+
+**WinPE cứu hộ của bạn:** chọn tệp `.wim` (hoặc `.iso` có `sources\boot.wim`: Hiren's BootCD PE, WinPE Acronis...) — máy nạp vào RAM
+ở lần khởi động tới mà không cần USB. WinPE chưa ký số Microsoft có thể bị Secure Boot chặn.
+
 ## Những thứ cố ý KHÔNG làm
 
 - **Không kích hoạt lậu** (KMS crack, patch...): trang Bản quyền chỉ nhập key hợp lệ và *gỡ* crack — các công cụ crack thường kèm mã độc.
+- **Không kèm Ghost / Acronis**: trang Ghost - Acronis dùng bản của bạn (xem ở trên).
 - **Không kèm phần mềm reset máy in Epson / Canon bản lậu** (Adjustment Program...). Reset tràn mực thải: mang đến bảo hành
   hoặc dùng công cụ chính hãng của hãng. Nếu bạn có công cụ hợp lệ, thêm vào bằng `phanmem.txt` hoặc tự mở.
 
@@ -101,7 +136,9 @@ Tìm ID bằng ô **Tìm trên winget** ở đầu trang (kết quả hiện tro
 
 - `C:\ProgramData\ITToolkit\NhatKy\yyyy-MM-dd.log` — nhật ký mọi thao tác.
 - `C:\ProgramData\ITToolkit\Office\` — setup.exe của Office Deployment Tool và tệp cấu hình.
-- `%AppData%\ITToolkit\caidat.ini` — giao diện sáng / tối, trang mở gần nhất, chiều cao ô nhật ký.
+- `C:\ITToolkitPE\` — WinPE tạm cho Ghost / WinPE của bạn (`pe.wim`, `boot.sdi`, bản sao `winre.wim`); xóa bằng nút *Hủy lịch / dọn tệp WinPE*.
+- `ITTK_*.txt` ở gốc các ổ — tệp đánh dấu để WinPE nhận đúng ổ, tự xóa khi xong.
+- `%AppData%\ITToolkit\caidat.ini` — giao diện sáng / tối, trang mở gần nhất, chiều cao ô nhật ký, đường dẫn Ghost / Acronis.
 
 ## Mã nguồn (`src`)
 
@@ -113,6 +150,7 @@ Tìm ID bằng ô **Tìm trên winget** ở đầu trang (kết quả hiện tro
 | `HeThong.cs` | Chạy lệnh / PowerShell, registry, dịch vụ, WMI, tải tệp, tường lửa |
 | `NhatKy.cs` | Nhật ký dùng chung + chạy tác vụ nền song song |
 | `SuaLoi.cs` | Danh mục lỗi máy in / chia sẻ LAN và các bước sửa |
+| `WinPE.cs` | Dựng WinPE từ Windows RE, mục khởi động ramdisk 1 lần (bcdedit), kịch bản Ghost chạy trong WinPE |
 | `TaiKhoan.cs` | Windows Credentials (Credential Manager), tài khoản cục bộ |
 | `HopThoai.cs` | Hộp thoại nhập liệu, cửa sổ xem nội dung |
 | `Trang*.cs` | Từng trang chức năng |

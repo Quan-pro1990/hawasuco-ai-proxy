@@ -153,6 +153,61 @@ namespace ToolkitIT
             }
         }
 
+        /// <summary>Chạy, lấy cả kết quả (stdout + stderr) và mã thoát; -1 nếu không chạy được / quá thời gian.</summary>
+        public static int KetQua(string exe, string thamSo, int choMs, out string ketQua)
+        {
+            var psi = new ProcessStartInfo(exe, thamSo ?? "");
+            psi.UseShellExecute = false;
+            psi.CreateNoWindow = true;
+            psi.RedirectStandardOutput = true;
+            psi.RedirectStandardError = true;
+            psi.StandardOutputEncoding = MaOem;
+            psi.StandardErrorEncoding = MaOem;
+            psi.WorkingDirectory = Sys32;
+            var sb = new StringBuilder();
+            try
+            {
+                using (var p = Process.Start(psi))
+                {
+                    DataReceivedEventHandler nhan = (s, e) => { if (e.Data != null) lock (sb) sb.AppendLine(LamSach(e.Data)); };
+                    p.OutputDataReceived += nhan;
+                    p.ErrorDataReceived += nhan;
+                    p.BeginOutputReadLine();
+                    p.BeginErrorReadLine();
+                    if (!p.WaitForExit(choMs <= 0 ? 120000 : choMs))
+                    {
+                        try { p.Kill(); } catch (Exception) { }
+                        lock (sb) ketQua = sb.ToString();
+                        return -1;
+                    }
+                    p.WaitForExit();
+                    lock (sb) ketQua = sb.ToString();
+                    return p.ExitCode;
+                }
+            }
+            catch (Exception ex)
+            {
+                ketQua = ex.Message;
+                return -1;
+            }
+        }
+
+        /// <summary>Bỏ dấu tiếng Việt và ký tự đặc biệt (dùng cho tệp .cmd chạy trong WinPE).</summary>
+        public static string KhongDau(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return "";
+            string n = s.Normalize(NormalizationForm.FormD);
+            var sb = new StringBuilder();
+            foreach (char c in n)
+            {
+                if (System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c) == System.Globalization.UnicodeCategory.NonSpacingMark) continue;
+                if (c == 'đ') sb.Append('d');
+                else if (c == 'Đ') sb.Append('D');
+                else if (c < 128 && (char.IsLetterOrDigit(c) || c == ' ' || c == '-' || c == '_' || c == '.')) sb.Append(c);
+            }
+            return sb.ToString().Trim();
+        }
+
         static string LamSach(string s)
         {
             return s.Replace("\0", "").TrimEnd();

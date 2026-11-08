@@ -96,6 +96,7 @@ namespace ToolkitIT
             ThemMenu("Tạo USB cài Windows", Ic.Usb, Tone.Tim, "Tạo USB boot từ file ISO, file tự động cài autounattend.xml", () => new TrangUsbBoot());
             ThemMenu("Driver - Thiết bị", Ic.ThietBi, Tone.Ngoc, "Thiết bị thiếu driver, sao lưu và cài lại driver", () => new TrangDriver());
             ThemMenu("Sao lưu - Phục hồi", Ic.KhoiPhuc, Tone.XanhLa, "Điểm khôi phục, dữ liệu người dùng, Wi-Fi", () => new TrangSaoLuu());
+            ThemMenu("Ghost - Acronis", Ic.O, Tone.Cam, "Sao lưu / bung tệp .gho (Ghost) và .tib (Acronis) qua WinPE, không cần USB", () => new TrangGhost());
             ThemMenu("Cài đặt Office", Ic.VanBan, Tone.Cam, "Cài Office chính hãng bằng Office Deployment Tool của Microsoft", () => new TrangOffice());
             ThemMenu("Bản quyền - Gỡ crack", Ic.Quyen, Tone.Vang, "Kiểm tra bản quyền, nhập key, gỡ dấu vết crack / KMS lậu", () => new TrangBanQuyen());
             ThemMenu("Tiện ích - Sửa lỗi Win", Ic.SuaChua, Tone.Do, "Sửa lỗi hệ thống, dọn dẹp, mạng, tùy chỉnh Windows", () => new TrangTienIch());
