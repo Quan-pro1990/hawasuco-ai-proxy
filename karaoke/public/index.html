@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a1020">
+<meta name="color-scheme" content="dark">
+<title>KaraLED – Điều khiển</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol viewBox="0 0 24 24" id="i-home"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-headphones"><path d="M4 15v-3a8 8 0 0116 0v3"/><rect x="3" y="14" width="4" height="7" rx="1.5"/><rect x="17" y="14" width="4" height="7" rx="1.5"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-music"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-lantern"><path d="M12 2v3M9 5h6M9 19h6M12 19v3"/><ellipse cx="12" cy="12" rx="6.5" ry="7"/><path d="M12 5c-2.6 2-2.6 12 0 14M12 5c2.6 2 2.6 12 0 14"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-snow"><path d="M12 2v20M3.4 7l17.2 10M3.4 17L20.6 7"/><path d="M9.5 3.5L12 6l2.5-2.5M9.5 20.5L12 18l2.5 2.5"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-sparkles"><path d="M11 3l1.9 4.9L17.8 9.8l-4.9 1.9L11 16.6l-1.9-4.9L4.2 9.8l4.9-1.9z"/><path d="M19 14.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-monitor"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-standby"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M7 9h10M7 13h6M9 21h6"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-square"><rect x="5" y="5" width="14" height="14" rx="2" fill="currentColor"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-qr"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM18 18h3v3h-3zM14 20.5h1.5M20.5 14v1.5"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-settings"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-search"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-mic"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v4M8 22h8"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-play"><path d="M7 4l13 8-13 8z" fill="currentColor"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-pause"><rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor"/><rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-restart"><path d="M3 12a9 9 0 109-9 9.7 9.7 0 00-6.7 2.8L3 8"/><path d="M3 3v5h5"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-stop"><rect x="5" y="5" width="14" height="14" rx="2" fill="currentColor"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-prev"><path d="M19 20L9 12l10-8z" fill="currentColor"/><path d="M5 4v16"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-next"><path d="M5 4l10 8-10 8z" fill="currentColor"/><path d="M19 4v16"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-repeat"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 013-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 01-3 3H3"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-vol"><path d="M11 5L6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 010 7M19 5a10 10 0 010 14"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-mute"><path d="M11 5L6 9H2v6h4l5 4z"/><path d="M22 9l-6 6M16 9l6 6"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-plus"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-up"><path d="M6 15l6-6 6 6"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-down"><path d="M6 9l6 6 6-6"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-top"><path d="M5 4h14M7 13l5-5 5 5M12 8v12"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-x"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-list"><path d="M9 6h12M9 12h12M9 18h12M4 6h.01M4 12h.01M4 18h.01"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-history"><path d="M3 12a9 9 0 103-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-shuffle"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-trash"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-image"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-video"><rect x="2" y="5" width="15" height="14" rx="2"/><path d="M17 10l5-3v10l-5-3z"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-lock"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-unlock"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 017.7-1.5"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-link"><path d="M10 13a5 5 0 007.5.5l3-3a5 5 0 00-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 00-7.5-.5l-3 3a5 5 0 007 7l1.7-1.7"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-yt"><rect x="2" y="5" width="20" height="14" rx="4" fill="#ff1f1f" stroke="none"/><path d="M10 9l5 3-5 3z" fill="#fff" stroke="none"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-text"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-megaphone"><path d="M3 11v2a1 1 0 001 1h3l7 5V5L7 10H4a1 1 0 00-1 1z"/><path d="M18 8.5a5 5 0 010 7"/></symbol>
+    <symbol viewBox="0 0 24 24" id="i-check"><path d="M5 12l5 5 9-10"/></symbol>
+  </defs>
+</svg>
+
+<header class="top">
+  <div class="brand-row">
+    <div class="brand">
+      <img class="logo" src="icon.svg" alt="">
+      <div class="brand-text">
+        <div class="brand-name" id="brand-name">KARALED</div>
+        <div class="brand-sub" id="brand-sub">Karaoke YouTube cho màn hình LED</div>
+        <div class="brand-hot" id="brand-hot"></div>
+      </div>
+    </div>
+    <div class="top-tools">
+      <span class="conn-dot" id="conn-dot" title="Kết nối máy chủ"></span>
+      <button class="tool-btn" id="btn-lock" title="Mã quản lý"><svg class="ic"><use href="#i-lock"/></svg><span id="lock-label">Khách</span></button>
+      <button class="tool-btn admin-only" id="btn-settings" title="Cài đặt"><svg class="ic"><use href="#i-settings"/></svg><span>Cài đặt</span></button>
+    </div>
+    <button class="home-btn" data-genre="karaoke" aria-label="Trang Karaoke">
+      <svg class="ic"><use href="#i-home"/></svg><span>Karaoke</span>
+    </button>
+  </div>
+
+  <section class="group group-genre">
+    <h2>Thể loại / chế độ đặc biệt</h2>
+    <div class="btn-row">
+      <button class="g-btn g-purple" data-genre="remix"><svg class="ic"><use href="#i-headphones"/></svg><span>DJ Remix</span></button>
+      <button class="g-btn g-green" data-genre="instrumental"><svg class="ic"><use href="#i-music"/></svg><span>Không lời</span></button>
+      <button class="g-btn g-orange" data-genre="chinese"><svg class="ic"><use href="#i-lantern"/></svg><span>Nhạc Hoa</span></button>
+      <button class="g-btn g-red" data-genre="season"><svg class="ic"><use href="#i-snow"/></svg><span>Noel &amp; Tết</span></button>
+      <button class="g-btn g-blue" data-genre="led"><svg class="ic"><use href="#i-sparkles"/></svg><span>Nền LED</span></button>
+    </div>
+  </section>
+
+  <section class="group group-device">
+    <h2>Màn hình LED &amp; thiết bị</h2>
+    <div class="btn-row">
+      <button class="d-btn d-green admin-only" id="btn-open-led"><svg class="ic"><use href="#i-monitor"/></svg><span>Mở LED</span></button>
+      <button class="d-btn admin-only" data-screen="standby"><svg class="ic"><use href="#i-standby"/></svg><span>Màn hình chờ</span></button>
+      <button class="d-btn admin-only" data-screen="blackout"><svg class="ic"><use href="#i-square"/></svg><span>Tắt màn hình</span></button>
+      <button class="d-btn d-blue" id="btn-connect"><svg class="ic"><use href="#i-qr"/></svg><span>Kết nối thiết bị</span></button>
+    </div>
+  </section>
+</header>
+
+<main class="layout" id="layout" data-tab="search">
+  <!-- ============ Tìm kiếm ============ -->
+  <section class="panel p-search" data-panel="search">
+    <div class="panel-head">
+      <svg class="ic ic-yt"><use href="#i-yt"/></svg>
+      <h2 id="search-title">Tìm kiếm YouTube</h2>
+    </div>
+    <form class="search-row" id="search-form" autocomplete="off">
+      <input id="q" type="search" placeholder="Tên bài hát, ca sĩ…" enterkeyhint="search" aria-label="Tên bài cần tìm">
+      <button type="button" class="btn btn-red" id="btn-karaoke"><svg class="ic"><use href="#i-mic"/></svg><span>Karaoke</span></button>
+      <button type="button" class="btn btn-blue" id="btn-find"><svg class="ic"><use href="#i-search"/></svg><span>Tìm</span></button>
+    </form>
+    <div class="voice-row">
+      <label for="voice-lang">Giọng nói</label>
+      <select id="voice-lang">
+        <option value="">Ngôn ngữ trình duyệt</option>
+        <option value="vi-VN">Tiếng Việt</option>
+        <option value="en-US">Tiếng Anh</option>
+        <option value="zh-CN">Tiếng Hoa (phổ thông)</option>
+        <option value="zh-TW">Tiếng Hoa (Đài Loan)</option>
+        <option value="yue-Hant-HK">Tiếng Quảng Đông</option>
+        <option value="ko-KR">Tiếng Hàn</option>
+        <option value="ja-JP">Tiếng Nhật</option>
+        <option value="th-TH">Tiếng Thái</option>
+        <option value="km-KH">Tiếng Khmer</option>
+      </select>
+      <button type="button" class="btn-icon btn-blue" id="btn-voice" title="Tìm bằng giọng nói" aria-label="Tìm bằng giọng nói"><svg class="ic"><use href="#i-mic"/></svg></button>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="singer-row">
+      <label for="singer">🎤 Người hát</label>
+      <input id="singer" maxlength="40" placeholder="Tên người hát (không bắt buộc)">
+    </div>
+    <div class="result-info" id="result-info"></div>
+    <div class="list results scroll" id="results"></div>
+  </section>
+
+  <!-- ============ Danh sách phát ============ -->
+  <section class="panel p-queue" data-panel="queue">
+    <div class="panel-head">
+      <svg class="ic ic-accent"><use href="#i-music"/></svg>
+      <h2>Danh sách phát <span class="count" id="queue-count">0</span></h2>
+      <label class="check admin-only" title="Bài hát xong sẽ quay lại cuối danh sách"><input type="checkbox" id="loop-queue"> Tự động lặp</label>
+    </div>
+    <form class="search-row" id="link-form" autocomplete="off">
+      <input id="link" type="url" inputmode="url" placeholder="Dán link YouTube (bài hoặc danh sách phát)…" aria-label="Link YouTube">
+      <button type="submit" class="btn btn-green"><svg class="ic"><use href="#i-plus"/></svg><span>Thêm</span></button>
+    </form>
+    <div class="list-tools admin-only">
+      <button class="mini-btn" id="btn-shuffle"><svg class="ic"><use href="#i-shuffle"/></svg>Trộn bài</button>
+      <button class="mini-btn danger" id="btn-clear-queue"><svg class="ic"><use href="#i-trash"/></svg>Xóa hết</button>
+    </div>
+    <div class="scroll queue-scroll">
+      <div class="list queue" id="queue"></div>
+      <div class="subhead">
+        <h3><svg class="ic"><use href="#i-history"/></svg>Bài đã phát <span class="count" id="history-count">0</span></h3>
+        <button class="mini-btn danger admin-only" id="btn-clear-history">Xóa lịch sử</button>
+      </div>
+      <div class="list history" id="history"></div>
+    </div>
+  </section>
+
+  <!-- ============ Điều khiển LED ============ -->
+  <section class="panel p-control" data-panel="control">
+    <div class="panel-head">
+      <svg class="ic ic-accent"><use href="#i-monitor"/></svg>
+      <h2>Màn hình LED <small>16:9</small></h2>
+      <span class="live" id="live-badge"></span>
+    </div>
+    <div class="scroll control-scroll">
+      <div class="preview" id="preview" data-view="standby">
+        <img id="pv-thumb" alt="">
+        <div class="pv-standby"><img src="icon.svg" alt=""><span id="pv-standby-text">Màn hình chờ</span></div>
+        <div class="pv-black">Đã tắt màn hình</div>
+        <div class="pv-fx" id="pv-fx"></div>
+        <div class="pv-ticker" id="pv-ticker"><span></span></div>
+      </div>
+      <div class="np">
+        <div class="np-title" id="np-title">Chưa phát bài nào</div>
+        <div class="np-sub" id="np-sub"></div>
+      </div>
+      <div class="progress">
+        <span id="t-pos">0:00</span>
+        <input type="range" id="seek" min="0" max="100" step="1" value="0" aria-label="Tua bài">
+        <span id="t-dur">0:00</span>
+      </div>
+      <div class="displays" id="displays"></div>
+
+      <div class="guest-note" id="guest-note">
+        <svg class="ic"><use href="#i-lock"/></svg>
+        <div>Chế độ khách: tìm và thêm bài vào danh sách. Muốn điều khiển, bấm <b>Khách</b> ở trên và nhập mã quản lý.</div>
+      </div>
+
+      <div class="controls admin-only">
+        <button class="c-btn c-green" data-act="play"><svg class="ic"><use href="#i-play"/></svg>Phát</button>
+        <button class="c-btn" data-act="pause"><svg class="ic"><use href="#i-pause"/></svg>Tạm dừng</button>
+        <button class="c-btn c-purple" data-act="restart"><svg class="ic"><use href="#i-restart"/></svg>Hát lại</button>
+        <button class="c-btn c-red" data-act="stop"><svg class="ic"><use href="#i-stop"/></svg>Dừng</button>
+        <button class="c-btn" data-act="prev"><svg class="ic"><use href="#i-prev"/></svg>Bài trước</button>
+        <button class="c-btn" data-act="next"><svg class="ic"><use href="#i-next"/></svg>Qua bài</button>
+        <button class="c-btn c-toggle" data-act="repeatOne" id="btn-repeat"><svg class="ic"><use href="#i-repeat"/></svg>Lặp 1 bài</button>
+        <button class="c-btn c-toggle" data-act="mute" id="btn-mute"><svg class="ic"><use href="#i-mute"/></svg>Tắt tiếng</button>
+      </div>
+
+      <div class="card admin-only">
+        <div class="card-head">Âm lượng <b id="vol-val">80%</b></div>
+        <div class="vol-row">
+          <svg class="ic"><use href="#i-vol"/></svg>
+          <input type="range" id="volume" min="0" max="100" step="1" value="80" aria-label="Âm lượng">
+        </div>
+      </div>
+
+      <div class="card admin-only">
+        <div class="card-head">Hiệu ứng trên LED</div>
+        <div class="fx-grid" id="fx-grid"></div>
+      </div>
+
+      <div class="card admin-only">
+        <div class="card-head"><svg class="ic"><use href="#i-text"/></svg>Chữ chạy trên LED</div>
+        <textarea id="ticker-input" rows="2" maxlength="300" placeholder="Nhập chữ tại đây… vd: Chúc mừng sinh nhật anh Tuấn!"></textarea>
+        <div class="opts">
+          <label>Màu <input type="color" id="ticker-color" value="#ffe14d"></label>
+          <label>Tốc độ
+            <select id="ticker-speed"><option value="slow">Chậm</option><option value="normal" selected>Vừa</option><option value="fast">Nhanh</option></select>
+          </label>
+          <label>Vị trí
+            <select id="ticker-pos"><option value="bottom">Dưới</option><option value="top">Trên</option></select>
+          </label>
+          <label>Cỡ chữ
+            <select id="ticker-size"><option value="small">Nhỏ</option><option value="medium" selected>Vừa</option><option value="large">Lớn</option></select>
+          </label>
+        </div>
+        <div class="row2">
+          <button class="btn btn-green" id="ticker-show">Hiện chữ</button>
+          <button class="btn" id="ticker-hide">Ẩn chữ</button>
+        </div>
+      </div>
+
+      <div class="card admin-only">
+        <div class="card-head"><svg class="ic"><use href="#i-megaphone"/></svg>Thông báo giữa màn hình</div>
+        <form class="row-inline" id="announce-form">
+          <input id="announce-input" maxlength="200" placeholder="Vd: Mời bạn Lan lên sân khấu">
+          <button class="btn btn-blue" type="submit">Hiện 8 giây</button>
+        </form>
+      </div>
+
+      <div class="card admin-only">
+        <div class="card-head">Màn hình chờ <small id="standby-info">mặc định</small></div>
+        <div class="row3">
+          <label class="btn btn-yellow"><svg class="ic"><use href="#i-video"/></svg>Video<input type="file" id="up-video" accept="video/mp4,video/webm,video/quicktime" hidden></label>
+          <label class="btn"><svg class="ic"><use href="#i-image"/></svg>Ảnh<input type="file" id="up-image" accept="image/jpeg,image/png,image/gif,image/webp" hidden></label>
+          <button class="btn" id="standby-reset"><svg class="ic"><use href="#i-restart"/></svg>Mặc định</button>
+        </div>
+        <div class="upload-bar" id="upload-bar"><div></div></div>
+        <p class="hint">Màn hình chờ hiện khi chưa có bài, khi bấm Dừng hoặc Màn hình chờ. Video tối đa 300 MB, phát lặp không tiếng.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="mini" id="mini">
+  <img id="mini-thumb" alt="">
+  <div class="mini-text"><div id="mini-title">Chưa phát bài nào</div><div class="mini-time" id="mini-time"></div></div>
+  <button class="mini-ctl admin-only" id="mini-toggle" aria-label="Phát / tạm dừng"><svg class="ic"><use href="#i-play"/></svg></button>
+  <button class="mini-ctl admin-only" data-act="next" aria-label="Qua bài"><svg class="ic"><use href="#i-next"/></svg></button>
+</div>
+
+<nav class="tabbar" aria-label="Chuyển trang">
+  <button data-tab="search" class="on"><svg class="ic"><use href="#i-search"/></svg>Tìm bài</button>
+  <button data-tab="queue"><svg class="ic"><use href="#i-list"/></svg>Danh sách<span class="badge" id="tab-badge"></span></button>
+  <button data-tab="control"><svg class="ic"><use href="#i-monitor"/></svg>Điều khiển</button>
+</nav>
+
+<!-- ============ Hộp thoại ============ -->
+<dialog id="dlg-connect">
+  <form method="dialog" class="dlg">
+    <div class="dlg-head"><h2>Kết nối thiết bị</h2><button class="x" value="close" aria-label="Đóng"><svg class="ic"><use href="#i-x"/></svg></button></div>
+    <p class="hint">Điện thoại, máy tính bảng, TV phải dùng <b>chung Wi-Fi / mạng</b> với máy đang chạy phần mềm.</p>
+    <div class="conn-grid">
+      <div class="conn-card">
+        <h3>📱 Điện thoại chọn bài</h3>
+        <div class="qr" id="qr-ctl"></div>
+        <a class="url" id="url-ctl" target="_blank" rel="noopener"></a>
+        <p class="hint">Mở camera điện thoại quét mã, hoặc gõ địa chỉ trên vào Chrome.</p>
+      </div>
+      <div class="conn-card">
+        <h3>🖥️ Màn hình LED / TV</h3>
+        <div class="qr" id="qr-led"></div>
+        <a class="url" id="url-led" target="_blank" rel="noopener"></a>
+        <p class="hint">Mở địa chỉ này trên máy nối LED hoặc trình duyệt của Smart TV, bấm vào màn hình một lần để bật tiếng. Phím <b>F</b> để toàn màn hình.</p>
+      </div>
+    </div>
+    <div class="conn-status" id="conn-status"></div>
+    <div class="row-inline" id="lan-pick-row">
+      <label for="lan-pick">Địa chỉ mạng</label>
+      <select id="lan-pick"></select>
+    </div>
+    <button type="button" class="btn" id="btn-screens" hidden>Cho phép “Mở LED” tự đưa sang màn hình thứ hai</button>
+  </form>
+</dialog>
+
+<dialog id="dlg-settings">
+  <form method="dialog" class="dlg" id="settings-form">
+    <div class="dlg-head"><h2>Cài đặt</h2><button class="x" value="close" aria-label="Đóng"><svg class="ic"><use href="#i-x"/></svg></button></div>
+    <label class="field">Tên hiển thị<input id="set-name" maxlength="40"></label>
+    <label class="field">Khẩu hiệu<input id="set-slogan" maxlength="80"></label>
+    <label class="field">Số điện thoại / hotline<input id="set-hotline" maxlength="40"></label>
+    <label class="check"><input type="checkbox" id="set-qr"> Hiện mã QR chọn bài trên màn hình chờ</label>
+    <label class="check"><input type="checkbox" id="set-autoplay"> Tự phát khi thêm bài lúc danh sách đang trống</label>
+
+    <h3>Khóa YouTube API (để tìm bài)</h3>
+    <p class="hint" id="key-status"></p>
+    <div class="row-inline">
+      <input id="set-key" placeholder="Dán khóa AIza…" autocomplete="off" spellcheck="false">
+      <button type="button" class="btn btn-blue" id="btn-add-key">Thêm khóa</button>
+    </div>
+    <button type="button" class="mini-btn danger" id="btn-clear-keys">Xóa các khóa đã nhập ở đây</button>
+    <p class="hint">Miễn phí: mỗi khóa tìm được khoảng 100 lần/ngày, kết quả được lưu lại 3 ngày nên tìm lại không tốn lượt. Cách lấy khóa: xem HUONG_DAN.md.</p>
+
+    <h3>Mã quản lý</h3>
+    <p class="hint" id="pin-status"></p>
+    <div class="row-inline">
+      <input id="set-pin" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="Mã mới, 4–8 chữ số" aria-label="Mã quản lý mới">
+      <button type="button" class="mini-btn danger" id="btn-remove-pin">Bỏ mã</button>
+    </div>
+    <p class="hint">Có mã thì khách quét QR chỉ tìm và thêm bài được; điều khiển, xóa, đổi thứ tự cần mã. Để trống ô trên nếu không đổi mã.</p>
+
+    <div class="dlg-foot">
+      <button type="button" class="btn" value="close" id="settings-cancel">Đóng</button>
+      <button type="button" class="btn btn-green" id="settings-save">Lưu</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-pin">
+  <form class="dlg dlg-small" id="pin-form">
+    <div class="dlg-head"><h2>Mã quản lý</h2><button type="button" class="x" id="pin-close" aria-label="Đóng"><svg class="ic"><use href="#i-x"/></svg></button></div>
+    <input id="pin-input" type="password" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="Nhập mã" aria-label="Mã quản lý">
+    <div class="pin-err" id="pin-err"></div>
+    <div class="dlg-foot">
+      <button type="button" class="btn" id="pin-logout">Về chế độ khách</button>
+      <button type="submit" class="btn btn-green">Xác nhận</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script src="vendor/qrcode.js"></script>
+<script src="common.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

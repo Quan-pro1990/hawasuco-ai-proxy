@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#000000">
+<title>Màn hình LED</title>
+<link rel="icon" href="icon.svg">
+<link rel="stylesheet" href="led.css">
+</head>
+<body>
+<div id="stage">
+  <div id="player-wrap"><div id="player"></div></div>
+
+  <div id="standby" class="on">
+    <div class="sb-default">
+      <div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
+      <div class="sb-grid"></div>
+    </div>
+    <img class="sb-image" alt="">
+    <video class="sb-video" muted loop playsinline></video>
+    <div class="sb-content">
+      <div class="sb-brand">
+        <div class="sb-name" id="sb-name">KARALED</div>
+        <div class="sb-slogan" id="sb-slogan"></div>
+        <div class="sb-hotline" id="sb-hotline"></div>
+      </div>
+      <div class="sb-clock"><div id="sb-time">--:--</div><div id="sb-date"></div></div>
+      <div class="sb-status" id="sb-status"></div>
+      <div class="sb-next" id="sb-next"></div>
+    </div>
+    <div class="sb-qr" id="sb-qr"><div class="qr" id="sb-qr-img"></div><div>Quét mã để chọn bài</div></div>
+  </div>
+
+  <canvas id="fx"></canvas>
+
+  <div id="banner"><div class="bn-label" id="bn-label">ĐANG PHÁT</div><div class="bn-title" id="bn-title"></div><div class="bn-sub" id="bn-sub"></div></div>
+  <div id="announce"><div id="announce-text"></div></div>
+  <div id="ticker"><div class="ticker-track"><span id="ticker-text"></span></div></div>
+  <div id="blackout"></div>
+
+  <div id="start" class="on">
+    <div class="start-box">
+      <div class="start-icon">▶</div>
+      <div class="start-title">Bấm vào màn hình để bắt đầu</div>
+      <div class="start-sub">Bật âm thanh và phóng toàn màn hình. Kéo cửa sổ này sang màn hình LED trước khi bấm.</div>
+    </div>
+  </div>
+  <div id="conn">Mất kết nối máy chủ, đang thử lại…</div>
+  <div id="yt-error"></div>
+</div>
+<script src="vendor/qrcode.js"></script>
+<script src="common.js"></script>
+<script src="effects.js"></script>
+<script src="led.js"></script>
+</body>
+</html>
