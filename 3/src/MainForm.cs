@@ -68,7 +68,6 @@ namespace ToolkitIT
         NutBo pillTacVu, pillGio, nutGiaoDien, nutNhatKy;
         readonly SplitContainer tach;
         RichTextBox oLog;
-        int dangChon = -1;
 
         [DllImport("dwmapi.dll")]
         static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
@@ -226,7 +225,6 @@ namespace ToolkitIT
                 if (menu[j].Trang != null && j != i) menu[j].Trang.Visible = false;
             }
             m.Trang.Visible = true;
-            dangChon = i;
             dauTrang.Dat(m.Ten, m.MoTa, m.Icon, m.Tone);
             CaiDat.Luu("trang", i.ToString());
             m.Trang.Hien();

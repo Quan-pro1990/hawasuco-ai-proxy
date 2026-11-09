@@ -1,0 +1,23 @@
+﻿IT TOOLKIT 1.0.0 - Bộ công cụ kỹ thuật viên cho Windows 10 / 11
+=================================================================
+
+CÁCH CHẠY
+  1. Giải nén cả thư mục ra ổ đĩa (đừng chạy thẳng trong tệp .zip).
+  2. Nhấp đúp ITToolkit.exe, bấm Yes khi Windows hỏi quyền Administrator.
+     Không cần cài đặt. Cần .NET Framework 4.8 (Windows 10 / 11 có sẵn).
+  3. Nếu Windows báo "Windows protected your PC" (tệp chưa ký số): bấm More info > Run anyway.
+     Để khỏi bị hỏi: TRƯỚC khi giải nén, chuột phải tệp .zip > Properties > tích Unblock > OK.
+
+TRONG GÓI
+  ITToolkit.exe     Phần mềm (1 tệp, chép USB mang đi được)
+  HUONG_DAN.md      Hướng dẫn đầy đủ từng trang (mở bằng Notepad hoặc trình duyệt)
+  Tools\            Đặt ghost64.exe của bạn vào đây để trang Ghost - Acronis tự nhận
+  phanmem.mau.txt   Mẫu thêm phần mềm vào Kho phần mềm (đổi tên thành phanmem.txt)
+  MaNguon\          Mã nguồn C#; chạy MaNguon\build.bat để tự biên dịch lại ITToolkit.exe
+                    bằng trình biên dịch có sẵn của Windows (không cần Visual Studio)
+
+LƯU Ý
+  - Mọi thao tác hiện ở ô Nhật ký và được lưu ở C:\ProgramData\ITToolkit\NhatKy\
+  - Nên tạo điểm khôi phục (trang Sao lưu - Phục hồi) trước khi sửa lỗi hệ thống.
+  - Phần mềm diệt virus có thể cảnh báo nhầm vì đây là công cụ sửa registry, dịch vụ, khởi động.
+    Mã nguồn đầy đủ có trong thư mục MaNguon để kiểm tra.

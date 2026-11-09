@@ -1,0 +1,4 @@
+﻿Đặt ghost64.exe (Symantec / Broadcom Ghost, bản 64-bit) vào thư mục này.
+Trang "Ghost - Acronis" của IT Toolkit sẽ tự nhận, dùng để sao lưu / bung tệp .gho qua WinPE.
+Có thể đặt thêm ghostexp.exe (Ghost Explorer) cạnh ghost64.exe để mở / lấy tệp lẻ trong tệp .gho.
+IT Toolkit không kèm sẵn Ghost (phần mềm có bản quyền).

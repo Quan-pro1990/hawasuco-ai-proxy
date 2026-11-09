@@ -1,0 +1,6 @@
+﻿# Mẫu thêm phần mềm vào trang "Kho phần mềm".
+# Đổi tên tệp này thành phanmem.txt (để cạnh ITToolkit.exe), bỏ dấu # ở các dòng muốn dùng.
+# Mỗi dòng: Nhóm|Tên hiển thị|WingetID   (tìm ID bằng ô "Tìm trên winget" trong phần mềm)
+#
+# Lập trình|Git|Git.Git
+# Liên lạc - họp|Zalo PC|<ID tìm được>

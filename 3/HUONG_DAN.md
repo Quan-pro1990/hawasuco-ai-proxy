@@ -9,10 +9,13 @@ driver, sao lưu, cài Office, bản quyền, sửa lỗi Windows, BitLocker, **
   (Microsoft, winget). Mọi lệnh đã chạy hiện ở ô **Nhật ký** phía dưới và được lưu vào `C:\ProgramData\ITToolkit\NhatKy\`.
 - Các tác vụ chạy nền, song song (góc trên hiện "Đang chạy N tác vụ"), giao diện không bị treo.
 
-## Tạo tệp ITToolkit.exe
+## Tải về & chạy
 
-Chạy `build.bat` (nhấp đúp) trên máy Windows → được `ITToolkit.exe` cạnh tệp `build.bat`.
-Dùng trình biên dịch C# có sẵn của Windows (`csc.exe` trong .NET Framework 4), không cần Visual Studio.
+Gói `ITToolkit_1.0.0.zip` có sẵn `ITToolkit.exe` đã biên dịch: giải nén, nhấp đúp `ITToolkit.exe` (xem `DOC_TRUOC.txt`).
+Tệp chưa ký số nên Windows SmartScreen có thể hỏi: *More info → Run anyway* (hoặc *Unblock* tệp .zip trước khi giải nén).
+
+Tự biên dịch lại: chạy `build.bat` (nhấp đúp) trên máy Windows → được `ITToolkit.exe` cạnh tệp `build.bat`
+(trong gói: thư mục `MaNguon`). Dùng trình biên dịch C# có sẵn của Windows (`csc.exe` trong .NET Framework 4), không cần Visual Studio.
 
 ## Các trang chức năng
 
