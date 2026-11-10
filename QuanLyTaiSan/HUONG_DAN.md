@@ -100,6 +100,10 @@ mở đúng các trang như trên trình duyệt (cùng tài khoản, cùng dữ
 - **Quét tem bằng camera của app**: nhanh, chạy cả khi máy chủ chưa có https (`http://IP:8080`), có đèn. Ở *Kiểm kê* và
   *Điều chuyển*, camera mở toàn màn hình và **ở lại để quét tem tiếp** — mỗi tem hiện kết quả ngay (*Đã kiểm kê MB-00012 · 35 / 120*,
   *Đã thêm…*, lỗi màu đỏ) và rung báo; bấm **Xong** (hoặc Back) để về danh sách vừa quét / danh sách điều chuyển.
+  Khó đọc (tem nhỏ, ở xa, chỗ tối, camera chưa nét): giữ tem cách 10–20 cm, bấm **Đèn**, **chạm màn hình** để lấy nét, hoặc
+  bấm **Chụp để đọc** (chụp ảnh nét rồi đọc trên ảnh).
+- App dùng được cả với **máy chủ bản cũ** (trước 1.2.0): trang Quét có thêm nút **Quét bằng camera của app** (máy chủ http thì
+  camera của app tự mở). Nên cập nhật máy chủ lên bản mới để có quét liên tục, báo kết quả từng tem và cập nhật app tự động.
 - **Xuất Excel, tải ảnh**: app hỏi **Mở** (Excel, WPS Office…), **Chia sẻ** (Zalo, email…) hoặc **Lưu vào máy**.
 - Ghi **vị trí GPS** của tài sản, **chụp ảnh** tài sản, **in tem** qua máy in Wi-Fi (hoặc lưu PDF).
 - Máy chủ có bản app mới → mở app là được hỏi **Cập nhật**.

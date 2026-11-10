@@ -7,6 +7,8 @@ của phần mềm trong app, thêm những việc trình duyệt trên điện 
 |---|---|---|
 | Quét tem QR bằng camera | chỉ khi máy chủ có **https** hợp lệ | luôn được — camera của app, đọc QR ngay trên máy (ZXing), cả khi máy chủ chạy `http://IP:8080` |
 | Quét liên tục khi kiểm kê / điều chuyển | quét trong khung nhỏ trên trang | camera toàn màn hình, hiện kết quả từng tem (đã kiểm kê / đã thêm / lỗi), rung báo |
+| Tem khó đọc (nhỏ, xa, tối) | — | ảnh xem trước 1920×1080, lấy nét lại định kỳ / chạm để lấy nét, đèn, **Chụp để đọc** (đọc trên ảnh chụp độ phân giải cao) |
+| Máy chủ bản cũ (trước 1.2.0) | — | trang Quét có nút **Quét bằng camera của app** (`assets/tuong-thich.js`); máy chủ http thì tự mở camera của app |
 | Máy chủ chưa có tên miền (chứng chỉ tự ký `https://IP:8443`) | cảnh báo "không an toàn" mỗi lần | hỏi **một lần** theo *mã nhận dạng chứng chỉ*, sau đó ghim chứng chỉ đó |
 | Xuất Excel, tải ảnh | tải vào thư mục Download | hỏi **Mở** (Excel, WPS…), **Chia sẻ** (Zalo, email…), **Lưu vào máy** |
 | Lấy vị trí GPS cho tài sản | chỉ khi https | luôn được |
@@ -47,9 +49,10 @@ android/
     MainActivity.java   màn hình kết nối, WebView, cầu nối cho trang web, tải file, chọn / chụp ảnh, in, GPS, cập nhật
     KetNoi.java         tìm máy chủ (api/ping), ghim chứng chỉ tự ký theo SHA-256, mã nhận dạng
     ManQuet.java        màn hình quét tem: camera (TextureView), khung ngắm, đèn, kết quả từng tem
-    DocQR.java          đọc mã QR trong khung hình camera bằng ZXing (Java thuần — kiểm thử được trên máy tính)
+    DocQR.java          đọc mã QR trong khung hình camera / ảnh chụp bằng ZXing (Java thuần — kiểm thử được trên máy tính)
     TepProvider.java    đưa file vừa tải cho ứng dụng khác; nhận ảnh từ ứng dụng Camera
   app/src/main/res/                icon (logo công ty + huy hiệu QR), màu, network_security_config (xml/mang.xml)
+  app/src/main/assets/tuong-thich.js  chèn vào trang của máy chủ bản cũ: trang Quét dùng camera của app
   build-apk.sh                     build không cần Gradle (Linux)
   kiem-thu/                        kiểm thử: đọc QR trên máy tính, chạy app trên máy ảo Android (GitHub Actions)
 ```
@@ -91,7 +94,8 @@ Build APK(s). File ra ở `app/build/outputs/apk/release/app-release.apk` → đ
 chạy app trên máy ảo Android 14 (kết nối https tự ký, đăng nhập, quét kiểm kê, GPS, tải Excel, cập nhật app);
 APK và ảnh chụp màn hình ở tab Actions → Artifacts.
 
-Kiểm thử phần đọc QR trên máy tính: `kiem-thu/thu-doc-qr.sh`.
+Kiểm thử phần đọc QR trên máy tính: `kiem-thu/thu-doc-qr.sh` (khung hình camera 1280×720 / 1920×1080 và ảnh chụp: tem
+xoay, nghiêng, lệch khung, nhỏ, mờ, sáng lệch). CI chạy lại bộ thử này trên Android 14 bằng chính mã trong APK.
 
 ### Khoá ký
 

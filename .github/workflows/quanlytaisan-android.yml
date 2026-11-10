@@ -1,7 +1,8 @@
 # App Android "Quản lý tài sản" (thư mục QuanLyTaiSan/android): build bằng Gradle (cách Android Studio) và bằng build-apk.sh
 # (không cần Gradle), kiểm thử phần đọc mã QR trên máy tính, máy chủ thử (QuanLyTaiSan.exe chạy bằng mono) đọc đúng phiên bản
 # APK, rồi chạy app thật trên máy ảo Android 14: kết nối https chứng chỉ tự ký (hỏi mã nhận dạng, ghim), đăng nhập, quét kiểm
-# kê bằng camera của app, GPS, tải Excel, phím Back, báo cập nhật app. Ảnh chụp màn hình: tab Actions → Artifacts.
+# kê bằng camera của app, GPS, tải Excel, phím Back, báo cập nhật app; máy chủ bản cũ 1.1.0 qua http vẫn quét bằng camera
+# của app; bộ đọc QR chạy trên Android (ART) bằng mã trong APK. Ảnh chụp màn hình: tab Actions → Artifacts.
 name: Quản lý tài sản - app Android
 
 on:
@@ -50,6 +51,11 @@ jobs:
           sed -i "s/^\( *versionCode\) [0-9]*/\1 99/; s/^\( *versionName\) '.*'/\1 '9.9.9'/" /tmp/android-moi/app/build.gradle
           GO_LOI=1 /tmp/android-moi/build-apk.sh "$PWD/ra/app-moi.apk"
           aapt dump badging ra/app-moi.apk | head -1
+          # kiểm thử đọc QR chạy trên Android (ART) bằng chính mã DocQR + ZXing trong APK: chỉ dex lớp ThuDocQR
+          ZX=$HOME/.cache/quanlytaisan/zxing-core-3.5.3.jar
+          javac -encoding UTF-8 -nowarn -d /tmp/thu-cls -cp "$ZX" QuanLyTaiSan/android/app/src/main/java/vn/com/hawasuco/taisan/DocQR.java QuanLyTaiSan/android/kiem-thu/ThuDocQR.java
+          rm /tmp/thu-cls/vn/com/hawasuco/taisan/DocQR.class
+          dalvik-exchange --dex --min-sdk-version=21 --output="$PWD/ra/thu-docqr.jar" /tmp/thu-cls
 
       - name: Máy chủ thử (mono) — đọc phiên bản APK, dữ liệu thử, HTTPS tự ký
         run: |
@@ -61,7 +67,7 @@ jobs:
           nohup mono /tmp/maychu/QuanLyTaiSan.exe --cong 18090 --khong-mo > /tmp/maychu.log 2>&1 &
           for i in $(seq 1 30); do curl -sf localhost:18090/api/ping > /tmp/ping.json && break; sleep 1; done
           cat /tmp/ping.json; echo
-          python3 -c "import json; a = json.load(open('/tmp/ping.json'))['app']; assert a and a['ma'] == 1 and a['phienBan'] == '1.0.0', a; print('OK  máy chủ đọc phiên bản APK của Gradle (aapt2):', a)"
+          python3 -c "import json, re; g = open('QuanLyTaiSan/android/app/build.gradle').read(); ma = int(re.search(r'versionCode (\d+)', g).group(1)); ten = re.search(r\"versionName '(.+)'\", g).group(1); a = json.load(open('/tmp/ping.json'))['app']; assert a and a['ma'] == ma and a['phienBan'] == ten, a; print('OK  máy chủ đọc phiên bản APK của Gradle (aapt2):', a)"
           curl -sf -o /tmp/tai.apk localhost:18090/tai-app && cmp /tmp/tai.apk /tmp/maychu/QuanLyTaiSan-DienThoai.apk && echo 'OK  /tai-app trả đúng tệp APK'
           TK=$(curl -s -X POST localhost:18090/api/dangnhap -H 'Content-Type: application/json' -d '{"ten":"admin","matKhau":"matkhau123"}' | python3 -c "import sys, json; print(json.load(sys.stdin)['token'])")
           for t in 'Máy bơm trục ngang trạm 1' 'Máy bơm chìm giếng 2' 'Máy bơm định lượng clo'; do
@@ -77,6 +83,17 @@ jobs:
           nohup node QuanLyTaiSan/android/kiem-thu/https-thu.cjs /tmp/khoa.pem /tmp/cc.pem 18443 18090 > /tmp/https.log 2>&1 &
           sleep 1
           curl -sk https://localhost:18443/api/ping; echo
+          # máy chủ bản cũ 1.1.0 (trước khi có app), http cổng 18091: app phải tự cho trang Quét dùng camera của app
+          git fetch -q --depth=1 origin 4f0465e37c9c6baf25b686402bb5e63011a2d469
+          mkdir -p /tmp/maychu-cu
+          git show FETCH_HEAD:QuanLyTaiSan/QuanLyTaiSan.exe > /tmp/maychu-cu/QuanLyTaiSan.exe
+          QLTS_DULIEU=/tmp/maychu-cu-dulieu QLTS_MATKHAU=matkhau123 mono /tmp/maychu-cu/QuanLyTaiSan.exe --dat-quan-tri admin
+          QLTS_DULIEU=/tmp/maychu-cu-dulieu nohup mono /tmp/maychu-cu/QuanLyTaiSan.exe --cong 18091 --khong-mo > /tmp/maychu-cu.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf localhost:18091/api/ping > /tmp/ping-cu.json && break; sleep 1; done
+          cat /tmp/ping-cu.json; echo
+          TK=$(curl -s -X POST localhost:18091/api/dangnhap -H 'Content-Type: application/json' -d '{"ten":"admin","matKhau":"matkhau123"}' | python3 -c "import sys, json; print(json.load(sys.stdin)['token'])")
+          curl -sf -X POST localhost:18091/api/taisan -H "Authorization: Bearer $TK" -H 'Content-Type: application/json' \
+            -d '{"ten":"Máy bơm trạm cũ","loai":1,"donVi":1}' | head -c 80; echo
           # tem QR dán trên tường cảnh ảo của camera máy ảo
           ZX=$HOME/.cache/quanlytaisan/zxing-core-3.5.3.jar
           javac -d /tmp/tem -cp "$ZX" QuanLyTaiSan/android/kiem-thu/TaoTemQR.java
@@ -97,6 +114,7 @@ jobs:
           RA: ${{ github.workspace }}/ra
           APK_MOI: ${{ github.workspace }}/ra/app-moi.apk
           THU_MUC_MAY_CHU: /tmp/maychu
+          MAY_CHU_CU: http://10.0.2.2:18091
         with:
           api-level: 34
           target: google_apis
@@ -105,6 +123,9 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back virtualscene -virtualscene-poster wall=${{ github.workspace }}/ra/tem-qr.png
           script: |
             adb install -r ra/app-thu.apk
+            adb push ra/app-thu.apk /data/local/tmp/app-thu.apk
+            adb push ra/thu-docqr.jar /data/local/tmp/thu-docqr.jar
+            adb shell CLASSPATH=/data/local/tmp/app-thu.apk:/data/local/tmp/thu-docqr.jar app_process /system/bin vn.com.hawasuco.taisan.ThuDocQR
             node QuanLyTaiSan/android/kiem-thu/thu-tren-may-ao.cjs
             adb logcat -d -s chromium:E AndroidRuntime:E > ra/logcat.txt || true
 
@@ -112,6 +133,7 @@ jobs:
         if: always()
         run: |
           tail -40 /tmp/maychu.log || true
+          tail -20 /tmp/maychu-cu.log || true
           tail -20 /tmp/https.log || true
 
       - name: Ảnh chụp màn hình thu nhỏ (base64, để xem nhanh trong nhật ký)

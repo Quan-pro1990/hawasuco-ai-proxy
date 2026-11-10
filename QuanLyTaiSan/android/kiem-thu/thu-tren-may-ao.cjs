@@ -1,10 +1,11 @@
 // Kiểm thử app Android trên máy ảo (GitHub Actions, .github/workflows/quanlytaisan-android.yml): kết nối máy chủ https
 // chứng chỉ tự ký (hỏi mã nhận dạng rồi ghim), đăng nhập trong app, quét kiểm kê bằng camera của app, GPS, tải Excel,
-// phím Back, báo cập nhật app. Điều khiển app bằng Playwright (_android: giao diện Android + WebView qua cổng gỡ lỗi).
+// phím Back, báo cập nhật app; máy chủ bản cũ 1.1.0 qua http: trang Quét vẫn dùng camera của app (assets/tuong-thich.js). Điều khiển app bằng Playwright (_android: giao diện Android + WebView qua cổng gỡ lỗi).
 // Cần bản app gỡ lỗi (GO_LOI=1 ./build-apk.sh) đã cài, máy chủ thử ở 10.0.2.2. Biến môi trường:
 //   RA              thư mục ảnh chụp màn hình            MAY_CHU_NHAP  địa chỉ gõ ở màn hình kết nối (10.0.2.2:18443)
 //   MA_CHUNG_CHI    mã nhận dạng chứng chỉ mong đợi      APK_MOI       bản app "mới hơn" để thử báo cập nhật
 //   THU_MUC_MAY_CHU thư mục chứa QuanLyTaiSan.exe đang chạy (chép APK_MOI vào đó)
+//   MAY_CHU_CU      máy chủ bản cũ 1.1.0 (http://10.0.2.2:18091), có tài sản MB-00001
 const { _android, chromium } = require('playwright-core');
 const fs = require('node:fs'), path = require('node:path'), { execFileSync } = require('node:child_process');
 
@@ -172,6 +173,39 @@ async function layTrang() {
     kiem(await dev.wait({ text: 'Cho phép cài bản cập nhật' }, { timeout: 1000 }).then(() => true, () => false),
       'tải bản mới (cùng khoá ký) → xin quyền cài bản cập nhật');
     await chup('cho-phep-cai');
+  });
+
+  await buoc('máy chủ bản cũ 1.1.0 qua http: quét bằng camera của app', async () => {
+    if (!process.env.MAY_CHU_CU) { console.log('--  không có MAY_CHU_CU (bỏ qua)'); return; }
+    await dev.shell(`am force-stop ${GOI}`);
+    await dev.shell(`pm clear ${GOI}`);   // xoá địa chỉ máy chủ, phiên đăng nhập: như cài mới
+    await dev.shell(`pm grant ${GOI} android.permission.CAMERA`);
+    await dev.shell(`am start -W -n ${GOI}/.MainActivity`);
+    await dev.wait({ desc: 'Địa chỉ máy chủ' }, { timeout: 40000 });
+    await dev.fill({ desc: 'Địa chỉ máy chủ' }, process.env.MAY_CHU_CU);
+    await dev.tap({ text: 'Kết nối' });
+    page = await layTrang();
+    await page.waitForSelector('#ten', { timeout: 40000 });
+    kiem(await page.evaluate(() => window.isSecureContext) === false, 'trang máy chủ cũ qua http (trang không được mở camera)');
+    await page.fill('#ten', 'admin');
+    await page.fill('#mk', 'matkhau123');
+    await page.click('button[type=submit]');
+    await page.waitForSelector('.dieuhuong', { timeout: 30000 });
+    await page.evaluate(() => { location.hash = '#/quet'; });
+    await dev.wait({ text: 'Đóng', clazz: 'android.widget.Button' }, { timeout: 20000 });
+    kiem(true, 'trang Quét của máy chủ cũ → app tự mở camera của app');
+    await ngu(3000);
+    await chup('cu-camera');
+    await back();
+    await ngu(1500);
+    kiem(await page.$('[data-appquet]') !== null, 'trang có nút "Quét bằng camera của app"');
+    await chup('cu-trang-quet');
+    // như camera của app vừa đọc được tem MB-00001
+    await page.evaluate(() => window.ungDungQuet(location.origin + '/t/MB-00001'));
+    await choTrang(() => /^#\/ts\/\d+/.test(location.hash), null, 15000);
+    kiem(true, 'mã đọc được đưa vào trang cũ → mở trang tài sản ' + await page.evaluate(() => location.hash));
+    await ngu(1500);
+    await chup('cu-tai-san');
   });
 
   await dev.close();

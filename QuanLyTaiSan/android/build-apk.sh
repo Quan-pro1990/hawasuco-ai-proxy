@@ -57,7 +57,7 @@ GO=()
 if [ -n "${GO_LOI:-}" ]; then GO=(--debug-mode); echo "== bản gỡ lỗi (debuggable)"; fi
 
 echo "== aapt: tài nguyên, manifest (phiên bản $PHIEN_BAN, mã $MA, minSdk $MIN_SDK, targetSdk $TARGET_SDK)"
-aapt package -f -m -J "$TMP/gen" -M "$TMP/AndroidManifest.xml" -S "$APP/res" -I "$ANDROID_JAR" "${GO[@]}" \
+aapt package -f -m -J "$TMP/gen" -M "$TMP/AndroidManifest.xml" -S "$APP/res" -A "$APP/assets" -I "$ANDROID_JAR" "${GO[@]}" \
   --min-sdk-version "$MIN_SDK" --target-sdk-version "$TARGET_SDK" --version-code "$MA" --version-name "$PHIEN_BAN" \
   -F "$TMP/app.unaligned.apk"
 

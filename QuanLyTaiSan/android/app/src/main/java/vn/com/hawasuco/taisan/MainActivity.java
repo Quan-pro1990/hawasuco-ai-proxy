@@ -255,6 +255,12 @@ public class MainActivity extends Activity {
             }
 
             @Override
+            public void onPageFinished(WebView v, String url) {
+                // máy chủ bản cũ (trước 1.2.0): cho trang Quét dùng camera của app (assets/tuong-thich.js)
+                if (cungMayChu(url)) v.evaluateJavascript(tuongThich(), null);
+            }
+
+            @Override
             public void onReceivedError(WebView v, int ma, String moTa, String url) {
                 // chỉ gọi cho trang chính (không gọi cho ảnh, api…)
                 hienLoi(moTaLoiMang(ma, moTa), false);
@@ -338,6 +344,17 @@ public class MainActivity extends Activity {
                 taiVe(url, tenTuHeader(cd, url, mime), "");
             }
         });
+    }
+
+    String tuongThich;
+
+    /** Đoạn JavaScript cho trang web của máy chủ bản cũ dùng camera của app (assets/tuong-thich.js). */
+    String tuongThich() {
+        if (tuongThich == null) {
+            try { tuongThich = new String(KetNoi.docHet(getAssets().open("tuong-thich.js")), "UTF-8"); }
+            catch (IOException e) { tuongThich = ""; }
+        }
+        return tuongThich;
     }
 
     static X509Certificate chungChi(SslCertificate sc) {
@@ -689,6 +706,12 @@ public class MainActivity extends Activity {
         int i = t.toLowerCase().indexOf("/t/");
         if (!t.matches("(?i)^https?://.+") || i < 0) {
             bao("Tem này không chứa địa chỉ máy chủ (nội dung: " + (t.length() > 60 ? t.substring(0, 60) + "…" : t) + "). Hãy gõ địa chỉ máy chủ.");
+            return;
+        }
+        String host = Uri.parse(t).getHost();
+        if (host == null || host.equalsIgnoreCase("localhost") || host.startsWith("127.")) {
+            bao("Tem này in lúc mở phần mềm ngay trên máy chủ (" + t.substring(0, i) + ") nên không có địa chỉ máy chủ thật. " +
+                "Hãy gõ địa chỉ máy chủ; quản trị vào Cài đặt → Địa chỉ in trong mã QR để in tem đúng địa chỉ.");
             return;
         }
         if (oDiaChi == null || ketNoiNgay == null) return;

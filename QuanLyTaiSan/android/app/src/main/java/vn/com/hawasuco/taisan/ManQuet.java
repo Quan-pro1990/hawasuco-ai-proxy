@@ -2,6 +2,8 @@ package vn.com.hawasuco.taisan;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
@@ -36,6 +38,8 @@ import java.util.Map;
  * WebView chỉ cho trang https mở camera). Đọc mã bằng ZXing ngay trên điện thoại, không cần mạng.
  * Quét 1 lần: đọc được mã là đóng, đưa mã cho trang web. Quét liên tục (kiểm kê, điều chuyển): ở lại camera,
  * trang web xử lý xong từng tem thì báo kết quả (ketQua) để hiện ở đây.
+ * Lấy nét: liên tục (nếu máy có), cứ vài giây chưa đọc được thì lấy nét lại, chạm màn hình để lấy nét ngay.
+ * Tem nhỏ / ở xa / chỗ tối: nút "Chụp để đọc" chụp ảnh độ phân giải cao rồi đọc trên ảnh.
  */
 @SuppressWarnings("deprecation")
 final class ManQuet extends FrameLayout implements TextureView.SurfaceTextureListener, Camera.PreviewCallback {
@@ -57,7 +61,8 @@ final class ManQuet extends FrameLayout implements TextureView.SurfaceTextureLis
     final TextureView tv;
     final KhungNgam khung;
     final TextView tieuDe, goiY, thongBao, dem;
-    final Button nutDen;
+    final Button nutDen, nutChup;
+    String goiYDau;
 
     // luồng camera: mở / đóng camera, nhận khung hình, đọc mã
     HandlerThread luong;
@@ -65,7 +70,8 @@ final class ManQuet extends FrameLayout implements TextureView.SurfaceTextureLis
     Camera camera;
     Camera.Size co;
     int xoay;
-    boolean den, dangChay;
+    boolean den, dangChay, lienTucLayNet;
+    volatile boolean dangChup;
     SurfaceTexture be;
     volatile float canhKhungAnh;      // cạnh khung ngắm tính theo điểm ảnh của camera
     final DocQR doc = new DocQR();
@@ -84,11 +90,21 @@ final class ManQuet extends FrameLayout implements TextureView.SurfaceTextureLis
         }
     };
 
+    /** Vài giây chưa đọc được tem: nhắc cách khắc phục. */
+    final Runnable nhacKho = new Runnable() {
+        @Override
+        public void run() {
+            goiY.setText("Chưa đọc được: giữ tem cách 10–20 cm, đủ sáng (bấm Đèn), chạm màn hình để lấy nét, " +
+                         "hoặc bấm \"Chụp để đọc\"");
+        }
+    };
+
     ManQuet(Activity a, boolean lienTuc, String tieuDeChu, String goiYChu, NguoiNghe nghe) {
         super(a);
         this.a = a;
         this.nghe = nghe;
         this.lienTuc = lienTuc;
+        this.goiYDau = goiYChu;
         setBackgroundColor(Color.BLACK);
         setClickable(true);
 
@@ -96,6 +112,10 @@ final class ManQuet extends FrameLayout implements TextureView.SurfaceTextureLis
         tv.setSurfaceTextureListener(this);
         addView(tv, new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         khung = new KhungNgam(a);
+        khung.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) { layNet(); }
+        });
         addView(khung, new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
         // thanh trên: tiêu đề, đèn, xong
@@ -130,6 +150,14 @@ final class ManQuet extends FrameLayout implements TextureView.SurfaceTextureLis
         goiY.setGravity(Gravity.CENTER);
         goiY.setShadowLayer(4, 0, 1, Color.BLACK);
         duoi.addView(goiY);
+        nutChup = nut("Chụp để đọc");
+        nutChup.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) { chupDoc(); }
+        });
+        LinearLayout.LayoutParams lc = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(40));
+        lc.topMargin = dp(10);
+        duoi.addView(nutChup, lc);
         thongBao = chu("", 16, true);
         thongBao.setGravity(Gravity.CENTER);
         thongBao.setPadding(dp(14), dp(10), dp(14), dp(10));
@@ -208,7 +236,10 @@ final class ManQuet extends FrameLayout implements TextureView.SurfaceTextureLis
 
     void doiChu(String tieuDeChu, String goiYChu) {
         if (tieuDeChu != null && tieuDeChu.length() > 0) tieuDe.setText(tieuDeChu);
-        if (goiYChu != null && goiYChu.length() > 0) goiY.setText(goiYChu);
+        if (goiYChu != null && goiYChu.length() > 0) {
+            goiYDau = goiYChu;
+            goiY.setText(goiYChu);
+        }
     }
 
     // ------------------------------------------------------------------ bật / tắt camera
@@ -221,6 +252,7 @@ final class ManQuet extends FrameLayout implements TextureView.SurfaceTextureLis
         luong.start();
         cam = new Handler(luong.getLooper());
         if (be != null) cam.post(moCamera);
+        ui.postDelayed(nhacKho, 9000);
     }
 
     /** Tắt camera (đóng màn hình quét, app xuống nền). */
@@ -228,6 +260,7 @@ final class ManQuet extends FrameLayout implements TextureView.SurfaceTextureLis
         if (!dangChay) return;
         dangChay = false;
         ui.removeCallbacks(hetCho);
+        ui.removeCallbacks(nhacKho);
         final HandlerThread l = luong;
         cam.post(new Runnable() {
             @Override
@@ -239,6 +272,7 @@ final class ManQuet extends FrameLayout implements TextureView.SurfaceTextureLis
         luong = null;
         cam = null;
         den = false;
+        nutDen.setText("Đèn");
     }
 
     final Runnable moCamera = new Runnable() {
@@ -263,6 +297,7 @@ final class ManQuet extends FrameLayout implements TextureView.SurfaceTextureLis
                 List<String> lay = p.getSupportedFocusModes();
                 if (lay != null && lay.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) p.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
                 else if (lay != null && lay.contains(Camera.Parameters.FOCUS_MODE_AUTO)) p.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+                else if (lay != null && lay.contains(Camera.Parameters.FOCUS_MODE_MACRO)) p.setFocusMode(Camera.Parameters.FOCUS_MODE_MACRO);
                 try { c.setParameters(p); }
                 catch (RuntimeException e) {
                     // vài máy không nhận chế độ lấy nét: chỉ đặt cỡ ảnh
@@ -279,7 +314,10 @@ final class ManQuet extends FrameLayout implements TextureView.SurfaceTextureLis
                 c.addCallbackBuffer(new byte[dai]);
                 c.setPreviewCallbackWithBuffer(ManQuet.this);
                 c.startPreview();
-                if (Camera.Parameters.FOCUS_MODE_AUTO.equals(c.getParameters().getFocusMode())) lapLayNet();
+                String cheDoNet = c.getParameters().getFocusMode();
+                lienTucLayNet = Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE.equals(cheDoNet);
+                if (lienTucLayNet || Camera.Parameters.FOCUS_MODE_AUTO.equals(cheDoNet) || Camera.Parameters.FOCUS_MODE_MACRO.equals(cheDoNet))
+                    lapLayNet();
                 ui.post(new Runnable() {
                     @Override
                     public void run() {
@@ -300,17 +338,138 @@ final class ManQuet extends FrameLayout implements TextureView.SurfaceTextureLis
         }
     };
 
-    /** Máy chỉ có lấy nét 1 lần (FOCUS_MODE_AUTO): lấy nét lại mỗi 2 giây. */
+    /**
+     * Lấy nét lại định kỳ cho tới khi đọc được: máy lấy nét 1 lần (AUTO / MACRO) mỗi 2 giây; máy lấy nét liên tục mỗi
+     * 4 giây (có máy lấy nét liên tục chậm hoặc nhầm vào nền phía sau khi tem ở gần).
+     */
     void lapLayNet() {
-        if (cam == null) return;
-        cam.postDelayed(new Runnable() {
+        final Handler h = cam;
+        if (h == null) return;
+        h.postDelayed(new Runnable() {
             @Override
             public void run() {
-                if (camera == null) return;
-                try { camera.autoFocus(null); } catch (RuntimeException e) { /* đang lấy nét */ }
+                if (camera == null || h != cam) return;
+                layNetNgay();
                 lapLayNet();
             }
-        }, 2000);
+        }, lienTucLayNet ? 4000 : 2000);
+    }
+
+    /** Chạm màn hình: lấy nét ngay. */
+    void layNet() {
+        if (cam == null) return;
+        cam.post(new Runnable() {
+            @Override
+            public void run() { layNetNgay(); }
+        });
+    }
+
+    /** (luồng camera) Lấy nét 1 lần; máy lấy nét liên tục thì sau đó trả về chế độ liên tục. */
+    void layNetNgay() {
+        final Camera c = camera;
+        if (c == null || dangChup) return;
+        try {
+            c.autoFocus(new Camera.AutoFocusCallback() {
+                @Override
+                public void onAutoFocus(boolean ok, Camera cc) {
+                    if (lienTucLayNet && camera == cc && !dangChup) {
+                        try { cc.cancelAutoFocus(); } catch (RuntimeException e) { /* camera đã đóng */ }
+                    }
+                }
+            });
+        } catch (RuntimeException e) {
+            // đang lấy nét / máy không lấy nét được
+        }
+    }
+
+    /**
+     * Chụp ảnh độ phân giải cao rồi đọc mã trên ảnh (tem nhỏ, ở xa, chỗ tối — ảnh xem trước không đủ nét).
+     */
+    void chupDoc() {
+        final Handler h = cam;
+        if (h == null || dangChup || dangCho) return;
+        dangChup = true;
+        nutChup.setEnabled(false);
+        bao("Đang chụp và đọc mã…", MAU_CHO);
+        h.post(new Runnable() {
+            @Override
+            public void run() {
+                final Camera c = camera;
+                if (c == null) { xongChup(null, "Camera chưa sẵn sàng."); return; }
+                final Camera.PictureCallback khiChup = new Camera.PictureCallback() {
+                    @Override
+                    public void onPictureTaken(byte[] jpeg, Camera cc) {
+                        String kq = null, loi = null;
+                        try { kq = docJpeg(jpeg); }
+                        catch (Throwable e) { loi = "Không đọc được ảnh: " + e; }
+                        try {
+                            cc.startPreview();
+                            if (lienTucLayNet) cc.cancelAutoFocus();   // trả về lấy nét liên tục
+                            if (co != null) cc.addCallbackBuffer(new byte[co.width * co.height * 3 / 2]);
+                            cc.setPreviewCallbackWithBuffer(ManQuet.this);
+                        } catch (RuntimeException e) {
+                            // camera đã đóng
+                        }
+                        xongChup(kq, kq != null ? null : loi != null ? loi :
+                            "Không thấy mã QR trong ảnh — để tem giữa khung, cách 10–20 cm, đủ sáng, giữ yên tay rồi chụp lại.");
+                    }
+                };
+                try {
+                    c.autoFocus(new Camera.AutoFocusCallback() {
+                        @Override
+                        public void onAutoFocus(boolean ok, Camera cc) { chup(cc, khiChup); }
+                    });
+                } catch (RuntimeException e) {
+                    chup(c, khiChup);   // máy không lấy nét được (ống kính cố định): chụp luôn
+                }
+            }
+        });
+    }
+
+    void chup(Camera c, Camera.PictureCallback khiChup) {
+        try { c.takePicture(null, null, khiChup); }
+        catch (RuntimeException e) { xongChup(null, "Không chụp được: " + e.getMessage()); }
+    }
+
+    void xongChup(final String kq, final String loi) {
+        ui.post(new Runnable() {
+            @Override
+            public void run() {
+                dangChup = false;
+                nutChup.setEnabled(true);
+                if (kq != null) {
+                    bao("", 0);
+                    docDuoc(kq);
+                } else {
+                    bao(loi, MAU_LOI);
+                }
+            }
+        });
+    }
+
+    /** Giải nén ảnh JPEG (thu nhỏ còn cạnh dài khoảng 2000–4000 điểm) rồi đọc mã. */
+    String docJpeg(byte[] jpeg) {
+        BitmapFactory.Options o = new BitmapFactory.Options();
+        o.inJustDecodeBounds = true;
+        BitmapFactory.decodeByteArray(jpeg, 0, jpeg.length, o);
+        int mau = 1;
+        while (Math.max(o.outWidth, o.outHeight) / (mau * 2) >= 2000) mau *= 2;
+        o = new BitmapFactory.Options();
+        o.inSampleSize = mau;
+        Bitmap b = BitmapFactory.decodeByteArray(jpeg, 0, jpeg.length, o);
+        if (b == null) return null;
+        int w = b.getWidth(), h = b.getHeight();
+        int[] diem = new int[w * h];
+        b.getPixels(diem, 0, w, 0, 0, w, h);
+        b.recycle();
+        DocQR d = new DocQR();   // luồng camera: không dùng chung với bộ đọc khung hình đang chạy
+        String kq = d.docAnh(diem, w, h);
+        if (kq != null) return kq;
+        // tem nhỏ giữa ảnh: đọc riêng vùng giữa (phóng to tương đối)
+        int c = Math.min(w, h) * 2 / 3, x0 = (w - c) / 2, y0 = (h - c) / 2;
+        int[] giua = new int[c * c];
+        for (int y = 0; y < c; y++) System.arraycopy(diem, (y0 + y) * w + x0, giua, y * c, c);
+        return d.docAnh(giua, c, c);
     }
 
     void dongCamera() {
@@ -326,19 +485,14 @@ final class ManQuet extends FrameLayout implements TextureView.SurfaceTextureLis
         c.release();
     }
 
-    /** Cỡ ảnh xem trước: gần 1280×720 nhất, cạnh dài không quá 1920. */
+    /** Cỡ ảnh xem trước: lớn nhất có cạnh dài không quá 1920 (thường 1920×1080) — tem nhỏ vẫn đủ điểm ảnh để đọc. */
     static Camera.Size chonCo(List<Camera.Size> ds) {
-        Camera.Size tot = ds.get(0);
-        long lech = Long.MAX_VALUE;
+        Camera.Size tot = null;
         for (Camera.Size s : ds) {
             if (Math.max(s.width, s.height) > 1920 || Math.min(s.width, s.height) < 480) continue;
-            long d = Math.abs((long) s.width * s.height - 1280L * 720);
-            if (d < lech) {
-                lech = d;
-                tot = s;
-            }
+            if (tot == null || (long) s.width * s.height > (long) tot.width * tot.height) tot = s;
         }
-        return tot;
+        return tot != null ? tot : ds.get(0);
     }
 
     int gocXoay(Camera.CameraInfo info) {
@@ -425,7 +579,7 @@ final class ManQuet extends FrameLayout implements TextureView.SurfaceTextureLis
     @Override
     public void onPreviewFrame(byte[] du, Camera c) {
         try {
-            if (!dangCho && du != null && co != null) {
+            if (!dangCho && !dangChup && du != null && co != null) {
                 final String kq = doc.doc(du, co.width, co.height, Math.round(canhKhungAnh));
                 if (kq != null) {
                     ui.post(new Runnable() {
@@ -454,6 +608,9 @@ final class ManQuet extends FrameLayout implements TextureView.SurfaceTextureLis
             return;
         }
         ganDay.put(kq, bay);
+        ui.removeCallbacks(nhacKho);
+        goiY.setText(goiYDau);
+        ui.postDelayed(nhacKho, 15000);
         if (lienTuc) {
             dangCho = true;
             bao("Đang xử lý…", MAU_CHO);
