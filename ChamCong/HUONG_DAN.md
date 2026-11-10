@@ -52,6 +52,12 @@ Bấm 1 người trong danh sách để mở hồ sơ gồm các tab:
 - **Bảo hiểm, thuế & người phụ thuộc**: lương đóng BH, số sổ BHXH, mã thẻ BHYT, nơi KCB; MST; danh sách **người phụ thuộc**
   có *từ tháng – đến tháng* để giảm trừ gia cảnh đúng từng tháng.
 - **Hợp đồng lao động**, **Quá trình công tác**, **Nghỉ phép** (phép năm theo tháng, đơn nghỉ), **Lương các kỳ** (12 kỳ gần nhất).
+- **Hồ sơ scan**: lưu trữ bản scan hợp đồng, quyết định, CCCD, sơ yếu lý lịch, bằng cấp, giấy khám sức khoẻ, sổ BHXH…
+  để khi cần thì xem, tải xuống. Kéo thả hoặc **Chọn tệp…** (PDF, ảnh, Word, Excel; tối đa 25 MB/tệp; nhiều tệp một lần), chọn loại
+  và hợp đồng gắn kèm; sửa loại, ghi chú (vd *bản gốc lưu tủ 2*); **Xem**, **Tải về**, **Tải tất cả (.zip)** (chia thư mục theo loại).
+  Ở tab Hợp đồng lao động mỗi hợp đồng có cột *Bản scan* và nút tải bản scan lên; trang Hợp đồng lao động cho biết hợp đồng nào chưa có bản scan.
+  Trên máy chủ, tệp lưu ở thư mục dữ liệu (`D:\ChamCongData\TepHoSo`) và chép thêm 1 bản vào thư mục sao lưu (xoá trong phần mềm thì bản sao lưu vẫn giữ);
+  tài khoản chấm công không xem được. Chạy 1 file trên máy: tệp lưu trong trình duyệt của máy đó (không nằm trong file sao lưu .json).
 - **In sơ yếu lý lịch** (A4, có ảnh). Sửa xong bấm **Lưu hồ sơ** (rời trang thì phần mềm tự lưu).
 
 ### Hợp đồng lao động

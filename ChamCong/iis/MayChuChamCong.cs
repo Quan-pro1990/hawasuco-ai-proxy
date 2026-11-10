@@ -463,6 +463,9 @@ namespace ChamCong
                 return t;
             }
 
+            // ----- hồ sơ scan của nhân viên: lưu trong thư mục dữ liệu, chép thêm 1 bản vào thư mục sao lưu
+            if (d == "/tep") return HoSoTep(kho, ctx, tk);
+
             // ----- chỉ quản trị
             if (tk.vaiTro != "quan_tri") return TraLoi.Loi(403, "Chỉ tài khoản quản trị được làm việc này.");
 
@@ -526,6 +529,57 @@ namespace ChamCong
             if (d == "/nhatky" && pt == "GET") return new TraLoi { Status = 200, Loai = "text/plain; charset=utf-8", Than = Encoding.UTF8.GetBytes(kho.DocNhatKy()) };
 
             return TraLoi.Loi(404, "Không có API này.");
+        }
+
+        static readonly Dictionary<string, string> LoaiTep = new Dictionary<string, string>
+        {
+            { "pdf", "application/pdf" }, { "jpg", "image/jpeg" }, { "jpeg", "image/jpeg" }, { "png", "image/png" }, { "webp", "image/webp" },
+            { "gif", "image/gif" }, { "tif", "image/tiff" }, { "tiff", "image/tiff" },
+            { "doc", "application/msword" }, { "docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document" },
+            { "xls", "application/vnd.ms-excel" }, { "xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }
+        };
+        const long TepToiDa = 25L * 1024 * 1024;
+
+        static TraLoi HoSoTep(Kho kho, NguCanh ctx, TaiKhoan tk)
+        {
+            if (tk.vaiTro == "cham_cong") return TraLoi.Loi(403, "Tài khoản chấm công không xem được hồ sơ nhân viên.");
+            string pt = ctx.PhuongThuc, nv = ctx.Q("nv") ?? "";
+            if (!Regex.IsMatch(nv, "^[A-Za-z0-9_-]{1,64}$")) throw new LoiApi(400, "Mã nhân viên không hợp lệ.");
+            if (pt == "POST")
+            {
+                string ten = ctx.Q("ten") ?? "";
+                string duoi = Path.GetExtension(ten).ToLowerInvariant().TrimStart('.');
+                if (!LoaiTep.ContainsKey(duoi)) throw new LoiApi(400, "Chỉ nhận tệp PDF, ảnh (JPG, PNG, WEBP, GIF, TIFF), Word, Excel.");
+                if (ctx.Than.Length == 0) throw new LoiApi(400, "Tệp rỗng.");
+                if (ctx.Than.Length > TepToiDa) throw new LoiApi(413, "Tệp lớn hơn 25 MB – hãy scan độ phân giải thấp hơn hoặc tách nhỏ.");
+                string id = kho.LuuTep(nv, duoi, ctx.Than);
+                kho.Ghi(tk.ten, ctx.Ip, "Tải lên hồ sơ scan \"" + ten + "\" (" + (ctx.Than.Length / 1024) + " KB) của nhân viên " + nv);
+                return TraLoi.Json(new Dictionary<string, object> { { "id", id }, { "kichThuoc", ctx.Than.Length } });
+            }
+            string idt = ctx.Q("id") ?? "";
+            if (!Regex.IsMatch(idt, "^[a-f0-9]{32}\\.[a-z0-9]{2,5}$")) throw new LoiApi(400, "Mã tệp không hợp lệ.");
+            string duoi2 = Path.GetExtension(idt).TrimStart('.');
+            if (!LoaiTep.ContainsKey(duoi2)) throw new LoiApi(400, "Loại tệp không hợp lệ.");
+            if (pt == "GET" || pt == "HEAD")
+            {
+                byte[] b = kho.DocTep(nv, idt);
+                if (b == null) throw new LoiApi(404, "Không còn tệp này trên máy chủ.");
+                string tenTai = ctx.Q("ten") ?? idt;
+                bool xem = ctx.Q("tai") != "1" && (duoi2 == "pdf" || duoi2 == "jpg" || duoi2 == "jpeg" || duoi2 == "png" || duoi2 == "webp" || duoi2 == "gif");
+                string ascii = new string(tenTai.Select(c => c >= 32 && c < 127 && c != '"' && c != '\\' ? c : '_').ToArray());
+                var tl = new TraLoi { Status = 200, Loai = LoaiTep[duoi2], Than = b };
+                tl.Header["Content-Disposition"] = (xem ? "inline" : "attachment") + "; filename=\"" + ascii + "\"; filename*=UTF-8''" + Uri.EscapeDataString(tenTai);
+                tl.Header["X-Content-Type-Options"] = "nosniff";
+                tl.Header["Cache-Control"] = "private, no-store";
+                return tl;
+            }
+            if (pt == "DELETE")
+            {
+                kho.XoaTep(nv, idt);
+                kho.Ghi(tk.ten, ctx.Ip, "Xoá hồ sơ scan " + idt + " của nhân viên " + nv + " (bản trong thư mục sao lưu vẫn giữ)");
+                return TraLoi.Json(new Dictionary<string, object> { { "ok", true } });
+            }
+            return TraLoi.Loi(405, "Phương thức không hỗ trợ.");
         }
 
         static Dictionary<string, object> ThongTinToi(TaiKhoan tk)
@@ -798,7 +852,7 @@ namespace ChamCong
 
     sealed class Kho
     {
-        readonly string tepDuLieu, tepTrangThai, tepTaiKhoan, thuMucSaoLuu, thuMucNhatKy;
+        readonly string tepDuLieu, tepTrangThai, tepTaiKhoan, thuMucSaoLuu, thuMucNhatKy, thuMucTep, thuMucTepSL;
         readonly object khoa = new object();
         readonly byte[] bimat;
         List<TaiKhoan> taiKhoan;
@@ -814,6 +868,8 @@ namespace ChamCong
             string sl = Environment.GetEnvironmentVariable("CHAMCONG_SAOLUU");
             thuMucSaoLuu = string.IsNullOrWhiteSpace(sl) ? Path.Combine(thuMuc, "SaoLuu") : Environment.ExpandEnvironmentVariables(sl.Trim());
             thuMucNhatKy = Path.Combine(thuMuc, "NhatKy");
+            thuMucTep = Path.Combine(thuMuc, "TepHoSo");
+            thuMucTepSL = Path.Combine(thuMucSaoLuu, "TepHoSo");
             Directory.CreateDirectory(thuMucSaoLuu);
             Directory.CreateDirectory(thuMucNhatKy);
 
@@ -921,6 +977,42 @@ namespace ChamCong
         }
 
         public string ThuMucSaoLuu { get { return thuMucSaoLuu; } }
+
+        // ----- hồ sơ scan: TepHoSo\<mã NV>\<mã tệp>; chép thêm vào <sao lưu>\TepHoSo (xoá trong phần mềm thì bản sao lưu vẫn giữ)
+
+        public string LuuTep(string nv, string duoi, byte[] b)
+        {
+            byte[] r = new byte[16];
+            using (var g = RandomNumberGenerator.Create()) g.GetBytes(r);
+            string id = BitConverter.ToString(r).Replace("-", "").ToLowerInvariant() + "." + duoi;
+            string tm = Path.Combine(thuMucTep, nv);
+            Directory.CreateDirectory(tm);
+            string tam = Path.Combine(tm, id + ".tmp");
+            File.WriteAllBytes(tam, b);
+            File.Move(tam, Path.Combine(tm, id));
+            try
+            {
+                string sl = Path.Combine(thuMucTepSL, nv);
+                Directory.CreateDirectory(sl);
+                File.WriteAllBytes(Path.Combine(sl, id), b);
+            }
+            catch (Exception ex) { Ghi("(máy chủ)", "", "Không chép được bản sao lưu hồ sơ scan " + id + ": " + ex.Message); }
+            return id;
+        }
+
+        public byte[] DocTep(string nv, string id)
+        {
+            string p = Path.Combine(Path.Combine(thuMucTep, nv), id);
+            if (File.Exists(p)) return File.ReadAllBytes(p);
+            string q = Path.Combine(Path.Combine(thuMucTepSL, nv), id);   // mất bản chính thì lấy bản sao lưu
+            return File.Exists(q) ? File.ReadAllBytes(q) : null;
+        }
+
+        public void XoaTep(string nv, string id)
+        {
+            string p = Path.Combine(Path.Combine(thuMucTep, nv), id);
+            if (File.Exists(p)) File.Delete(p);
+        }
 
         public List<object> DanhSachSaoLuu()
         {

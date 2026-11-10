@@ -191,7 +191,7 @@
     });
     db.nhanVien.forEach(function (nv) {
       if (!nv.phuCap) nv.phuCap = {};
-      ['hopDong', 'quyetDinh', 'nguoiPhuThuoc'].forEach(function (f) { if (!Array.isArray(nv[f])) nv[f] = []; });
+      ['hopDong', 'quyetDinh', 'nguoiPhuThuoc', 'hoSoTep'].forEach(function (f) { if (!Array.isArray(nv[f])) nv[f] = []; });
       if (nv.lichLam) { nv.loaiLD = nv.lichLam === 'T2-T6' ? 'VP' : nv.lichLam === 'T2-T7' ? 'CN' : ''; delete nv.lichLam; }
     });
     db.phienBan = 1;

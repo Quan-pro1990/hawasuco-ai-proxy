@@ -142,8 +142,10 @@
   function xoaNV(nv, sauKhiXoa) {
     var coDL = Object.keys(App.db.thang).some(function (k) { var T = App.db.thang[k]; return (T.cc && T.cc[nv.id] && Object.keys(T.cc[nv.id]).length) || (T.chot && T.chot.rows.some(function (r) { return r.nvId === nv.id; })); });
     var msg = 'Xoá nhân viên <b>' + h(nv.hoTen) + '</b> (' + h(nv.ma) + ')?' + (coDL ? '<br><br><span style="color:var(--do)">Nhân viên này đã có dữ liệu chấm công / lương. Nếu đã nghỉ việc, nên sửa trạng thái thành “Đã nghỉ việc” và nhập ngày nghỉ để giữ lịch sử. Xoá sẽ mất dữ liệu chấm công của người này (bảng lương các tháng đã chốt vẫn giữ).</span>' : '');
+    if ((nv.hoSoTep || []).length) msg += '<br><br>' + nv.hoSoTep.length + ' tệp hồ sơ scan cũng bị xoá' + (App.TEP && App.TEP.mayChu() ? ' (máy chủ vẫn giữ bản trong thư mục sao lưu)' : '') + '.';
     App.xacNhan(msg, { nut: 'Xoá', nguy: true }).then(function (ok) {
       if (!ok) return;
+      (nv.hoSoTep || []).forEach(function (t) { if (App.TEP) App.TEP.xoa(nv, t).catch(function () { /* bỏ qua */ }); });
       App.db.nhanVien = App.db.nhanVien.filter(function (x) { return x !== nv; });
       Object.keys(App.db.thang).forEach(function (k) { var T = App.db.thang[k]; ['cc', 'ot', 'muon', 'vr', 'dc'].forEach(function (f) { if (T[f]) delete T[f][nv.id]; }); });
       App.db.donNghi = (App.db.donNghi || []).filter(function (d) { return d.nvId !== nv.id; });

@@ -540,14 +540,15 @@
       '<label class="chk"><input type="checkbox" id="hd-tatca"' + (stHD.tatCa ? ' checked' : '') + '> Hiện cả hợp đồng cũ</label><span class="gian"></span>' +
       '<button class="nut" id="hd-xuat">' + App.icon('tai') + 'Xuất Excel</button><button class="nut chinh" id="hd-moi">' + App.icon('them') + 'Ký hợp đồng mới</button></div></div>' +
       App.dauIn('DANH SÁCH HỢP ĐỒNG LAO ĐỘNG', 'Ngày ' + new Date().toLocaleDateString('vi-VN')) +
-      '<div class="cuon cao"><table class="bang"><thead><tr><th>STT</th><th>Mã NV</th><th style="min-width:160px">Họ và tên</th><th>Phòng / đội</th><th>Số HĐ</th><th>Loại hợp đồng</th><th>Ngày ký</th><th>Từ ngày</th><th>Đến ngày</th><th class="so">Mức lương</th><th>Tình trạng</th><th class="khong-in"></th></tr></thead><tbody>' +
+      '<div class="cuon cao"><table class="bang"><thead><tr><th>STT</th><th>Mã NV</th><th style="min-width:160px">Họ và tên</th><th>Phòng / đội</th><th>Số HĐ</th><th>Loại hợp đồng</th><th>Ngày ký</th><th>Từ ngày</th><th>Đến ngày</th><th class="so">Mức lương</th><th>Tình trạng</th><th>Bản scan</th><th class="khong-in"></th></tr></thead><tbody>' +
       (dong.length ? dong.map(function (o, i) {
         var x = o.hd;
         return '<tr data-nv="' + o.nv.id + '" data-hd="' + (x ? x.id || '' : '') + '"><td class="giua">' + (i + 1) + '</td><td>' + h(o.nv.ma) + '</td><td class="ten"><span class="lk" data-hs="' + o.nv.id + '">' + h(o.nv.hoTen) + '</span></td><td>' + h(TL.tenPhongBan(db, o.nv.phongBan)) + '</td>' +
           (x ? '<td>' + h(x.so) + '</td><td>' + h(x.loai) + '</td><td class="giua">' + TL.hienNgay(x.ngayKy) + '</td><td class="giua">' + TL.hienNgay(x.tuNgay) + '</td><td class="giua">' + (TL.hienNgay(x.denNgay) || '—') + '</td><td class="so">' + App.tienRong(x.luongCB) + '</td><td>' + App.ttHopDong(x) + '</td>' +
+            '<td>' + (function () { var n = (o.nv.hoSoTep || []).filter(function (t) { return x.id && t.hopDongId === x.id; }).length; return n ? '<span class="lk" data-scan="' + o.nv.id + '">' + n + ' tệp</span>' : '<span class="the-tt cam">Chưa có</span>'; })() + '</td>' +
             '<td class="khong-in" style="white-space:nowrap"><button class="nut nho" data-a="in" title="In hợp đồng">' + App.icon('in') + '</button> <button class="nut nho" data-a="sua" title="Sửa">' + App.icon('sua') + '</button> <button class="nut nho" data-a="moi" title="Ký hợp đồng tiếp theo">' + App.icon('them') + '</button></td>'
-            : '<td colspan="6" class="mo">Chưa có hợp đồng</td><td><span class="the-tt cam">Thiếu HĐ</span></td><td class="khong-in"><button class="nut nho chinh" data-a="moi">' + App.icon('them') + 'Thêm</button></td>') + '</tr>';
-      }).join('') : '<tr><td colspan="12" class="trong">Không có hợp đồng phù hợp bộ lọc.</td></tr>') + '</tbody></table></div>';
+            : '<td colspan="6" class="mo">Chưa có hợp đồng</td><td><span class="the-tt cam">Thiếu HĐ</span></td><td></td><td class="khong-in"><button class="nut nho chinh" data-a="moi">' + App.icon('them') + 'Thêm</button></td>') + '</tr>';
+      }).join('') : '<tr><td colspan="13" class="trong">Không có hợp đồng phù hợp bộ lọc.</td></tr>') + '</tbody></table></div>';
     App.$('#hd-loc').onchange = function () { stHD.loc = this.value; App.veLai(); };
     App.$('#hd-pb').onchange = function () { stHD.pb = this.value; App.veLai(); };
     App.$('#hd-tim').oninput = function () { stHD.tim = this.value; var v = this.value; App.veLai(); var i = App.$('#hd-tim'); i.focus(); i.setSelectionRange(v.length, v.length); };
@@ -572,6 +573,7 @@
     };
     noi.onclick = function (e) {
       var hs = e.target.closest('[data-hs]'); if (hs) { App.moHoSo(hs.dataset.hs, 'hopdong'); return; }
+      var sc = e.target.closest('[data-scan]'); if (sc) { App.moHoSo(sc.dataset.scan, 'scan'); return; }
       var b = e.target.closest('[data-a]'), tr = e.target.closest('tr[data-nv]'); if (!b || !tr) return;
       var nv = App.timNV(tr.dataset.nv), i = (nv.hopDong || []).findIndex(function (x) { return x.id === tr.dataset.hd; });
       if (b.dataset.a === 'in' && i >= 0) App.inHopDong(nv, nv.hopDong[i]);

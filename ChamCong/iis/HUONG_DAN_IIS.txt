@@ -78,11 +78,14 @@ lẫn nhau; máy kế toán đang sửa mà tổ vừa chấm công thì phần 
 - Sao lưu tự động:      D:\ChamCongData\SaoLuu\dulieu_yyyy-MM-dd.json – mỗi ngày 1 bản (lần lưu đầu tiên
                         trong ngày), giữ 120 ngày gần nhất.
 - Nhật ký phần mềm:     D:\ChamCongData\NhatKy\yyyy-MM.txt (đăng nhập, lưu, chấm công, tài khoản…)
+- Hồ sơ scan nhân viên: D:\ChamCongData\TepHoSo\<mã NV>\ (hợp đồng, quyết định, CCCD… tải lên trong hồ sơ);
+                        mỗi tệp chép thêm 1 bản vào D:\ChamCongData\SaoLuu\TepHoSo (xoá trong phần mềm thì bản này vẫn giữ).
 - Nhật ký truy cập IIS: D:\ChamCongData\IISLogs
 - Trên C chỉ có chương trình (C:\inetpub\ChamCong, vài trăm KB).
 Tải bản sao lưu về máy / khôi phục: Cài đặt & dữ liệu → Dữ liệu.
 Nên chép thêm thư mục SaoLuu ra ổ khác / NAS hằng tuần, vd tạo tác vụ trong Task Scheduler chạy:
    robocopy D:\ChamCongData\SaoLuu \\NAS\SaoLuu\ChamCong /MIR /R:2 /W:5
+   (lệnh trên chép cả dữ liệu lẫn hồ sơ scan trong SaoLuu\TepHoSo)
 
 6. CẬP NHẬT PHIÊN BẢN MỚI
 -------------------------

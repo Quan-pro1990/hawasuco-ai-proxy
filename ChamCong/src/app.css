@@ -425,3 +425,9 @@ td > .chon-bac select[data-xl="bac"] { width: 165px; }
 .chip-muc.chon .the-tt { background: rgba(255,255,255,.2); color: #fff; }
 input.tu-dong { color: var(--chinh); font-style: italic; }
 td.bac-tat { background: repeating-linear-gradient(135deg, #f3f5f8, #f3f5f8 6px, #e9edf2 6px, #e9edf2 12px); }
+
+/* Hồ sơ scan */
+.vung-tha { border: 2px dashed var(--vien); border-radius: 12px; padding: 16px; text-align: center; color: var(--mo); background: #fafbfd; }
+.vung-tha.keo { border-color: var(--chinh); background: var(--chinh-nhat); color: var(--chinh); }
+.vung-tha > div > svg { width: 22px; height: 22px; vertical-align: middle; }
+.vung-tha select { max-width: 360px; }
