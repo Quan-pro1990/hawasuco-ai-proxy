@@ -68,7 +68,10 @@ Tiếp nhận, bổ nhiệm, điều chuyển, **nâng lương**, **khen thưở
   có ngày hiệu lực trở đi tính lương mới (không phải sửa tay từng tháng).
 - **Khen thưởng / kỷ luật** có số tiền và *kỳ lương*: tiền thưởng tự cộng vào thu nhập (chịu thuế), tiền phạt / bồi thường
   tự vào khấu trừ của bảng lương kỳ đó (kỳ đã chốt thì cần mở khoá).
-- **Nâng lương** cho người đã xếp bảng lương: chọn *bậc mới*, phần mềm tự điền mức lương theo bảng.
+- **Nâng lương / chuyển chức danh** cho người đã xếp bảng lương: chọn *chức danh* (vd từ Trưởng phòng sang Đội trưởng) và *bậc mới*,
+  phần mềm tự điền mức lương theo bảng của kỳ đó. **Ngày hiệu lực quyết định quyết định kỳ bắt đầu áp dụng** (phần mềm ghi rõ
+  "Áp dụng từ kỳ lương tháng …"): các kỳ trước vẫn tính chức danh, bậc, lương cũ. Chỉ đổi chức danh thì thời gian hưởng bậc giữ nguyên.
+  Trang *Xếp lương, nâng bậc* có nút **Nâng / chuyển bậc…** trên từng người.
 - **Bổ nhiệm, điều chuyển** cập nhật phòng / đội, chức vụ; **Thôi việc** đặt ngày nghỉ việc = ngày trước ngày hiệu lực.
 - Xoá quyết định mới nhất thì lương, bậc / phòng, đội / trạng thái trở về như trước.
 
@@ -83,7 +86,12 @@ Tiếp nhận, bổ nhiệm, điều chuyển, **nâng lương**, **khen thưở
 ### Xếp lương, nâng bậc
 - **Danh mục → Thang, bảng lương**: tạo bảng (vd *Thang lương, bảng lương của công ty*), chọn kiểu **mức tiền** hoặc **hệ số ×
   mức lương cơ sở**, *Dùng cho* mức lương, lương đóng BH hoặc cả hai, thời gian nâng bậc (năm). Thêm chức danh / nhóm công việc
-  rồi nhập từng bậc; *+ Bậc / − Bậc* thêm bớt cột. Sửa giá trị bậc hoặc lương cơ sở thì lương người đang xếp bậc đó cập nhật ngay.
+  rồi nhập từng bậc. **Số bậc riêng từng chức danh**: cột *Số bậc* bấm **−** / **+** (vd từ Đội trưởng trở lên 2 bậc, còn lại 3 bậc);
+  ô bậc thừa bị khoá. Không bớt được bậc đang có người xếp; bớt bậc đã có giá trị thì phần mềm hỏi lại (xoá giá trị ở mọi mức áp dụng).
+  **Tách…**: tách 1 chức danh thành 2 (vd *Trưởng phòng, Đội trưởng* → *Trưởng phòng* và *Đội trưởng*): chức danh mới chép số bậc và giá trị
+  các bậc, đánh dấu nhân viên chuyển sang (tự gợi ý theo chức vụ), giữ nguyên bậc, và chọn **áp dụng từ kỳ lương** nào (phần mềm lập
+  quyết định chuyển chức danh, các kỳ trước tính theo chức danh cũ; để trống = áp dụng cho mọi kỳ chưa chốt); sau đó sửa giá trị riêng.
+  Sửa giá trị bậc hoặc lương cơ sở thì lương người đang xếp bậc đó cập nhật ngay.
 - Menu **Xếp lương, nâng bậc**: chọn bảng – chức danh – bậc, ngày hưởng bậc cho từng người; tab **Đến hạn nâng bậc** liệt kê
   người đã / sắp đến hạn (kỷ luật *kéo dài thời hạn nâng lương* cộng 6 tháng), bấm **Nâng bậc…** để lập quyết định, xuất Excel, in.
 

@@ -50,7 +50,7 @@
     var ds = [
       ['NV001', 'Nguyễn Văn An', 'Nam', '1975-03-12', 'BGD', 'Giám đốc', '2015-01-05', 30000000, { DT: 1000000, TN: 4000000 }, 2, 'VP'],
       ['NV002', 'Trần Thị Bình', 'Nữ', '1982-07-21', 'KTTV', 'Kế toán trưởng', '2016-03-01', 18000000, { DT: 500000, TN: 2000000 }, 1, 'VP'],
-      ['NV003', 'Lê Hoàng Cường', 'Nam', '1985-11-02', 'KDVT', 'Trưởng phòng', '2017-06-15', 15500000, { TN: 1500000 }, 2, 'VP'],
+      ['NV003', 'Lê Hoàng Cường', 'Nam', '1985-11-02', 'KDVT', 'Trưởng phòng', '2017-06-15', 15000000, { TN: 1500000 }, 2, 'VP'],
       ['NV004', 'Phạm Thu Dung', 'Nữ', '1990-' + TL.pad(M) + '-14', 'TCHC', 'Trưởng phòng', '2018-04-02', 14000000, { TN: 1500000 }, 1, 'VP'],
       ['NV005', 'Hoàng Minh Đức', 'Nam', '1988-09-30', 'KTH', 'Trưởng phòng', '2017-09-01', 15000000, { TN: 1500000 }, 2, 'VP'],
       ['NV006', 'Vũ Thị Hà', 'Nữ', '1993-05-18', 'KTTV', 'Kế toán viên', '2020-07-01', 9000000, {}, 0, 'VP'],
@@ -137,21 +137,23 @@
 
     // ---- Thang, bảng lương (mức tiền) và xếp bậc ----
     db.thangLuong = [TL.chuanBangLuong({
-      ma: 'BL1', ten: 'Thang lương, bảng lương của công ty', kieu: 'tien', apDung: 'cb', namNang: 3, soBac: 8,
+      // từ Đội trưởng trở lên 2 bậc, còn lại 3 bậc
+      ma: 'BL1', ten: 'Thang lương, bảng lương của công ty', kieu: 'tien', apDung: 'cb', namNang: 3,
       ngach: [
-        { ma: 'GD', ten: 'Giám đốc', bac: [28000000, 30000000] },
-        { ma: 'PGD', ten: 'Phó Giám đốc, Kế toán trưởng', bac: [17000000, 18000000] },
-        { ma: 'TP', ten: 'Trưởng phòng, Đội trưởng', bac: [14000000, 14500000, 15000000, 15500000] },
-        { ma: 'CV', ten: 'Chuyên viên, kỹ sư, kế toán viên', bac: [7500000, 8000000, 8500000, 9000000, 9500000, 10000000, 10500000, 11000000] },
-        { ma: 'NV', ten: 'Nhân viên nghiệp vụ (ghi thu, thủ kho)', namNang: 2, bac: [6600000, 7000000, 7320000, 7680000, 8040000, 8400000, 8800000] },
-        { ma: 'CN', ten: 'Công nhân lắp đặt – sửa chữa, lái xe', namNang: 2, bac: [7000000, 7500000, 8000000, 8500000, 9000000, 9500000, 10000000] }
+        { ma: 'GD', ten: 'Giám đốc', soBac: 2, bac: [28000000, 30000000] },
+        { ma: 'PGD', ten: 'Phó Giám đốc, Kế toán trưởng', soBac: 2, bac: [17000000, 18000000] },
+        { ma: 'TP', ten: 'Trưởng phòng', soBac: 2, bac: [14000000, 15000000] },
+        { ma: 'DT', ten: 'Đội trưởng', soBac: 2, bac: [14000000, 15000000] },
+        { ma: 'CV', ten: 'Chuyên viên, kỹ sư, kế toán viên', soBac: 3, bac: [8500000, 9000000, 9500000] },
+        { ma: 'NV', ten: 'Nhân viên nghiệp vụ (ghi thu, thủ kho)', soBac: 3, namNang: 2, bac: [7000000, 7320000, 8040000] },
+        { ma: 'CN', ten: 'Công nhân lắp đặt – sửa chữa, lái xe', soBac: 3, namNang: 2, bac: [7500000, 8000000, 9000000] }
       ]
     })];
     var xep = {
-      NV001: ['GD', 2, '2023-01-01'], NV002: ['PGD', 2, '2022-03-01'], NV003: ['TP', 4, '2021-07-01'], NV004: ['TP', 1, '2024-04-01'], NV005: ['TP', 3, '2023-09-01'],
-      NV006: ['CV', 4, dau(lui(2))], NV007: ['NV', 5, TL.themThangISO(TL.iso(Y, M, 1), -24)], NV008: ['CV', 4, '2024-01-10'], NV009: ['CN', 5, '2025-02-01'],
-      NV010: ['NV', 3, TL.themThangISO(TL.iso(Y, M, 1), -23)], NV011: ['CN', 3, dau(lui(5))], NV012: ['NV', 5, '2025-06-01'], NV013: ['CN', 5, '2025-08-05'],
-      NV014: ['NV', 2, null], NV017: ['NV', 3, '2023-05-01']
+      NV001: ['GD', 2, '2023-01-01'], NV002: ['PGD', 2, '2022-03-01'], NV003: ['TP', 2, '2021-07-01'], NV004: ['TP', 1, '2023-11-01'], NV005: ['TP', 2, '2023-09-01'],
+      NV006: ['CV', 2, dau(lui(2))], NV007: ['NV', 3, '2024-11-01'], NV008: ['CV', 2, '2024-01-10'], NV009: ['CN', 3, '2025-02-01'],
+      NV010: ['NV', 2, TL.themThangISO(TL.iso(Y, M, 1), -24)], NV011: ['CN', 2, dau(lui(5))], NV012: ['NV', 3, '2025-06-01'], NV013: ['CN', 3, '2025-08-05'],
+      NV014: ['NV', 1, null], NV017: ['NV', 2, '2023-05-01']
     };
     db.nhanVien.forEach(function (nv) { var x = xep[nv.ma]; if (x) nv.xepLuong = { bang: 'BL1', ngach: x[0], bac: x[1], ngayHuong: x[2] || nv.ngayVao }; });
     [nl1, nl2].forEach(function (nv) {

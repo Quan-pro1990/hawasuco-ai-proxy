@@ -424,3 +424,4 @@ td > .chon-bac select[data-xl="bac"] { width: 165px; }
 .chip-muc.chon { background: var(--chinh); border-color: var(--chinh); color: #fff; font-weight: 600; }
 .chip-muc.chon .the-tt { background: rgba(255,255,255,.2); color: #fff; }
 input.tu-dong { color: var(--chinh); font-style: italic; }
+td.bac-tat { background: repeating-linear-gradient(135deg, #f3f5f8, #f3f5f8 6px, #e9edf2 6px, #e9edf2 12px); }

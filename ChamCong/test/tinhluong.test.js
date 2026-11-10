@@ -321,6 +321,22 @@ t('Làm thêm giờ chi bảng riêng: không gộp vào lãnh kỳ II (thuế v
   assert.strictEqual(b.khoi, 'Văn phòng công ty');
 });
 
+t('Chuyển chức danh trong thang bảng lương từ một kỳ: kỳ trước giữ chức danh cũ', function () {
+  var db = dbMau(), nv = db.nhanVien[0];
+  db.thangLuong = [{ ma: 'T', ten: 'Bảng lương', kieu: 'tien', apDung: 'cb', ngach: [
+    { ma: 'TP', ten: 'Trưởng phòng', soBac: 2, bac: [14000000, 15000000] }, { ma: 'DT', ten: 'Đội trưởng', soBac: 2, bac: [13000000, 14500000] }] }];
+  db = TL.chuanHoa(db);
+  // đang Trưởng phòng bậc 2; quyết định chuyển sang Đội trưởng bậc 2 hiệu lực 21/10/2026 (đầu kỳ 11)
+  nv.xepLuong = { bang: 'T', ngach: 'DT', bac: 2, ngayHuong: '2024-01-01' };
+  nv.quyetDinh = [{ loai: 'nang_luong', hieuLuc: '2026-10-21', luongCu: 15000000, luongMoi: 14500000,
+    xepLuongCu: { bang: 'T', ngach: 'TP', bac: 2, ngayHuong: '2024-01-01' }, xepLuongMoi: nv.xepLuong }];
+  assert.strictEqual(TL.xepLuongTheoKy(db, nv, 2026, 10).ngach, 'TP');
+  assert.strictEqual(TL.xepLuongTheoKy(db, nv, 2026, 11).ngach, 'DT');
+  assert.strictEqual(TL.luongTheoKy(db, nv, 2026, 10).luongCB, 15000000);
+  assert.strictEqual(TL.luongTheoKy(db, nv, 2026, 11).luongCB, 14500000);
+  assert.strictEqual(TL.xepLuongNV(db, nv).ngayHuong, '2024-01-01');   // giữ thời gian hưởng bậc khi chỉ đổi chức danh
+});
+
 t('Phòng / đội: chuyển qua lại có hiệu lực theo kỳ, kỳ cũ vẫn thuộc đơn vị cũ', function () {
   var db = dbMau(), nv = db.nhanVien[0];
   db.phongBan = [{ ma: 'KD', ten: 'Phòng Kinh doanh - Vật tư' }, { ma: 'D1', ten: 'Đội Cấp nước số 1' }];
@@ -364,6 +380,16 @@ t('Thang, bảng lương: bậc theo mức tiền / hệ số, áp vào mức l�
   assert.strictEqual(TL.xepLuongNV(db, nv).ngayNang, '2027-08-29');
   // bậc cuối: không còn hạn nâng
   nv.xepLuong.bac = 3; assert.strictEqual(TL.xepLuongNV(db, nv).ngayNang, ''); assert.ok(TL.xepLuongNV(db, nv).bacCuoi);
+  // số bậc riêng từng chức danh: bớt Chuyên viên còn 2 bậc thì bậc 3 bỏ qua, bậc 2 là bậc cuối
+  assert.strictEqual(db.thangLuong[0].ngach[0].soBac, 3); assert.strictEqual(db.thangLuong[0].ngach[1].soBac, 2);
+  db.thangLuong[0].ngach[0].soBac = 2; TL.chuanBangLuong(db.thangLuong[0]);
+  assert.strictEqual(TL.soBacNgach(db.thangLuong[0].ngach[0]), 2); assert.strictEqual(db.thangLuong[0].soBac, 2);
+  assert.strictEqual(TL.giaTriBac(db, db.thangLuong[0], db.thangLuong[0].ngach[0], 3), null);
+  nv.xepLuong.bac = 2; assert.ok(TL.xepLuongNV(db, nv).bacCuoi); assert.strictEqual(TL.xepLuongNV(db, nv).ngayNang, '');
+  // thêm lại thành 3 bậc: cột mới trống cho tới khi nhập giá trị
+  db.thangLuong[0].ngach[0].soBac = 3; TL.chuanBangLuong(db.thangLuong[0]);
+  assert.strictEqual(db.thangLuong[0].soBac, 3); assert.strictEqual(TL.soBacNgach(db.thangLuong[0].ngach[0]), 2);
+  db.thangLuong[0].ngach[0].bac[2] = 8500000; assert.strictEqual(TL.soBacNgach(db.thangLuong[0].ngach[0]), 3);
   // hệ số × lương cơ sở, chỉ dùng cho lương đóng BH
   nv.quyetDinh = []; nv.xepLuong = { bang: 'H', ngach: 'KS', bac: 2, ngayHuong: '2025-01-01' };
   xl = TL.xepLuongNV(db, nv);

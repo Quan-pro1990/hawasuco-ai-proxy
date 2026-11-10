@@ -164,7 +164,17 @@
     if (!db.khoiLuong || typeof db.khoiLuong !== 'object' || Array.isArray(db.khoiLuong)) db.khoiLuong = {};
     if (!db.caiDat.tamUng || typeof db.caiDat.tamUng !== 'object') db.caiDat.tamUng = { macDinh: 0, theoChucVu: [] };
     if (!Array.isArray(db.caiDat.tamUng.theoChucVu)) db.caiDat.tamUng.theoChucVu = [];
-    db.thangLuong.forEach(chuanBangLuong);
+    db.thangLuong.forEach(function (b) {
+      // dữ liệu cũ chưa có số bậc từng chức danh: lấy tới bậc cuối có giá trị (mức ban đầu và các mức theo kỳ)
+      var cuoi = function (arr) { var k = 0; (arr || []).forEach(function (v, i) { if (+v > 0) k = i + 1; }); return k; };
+      (b.ngach || []).forEach(function (g) {
+        if (+g.soBac > 0) return;
+        var k = cuoi(g.bac);
+        db.dotLuong.forEach(function (d) { var x = d.bang && d.bang[b.ma] && d.bang[b.ma].ngach && d.bang[b.ma].ngach[g.ma]; k = Math.max(k, cuoi(x)); });
+        g.soBac = k || +b.soBac || 3;
+      });
+      chuanBangLuong(b);
+    });
     if (!Array.isArray(db.ngayLe)) db.ngayLe = md.ngayLe;
     db.ngayLe.forEach(function (x) { if (!x.loai) x.loai = loaiNgayLe(x); });
     if (!db.thang || typeof db.thang !== 'object') db.thang = {};
@@ -522,10 +532,12 @@
     if (!AP_DUNG_BL[b.apDung]) b.apDung = 'cb';
     if (!(+b.namNang > 0)) b.namNang = 3;
     if (!Array.isArray(b.ngach)) b.ngach = [];
-    var n = +b.soBac || 0;
-    b.ngach.forEach(function (g) { if (!Array.isArray(g.bac)) g.bac = []; n = Math.max(n, g.bac.length); });
+    // mỗi chức danh có số bậc riêng (g.soBac, vd quản lý 2 bậc, nhân viên 3 bậc); số cột của bảng = số bậc lớn nhất
+    var n = 0;
+    b.ngach.forEach(function (g) { if (!Array.isArray(g.bac)) g.bac = []; n = Math.max(n, +g.soBac > 0 ? +g.soBac : g.bac.length); });
+    if (!b.ngach.length) n = +b.soBac || 3;
     b.soBac = Math.max(1, n);
-    b.ngach.forEach(function (g) { while (g.bac.length < b.soBac) g.bac.push(''); });
+    b.ngach.forEach(function (g) { while (g.bac.length < b.soBac) g.bac.push(''); if (g.bac.length > b.soBac) g.bac.length = b.soBac; });
     return b;
   }
   function timBangLuong(db, ma) { return (db.thangLuong || []).filter(function (b) { return b.ma === ma; })[0] || null; }
@@ -599,11 +611,16 @@
     var v = traCuuDot(db, ky, function (d) { var x = d.bang && d.bang[b.ma]; return x && +x.mucCoSo > 0 ? +x.mucCoSo : undefined; });
     return v !== undefined ? v : (+b.mucCoSo || luongCoSoKy(db, ky));
   }
-  /** Số bậc thực có của một chức danh (đến ô cuối có giá trị); có db, b thì theo mức áp dụng tại kỳ */
-  function soBacNgach(g, db, b, ky) { var n = 0; (db && b ? bacNgach(db, b, g, ky) : g.bac || []).forEach(function (v, i) { if (+v > 0) n = i + 1; }); return n; }
+  /** Số bậc thực có của một chức danh: trong giới hạn số bậc của chức danh, tới ô cuối có giá trị; có db, b thì theo mức áp dụng tại kỳ */
+  function soBacNgach(g, db, b, ky) {
+    var arr = db && b ? bacNgach(db, b, g, ky) : g.bac || [], lim = Math.min(+g.soBac > 0 ? +g.soBac : arr.length, arr.length), n = 0;
+    for (var i = 0; i < lim; i++) if (+arr[i] > 0) n = i + 1;
+    return n;
+  }
   /** Giá trị một bậc tại kỳ (bỏ trống = kỳ hiện hành): { heSo, tien } (bậc tính từ 1) */
   function giaTriBac(db, b, g, bac, ky) {
-    var arr = g ? bacNgach(db, b, g, ky) : [], v = +arr[bac - 1];
+    if (!g || (+g.soBac > 0 && bac > +g.soBac)) return null;
+    var arr = bacNgach(db, b, g, ky), v = +arr[bac - 1];
     if (!(v > 0)) return null;
     return b.kieu === 'he_so' ? { heSo: v, tien: Math.round(v * mucCoSoBL(db, b, ky)) } : { heSo: null, tien: Math.round(v) };
   }

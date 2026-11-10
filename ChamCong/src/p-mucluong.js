@@ -89,7 +89,7 @@
 
     noi.innerHTML =
       '<div class="the"><h3>Mức lương áp dụng theo kỳ<span class="phai">Kỳ hiện hành: ' + kyHien(hn) + '</span></h3>' +
-      '<p class="mo" style="margin-top:0">Khi Nhà nước hoặc công ty thay đổi bảng lương, bậc lương, lương cơ sở, tiền cơm hay mức tạm ứng: bấm <b>Mức mới áp dụng từ tháng…</b>, ' +
+      '<p class="mo" style="margin-top:0">Số bậc của từng chức danh (vd từ Đội trưởng trở lên 2 bậc, còn lại 3 bậc) chỉnh ở Danh mục → Thang, bảng lương. Khi Nhà nước hoặc công ty thay đổi bảng lương, bậc lương, lương cơ sở, tiền cơm hay mức tạm ứng: bấm <b>Mức mới áp dụng từ tháng…</b>, ' +
       'chọn kỳ lương bắt đầu áp dụng, sửa các số thay đổi rồi thôi. Bảng lương mỗi kỳ tự lấy đúng mức của kỳ đó – các kỳ trước vẫn giữ mức cũ, kỳ đã chốt không đổi.</p>' +
       ML.thanh(true) + '</div>' +
 
@@ -222,6 +222,7 @@
         var cu = d ? TL.bacNgach(db, b, g, kySau(d.tuKy, -1)) : null;
         return '<tr data-g="' + gi + '"><td>' + h(g.ma) + '</td><td>' + h(g.ten) + '</td>' +
           Array.apply(null, Array(b.soBac)).map(function (_, k2) {
+            if (k2 >= (+g.soBac || b.soBac)) return '<td class="bac-tat" title="' + h(g.ten) + ' có ' + g.soBac + ' bậc"></td>';
             var v = ML.docBac(b, g, k2), gt = +v > 0 ? (hs ? { tien: Math.round(v * TL.mucCoSoBL(db, b, kyD)) } : null) : null;
             var vc = cu ? +cu[k2] : 0, doi = d && +v > 0 && vc > 0 && +v !== vc;
             return '<td class="so"><input class="o-nhap so" data-bac="' + k2 + '" value="' + (+v > 0 ? (hs ? NF_HS.format(v) : App.tien(v)) : '') + '" style="width:100%' + (doi ? ';font-weight:700;color:var(--chinh-dam)' : '') + '"' +
@@ -277,7 +278,7 @@
       var hs = b.kieu === 'he_so', cot = [{ t: 'STT', stt: true, w: 5, kieu: 'giua' }, { t: 'Mã', w: 7, f: function (g) { return g.ma; } }, { t: 'Chức danh / nhóm công việc', w: 34, f: function (g) { return g.ten; } }];
       for (var k = 0; k < b.soBac; k++) (function (k2) {
         cot.push({ t: 'Bậc ' + (k2 + 1), w: hs ? 9 : 13, kieu: hs ? null : 'so', nhom: hs ? 'Hệ số' : 'Mức lương (đ/tháng)', khongTong: true,
-          f: function (g) { var v = ML.docBac(b, g, k2); return +v > 0 ? (hs ? NF_HS.format(v) : +v) : ''; } });
+          f: function (g) { if (k2 >= (+g.soBac || b.soBac)) return ''; var v = ML.docBac(b, g, k2); return +v > 0 ? (hs ? NF_HS.format(v) : +v) : ''; } });
       })(k);
       shs.push(App.sheetBang({ ten: b.ten.slice(0, 28), tieuDe: b.ten.toUpperCase(), phuDe: phu, cot: cot, dong: b.ngach, chuKy: true }));
     });
