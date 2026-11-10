@@ -217,8 +217,9 @@
         var bx = xlQD(q, nvx);
         if (bx) {
           var bacMoi = q.bacMoi != null ? +q.bacMoi : q.xepLuongMoi ? +q.xepLuongMoi.bac : '', ob = '<option value="">(Không đổi bậc)</option>';
-          for (var k = 1; k <= TL.soBacNgach(bx.g); k++) ob += '<option value="' + k + '"' + (k === bacMoi ? ' selected' : '') + '>' + h(App.moTaBac(bx.b, bx.g, k)) + '</option>';
-          var gtm = bacMoi ? TL.giaTriBac(db, bx.b, bx.g, bacMoi) : null;
+          var kyQD = q.hieuLuc ? TL.kyCuaISO(db, q.hieuLuc) : null;
+          for (var k = 1; k <= TL.soBacNgach(bx.g, db, bx.b, kyQD); k++) ob += '<option value="' + k + '"' + (k === bacMoi ? ' selected' : '') + '>' + h(App.moTaBac(bx.b, bx.g, k, kyQD)) + '</option>';
+          var gtm = bacMoi ? TL.giaTriBac(db, bx.b, bx.g, bacMoi, kyQD) : null;
           if (moi && gtm && q.luongMoi == null && q.luongBHMoi == null) {
             if (bx.b.apDung !== 'bh') q.luongMoi = gtm.tien;
             if (bx.b.apDung !== 'cb') q.luongBHMoi = gtm.tien;
@@ -258,7 +259,7 @@
         if (fm.nvId) fm.nvId.onchange = function () { q.luongMoi = null; q.luongBHMoi = null; q.bacMoi = null; q.phongBanMoi = ''; q.chucVuMoi = null; ve2(); };
         App.$('#qd-phan', el).addEventListener('change', function (e) {
           if (e.target.name !== 'bacMoi') return;
-          var bx = xlQD(q, nvHT()), gt = bx && +e.target.value ? TL.giaTriBac(db, bx.b, bx.g, +e.target.value) : null;
+          var hl = fm.hieuLuc && fm.hieuLuc.value, bx = xlQD(q, nvHT()), gt = bx && +e.target.value ? TL.giaTriBac(db, bx.b, bx.g, +e.target.value, hl ? TL.kyCuaISO(db, hl) : null) : null;
           if (!gt) return;
           if (bx.b.apDung !== 'bh') fm.luongMoi.value = App.tien(gt.tien);
           if (bx.b.apDung !== 'cb') fm.luongBHMoi.value = App.tien(gt.tien);

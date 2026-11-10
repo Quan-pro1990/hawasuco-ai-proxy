@@ -12,6 +12,7 @@
     var nghi = (l.nghiTuan || []).slice().sort(function (a, b) { return (a || 7) - (b || 7); }).map(function (t) { return TL.TEN_THU[t]; }).join(', ');
     return (+l.congChuan > 0 ? App.so(l.congChuan) + ' công' : 'công theo lịch') + (nghi ? ', nghỉ ' + nghi : ', làm cả tuần');
   };
+  App.NGAN_HANG = ['Công thương (VietinBank)', 'Nông nghiệp (Agribank)', 'Ngoại thương (Vietcombank)', 'Đầu tư và Phát triển (BIDV)', 'Sài Gòn Thương Tín (Sacombank)', 'Kỹ thương (Techcombank)', 'Quân đội (MB)', 'Á Châu (ACB)'];
   App.CACH_PC = { co_dinh: 'Cố định / tháng', theo_cong: 'Theo ngày công', theo_ngay: 'Đơn giá × ngày đi làm' };
 
   /** Chuẩn hoá ngày nhập (dd/mm/yyyy, yyyy-mm-dd, số Excel) -> 'yyyy-mm-dd' */
@@ -35,7 +36,7 @@
       if (loc.pb && nv.phongBan !== loc.pb) return false;
       if (loc.tt === 'dang' && nv.trangThai === 'nghi_viec') return false;
       if (loc.tt === 'nghi' && nv.trangThai !== 'nghi_viec') return false;
-      if (loc.tim && !App.timKhop(nv.ma + ' ' + nv.hoTen + ' ' + (nv.chucVu || '') + ' ' + (nv.sdt || ''), loc.tim)) return false;
+      if (loc.tim && !App.timKhop(nv.ma + ' ' + nv.hoTen + ' ' + (nv.chucVu || '') + ' ' + (nv.sdt || '') + ' ' + (nv.soTK || ''), loc.tim)) return false;
       return true;
     }).sort(function (a, b) { return String(a.ma).localeCompare(String(b.ma), 'vi', { numeric: true }); });
   }
@@ -44,7 +45,7 @@
     var db = App.db;
     noi.innerHTML =
       '<div class="the khong-in"><div class="hang">' +
-      '<input type="search" id="nv-tim" placeholder="Tìm mã, tên, chức vụ, SĐT…" value="' + h(loc.tim) + '" style="width:260px">' +
+      '<input type="search" id="nv-tim" placeholder="Tìm mã, tên, chức vụ, SĐT, số TK…" value="' + h(loc.tim) + '" style="width:260px">' +
       '<select id="nv-pb">' + App.optDonVi(loc.pb, { tatCa: 'Tất cả phòng / đội', ngung: true }) + '</select>' +
       '<select id="nv-tt"><option value="dang"' + (loc.tt === 'dang' ? ' selected' : '') + '>Đang làm việc</option><option value="nghi"' + (loc.tt === 'nghi' ? ' selected' : '') + '>Đã nghỉ việc</option><option value=""' + (loc.tt === '' ? ' selected' : '') + '>Tất cả</option></select>' +
       '<span class="gian"></span>' +
@@ -98,15 +99,16 @@
     var conLam = ds.filter(function (nv) { return nv.trangThai !== 'nghi_viec'; });
     var het = conLam.length && conLam.every(function (nv) { return chon[nv.id]; });
     var html = '<thead><tr><th class="khong-in" title="Chọn để chuyển phòng / đội"><input type="checkbox" id="nv-chon-het"' + (het ? ' checked' : '') + '></th><th>STT</th><th>Mã NV</th><th style="min-width:170px">Họ và tên</th><th>Phòng / đội</th><th>Chức vụ</th><th>Ngày vào</th><th>Loại HĐ</th>' +
-      '<th>Loại LĐ</th><th>Công chuẩn</th><th>Hình thức</th><th class="so">Mức lương</th><th class="so">Lương đóng BH</th><th>NPT</th><th>Hết hạn HĐ</th><th>Trạng thái</th><th class="khong-in"></th></tr></thead><tbody>';
-    if (!ds.length) html += '<tr><td colspan="17" class="trong">' + (db.nhanVien.length ? 'Không có nhân viên phù hợp bộ lọc.' : 'Chưa có nhân viên. Bấm “Thêm nhân viên” hoặc “Nhập từ Excel”.') + '</td></tr>';
+      '<th>Loại LĐ</th><th>Công chuẩn</th><th>Hình thức</th><th class="so">Mức lương</th><th class="so">Lương đóng BH</th><th>Tài khoản ngân hàng</th><th>NPT</th><th>Hết hạn HĐ</th><th>Trạng thái</th><th class="khong-in"></th></tr></thead><tbody>';
+    if (!ds.length) html += '<tr><td colspan="18" class="trong">' + (db.nhanVien.length ? 'Không có nhân viên phù hợp bộ lọc.' : 'Chưa có nhân viên. Bấm “Thêm nhân viên” hoặc “Nhập từ Excel”.') + '</td></tr>';
     ds.forEach(function (nv, i) {
       var tt = nv.trangThai || 'dang_lam';
       var lbh = nv.thamGiaBH ? (+nv.luongBH > 0 ? App.tien(nv.luongBH) : ((nv.hinhThuc || 'thang') === 'thang' || nv.hinhThuc === 'khoan' ? '<span class="mo" title="Lương CB + phụ cấp đóng BH">' + App.tien(luongBHMacDinh(nv)) + '</span>' : '<span class="the-tt cam">Chưa nhập</span>')) : '<span class="mo">Không tham gia</span>';
       html += '<tr data-id="' + nv.id + '" style="cursor:pointer"><td class="khong-in giua">' + (tt === 'nghi_viec' ? '' : '<input type="checkbox" class="chon-nv"' + (chon[nv.id] ? ' checked' : '') + '>') + '</td><td class="giua">' + (i + 1) + '</td><td>' + h(nv.ma) + '</td><td class="ten">' + h(nv.hoTen) + '</td>' +
         '<td>' + h(TL.tenPhongBan(db, nv.phongBan)) + '</td><td>' + h(nv.chucVu) + '</td><td class="giua">' + TL.hienNgay(nv.ngayVao) + '</td><td>' + h(nv.loaiHD || '') + '</td>' +
         '<td>' + h((TL.loaiLDNV(db, nv) || {}).ten || '') + '</td><td class="giua">' + App.so(TL.congChuan(db, App.ky.y, App.ky.m, nv)) + '</td><td>' + (App.HINH_THUC[nv.hinhThuc || 'thang']) + '</td><td class="so">' + App.tien(nv.luongCB) + (nv.tiLeHuong != null && +nv.tiLeHuong !== 100 ? ' <span class="the-tt cam">' + nv.tiLeHuong + '%</span>' : '') + '</td>' +
-        '<td class="so">' + lbh + '</td><td class="giua">' + (TL.soNPTKy(nv, App.ky.y, App.ky.m) || '') + '</td>' +
+        '<td class="so">' + lbh + '</td><td style="white-space:nowrap">' + (nv.soTK ? h(nv.soTK) + (nv.nganHang ? '<div class="mo nho">' + h(nv.nganHang) + '</div>' : '') : (tt === 'nghi_viec' ? '' : '<span class="the-tt cam">Chưa có</span>')) + '</td>' +
+        '<td class="giua">' + (TL.soNPTKy(nv, App.ky.y, App.ky.m) || '') + '</td>' +
         '<td class="giua">' + (nv.ngayHetHD ? TL.hienNgay(nv.ngayHetHD) + App.nhanHetHan(nv.ngayHetHD) : '') + '</td>' +
         '<td><span class="the-tt ' + ({ dang_lam: 'xanh', thu_viec: 'cam', tam_nghi: 'lam', nghi_viec: '' }[tt]) + '">' + App.TRANG_THAI[tt] + '</span></td>' +
         '<td class="khong-in"><button class="nut nho nguy xoa" title="Xoá">' + App.icon('xoa') + '</button></td></tr>';
@@ -165,7 +167,7 @@
       ['maSP', 'Sản phẩm chính', 16, 'spm'], ['donGiaSP', 'Đơn giá SP riêng', 9, 'so'],
       ['luongBH', 'Lương đóng BH', 13, 'so'], ['thamGiaBH', 'Tham gia BH', 8, 'bool'], ['doanVien', 'Đoàn viên CĐ', 8, 'bool'],
       ['cachTinhThue', 'Cách tính thuế', 16, 'thue'], ['mst', 'MST cá nhân', 13], ['soNPT', 'Số người phụ thuộc', 8, 'so'],
-      ['nganHang', 'Ngân hàng', 14], ['soTK', 'Số tài khoản', 16], ['phepNam', 'Phép năm', 7, 'so'], ['phepTon', 'Phép tồn', 7, 'so']
+      ['soTK', 'Số tài khoản', 16], ['nganHang', 'Ngân hàng', 14], ['chiNhanhNH', 'Chi nhánh NH', 16], ['tamUngRieng', 'Tạm ứng kỳ I riêng', 10, 'so'], ['phepNam', 'Phép năm', 7, 'so'], ['phepTon', 'Phép tồn', 7, 'so']
     ];
     App.db.phuCap.forEach(function (p) { c.push(['pc:' + p.ma, 'PC ' + p.ten, 12, 'so']); });
     c.push(['ghiChu', 'Ghi chú', 20]);

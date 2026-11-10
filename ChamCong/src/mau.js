@@ -65,7 +65,7 @@
         ngayVao: x[6], luongCB: x[7], phuCap: x[8], soNPT: x[9], loaiLD: x[10], maSP: x[5] === 'CN LĐ-SC' ? 'DH' : '', hinhThuc: 'thang', tiLeHuong: 100, thamGiaBH: true, doanVien: true,
         cachTinhThue: 'luy_tien', trangThai: 'dang_lam', loaiHD: 'Không xác định thời hạn', luongBH: 0,
         cccd: '0010' + (90000000 + i * 7919), sdt: '09' + String(10000000 + i * 1234567).slice(0, 8), email: '', diaChi: '',
-        mst: '80' + String(10000000 + i * 271828).slice(0, 8), nganHang: i % 3 ? 'Vietcombank' : 'BIDV', soTK: '10' + String(20000000 + i * 3141592).slice(0, 10),
+        mst: '80' + String(10000000 + i * 271828).slice(0, 8), nganHang: i % 3 ? 'Công thương (VietinBank)' : 'Nông nghiệp (Agribank)', chiNhanhNH: 'Chi nhánh Hậu Giang', soTK: '10' + String(20000000 + i * 3141592).slice(0, 10),
         phepNam: i < 3 ? 14 : 12, phepTon: i % 4 === 0 ? 2 : 0, ghiChu: ''
       };
     });
@@ -152,6 +152,13 @@
       q.xepLuongMoi = Object.assign({}, nv.xepLuong); q.xepLuongCu = Object.assign({}, nv.xepLuong, { bac: nv.xepLuong.bac - 1, ngayHuong: '' });
       q.noiDung = 'Nâng bậc lương thường xuyên: bậc ' + (nv.xepLuong.bac - 1) + ' lên bậc ' + nv.xepLuong.bac;
     });
+    // ---- Mức lương áp dụng từ kỳ 01 năm sau (mẫu): các bậc tăng 5%, tiền cơm 55.000 đ/ngày ----
+    var kyMoi = (Y + 1) + '-01', dot = Object.assign({ id: 'dot_mau', tuKy: kyMoi, soQD: '01/QĐ-CT (mẫu)', ghiChu: 'Điều chỉnh lương năm ' + (Y + 1) + ' (dữ liệu mẫu)' }, TL.chupMucKy(db, kyMoi));
+    Object.keys(dot.bang.BL1.ngach).forEach(function (m) { dot.bang.BL1.ngach[m] = dot.bang.BL1.ngach[m].map(function (x) { return +x > 0 ? Math.round(x * 1.05 / 1000) * 1000 : x; }); });
+    dot.phuCap.AN = 55000;
+    db.dotLuong = [dot];
+    db.nhanVien.forEach(function (nv) { TL.apXepLuong(db, nv); });
+    nv16.tamUngRieng = 0;   // cộng tác viên theo giờ: không tạm ứng kỳ I
     qd('NV010', { loai: 'khen_thuong', so: '95/QĐ-CT', ngay: TL.congNgay(Y, M, D, -10), hieuLuc: TL.congNgay(Y, M, D, -10), hinhThuc: 'Tiền thưởng', soTien: 1000000, kyLuong: kyTruoc, noiDung: 'Hoàn thành vượt chỉ tiêu thu tiền nước' });
     qd('NV013', { loai: 'ky_luat', so: '96/QĐ-CT', ngay: TL.congNgay(Y, M, D, -8), hieuLuc: TL.congNgay(Y, M, D, -8), hinhThuc: 'Khiển trách', soTien: 300000, kyLuong: kyTruoc, noiDung: 'Bồi thường chi phí sửa xe do vi phạm quy định vận hành' });
     var nv17q = db.nhanVien[16];
@@ -236,7 +243,6 @@
         if (ghiThu(nv)) dc.sp = { HD: 1500 + Math.floor(R() * 1100) };
         if (congNhanSC(nv)) dc.sp = { DH: 6 + Math.floor(R() * 15) };
         if (nv.id === 'nv7' && R() < 0.5) dc.sp = Object.assign(dc.sp || {}, { DH: 2 + Math.floor(R() * 4) });
-        if (nv.hinhThuc === 'thang' && idx > 0 && R() < 0.6) dc.tamUng = nv.luongCB >= 15000000 ? 3000000 : 2000000;
         if (R() < 0.04 && idx > 3) { dc.khauTru = 150000; dc.ghiChu = 'Bồi thường làm hỏng dụng cụ'; }
         if (Object.keys(dc).length) TK.dc[nv.id] = dc;
       });

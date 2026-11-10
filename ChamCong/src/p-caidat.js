@@ -109,12 +109,14 @@
     var db = App.db;
     el.innerHTML = '<div class="the"><h3>Các khoản phụ cấp</h3><p class="mo" style="margin-top:0"><b>Mức chung</b> áp dụng cho mọi nhân viên (vd cơm trưa 50.000 đ/ngày); ' +
       'ai hưởng mức khác thì nhập mức riêng trong hồ sơ nhân viên (nhập 0 = không hưởng). ' +
+      (db.dotLuong.length ? 'Mức chung ở đây là <b>mức ban đầu</b>; tiền cơm thay đổi từ tháng nào thì sửa ở trang <a href="#mucluong">Mức lương theo kỳ</a>. ' : '') +
       '<b>Đơn giá × ngày đi làm</b>: mức × số ngày có đi làm (gồm ngày SP và ngày đi làm vào ngày lễ; ngày nghỉ lễ L, nghỉ phép, ốm… không tính). <b>Theo ngày công</b>: mức tháng × công hưởng lương ÷ công chuẩn.</p>' +
       '<div class="cuon"><table class="bang"><thead><tr><th>Mã</th><th style="min-width:180px">Tên phụ cấp</th><th>Cách tính</th><th class="so">Mức chung (đ)</th><th>Chịu thuế TNCN</th><th>Tính vào lương đóng BH</th><th style="min-width:200px">Ghi chú</th><th></th></tr></thead><tbody>' +
       db.phuCap.map(function (p, i) {
         return '<tr data-i="' + i + '"><td>' + h(p.ma) + '</td><td><input class="o-nhap chu" data-f="ten" value="' + h(p.ten) + '" style="width:100%"></td>' +
           '<td><select data-f="cachTinh">' + Object.keys(App.CACH_PC).map(function (k) { return '<option value="' + k + '"' + (p.cachTinh === k ? ' selected' : '') + '>' + App.CACH_PC[k] + '</option>'; }).join('') + '</select></td>' +
-          '<td><input class="o-nhap" data-f="mucChung" value="' + (p.mucChung ? App.tien(p.mucChung) : '') + '" placeholder="theo từng người" title="' + (p.cachTinh === 'theo_ngay' ? 'Đơn giá 1 ngày' : 'Mức 1 tháng') + '"></td>' +
+          '<td>' + (db.dotLuong.length && TL.mucChungPC(db, p) !== (+p.mucChung || 0) ? '<div class="nho" style="color:var(--chinh)">Đang áp dụng: ' + App.tien(TL.mucChungPC(db, p)) + '</div>' : '') +
+          '<input class="o-nhap" data-f="mucChung" value="' + (p.mucChung ? App.tien(p.mucChung) : '') + '" placeholder="theo từng người" title="' + (p.cachTinh === 'theo_ngay' ? 'Đơn giá 1 ngày' : 'Mức 1 tháng') + '"></td>' +
           '<td class="giua"><input type="checkbox" data-f="chiuThue"' + (p.chiuThue ? ' checked' : '') + '></td><td class="giua"><input type="checkbox" data-f="dongBH"' + (p.dongBH ? ' checked' : '') + '></td>' +
           '<td><input class="o-nhap chu" data-f="ghiChu" value="' + h(p.ghiChu || '') + '" style="width:100%"></td><td><button class="nut nho nguy" data-a="xoa">' + App.icon('xoa') + '</button></td></tr>';
       }).join('') + '</tbody></table></div><div class="hang" style="margin-top:12px"><input id="pc-ten" placeholder="Tên phụ cấp mới (vd Độc hại)" style="width:280px"><button class="nut chinh" id="pc-them">' + App.icon('them') + 'Thêm phụ cấp</button></div></div>';
@@ -322,7 +324,9 @@
           '<h4>Doanh nghiệp</h4>' + o('BHXH (gồm ốm đau – thai sản, TNLĐ-BNN)', 'caiDat.bh.dn.bhxh', 'so') + o('BHYT', 'caiDat.bh.dn.bhyt', 'so') + o('BHTN', 'caiDat.bh.dn.bhtn', 'so') +
           o('Kinh phí công đoàn', 'caiDat.bh.dn.kpcd', 'so') +
           '</div></div><div class="the"><h3>Mức lương làm căn cứ</h3><div class="form ba">' +
-          o('Lương cơ sở (đ/tháng)', 'caiDat.luongCoSo', 'tien', 'Trần đóng BHXH, BHYT = 20 × lương cơ sở = ' + App.tien(20 * cd.luongCoSo)) +
+          o('Lương cơ sở (đ/tháng)', 'caiDat.luongCoSo', 'tien', App.db.dotLuong.length && TL.luongCoSoKy(App.db) !== +cd.luongCoSo
+            ? 'Mức ban đầu. Đang áp dụng kỳ hiện hành: ' + App.tien(TL.luongCoSoKy(App.db)) + ' (trang Mức lương theo kỳ)'
+            : 'Trần đóng BHXH, BHYT = 20 × lương cơ sở = ' + App.tien(20 * cd.luongCoSo) + '. Thay đổi từ một tháng: trang Mức lương theo kỳ') +
           o('Vùng lương tối thiểu', 'caiDat.vung', [['I', 'Vùng I'], ['II', 'Vùng II'], ['III', 'Vùng III'], ['IV', 'Vùng IV']], 'Chọn vùng sẽ điền mức lương tối thiểu năm 2026') +
           o('Lương tối thiểu vùng (đ/tháng)', 'caiDat.luongToiThieuVung', 'tien', 'Trần đóng BHTN = 20 × lương tối thiểu vùng = ' + App.tien(20 * cd.luongToiThieuVung)) +
           o('Không đóng BH khi nghỉ không lương từ (ngày)', 'caiDat.nguongNghiKhongDongBH', 'so') +

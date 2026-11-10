@@ -461,6 +461,7 @@
     { id: 'phieuluong', ten: 'Phiếu lương', icon: 'phieuluong' },
     { id: 'baocao', ten: 'Báo cáo lương', icon: 'baocao' },
     { nhom: 'Thiết lập' },
+    { id: 'mucluong', ten: 'Mức lương theo kỳ', icon: 'bac' },
     { id: 'danhmuc', ten: 'Danh mục', icon: 'danhmuc' },
     { id: 'caidat', ten: 'Cài đặt & dữ liệu', icon: 'caidat' }
   ];

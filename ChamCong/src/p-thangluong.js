@@ -11,8 +11,8 @@
   function opts(obj, chon) { return Object.keys(obj).map(function (k) { return '<option value="' + k + '"' + (k === chon ? ' selected' : '') + '>' + h(obj[k]) + '</option>'; }).join(''); }
 
   /** "Bậc 3 – hệ số 3,00 = 7.020.000 đ" */
-  App.moTaBac = function (b, g, bac) {
-    var gt = TL.giaTriBac(App.db, b, g, bac);
+  App.moTaBac = function (b, g, bac, ky) {
+    var gt = TL.giaTriBac(App.db, b, g, bac, ky);
     if (!gt) return 'Bậc ' + bac;
     return 'Bậc ' + bac + ' – ' + (gt.heSo != null ? 'hệ số ' + App.soHS(gt.heSo) + ' = ' : '') + App.tien(gt.tien) + ' đ';
   };
@@ -53,7 +53,8 @@
       '<p class="mo" style="margin:0">Mỗi bảng gồm các <b>chức danh / nhóm công việc</b>, mỗi chức danh có nhiều <b>bậc</b>. Giá trị bậc là <b>mức tiền</b> (đồng / tháng) hoặc <b>hệ số</b> × mức lương cơ sở. ' +
       '“Dùng cho” quyết định bậc lương được ghi vào <b>mức lương</b> (tính lương thời gian), <b>lương đóng bảo hiểm</b>, hay cả hai. ' +
       'Xếp bậc cho từng người ở trang <a href="#nangbac">Xếp lương, nâng bậc</a> hoặc trong hồ sơ nhân viên. ' +
-      'Sửa giá trị bậc hoặc mức lương cơ sở sẽ cập nhật ngay lương của người đang xếp ở bậc đó (các kỳ đã chốt không đổi).</p></div>' +
+      'Bảng lương thay đổi từ một tháng (bậc, lương cơ sở, tiền cơm, tạm ứng): dùng trang <a href="#mucluong">Mức lương theo kỳ</a> – các kỳ trước giữ mức cũ.</p>' +
+      '<div style="margin-top:10px"><div class="mo nho" style="margin-bottom:4px">Giá trị các bậc bên dưới là của mức:</div>' + App.ML.thanh(false) + '</div></div>' +
       ds.map(theBang).join('') +
       '<div class="the"><h3>Thêm bảng lương</h3><div class="hang"><input id="tl-ten" placeholder="Tên bảng (vd Bảng lương chức vụ quản lý)" style="width:340px">' +
       '<select id="tl-kieu">' + opts(TL.KIEU_BL, 'tien') + '</select><select id="tl-apdung">' + opts(TL.AP_DUNG_BL, 'cb') + '</select>' +
@@ -69,18 +70,18 @@
       if (i.dataset.bac != null) {
         var k = +i.dataset.bac, v = b.kieu === 'he_so' ? docHS(i.value) : App.docSo(i.value);
         if (!v && dsXep(b.ma, g.ma, k + 1).length) { App.bao('Bậc ' + (k + 1) + ' đang xếp cho ' + dsXep(b.ma, g.ma, k + 1).length + ' nhân viên – không để trống được.', 'loi'); veLai(); return; }
-        g.bac[k] = v || ''; apLai = true;
+        App.ML.ghiBac(b, g, k, v || ''); apLai = true;
       } else if (f === 'ten') { if (!i.value.trim()) { veLai(); return; } b.ten = i.value.trim(); }
       else if (f === 'apDung') { b.apDung = i.value; apLai = true; }
-      else if (f === 'mucCoSo') { b.mucCoSo = App.docSo(i.value) || ''; apLai = true; }
+      else if (f === 'mucCoSo') { App.ML.ghiMucCoSo(b, App.docSo(i.value) || ''); apLai = true; }
       else if (f === 'namNang') { b.namNang = docHS(i.value) || 3; }
       else if (f === 'gten') { if (!i.value.trim()) { veLai(); return; } g.ten = i.value.trim(); }
       else if (f === 'gnam') { g.namNang = docHS(i.value) || ''; }
       else if (f === 'kieu') {
         var n = dsXep(b.ma).length;
         if (n) { App.bao('Bảng đang xếp cho ' + n + ' nhân viên – không đổi kiểu được. Tạo bảng mới nếu cần.', 'loi'); veLai(); return; }
-        var coGT = b.ngach.some(function (x) { return x.bac.some(function (v) { return +v > 0; }); });
-        var doiKieu = function () { b.kieu = i.value; b.ngach.forEach(function (x) { x.bac = x.bac.map(function () { return ''; }); }); App.luu(); veLai(); };
+        var coGT = b.ngach.some(function (x) { return x.bac.some(function (v) { return +v > 0; }); }) || App.db.dotLuong.some(function (d) { return d.bang && d.bang[b.ma]; });
+        var doiKieu = function () { b.kieu = i.value; b.ngach.forEach(function (x) { x.bac = x.bac.map(function () { return ''; }); }); App.ML.xoaGiaTri(b); App.luu(); veLai(); };
         if (coGT) App.xacNhan('Đổi kiểu bảng sẽ xoá giá trị các bậc đã nhập. Tiếp tục?', { nut: 'Đổi kiểu', nguy: true }).then(function (ok) { if (ok) doiKieu(); else veLai(); });
         else doiKieu();
         return;
@@ -91,6 +92,8 @@
     };
 
     el.onclick = function (e) {
+      var cm = e.target.closest('[data-muc]');
+      if (cm) { App.ML.datChon(cm.dataset.muc); veLai(); return; }
       if (e.target.closest('#tl-them')) {
         var ten = App.$('#tl-ten').value.trim();
         if (!ten) { App.bao('Nhập tên bảng lương.', 'loi'); App.$('#tl-ten').focus(); return; }
@@ -107,7 +110,7 @@
         if (b.soBac <= 1) return;
         var nb = dsXep(b.ma, null, b.soBac).length;
         if (nb) { App.bao('Bậc ' + b.soBac + ' đang xếp cho ' + nb + ' nhân viên – không bớt được.', 'loi'); return; }
-        var bo = function () { b.soBac--; b.ngach.forEach(function (x) { x.bac.length = b.soBac; }); App.luu(); veLai(); };
+        var bo = function () { b.soBac--; b.ngach.forEach(function (x) { x.bac.length = b.soBac; }); App.ML.botBac(b); App.luu(); veLai(); };
         if (b.ngach.some(function (x) { return +x.bac[b.soBac - 1] > 0; })) App.xacNhan('Bớt cột bậc ' + b.soBac + ' (đang có giá trị)?', { nut: 'Bớt bậc', nguy: true }).then(function (ok) { if (ok) bo(); });
         else bo();
         return;
@@ -115,7 +118,7 @@
       if (act === 'xoabang') {
         var n1 = dsXep(b.ma).length;
         if (n1) { App.bao('Bảng “' + b.ten + '” đang xếp cho ' + n1 + ' nhân viên. Hãy xếp họ sang bảng khác (trang Xếp lương, nâng bậc) rồi mới xoá.', 'loi'); return; }
-        App.xacNhan('Xoá bảng lương <b>' + h(b.ten) + '</b>?', { nut: 'Xoá', nguy: true }).then(function (ok) { if (ok) { ds.splice(ds.indexOf(b), 1); App.luu(); veLai(); } });
+        App.xacNhan('Xoá bảng lương <b>' + h(b.ten) + '</b>?', { nut: 'Xoá', nguy: true }).then(function (ok) { if (ok) { ds.splice(ds.indexOf(b), 1); App.ML.xoaBang(b); App.luu(); veLai(); } });
         return;
       }
       if (act === 'themngach') {
@@ -131,7 +134,7 @@
       if (act === 'xoangach' && g) {
         var n2 = dsXep(b.ma, g.ma).length;
         if (n2) { App.bao('“' + g.ten + '” đang xếp cho ' + n2 + ' nhân viên – hãy xếp họ sang chức danh khác trước.', 'loi'); return; }
-        App.xacNhan('Xoá chức danh <b>' + h(g.ten) + '</b> khỏi bảng?', { nut: 'Xoá', nguy: true }).then(function (ok) { if (ok) { b.ngach.splice(b.ngach.indexOf(g), 1); App.luu(); veLai(); } });
+        App.xacNhan('Xoá chức danh <b>' + h(g.ten) + '</b> khỏi bảng?', { nut: 'Xoá', nguy: true }).then(function (ok) { if (ok) { b.ngach.splice(b.ngach.indexOf(g), 1); App.ML.xoaNgach(b, g); App.luu(); veLai(); } });
         return;
       }
       if (act === 'lenngach' && g) { var i0 = b.ngach.indexOf(g); if (i0 > 0) { b.ngach.splice(i0 - 1, 0, b.ngach.splice(i0, 1)[0]); App.luu(); veLai(); } }
@@ -146,7 +149,7 @@
       '<div class="hang" style="margin-bottom:10px;gap:8px 14px">' +
       '<input class="o-nhap chu" data-f="ten" value="' + h(b.ten) + '" style="flex:1;min-width:340px;font-weight:700;font-size:15px" title="Tên bảng">' +
       '<label class="nho">Kiểu <select data-f="kieu">' + opts(TL.KIEU_BL, b.kieu) + '</select></label>' +
-      (hs ? '<label class="nho">Mức lương cơ sở <input class="o-nhap so" data-f="mucCoSo" value="' + (b.mucCoSo ? App.tien(b.mucCoSo) : '') + '" placeholder="' + App.tien(db.caiDat.luongCoSo) + '" style="width:110px" title="Để trống = lương cơ sở trong Cài đặt"></label>' : '') +
+      (hs ? '<label class="nho">Mức lương cơ sở <input class="o-nhap so" data-f="mucCoSo" value="' + (App.ML.docMucCoSo(b) ? App.tien(App.ML.docMucCoSo(b)) : '') + '" placeholder="' + App.tien(TL.luongCoSoKy(db, App.ML.ky())) + '" style="width:110px" title="Để trống = lương cơ sở của mức đang chọn"></label>' : '') +
       '<label class="nho">Dùng cho <select data-f="apDung">' + opts(TL.AP_DUNG_BL, b.apDung) + '</select></label>' +
       '<label class="nho">Nâng bậc sau <input class="o-nhap so" data-f="namNang" value="' + App.so(b.namNang) + '" style="width:46px"> năm</label>' +
       '<span class="gian"></span><span class="mo nho">' + soNV + ' nhân viên</span>' +
@@ -157,8 +160,8 @@
         var n = dsXep(b.ma, g.ma).length;
         return '<tr data-g="' + gi + '"><td>' + h(g.ma) + '</td><td><input class="o-nhap chu" data-f="gten" value="' + h(g.ten) + '" style="width:100%"></td>' +
           '<td><input class="o-nhap so" data-f="gnam" value="' + (g.namNang ? App.so(g.namNang) : '') + '" placeholder="' + App.so(b.namNang) + '" style="width:46px"></td>' +
-          g.bac.map(function (v, k) {
-            var gt = TL.giaTriBac(db, b, g, k + 1), nk = dsXep(b.ma, g.ma, k + 1).length;
+          g.bac.map(function (v0, k) {
+            var v = App.ML.docBac(b, g, k), gt = TL.giaTriBac(db, b, g, k + 1, App.ML.ky()), nk = dsXep(b.ma, g.ma, k + 1).length;
             return '<td class="so"><input class="o-nhap so" data-bac="' + k + '" value="' + (+v > 0 ? (hs ? App.soHS(v) : App.tien(v)) : '') + '" style="width:100%">' +
               (hs && gt ? '<div class="mo nho">' + App.tien(gt.tien) + '</div>' : '') + (nk ? '<div class="nho" style="color:var(--chinh)" title="Số người đang hưởng bậc này">' + nk + ' người</div>' : '') + '</td>';
           }).join('') +
@@ -178,7 +181,7 @@
     attr = attr || '';
     var s = '<select data-xl="bang" ' + attr + '><option value="">(Chưa xếp)</option>' + db.thangLuong.map(function (t) { return '<option value="' + h(t.ma) + '"' + (b === t ? ' selected' : '') + '>' + h(t.ten) + '</option>'; }).join('') + '</select>';
     s += '<select data-xl="ngach" ' + attr + (b ? '' : ' disabled') + '>' + (b ? b.ngach.map(function (n) { return '<option value="' + h(n.ma) + '"' + (g === n ? ' selected' : '') + '>' + h(n.ten) + '</option>'; }).join('') : '') + '</select>';
-    var sb = g ? TL.soBacNgach(g) : 0, bac = x ? +x.bac || 1 : 1, ob = '';
+    var sb = g ? TL.soBacNgach(g, db, b) : 0, bac = x ? +x.bac || 1 : 1, ob = '';
     for (var k = 1; k <= Math.max(sb, g ? bac : 0); k++) ob += '<option value="' + k + '"' + (k === bac ? ' selected' : '') + '>' + h(App.moTaBac(b, g, k)) + '</option>';
     s += '<select data-xl="bac" ' + attr + (g ? '' : ' disabled') + '>' + ob + '</select>';
     return s;
@@ -193,7 +196,7 @@
       return { bang: b.ma, ngach: b.ngach[0].ma, bac: 1, ngayHuong: (x && x.ngayHuong) || App.homNay() };
     }
     if (!x) return x;
-    if (truong === 'ngach') { x.ngach = giaTri; var g = TL.timNgach(TL.timBangLuong(db, x.bang), giaTri); x.bac = Math.min(+x.bac || 1, Math.max(1, TL.soBacNgach(g))); }
+    if (truong === 'ngach') { x.ngach = giaTri; var g = TL.timNgach(TL.timBangLuong(db, x.bang), giaTri); x.bac = Math.min(+x.bac || 1, Math.max(1, TL.soBacNgach(g, db, TL.timBangLuong(db, x.bang)))); }
     if (truong === 'bac') x.bac = +giaTri;
     if (truong === 'ngayHuong') x.ngayHuong = giaTri;
     return x;

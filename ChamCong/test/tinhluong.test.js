@@ -245,6 +245,63 @@ t('Nhân sự: tuổi nghỉ hưu theo lộ trình, thâm niên', function () {
   assert.deepStrictEqual(TL.thamNien('2019-05-06', '2026-11-02'), { nam: 7, thang: 5, tongThang: 89 });
 });
 
+t('Mức áp dụng từ kỳ: bậc lương, tiền cơm, lương cơ sở, tạm ứng kỳ I theo chức vụ; kỳ II = phần còn lại', function () {
+  var db = dbMau(), nv = db.nhanVien[0];
+  db.thangLuong = [{ ma: 'T', ten: 'Bảng lương', kieu: 'tien', apDung: 'cb', namNang: 3, ngach: [{ ma: 'CV', ten: 'Chuyên viên', bac: [8000000, 9000000] }] }];
+  db.caiDat.tamUng = { macDinh: 1000000, theoChucVu: [{ chucVu: 'Trưởng phòng', muc: 3000000 }] };
+  // từ kỳ 11/2026: tăng bậc lương, tiền cơm 60.000, lương cơ sở mới, tạm ứng mới
+  db.dotLuong = [{ id: 'd1', tuKy: '2026-11', soQD: '15/QĐ', luongCoSo: 2800000, phuCap: { AN: 60000 },
+    tamUng: { macDinh: 1500000, theoChucVu: [{ chucVu: 'trưởng  PHÒNG', muc: 4000000 }] }, bang: { T: { ngach: { CV: [8500000, 9500000] } } } }];
+  db = TL.chuanHoa(db);
+  delete nv.phuCap.AN;  // dùng mức chung
+  nv.chucVu = 'Trưởng phòng';
+  nv.xepLuong = { bang: 'T', ngach: 'CV', bac: 2, ngayHuong: '2026-11-05' };
+  // nâng từ bậc 1 lên bậc 2 hiệu lực 05/11/2026 (thuộc kỳ 11: 21/10 – 20/11)
+  nv.quyetDinh = [{ loai: 'nang_luong', hieuLuc: '2026-11-05', luongCu: 8000000, luongMoi: 9500000, xepLuongCu: { bang: 'T', ngach: 'CV', bac: 1, ngayHuong: '2023-11-01' }, xepLuongMoi: nv.xepLuong }];
+  assert.strictEqual(TL.dotTaiKy(db, '2026-10'), null);
+  assert.strictEqual(TL.dotTaiKy(db, '2026-12').id, 'd1');
+  assert.strictEqual(TL.luongTheoKy(db, nv, 2026, 10).luongCB, 8000000);   // bậc 1, mức ban đầu
+  assert.strictEqual(TL.luongTheoKy(db, nv, 2026, 11).luongCB, 9500000);   // bậc 2, mức mới
+  assert.strictEqual(TL.luongCoSoKy(db, '2026-10'), db.caiDat.luongCoSo);
+  assert.strictEqual(TL.luongCoSoKy(db, '2027-03'), 2800000);
+  var an = db.phuCap.filter(function (p) { return p.ma === 'AN'; })[0];
+  assert.strictEqual(TL.mucChungPC(db, an, '2026-10'), 50000);
+  assert.strictEqual(TL.mucChungPC(db, an, '2026-11'), 60000);
+  // ảnh chụp mức tại kỳ 11 để tạo đợt sau
+  var ch = TL.chupMucKy(db, '2026-11');
+  assert.deepStrictEqual(ch.bang.T.ngach.CV, [8500000, 9500000]); assert.strictEqual(ch.phuCap.AN, 60000); assert.strictEqual(ch.tamUng.theoChucVu[0].muc, 4000000);
+  // chấm công 3 ngày mỗi kỳ
+  TL.thang(db, 2026, 10, true).cc[nv.id] = { 1: '+', 2: '+', 5: '+' };
+  TL.thang(db, 2026, 11, true).cc[nv.id] = { 3: '+', 4: '+', 5: '+' };
+  var r10 = TL.tinhBangLuong(db, 2026, 10).rows[0], r11 = TL.tinhBangLuong(db, 2026, 11).rows[0];
+  assert.strictEqual(r10.tamUng, 3000000); assert.ok(r10.tamUngTuDong);
+  assert.strictEqual(r11.tamUng, 4000000);                                   // chức vụ khớp không phân biệt hoa thường, dấu cách
+  assert.strictEqual(r10.phuCap.AN, 150000); assert.strictEqual(r11.phuCap.AN, 180000);
+  assert.strictEqual(r11.thucLinh, Math.round((r11.tongThuNhap - r11.tamUng - r11.tongKhauTru) / (db.caiDat.lamTron || 1)) * (db.caiDat.lamTron || 1));
+  // chức vụ khác: mức chung; mức riêng trong hồ sơ; nhập tay kỳ này (kể cả 0)
+  nv.chucVu = 'Nhân viên';
+  assert.strictEqual(TL.tinhBangLuong(db, 2026, 10).rows[0].tamUng, 1000000);
+  assert.strictEqual(TL.tinhBangLuong(db, 2026, 11).rows[0].tamUng, 1500000);
+  nv.tamUngRieng = 2500000;
+  assert.strictEqual(TL.tinhBangLuong(db, 2026, 11).rows[0].tamUng, 2500000);
+  TL.thang(db, 2026, 11, true).dc[nv.id] = { tamUng: 0 };
+  var r = TL.tinhBangLuong(db, 2026, 11).rows[0];
+  assert.strictEqual(r.tamUng, 0); assert.ok(!r.tamUngTuDong); assert.strictEqual(r.tamUngMacDinh, 2500000);
+  // tiền ăn giữa ca: 26 ngày × 50.000 = 1.300.000, vượt mức miễn thuế 1.200.000 → 100.000 chịu thuế (như bảng lương các đội)
+  TL.thang(db, 2026, 11, true).cc[nv.id] = {};
+  TL.ngayKy(db, 2026, 11).forEach(function (x) { if (TL.thuTrongTuan(x.y, x.m, x.d) !== 0) (TL.thang(db, x.y, x.m, true).cc[nv.id] = TL.thang(db, x.y, x.m, true).cc[nv.id] || {})[x.d] = '+'; });
+  db.dotLuong[0].phuCap.AN = 50000; db.dotLuong[0].mienThueAnCa = 1200000;
+  r = TL.tinhBangLuong(db, 2026, 11).rows[0];
+  assert.strictEqual(r.phuCap.AN, r.cong.ngayCom * 50000);
+  assert.strictEqual(r.anCaVuot, Math.max(0, r.phuCap.AN - 1200000));
+  assert.strictEqual(r.tnct, r.tongThuNhap - (r.phuCap.AN - r.anCaVuot) - r.otMienThue);
+  db.dotLuong[0].mienThueAnCa = 730000;   // mức cũ (trước 01/7/2026)
+  assert.strictEqual(TL.tinhBangLuong(db, 2026, 11).rows[0].anCaVuot, r.phuCap.AN - 730000);
+  // không có công hưởng lương: không tự tạm ứng
+  delete nv.tamUngRieng; TL.thang(db, 2026, 12, true);
+  assert.strictEqual(TL.tinhBangLuong(db, 2026, 12).rows[0].tamUng, 0);
+});
+
 t('Phòng / đội: chuyển qua lại có hiệu lực theo kỳ, kỳ cũ vẫn thuộc đơn vị cũ', function () {
   var db = dbMau(), nv = db.nhanVien[0];
   db.phongBan = [{ ma: 'KD', ten: 'Phòng Kinh doanh - Vật tư' }, { ma: 'D1', ten: 'Đội Cấp nước số 1' }];

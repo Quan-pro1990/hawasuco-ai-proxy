@@ -416,3 +416,11 @@ td > .chon-bac select[data-xl="bac"] { width: 165px; }
 .bang-bac input.o-nhap.so { text-align: right; }
 @media print { .chon-bac select { border: 0; appearance: none; -webkit-appearance: none; padding: 0; background: none; } }
 .tk-dv { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; color: var(--chu); max-height: 220px; overflow: auto; border: 1px solid var(--vien); border-radius: 8px; padding: 8px 10px; }
+
+/* Mức lương theo kỳ */
+.muc-thanh { gap: 6px; flex-wrap: wrap; }
+.chip-muc { border: 1px solid var(--vien); background: #fff; border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 13px; cursor: pointer; color: var(--chu); display: inline-flex; gap: 6px; align-items: center; }
+.chip-muc:hover { border-color: var(--chinh); }
+.chip-muc.chon { background: var(--chinh); border-color: var(--chinh); color: #fff; font-weight: 600; }
+.chip-muc.chon .the-tt { background: rgba(255,255,255,.2); color: #fff; }
+input.tu-dong { color: var(--chinh); font-style: italic; }

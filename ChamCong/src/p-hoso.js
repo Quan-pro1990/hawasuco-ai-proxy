@@ -130,6 +130,8 @@
       if (t2) { App.bao('Mã chấm công ' + v.maChamCong + ' đã dùng cho ' + t2.hoTen + '.', 'loi'); return false; }
     }
     ['luongCB', 'luongBH', 'donGiaSP'].forEach(function (k) { v[k] = App.docSo(v[k]); });
+    v.tamUngRieng = v.tamUngRieng == null || String(v.tamUngRieng).trim() === '' ? '' : App.docSo(v.tamUngRieng);
+    v.soTK = String(v.soTK || '').replace(/\s+/g, '');
     v.congChuanRieng = v.congChuanRieng === '' || v.congChuanRieng == null ? '' : +v.congChuanRieng;
     v.tiLeHuong = v.tiLeHuong === '' || v.tiLeHuong == null ? 100 : +v.tiLeHuong;
     v.soNPT = +v.soNPT || 0;
@@ -209,6 +211,8 @@
   /* ---------- Tab: công việc & lương ---------- */
   function tabCongViec(el, d, nv) {
     var db = App.db, chucVu = {};
+    var xlh = TL.xepLuongNV(db, d), ht0 = d.hinhThuc || 'thang';
+    var theoBang = !!(xlh && xlh.tien && (xlh.apDung === 'cb' || xlh.apDung === 'ca_hai') && (ht0 === 'thang' || ht0 === 'khoan'));
     db.nhanVien.forEach(function (x) { if (x.chucVu) chucVu[x.chucVu] = 1; });
     var pc = db.phuCap.map(function (p) {
       var k = '_pc_' + p.ma, v = k in d ? d[k] : (d.phuCap || {})[p.ma], coRieng = v != null && v !== '';
@@ -227,15 +231,24 @@
       F.o('Loại hợp đồng hiện tại', F.sel('loaiHD', d.loaiHD, App.LOAI_HD), 'Tự cập nhật khi thêm hợp đồng mới') + F.o('Hết hạn HĐ / thử việc', F.ngay('ngayHetHD', d.ngayHetHD)) + '<span></span>' +
       '<h4>Lương</h4>' + oBacLuong(db, d) +
       F.o('Hình thức trả lương', F.sel('hinhThuc', d.hinhThuc || 'thang', F.cap(App.HINH_THUC))) +
-      F.o('Mức lương / HĐ <span id="dv-luong">(' + App.DV_LUONG[d.hinhThuc || 'thang'] + ')</span>', F.tien('luongCB', d.luongCB),
-        coQDLuong ? 'Mức hiện hành. Các kỳ trước ngày hiệu lực quyết định nâng lương vẫn tính lương cũ.' : 'Nâng lương có hiệu lực từ 1 ngày: dùng tab Quá trình công tác → Quyết định nâng lương') +
+      (theoBang ? F.o('Mức lương / HĐ <span id="dv-luong">(' + App.DV_LUONG[d.hinhThuc || 'thang'] + ')</span>',
+          '<input name="luongCB" class="so tien" readonly value="' + App.tien(d.luongCB) + '" title="Theo thang bảng lương">',
+          'Theo bảng lương (kỳ hiện hành). Mỗi kỳ tính theo mức áp dụng của kỳ đó – đổi bậc / mức ở trên hoặc trang Mức lương theo kỳ')
+        : F.o('Mức lương / HĐ <span id="dv-luong">(' + App.DV_LUONG[d.hinhThuc || 'thang'] + ')</span>', F.tien('luongCB', d.luongCB),
+        coQDLuong ? 'Mức hiện hành. Các kỳ trước ngày hiệu lực quyết định nâng lương vẫn tính lương cũ.' : 'Nâng lương có hiệu lực từ 1 ngày: dùng tab Quá trình công tác → Quyết định nâng lương')) +
+      F.o('Tạm ứng kỳ I riêng (đ)', F.tien('tamUngRieng', d.tamUngRieng, 'Theo chức vụ: ' + App.tien(TL.tamUngTheoChucVu(db, d.chucVu))),
+        'Để trống = theo chức vụ (trang Mức lương theo kỳ); 0 = không tạm ứng') +
       F.o('Tỷ lệ hưởng lương (%)', F.txt('tiLeHuong', d.tiLeHuong == null ? 100 : d.tiLeHuong, 'type="number" min="0" max="200" step="1"'), 'Thử việc thường 85%') +
       F.o('Công chuẩn riêng (ngày)', F.txt('congChuanRieng', d.congChuanRieng || '', 'type="number" min="0" step="0.5" placeholder="Theo loại lao động"')) +
       F.o('Sản phẩm chính (lương SP)', F.sel('maSP', d.maSP || '', [['', '(Sản phẩm đầu danh mục)']].concat((db.sanPham || []).map(function (p) { return [p.ma, p.ten + ' – ' + App.tien(p.donGia) + ' đ/' + (p.dvt || 'đv')]; })))) +
       F.o('Đơn giá SP riêng (đ)', F.tien('donGiaSP', d.donGiaSP, 'Theo danh mục')) +
       pc +
-      '<h4>Ngân hàng & phép năm</h4>' +
-      F.o('Ngân hàng', F.txt('nganHang', d.nganHang)) + F.o('Số tài khoản', F.txt('soTK', d.soTK)) + '<span></span>' +
+      '<h4>Tài khoản ngân hàng nhận lương</h4>' +
+      F.o('Số tài khoản', F.txt('soTK', d.soTK, 'inputmode="numeric" autocomplete="off" placeholder="vd 103881293726"'), 'Dùng cho danh sách đề nghị chi lương kỳ I, kỳ II gửi ngân hàng') +
+      F.o('Ngân hàng', F.txt('nganHang', d.nganHang, 'list="ds-nganhang" placeholder="vd Công thương (VietinBank)"') + '<datalist id="ds-nganhang">' +
+        App.NGAN_HANG.map(function (n) { return '<option value="' + h(n) + '">'; }).join('') + '</datalist>') +
+      F.o('Chi nhánh', F.txt('chiNhanhNH', d.chiNhanhNH, 'placeholder="vd Chi nhánh Hậu Giang"')) +
+      '<h4>Phép năm</h4>' +
       F.o('Số ngày phép năm', F.txt('phepNam', d.phepNam, 'type="number" min="0" step="0.5" placeholder="' + db.caiDat.phepNam + '"'), 'Để trống = ' + db.caiDat.phepNam + ' ngày') +
       F.o('Phép tồn năm trước', F.txt('phepTon', d.phepTon, 'type="number" min="0" step="0.5"')) + '<span></span>' +
       F.o('Ghi chú', F.vung('ghiChu', d.ghiChu), '', 'ca') +
