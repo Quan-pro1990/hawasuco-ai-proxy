@@ -314,7 +314,7 @@
         var tv = v.thuViec; tv.tuNgay = tv.tuNgay || v.ngayVao || '';
         if (!tv.tuNgay) delete v.thuViec;
         else {
-          tv.soThang = +mdTV.soThang || 2; tv.denNgay = tv.denNgay || TL.denNgayThuViec(tv.tuNgay, tv.soThang);
+          tv.soThang = TL.soThangThuViec(App.db); tv.denNgay = tv.denNgay || TL.denNgayThuViec(tv.tuNgay, tv.soThang);
           tv.tiLe = +tv.tiLe > 0 ? +tv.tiLe : (+mdTV.tiLe || 85);
         }
       }

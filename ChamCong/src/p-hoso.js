@@ -131,7 +131,7 @@
   function tvMacDinh() { return App.db.caiDat.thuViec || { soThang: 2, tiLe: 85, khongDongBH: true }; }
   function thuViecMoi(d) {
     // bắt đầu từ ngày vào làm (người mới); người đã vào làm lâu (quá 180 ngày) thì từ hôm nay
-    var md = tvMacDinh(), hn = App.homNay(), n = TL.docNgay(hn), tu = d.ngayVao && d.ngayVao >= TL.congNgay(n.y, n.m, n.d, -180) ? d.ngayVao : hn, soThang = +md.soThang || 2;
+    var md = tvMacDinh(), hn = App.homNay(), n = TL.docNgay(hn), tu = d.ngayVao && d.ngayVao >= TL.congNgay(n.y, n.m, n.d, -180) ? d.ngayVao : hn, soThang = TL.soThangThuViec(App.db);
     return { tuNgay: tu, soThang: soThang, denNgay: TL.denNgayThuViec(tu, soThang), tiLe: md.tiLe == null || md.tiLe === '' ? 85 : +md.tiLe };
   }
   function suaThuViec(k, v) {
@@ -186,7 +186,7 @@
     if (v.thuViec) {
       var tv = v.thuViec, mdTV = tvMacDinh();
       if (!tv.tuNgay) { App.bao('Nhập ngày bắt đầu thử việc (tab Công việc & lương) hoặc bỏ chọn “Có thời gian thử việc”.', 'loi'); return false; }
-      var soThang = Math.max(1, Math.round(+tv.soThang || +mdTV.soThang || 2)), den = tv.denNgay || TL.denNgayThuViec(tv.tuNgay, soThang);
+      var soThang = Math.max(1, Math.round(+tv.soThang || TL.soThangThuViec(db))), den = tv.denNgay || TL.denNgayThuViec(tv.tuNgay, soThang);
       if (den < tv.tuNgay) { App.bao('Ngày kết thúc thử việc phải sau ngày bắt đầu.', 'loi'); return false; }
       var tiLe = tv.tiLe === '' || tv.tiLe == null ? +mdTV.tiLe || 85 : +tv.tiLe;
       if (!(tiLe > 0 && tiLe <= 100)) { App.bao('Lương thử việc nhập từ 1 đến 100 (% lương chính thức).', 'loi'); return false; }
@@ -410,11 +410,15 @@
   /* ---------- Tab: hợp đồng ---------- */
   function tabHopDong(el, d, nv) {
     var ds = (nv.hopDong || []).map(function (x, i) { return { x: x, i: i }; }).sort(function (a, b) { return (b.x.tuNgay || '') < (a.x.tuNgay || '') ? -1 : 1; });
-    el.innerHTML = '<div class="the"><h3>Hợp đồng lao động<span class="phai"><button class="nut nho chinh" id="hd-them">' + App.icon('them') + 'Thêm hợp đồng</button></span></h3>' +
-      '<div class="cuon"><table class="bang"><thead><tr><th>Số HĐ</th><th>Loại hợp đồng</th><th>Ngày ký</th><th>Từ ngày</th><th>Đến ngày</th><th>Chức danh</th><th class="so">Mức lương</th><th>Tình trạng</th><th>Bản scan</th><th></th></tr></thead><tbody>' +
+    var tiepHD = TL.hdTiepTheo(App.db, nv);
+    el.innerHTML = '<div class="the"><h3>Hợp đồng lao động<span class="phai"><button class="nut nho chinh" id="hd-them" title="' + h(tiepHD.gd ? 'Ký ' + tiepHD.gd.ten.toLowerCase() + (tiepHD.tuNgay ? ' từ ' + TL.hienNgay(tiepHD.tuNgay) : '') : '') + '">' + App.icon('them') +
+      ((nv.hopDong || []).length ? 'Ký hợp đồng tiếp theo' : 'Ký hợp đồng') + '</button></span></h3>' + App.loTrinhHD(nv) +
+      (tiepHD.canhBao && (nv.hopDong || []).length ? '<div class="canh-bao" style="margin-bottom:12px">' + h(tiepHD.canhBao) + '</div>' : '') +
+      '<div class="cuon"><table class="bang"><thead><tr><th>Số HĐ</th><th>Giai đoạn / loại hợp đồng</th><th>Ngày ký</th><th>Từ ngày</th><th>Đến ngày</th><th>Chức danh</th><th class="so">Mức lương</th><th>Tình trạng</th><th>Bản scan</th><th></th></tr></thead><tbody>' +
       (ds.length ? ds.map(function (o) {
         var x = o.x;
-        return '<tr data-i="' + o.i + '"><td>' + h(x.so) + '</td><td>' + h(x.loai) + '</td><td class="giua">' + TL.hienNgay(x.ngayKy) + '</td><td class="giua">' + TL.hienNgay(x.tuNgay) + '</td>' +
+        var tenGD = App.tenGiaiDoan(nv, x);
+        return '<tr data-i="' + o.i + '"><td>' + h(x.so) + '</td><td>' + h(tenGD) + (tenGD !== x.loai ? '<div class="mo nho">' + h(x.loai) + '</div>' : '') + '</td><td class="giua">' + TL.hienNgay(x.ngayKy) + '</td><td class="giua">' + TL.hienNgay(x.tuNgay) + '</td>' +
           '<td class="giua">' + (x.denNgay ? TL.hienNgay(x.denNgay) : '<span class="mo">—</span>') + '</td><td>' + h(x.chucDanh) + '</td><td class="so">' + App.tienRong(x.luongCB) + '</td>' +
           '<td>' + App.ttHopDong(x) + '</td>' +
           '<td style="white-space:nowrap">' + (function () { var n = (nv.hoSoTep || []).filter(function (t) { return x.id && t.hopDongId === x.id; }).length;

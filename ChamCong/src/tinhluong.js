@@ -105,9 +105,11 @@
         { chucVu: 'Chủ tịch kiêm Giám đốc', muc: 6000000 }, { chucVu: 'Giám đốc', muc: 6000000 },
         { chucVu: 'Phó Giám đốc', muc: 5000000 }, { chucVu: 'Kế toán trưởng', muc: 5000000 },
         { chucVu: 'Trưởng phòng', muc: 3000000 }, { chucVu: 'Phó phòng', muc: 3000000 }, { chucVu: 'Đội trưởng', muc: 3000000 }] },
-      // thử việc: số tháng mặc định, lương thử việc = tiLe % lương chính thức (Điều 26 BLLĐ 2019: ít nhất 85%),
+      // thử việc: lương thử việc = tiLe % lương chính thức (Điều 26 BLLĐ 2019: ít nhất 85%); số tháng theo giai đoạn HĐ thử việc;
       // hợp đồng thử việc riêng thì thời gian thử việc không đóng BHXH, BHYT, BHTN
-      thuViec: { soThang: 2, tiLe: 85, khongDongBH: true },
+      thuViec: { tiLe: 85, khongDongBH: true },
+      // các giai đoạn ký hợp đồng theo thứ tự: thử việc -> chính thức 1 năm -> chính thức 3 năm -> không xác định thời hạn
+      giaiDoanHD: giaiDoanHDMacDinh(),
       mienThueAnCa: 1200000,    // tiền ăn giữa ca không tính thuế TNCN tối đa / tháng (NĐ 253/2026, từ 01/7/2026; trước đó 730.000)
       luongToiThieuVung: 5310000,
       vung: 'I',
@@ -167,6 +169,7 @@
     if (!db.khoiLuong || typeof db.khoiLuong !== 'object' || Array.isArray(db.khoiLuong)) db.khoiLuong = {};
     if (!db.caiDat.tamUng || typeof db.caiDat.tamUng !== 'object') db.caiDat.tamUng = { macDinh: 0, theoChucVu: [] };
     if (!Array.isArray(db.caiDat.tamUng.theoChucVu)) db.caiDat.tamUng.theoChucVu = [];
+    if (!Array.isArray(db.caiDat.giaiDoanHD) || !db.caiDat.giaiDoanHD.length) db.caiDat.giaiDoanHD = giaiDoanHDMacDinh();
     db.thangLuong.forEach(function (b) {
       // dữ liệu cũ chưa có số bậc từng chức danh: lấy tới bậc cuối có giá trị (mức ban đầu và các mức theo kỳ)
       var cuoi = function (arr) { var k = 0; (arr || []).forEach(function (v, i) { if (+v > 0) k = i + 1; }); return k; };
@@ -199,7 +202,7 @@
       // dữ liệu cũ: thử việc ghi bằng "% hưởng lương" (85) và ngày hết hạn HĐ thử việc -> chuyển sang thời gian thử việc riêng
       if (nv.trangThai === 'thu_viec' && !nv.thuViec && nv.ngayVao) {
         var tlc = +nv.tiLeHuong, ttv = db.caiDat.thuViec || {};
-        nv.thuViec = { tuNgay: nv.ngayVao, soThang: +ttv.soThang || 2, tiLe: tlc > 0 && tlc < 100 ? tlc : (+ttv.tiLe || 85) };
+        nv.thuViec = { tuNgay: nv.ngayVao, soThang: soThangThuViec(db), tiLe: tlc > 0 && tlc < 100 ? tlc : (+ttv.tiLe || 85) };
         nv.thuViec.denNgay = nv.loaiHD === 'Thử việc' && nv.ngayHetHD > nv.ngayVao ? nv.ngayHetHD : denNgayThuViec(nv.ngayVao, nv.thuViec.soThang);
         if (tlc > 0 && tlc < 100) nv.tiLeHuong = 100;
       }
@@ -667,11 +670,73 @@
     var t = nv && nv.thuViec;
     if (!t || !docNgay(t.tuNgay)) return null;
     var md = (db.caiDat && db.caiDat.thuViec) || {};
-    var soThang = +t.soThang > 0 ? +t.soThang : (+md.soThang || 2);
+    var soThang = +t.soThang > 0 ? +t.soThang : soThangThuViec(db);
     var den = docNgay(t.denNgay) ? t.denNgay : denNgayThuViec(t.tuNgay, soThang);
     var tiLe = t.tiLe == null || t.tiLe === '' ? (md.tiLe == null || md.tiLe === '' ? 85 : +md.tiLe) : +t.tiLe;
     return { tuNgay: t.tuNgay, denNgay: den, soThang: soThang, tiLe: tiLe };
   }
+  /* ================= Giai đoạn ký hợp đồng ================= */
+
+  var HD_XD = 'Xác định thời hạn', HD_KXD = 'Không xác định thời hạn';
+  function giaiDoanHDMacDinh() {
+    return [
+      { ma: 'TV', ten: 'Hợp đồng thử việc', loai: 'Thử việc', soThang: 1 },
+      { ma: 'CT1', ten: 'Hợp đồng chính thức 1 năm', loai: HD_XD, soThang: 12 },
+      { ma: 'CT3', ten: 'Hợp đồng chính thức 3 năm', loai: HD_XD, soThang: 36 },
+      { ma: 'KXD', ten: 'Hợp đồng không xác định thời hạn', loai: HD_KXD, soThang: 0 }
+    ];
+  }
+  function dsGiaiDoan(db) { var g = db && db.caiDat && db.caiDat.giaiDoanHD; return Array.isArray(g) && g.length ? g : giaiDoanHDMacDinh(); }
+  function timGiaiDoan(db, ma) { return dsGiaiDoan(db).filter(function (g) { return g.ma === ma; })[0] || null; }
+  /** Số tháng thử việc mặc định = số tháng của giai đoạn hợp đồng thử việc */
+  function soThangThuViec(db) {
+    var g = dsGiaiDoan(db).filter(function (x) { return x.loai === 'Thử việc'; })[0];
+    return g && +g.soThang > 0 ? +g.soThang : (+((db && db.caiDat && db.caiDat.thuViec) || {}).soThang || 1);
+  }
+  /** Số tháng từ ngày đến ngày (tính cả ngày cuối), làm tròn: 01/10–30/11 = 2 */
+  function soThangGiua(tu, den) {
+    var a = docNgay(tu), b0 = docNgay(den);
+    if (!a || !b0) return 0;
+    var b = docNgay(congNgay(b0.y, b0.m, b0.d, 1)), dd = b.d - a.d;
+    return (b.y - a.y) * 12 + b.m - a.m + (dd >= 15 ? 1 : dd <= -15 ? -1 : 0);
+  }
+  function hdTheoNgay(nv) {
+    return (nv.hopDong || []).slice().sort(function (a, b) { return (a.tuNgay || '') < (b.tuNgay || '') ? -1 : (a.tuNgay || '') > (b.tuNgay || '') ? 1 : 0; });
+  }
+  /** Giai đoạn của từng hợp đồng theo thứ tự hiệu lực: [{ hd, gd, lanXD }].
+      HĐ chưa ghi giai đoạn (dữ liệu cũ) thì suy theo loại HĐ, thời hạn (12 / 36 tháng) hoặc thứ tự ký. */
+  function giaiDoanCacHD(db, nv) {
+    var gd = dsGiaiDoan(db), xd = gd.filter(function (g) { return g.loai === HD_XD; }), lan = 0;
+    return hdTheoNgay(nv).map(function (hd) {
+      var g = hd.giaiDoan ? timGiaiDoan(db, hd.giaiDoan) : null;
+      if (!g && hd.loai === HD_XD) {
+        var th = soThangGiua(hd.tuNgay, hd.denNgay);
+        g = th ? xd.filter(function (x) { return Math.abs(+x.soThang - th) <= 1; })[0] : null;
+        if (!g) g = xd[Math.min(lan, xd.length - 1)] || null;
+      } else if (!g) g = gd.filter(function (x) { return x.loai === hd.loai; })[0] || null;
+      if (hd.loai === HD_XD) lan++;
+      return { hd: hd, gd: g, lanXD: hd.loai === HD_XD ? lan : 0 };
+    });
+  }
+  function giaiDoanCuaHD(db, nv, hd) { var x = giaiDoanCacHD(db, nv).filter(function (y) { return y.hd === hd || (hd.id && y.hd.id === hd.id); })[0]; return x ? x.gd : null; }
+  /** Hợp đồng ký tiếp theo sau hd (mặc định HĐ mới nhất): { gd, tuNgay, denNgay, canhBao }.
+      Đã ký 2 lần HĐ xác định thời hạn thì lần sau phải là HĐ không xác định thời hạn (khoản 2 Điều 20 BLLĐ 2019). */
+  function hdTiepTheo(db, nv, hd) {
+    var gd = dsGiaiDoan(db), ds = giaiDoanCacHD(db, nv), i = ds.length - 1;
+    if (hd) { i = -1; ds.forEach(function (y, k) { if (y.hd === hd || (hd.id && y.hd.id === hd.id)) i = k; }); }
+    if (i < 0) return { gd: gd[0] || null, tuNgay: '', denNgay: '', canhBao: '' };
+    var x = ds[i], k = x.gd ? gd.indexOf(x.gd) : -1, tiep = null, canhBao = '';
+    if (k >= 0) tiep = gd[Math.min(k + 1, gd.length - 1)];
+    else if (x.hd.loai === 'Thử việc') tiep = gd.filter(function (g) { return g.loai !== 'Thử việc'; })[0] || null;
+    var soXD = ds.slice(0, i + 1).filter(function (y) { return y.hd.loai === HD_XD; }).length;
+    if (tiep && tiep.loai === HD_XD && soXD >= 2) {
+      var kxd = gd.filter(function (g) { return g.loai === HD_KXD; })[0];
+      if (kxd) { tiep = kxd; canhBao = 'Đã ký ' + soXD + ' lần HĐ xác định thời hạn – lần tiếp theo phải ký HĐ không xác định thời hạn (khoản 2 Điều 20 BLLĐ 2019)'; }
+    }
+    var n = docNgay(x.hd.denNgay), tu = n ? congNgay(n.y, n.m, n.d, 1) : '';
+    return { gd: tiep, tuNgay: tu, denNgay: tiep && +tiep.soThang > 0 && tu ? denNgayThuViec(tu, tiep.soThang) : '', canhBao: canhBao };
+  }
+
   /** Đang thử việc vào ngày (ISO) */
   function dangThuViec(db, nv, ngay) { var t = thuViecNV(db, nv); return !!(t && ngay >= t.tuNgay && ngay <= t.denNgay); }
 
@@ -1174,7 +1239,9 @@
     chotThang: chotThang, moKhoaThang: moKhoaThang,
     tinhVaoRa: tinhVaoRa, phepNam: phepNam, docSo: docSo,
     KIEU_BL: KIEU_BL, AP_DUNG_BL: AP_DUNG_BL, chuanBangLuong: chuanBangLuong, timBangLuong: timBangLuong, timNgach: timNgach, mucCoSoBL: mucCoSoBL,
-    thuViecNV: thuViecNV, denNgayThuViec: denNgayThuViec, dangThuViec: dangThuViec,
+    thuViecNV: thuViecNV, denNgayThuViec: denNgayThuViec, denNgayHD: denNgayThuViec, dangThuViec: dangThuViec,
+    giaiDoanHDMacDinh: giaiDoanHDMacDinh, dsGiaiDoan: dsGiaiDoan, timGiaiDoan: timGiaiDoan, soThangThuViec: soThangThuViec, soThangGiua: soThangGiua,
+    hdTheoNgay: hdTheoNgay, giaiDoanCacHD: giaiDoanCacHD, giaiDoanCuaHD: giaiDoanCuaHD, hdTiepTheo: hdTiepTheo,
     soBacNgach: soBacNgach, giaTriBac: giaTriBac, xepLuongNV: xepLuongNV, apXepLuong: apXepLuong, themThangISO: themThangISO,
     dsDotLuong: dsDotLuong, kyHienHanh: kyHienHanh, kyCuaISO: kyCuaISO, dotTaiKy: dotTaiKy, luongCoSoKy: luongCoSoKy, mucChungPC: mucChungPC,
     bacNgach: bacNgach, chupMucKy: chupMucKy, xepLuongTheoKy: xepLuongTheoKy, cauHinhTamUng: cauHinhTamUng, tamUngTheoChucVu: tamUngTheoChucVu,

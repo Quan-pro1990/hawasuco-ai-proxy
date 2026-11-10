@@ -137,7 +137,8 @@
     if (canh.length) cy.push(['<a href="#bangluong">' + canh.length + ' nhân viên có lưu ý khi tính lương</a>', '<span class="the-tt cam">Xem</span>']);
     var choDuyet = (db.donNghi || []).filter(function (d) { return d.trangThai === 'cho'; }).length;
     if (choDuyet) cy.push(['<a href="#nghiphep">' + choDuyet + ' đơn nghỉ phép chờ duyệt</a>', '<span class="the-tt cam">Duyệt</span>']);
-    var chuaHD = 0;
+    var chuaHD = 0, kl = App.demKyLai ? App.demKyLai() : null;
+    if (kl && (kl.het || kl.s30)) cy.push(['<a href="#theodoihd">Hợp đồng cần ký lại: ' + (kl.het ? kl.het + ' đã hết hạn' : '') + (kl.het && kl.s30 ? ', ' : '') + (kl.s30 ? kl.s30 + ' hết hạn trong 30 ngày' : '') + '</a>', '<span class="the-tt ' + (kl.het ? 'do' : 'cam') + '">Theo dõi</span>']);
     db.nhanVien.forEach(function (nv) {
       if (nv.trangThai === 'nghi_viec') return;
       if (nv.ngaySinh && +nv.ngaySinh.slice(5, 7) === m) cy.push(['🎂 Sinh nhật <span class="lk" data-hs="' + nv.id + '">' + h(nv.hoTen) + '</span>', '<span class="the-tt lam">' + nv.ngaySinh.slice(8, 10) + '/' + TL.pad(m) + '</span>']);
@@ -151,7 +152,8 @@
       }
       if (het) {
         var con = Math.round((new Date(het) - new Date(hnIso)) / 864e5);
-        if (con >= -30 && con <= 30) cy.push([(nv.trangThai === 'thu_viec' ? 'Hết thử việc: ' : 'Hết hạn hợp đồng: ') + '<span class="lk" data-hs="' + nv.id + '">' + h(nv.hoTen) + '</span>', '<span class="the-tt ' + (con <= 7 ? 'do' : 'cam') + '">' + (con < 0 ? 'đã hết ' + (-con) + ' ngày' : 'còn ' + con + ' ngày') + '</span>']);
+        var tiepHD = hd ? TL.hdTiepTheo(db, nv, hd) : null, coSau = hd && (nv.hopDong || []).some(function (y) { return (y.tuNgay || '') > (hd.tuNgay || ''); });
+        if (con >= -30 && con <= 30 && !coSau) cy.push([(nv.trangThai === 'thu_viec' ? 'Hết thử việc: ' : 'Hết hạn ' + (hd ? App.tenGiaiDoan(nv, hd).replace(/^Hợp đồng/, 'HĐ').toLowerCase().replace(/^hđ/, 'HĐ') : 'hợp đồng') + (tiepHD && tiepHD.gd ? ' → ký ' + tiepHD.gd.ten.replace(/^Hợp đồng/, 'HĐ').toLowerCase().replace(/^hđ/, 'HĐ') : '') + ': ') + '<span class="lk" data-hs="' + nv.id + '">' + h(nv.hoTen) + '</span>', '<span class="the-tt ' + (con <= 7 ? 'do' : 'cam') + '">' + (con < 0 ? 'đã hết ' + (-con) + ' ngày' : 'còn ' + con + ' ngày') + '</span>']);
       }
       var nh = TL.ngayNghiHuu(nv.gioiTinh, nv.ngaySinh);
       if (nh) { var cn = Math.round((new Date(nh) - new Date(hnIso)) / 864e5); if (cn >= 0 && cn <= 180) cy.push(['Đến tuổi nghỉ hưu: <span class="lk" data-hs="' + nv.id + '">' + h(nv.hoTen) + '</span>', '<span class="the-tt lam">' + TL.hienNgay(nh) + '</span>']); }

@@ -225,6 +225,19 @@ table.cc tfoot td.dinh3 { z-index: 3; text-align: left; padding: 0 6px; }
 .kpi .phu { font-size: 12px; color: var(--mo); }
 .kpi .phu .tang { color: var(--xanh); }
 .kpi .phu .giam { color: var(--do); }
+.kpi.bam { cursor: pointer; transition: border-color .15s; }
+.kpi.bam:hover { border-color: var(--vien-dam); }
+.kpi.chon { border-color: var(--chinh); box-shadow: inset 0 0 0 1px var(--chinh); }
+/* lộ trình ký hợp đồng trong hồ sơ */
+.lo-trinh { display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 14px; }
+.lo-trinh .buoc { flex: 1 1 170px; border: 1px solid var(--vien); border-radius: 10px; padding: 9px 12px; background: #fff; }
+.lo-trinh .buoc .so { font-size: 11.5px; color: var(--mo); }
+.lo-trinh .buoc b { display: block; font-size: 13.5px; margin: 1px 0 2px; }
+.lo-trinh .buoc .ng { font-size: 12.5px; color: var(--mo); }
+.lo-trinh .buoc.dang { border-color: var(--chinh); background: var(--chinh-nhat); }
+.lo-trinh .buoc.xong { background: #f6f8fa; }
+.lo-trinh .buoc.du { border-style: dashed; }
+.lo-trinh .buoc.bo { opacity: .55; }
 .bd { position: relative; width: 100%; }
 .bd svg { display: block; width: 100%; height: auto; overflow: visible; }
 .bd text { font-family: inherit; }

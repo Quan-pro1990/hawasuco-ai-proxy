@@ -466,8 +466,35 @@ t('Thử việc: 85% lương chính thức, số tháng, kỳ có cả ngày th�
   var cu = TL.duLieuMoi();
   cu.nhanVien = [{ id: 'c', ma: 'C', hoTen: 'C', trangThai: 'thu_viec', tiLeHuong: 85, ngayVao: '2026-10-05', loaiHD: 'Thử việc', ngayHetHD: '2026-12-04' }];
   TL.chuanHoa(cu);
-  assert.deepStrictEqual(cu.nhanVien[0].thuViec, { tuNgay: '2026-10-05', soThang: 2, tiLe: 85, denNgay: '2026-12-04' });
+  assert.deepStrictEqual(cu.nhanVien[0].thuViec, { tuNgay: '2026-10-05', soThang: 1, tiLe: 85, denNgay: '2026-12-04' });
   assert.strictEqual(cu.nhanVien[0].tiLeHuong, 100);
+});
+
+t('Giai đoạn ký HĐ: thử việc 1 tháng -> chính thức 1 năm -> 3 năm -> không xác định thời hạn', function () {
+  var db = TL.duLieuMoi();
+  assert.deepStrictEqual(TL.dsGiaiDoan(db).map(function (g) { return g.ma + ':' + g.soThang; }), ['TV:1', 'CT1:12', 'CT3:36', 'KXD:0']);
+  assert.strictEqual(TL.soThangThuViec(db), 1);
+  assert.strictEqual(TL.soThangGiua('2026-10-01', '2026-11-30'), 2); assert.strictEqual(TL.soThangGiua('2026-11-01', '2029-10-31'), 36);
+  var nv = { id: 'a', hopDong: [] };
+  // chưa có HĐ: giai đoạn đầu (thử việc)
+  assert.strictEqual(TL.hdTiepTheo(db, nv).gd.ma, 'TV');
+  nv.hopDong.push({ id: 'h1', loai: 'Thử việc', tuNgay: '2026-10-01', denNgay: TL.denNgayHD('2026-10-01', 1) });
+  var t = TL.hdTiepTheo(db, nv);
+  assert.strictEqual(t.gd.ma, 'CT1'); assert.strictEqual(t.tuNgay, '2026-11-01'); assert.strictEqual(t.denNgay, '2027-10-31');
+  nv.hopDong.push({ id: 'h2', loai: 'Xác định thời hạn', giaiDoan: 'CT1', tuNgay: t.tuNgay, denNgay: t.denNgay });
+  t = TL.hdTiepTheo(db, nv);
+  assert.strictEqual(t.gd.ma, 'CT3'); assert.strictEqual(t.tuNgay, '2027-11-01'); assert.strictEqual(t.denNgay, '2030-10-31'); assert.strictEqual(t.canhBao, '');
+  // dữ liệu cũ không ghi giai đoạn: HĐ xác định thời hạn 36 tháng nhận ra là "chính thức 3 năm"
+  nv.hopDong.push({ id: 'h3', loai: 'Xác định thời hạn', tuNgay: t.tuNgay, denNgay: t.denNgay });
+  assert.strictEqual(TL.giaiDoanCacHD(db, nv)[2].gd.ma, 'CT3'); assert.strictEqual(TL.giaiDoanCacHD(db, nv)[2].lanXD, 2);
+  t = TL.hdTiepTheo(db, nv);
+  assert.strictEqual(t.gd.ma, 'KXD'); assert.strictEqual(t.denNgay, '');
+  // đã 2 lần HĐ xác định thời hạn (1 năm + 1 năm) -> lần sau bắt buộc không xác định thời hạn
+  var nv2 = { id: 'b', hopDong: [{ loai: 'Xác định thời hạn', tuNgay: '2024-01-01', denNgay: '2024-12-31', giaiDoan: 'CT1' }, { loai: 'Xác định thời hạn', tuNgay: '2025-01-01', denNgay: '2025-12-31', giaiDoan: 'CT1' }] };
+  t = TL.hdTiepTheo(db, nv2);
+  assert.strictEqual(t.gd.ma, 'KXD'); assert.ok(/Điều 20/.test(t.canhBao));
+  // HĐ đầu tiên của nv: tiếp theo HĐ thử việc (theo hd cụ thể)
+  assert.strictEqual(TL.hdTiepTheo(db, nv, nv.hopDong[0]).gd.ma, 'CT1');
 });
 
 t('Giờ vào / ra', function () {

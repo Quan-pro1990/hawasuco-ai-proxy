@@ -61,8 +61,32 @@ Bấm 1 người trong danh sách để mở hồ sơ gồm các tab:
 - **In sơ yếu lý lịch** (A4, có ảnh). Sửa xong bấm **Lưu hồ sơ** (rời trang thì phần mềm tự lưu).
 
 ### Hợp đồng lao động
-- Thêm hợp đồng ở hồ sơ hoặc trang **Hợp đồng lao động**: số, loại (thử việc, xác định / không xác định thời hạn, thời vụ),
+- Thêm hợp đồng ở hồ sơ hoặc trang **Hợp đồng lao động**: giai đoạn, số, loại (thử việc, xác định / không xác định thời hạn, thời vụ),
   ngày ký, hiệu lực, chức danh, mức lương, phụ cấp, địa điểm, công việc.
+
+### Giai đoạn ký hợp đồng
+- Mặc định 4 giai đoạn: **Hợp đồng thử việc 1 tháng → Hợp đồng chính thức 1 năm → Hợp đồng chính thức 3 năm → Hợp đồng không xác định
+  thời hạn**. Sửa tên, thời hạn, thứ tự, thêm / bớt ở **Danh mục → Giai đoạn hợp đồng** (số tháng của giai đoạn thử việc cũng là số tháng
+  thử việc mặc định).
+- **Ký hợp đồng tiếp theo** (hồ sơ → tab Hợp đồng, trang Hợp đồng lao động hoặc trang Theo dõi hợp đồng): phần mềm chọn sẵn giai đoạn kế tiếp,
+  ngày hiệu lực = ngày sau ngày hết hạn HĐ trước, tự tính ngày hết hạn (vd 01/12/2026 + 1 năm → 30/11/2027). Người chưa có HĐ: mới vào thì
+  bắt đầu từ HĐ thử việc, đã làm lâu thì từ HĐ chính thức 1 năm.
+- Phần mềm nhắc (không chặn lưu) theo Bộ luật Lao động 2019: HĐ xác định thời hạn quá 36 tháng; đã ký 2 lần HĐ xác định thời hạn thì lần sau
+  phải ký HĐ không xác định thời hạn (Điều 20) – trường hợp này phần mềm tự chọn giai đoạn không xác định thời hạn; thử việc lần 2 (Điều 25);
+  HĐ mới trùng thời gian HĐ cũ.
+- Hồ sơ → tab **Hợp đồng lao động** có **lộ trình**: giai đoạn đã kết thúc, đang hiệu lực (còn bao nhiêu ngày), dự kiến các giai đoạn sau.
+  Hợp đồng cũ chưa ghi giai đoạn được tự nhận theo loại và thời hạn (12 tháng → 1 năm, 36 tháng → 3 năm).
+
+### Theo dõi hợp đồng (bảng điều khiển)
+Menu **Nhân sự → Theo dõi hợp đồng** – dành cho người phụ trách hợp đồng:
+- **Thẻ số liệu** (bấm để lọc danh sách): đã hết hạn chưa ký lại · hết hạn trong 30 ngày · 31 – 90 ngày · đang thử việc ·
+  chưa có hợp đồng · đã ký hợp đồng tiếp theo trước khi HĐ cũ hết hạn.
+- **Biểu đồ** hợp đồng hết hạn theo tháng (quá hạn + 12 tháng tới, chia theo giai đoạn; rê chuột xem số, bấm cột để lọc danh sách tháng đó),
+  hợp đồng đang hiệu lực theo giai đoạn, số HĐ cần ký lại theo phòng / đội.
+- **Danh sách cần ký lại**: HĐ hiện tại, ngày hết hạn, còn bao nhiêu ngày, giai đoạn ký tiếp, ngày hiệu lực dự kiến; cột **Theo dõi**
+  (Chưa xử lý / Đang trình ký / Không ký tiếp) và **Ghi chú** để ghi tiến độ (lưu ngày, người cập nhật); nút **Ký tiếp** mở sẵn form hợp đồng
+  giai đoạn sau – ký xong thì dòng tự chuyển "Đã ký". Lọc theo khoảng 30 / 60 / 90 ngày, 6 – 12 tháng, theo phòng / đội; **Xuất Excel**, **In danh sách**.
+- Cùng danh sách này ở **Báo cáo nhân sự → Hợp đồng cần ký lại**; trang **Tổng quan** nhắc số HĐ đã hết hạn / hết hạn trong 30 ngày.
 - Đánh dấu *Cập nhật hồ sơ* thì loại HĐ, ngày hết hạn, chức danh được cập nhật; HĐ thử việc ghi luôn thời gian thử việc và % lương thử việc
   vào hồ sơ; HĐ chính thức thì tự chuyển "Đang làm việc", hưởng 100% lương (ký trước ngày hết thử việc thì thử việc kết thúc ngày trước
   ngày HĐ có hiệu lực; người chưa tham gia BH được bật tham gia BH). Nếu mức lương trong HĐ khác hiện tại có thể *áp dụng từ ngày hiệu lực*
@@ -70,10 +94,10 @@ Bấm 1 người trong danh sách để mở hồ sơ gồm các tab:
 
 ### Thử việc – lương thử việc, số tháng thử việc
 - Hồ sơ → tab **Công việc & lương** → mục **Thử việc**: đánh dấu *Có thời gian thử việc*, nhập **từ ngày**, **số tháng thử việc**
-  (tự tính **đến ngày**: 01/10 + 2 tháng → 30/11; sửa được khi thử việc tính theo số ngày) và **lương thử việc (% lương chính thức)** –
+  (tự tính **đến ngày**: 01/10 + 1 tháng → 31/10; sửa được khi thử việc tính theo số ngày) và **lương thử việc (% lương chính thức)** –
   mặc định **85%** (mức tối thiểu theo Điều 26 BLLĐ 2019). Dòng bên dưới hiện ngay lương thử việc, ví dụ 85% × 7.000.000 = 5.950.000 đ/tháng.
 - Chọn trạng thái *Thử việc* hoặc thêm HĐ loại *Thử việc* thì phần mềm tự điền thời gian thử việc theo mặc định ở
-  **Cài đặt → Lương → Thử việc** (số tháng mặc định 2, lương thử việc 85%, thời gian thử việc không đóng BHXH, BHYT, BHTN).
+  **Cài đặt → Lương → Thử việc** (lương thử việc 85%; số tháng theo giai đoạn HĐ thử việc – mặc định 1 tháng, thời gian thử việc không đóng BHXH, BHYT, BHTN).
 - Tính lương: những ngày nằm trong thời gian thử việc hưởng lương thử việc. Kỳ có cả ngày thử việc và ngày chính thức được tính
   theo số công của từng phần: mức lương ÷ công chuẩn × (công thử việc × 85% + công chính thức). Bảng lương hiện nhãn **TV 85%**
   cạnh tên, chi tiết và phiếu lương ghi rõ số công thử việc.
@@ -124,7 +148,7 @@ thay ô đang chấm `+`, giữ nguyên ô đã chấm nghỉ khác). **Huỷ du
 
 ### Báo cáo nhân sự
 Cơ cấu lao động (phòng / đội, giới tính, độ tuổi, trình độ, loại HĐ, loại lao động, thâm niên), biến động lao động 12 tháng
-(tăng, giảm, đầu – cuối tháng), danh sách trích ngang, sinh nhật theo tháng, hợp đồng hết hạn trong 60 ngày,
+(tăng, giảm, đầu – cuối tháng), danh sách trích ngang, sinh nhật theo tháng, hợp đồng cần ký lại,
 lao động đến tuổi nghỉ hưu trong 24 tháng (lộ trình Nghị định 135/2020/NĐ-CP), khen thưởng – kỷ luật trong năm. Xuất Excel, in.
 
 Trang **Tổng quan** nhắc: đơn nghỉ chờ duyệt, hợp đồng sắp / đã hết hạn, nhân viên chưa có hợp đồng, sắp đến tuổi nghỉ hưu, sinh nhật.

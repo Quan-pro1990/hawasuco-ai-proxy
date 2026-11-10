@@ -8,14 +8,14 @@
   function datPath(o, p, v) { var ks = p.split('.'), x = o; for (var i = 0; i < ks.length - 1; i++) { if (x[ks[i]] == null) x[ks[i]] = {}; x = x[ks[i]]; } x[ks[ks.length - 1]] = v; }
 
   /* ================= DANH MỤC ================= */
-  var TABS_DM = [['pb', 'Phòng, đội'], ['ld', 'Loại lao động & công chuẩn'], ['bl', 'Thang, bảng lương'], ['sp', 'Sản phẩm (lương SP)'], ['pc', 'Phụ cấp'], ['kh', 'Ký hiệu chấm công'], ['le', 'Ngày lễ, Tết']];
+  var TABS_DM = [['pb', 'Phòng, đội'], ['ld', 'Loại lao động & công chuẩn'], ['hd', 'Giai đoạn hợp đồng'], ['bl', 'Thang, bảng lương'], ['sp', 'Sản phẩm (lương SP)'], ['pc', 'Phụ cấp'], ['kh', 'Ký hiệu chấm công'], ['le', 'Ngày lễ, Tết']];
 
   App.moDanhMuc = function (t) { st.tab = t; if (location.hash !== '#danhmuc') location.hash = '#danhmuc'; else App.veLai(); };
 
   function veDM(noi) {
     noi.innerHTML = '<div class="tabs">' + TABS_DM.map(function (t) { return '<button data-t="' + t[0] + '"' + (st.tab === t[0] ? ' class="chon"' : '') + '>' + t[1] + '</button>'; }).join('') + '</div><div id="dm-noi"></div>';
     App.$('.tabs', noi).onclick = function (e) { var b = e.target.closest('[data-t]'); if (b) { st.tab = b.dataset.t; App.veLai(); } };
-    ({ pb: App.dmDonVi, bl: App.dmThangLuong, ld: dmLD, sp: dmSP, pc: dmPC, kh: dmKH, le: dmLe })[st.tab](App.$('#dm-noi'));
+    ({ pb: App.dmDonVi, bl: App.dmThangLuong, hd: dmGD, ld: dmLD, sp: dmSP, pc: dmPC, kh: dmKH, le: dmLe })[st.tab](App.$('#dm-noi'));
   }
 
   function dmLD(el) {
@@ -58,6 +58,73 @@
         var ma = App.boDau(ten).split(/\s+/).map(function (w) { return w[0] || ''; }).join('').toUpperCase().replace(/[^A-Z0-9]/g, '') || 'LD';
         while (ds.some(function (x) { return x.ma === ma; })) ma += '1';
         ds.push({ ma: ma, ten: ten, congChuan: 26, nghiTuan: [0] }); App.luu(); dmLD(el);
+      }
+    };
+  }
+
+  /** Danh mục giai đoạn ký hợp đồng: thử việc -> chính thức 1 năm -> chính thức 3 năm -> không xác định thời hạn */
+  function dmGD(el) {
+    var db = App.db, ds = db.caiDat.giaiDoanHD, KXD = 'Không xác định thời hạn';
+    var dem = {};
+    db.nhanVien.forEach(function (nv) {
+      if (nv.trangThai === 'nghi_viec' || !App.hdHieuLuc) return;
+      var hl = App.hdHieuLuc(nv), g = hl && TL.giaiDoanCuaHD(db, nv, hl);
+      if (g) dem[g.ma] = (dem[g.ma] || 0) + 1;
+    });
+    el.innerHTML = '<div class="the"><h3>Giai đoạn ký hợp đồng</h3><p class="mo" style="margin-top:0">Thứ tự các lần ký hợp đồng của một người. ' +
+      'Khi <b>Ký hợp đồng</b>, phần mềm chọn sẵn giai đoạn tiếp theo, ngày hiệu lực nối tiếp ngày hết hạn HĐ trước và tự tính ngày hết hạn theo thời hạn của giai đoạn. ' +
+      'Số tháng của giai đoạn <i>thử việc</i> cũng là số tháng thử việc mặc định. Hợp đồng sắp hết hạn, cần ký giai đoạn tiếp theo: trang <a href="#theodoihd">Theo dõi hợp đồng</a>.</p>' +
+      '<div class="cuon"><table class="bang"><thead><tr><th>Thứ tự</th><th style="min-width:260px">Tên giai đoạn</th><th>Loại hợp đồng</th><th>Thời hạn (tháng)</th><th>Đang hiệu lực</th><th></th></tr></thead><tbody>' +
+      ds.map(function (g, i) {
+        return '<tr data-i="' + i + '"><td class="giua">' + (i + 1) + '</td><td><input class="o-nhap chu" data-f="ten" value="' + h(g.ten) + '" style="width:100%"></td>' +
+          '<td><select class="o-nhap" data-f="loai">' + App.LOAI_HD.map(function (l) { return '<option' + (l === g.loai ? ' selected' : '') + '>' + h(l) + '</option>'; }).join('') + '</select></td>' +
+          '<td>' + (g.loai === KXD ? '<span class="mo">Không thời hạn</span>' : '<input class="o-nhap" data-f="soThang" type="number" min="1" max="60" step="1" value="' + (+g.soThang || '') + '" style="width:80px"> <span class="mo nho">' + App.thoiHan(g.soThang) + '</span>') + '</td>' +
+          '<td class="giua">' + (dem[g.ma] || 0) + ' người</td>' +
+          '<td style="white-space:nowrap"><button class="nut nho" data-a="len" title="Lên"' + (i ? '' : ' disabled') + '>↑</button> <button class="nut nho" data-a="xuong" title="Xuống"' + (i < ds.length - 1 ? '' : ' disabled') + '>↓</button> ' +
+          '<button class="nut nho nguy" data-a="xoa" title="Xoá">' + App.icon('xoa') + '</button></td></tr>';
+      }).join('') + '</tbody></table></div>' +
+      '<div class="hang" style="margin-top:12px"><input id="gd-ten" placeholder="Tên giai đoạn (vd Hợp đồng chính thức 2 năm)" style="width:300px">' +
+      '<select id="gd-loai">' + App.LOAI_HD.map(function (l) { return '<option' + (l === 'Xác định thời hạn' ? ' selected' : '') + '>' + h(l) + '</option>'; }).join('') + '</select>' +
+      '<input id="gd-th" type="number" min="1" max="60" placeholder="Số tháng" style="width:100px"><button class="nut chinh" id="gd-them">' + App.icon('them') + 'Thêm giai đoạn</button>' +
+      '<span class="gian"></span><button class="nut" id="gd-goc">Khôi phục 4 giai đoạn mặc định</button></div>' +
+      '<p class="mo nho">Theo Bộ luật Lao động 2019: HĐ xác định thời hạn không quá 36 tháng; hết HĐ xác định thời hạn mà vẫn làm việc thì chỉ được ký thêm 1 lần HĐ xác định thời hạn, ' +
+      'sau đó phải ký HĐ không xác định thời hạn (Điều 20). Chỉ thử việc 1 lần với 1 công việc, không quá 180 ngày (quản lý DN), 60 ngày (cao đẳng trở lên), 30 ngày (trung cấp, CNKT), 6 ngày làm việc (khác) – Điều 25.</p></div>';
+    function luu() { App.luu(); dmGD(el); App.bao('Đã lưu'); }
+    el.onchange = function (e) {
+      var i = e.target, tr = i.closest('tr[data-i]'); if (!tr || !i.dataset.f) return;
+      var g = ds[+tr.dataset.i], f = i.dataset.f;
+      if (f === 'ten') { if (!i.value.trim()) { App.bao('Tên giai đoạn không được trống.', 'loi'); dmGD(el); return; } g.ten = i.value.trim(); }
+      else if (f === 'loai') { g.loai = i.value; if (g.loai === KXD) g.soThang = 0; else if (!(+g.soThang > 0)) g.soThang = g.loai === 'Thử việc' ? 1 : 12; }
+      else if (f === 'soThang') { var n = Math.round(+i.value); if (!(n >= 1 && n <= 60)) { App.bao('Thời hạn nhập từ 1 đến 60 tháng.', 'loi'); dmGD(el); return; } g.soThang = n; }
+      luu();
+    };
+    el.onclick = function (e) {
+      var b = e.target.closest('[data-a]');
+      if (b) {
+        var k = +b.closest('tr').dataset.i, g = ds[k];
+        if (b.dataset.a === 'len' && k > 0) { ds.splice(k, 1); ds.splice(k - 1, 0, g); luu(); }
+        else if (b.dataset.a === 'xuong' && k < ds.length - 1) { ds.splice(k, 1); ds.splice(k + 1, 0, g); luu(); }
+        else if (b.dataset.a === 'xoa') {
+          if (ds.length <= 1) { App.bao('Cần giữ ít nhất 1 giai đoạn.', 'loi'); return; }
+          App.xacNhan('Xoá giai đoạn <b>' + h(g.ten) + '</b>? Các hợp đồng đã ghi giai đoạn này sẽ được xếp lại theo loại và thời hạn hợp đồng.', { nut: 'Xoá', nguy: true }).then(function (ok) {
+            if (!ok) return; db.caiDat.giaiDoanHD = ds = ds.filter(function (x) { return x !== g; }); luu();
+          });
+        }
+        return;
+      }
+      if (e.target.closest('#gd-them')) {
+        var ten = App.$('#gd-ten').value.trim(), loai = App.$('#gd-loai').value, th = Math.round(+App.$('#gd-th').value);
+        if (!ten) { App.bao('Nhập tên giai đoạn.', 'loi'); return; }
+        if (loai !== KXD && !(th >= 1 && th <= 60)) { App.bao('Nhập thời hạn từ 1 đến 60 tháng.', 'loi'); return; }
+        var so = 1; while (ds.some(function (x) { return x.ma === 'GD' + so; })) so++;
+        // thêm vào trước giai đoạn không xác định thời hạn (giai đoạn cuối)
+        var vt = ds.length && ds[ds.length - 1].loai === KXD ? ds.length - 1 : ds.length;
+        ds.splice(vt, 0, { ma: 'GD' + so, ten: ten, loai: loai, soThang: loai === KXD ? 0 : th });
+        luu();
+      } else if (e.target.closest('#gd-goc')) {
+        App.xacNhan('Khôi phục 4 giai đoạn: thử việc 1 tháng → chính thức 1 năm → chính thức 3 năm → không xác định thời hạn?', { nut: 'Khôi phục' }).then(function (ok) {
+          if (!ok) return; db.caiDat.giaiDoanHD = ds = TL.giaiDoanHDMacDinh(); luu();
+        });
       }
     };
   }
@@ -314,7 +381,7 @@
           o('Đi làm (lương thời gian) ngày Tết được tính (công)', 'caiDat.heSoCongTet', 'so', 'Mặc định 3 công; tiền cơm vẫn tính 1 ngày') +
           '</div><p class="mo nho">Theo Bộ luật Lao động 2019: làm thêm ngày thường ít nhất 150%, ngày nghỉ hằng tuần 200%, ngày lễ 300% (chưa kể lương ngày lễ). Phần chênh lệch so với lương giờ bình thường không chịu thuế TNCN.</p></div>' +
           '<div class="the"><h3>Thử việc</h3><div class="form ba">' +
-          o('Số tháng thử việc mặc định', 'caiDat.thuViec.soThang', 'so', 'Dùng khi chọn trạng thái Thử việc, thêm HĐ thử việc') +
+          '<label class="o">Số tháng thử việc mặc định<input value="' + TL.soThangThuViec(App.db) + ' tháng" disabled><span class="gc">Theo giai đoạn HĐ thử việc – sửa ở <a href="#danhmuc" onclick="App.moDanhMuc(\'hd\');return false">Danh mục → Giai đoạn hợp đồng</a></span></label>' +
           o('Lương thử việc (% lương chính thức)', 'caiDat.thuViec.tiLe', 'so', 'Mặc định 85% – mức tối thiểu theo Điều 26 BLLĐ 2019') +
           o('Thời gian thử việc không đóng BHXH, BHYT, BHTN (ký hợp đồng thử việc riêng)', 'caiDat.thuViec.khongDongBH', 'bool') +
           '</div><p class="mo nho">Từng người sửa được ở hồ sơ (tab Công việc &amp; lương → Thử việc). Ngày thuộc thời gian thử việc hưởng lương thử việc; kỳ có cả ngày thử việc và ngày chính thức được tính theo số công của từng phần. ' +

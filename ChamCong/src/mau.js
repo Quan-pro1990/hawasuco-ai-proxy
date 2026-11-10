@@ -41,7 +41,9 @@
     };
     var kyThuat = function (nv) { return ['KTH', 'D1', 'D2', 'DTC'].indexOf(nv.phongBan) >= 0; };
     function lui(thang) { var t = new Date(Y, M - 1 - thang, 1); return { y: t.getFullYear(), m: t.getMonth() + 1 }; }
-    var vaoTV = lui(1), nghiNV = lui(4);
+    var nghiNV = lui(4), hnIso = TL.iso(Y, M, D);
+    // ngày vào làm sao cho HĐ chính thức (sau 1 tháng thử việc, soThangCT tháng chính thức) hết hạn sau conNgay ngày – minh hoạ trang Theo dõi hợp đồng
+    function vaoDeHet(conNgay, soThangCT) { return TL.themThangISO(TL.congNgay(Y, M, D, conNgay + 1), -(soThangCT + 1)); }
     db.sanPham = [
       { ma: 'HD', ten: 'Hoá đơn ghi thu', dvt: 'HĐ', donGia: 1200 },
       { ma: 'DH', ten: 'Lắp đặt, thay đồng hồ nước', dvt: 'cái', donGia: 60000 }
@@ -56,13 +58,13 @@
       ['NV006', 'Vũ Thị Hà', 'Nữ', '1993-05-18', 'KTTV', 'Kế toán viên', '2020-07-01', 9000000, {}, 0, 'VP'],
       ['NV007', 'Đặng Quốc Huy', 'Nam', '1995-12-05', 'KDVT', 'Nhân viên ghi thu', '2021-02-22', 8040000, {}, 0, 'CN'],
       ['NV008', 'Bùi Thị Lan', 'Nữ', '1996-08-08', 'TCHC', 'Chuyên viên nhân sự', '2021-10-11', 9000000, {}, 0, 'VP'],
-      ['NV009', 'Đỗ Văn Long', 'Nam', '1992-04-25', 'DTC', 'CN LĐ-SC', '2019-05-06', 9000000, {}, 1, 'CN'],
-      ['NV010', 'Ngô Thị Mai', 'Nữ', '1997-' + TL.pad(M) + '-25', 'D2', 'Nhân viên ghi thu', '2022-03-01', 7320000, {}, 0, 'CN'],
+      ['NV009', 'Đỗ Văn Long', 'Nam', '1992-04-25', 'DTC', 'CN LĐ-SC', vaoDeHet(-5, 48), 9000000, {}, 1, 'CN'],
+      ['NV010', 'Ngô Thị Mai', 'Nữ', '1997-' + TL.pad(M) + '-25', 'D2', 'Nhân viên ghi thu', vaoDeHet(25, 48), 7320000, {}, 0, 'CN'],
       ['NV011', 'Dương Văn Nam', 'Nam', '1994-06-11', 'D1', 'CN LĐ-SC', '2020-11-16', 8000000, {}, 1, 'CN'],
       ['NV012', 'Lý Thị Oanh', 'Nữ', '1999-10-03', 'KDVT', 'Thủ kho', '2023-02-13', 8040000, {}, 0, 'VP'],
-      ['NV013', 'Phan Thanh Phong', 'Nam', '1998-03-27', 'KDVT', 'Tài xế', '2024-08-05', 9000000, {}, 0, 'CN'],
-      ['NV014', 'Trịnh Thị Quỳnh', 'Nữ', '2000-12-12', 'KDVT', 'Nhân viên ghi thu', TL.iso(vaoTV.y, vaoTV.m, 1), 7000000, {}, 0, 'CN'],
-      ['NV015', 'Mai Văn Sơn', 'Nam', '1979-07-07', 'TCHC', 'Bảo vệ', '2019-01-02', 300000, {}, 1, ''],
+      ['NV013', 'Phan Thanh Phong', 'Nam', '1998-03-27', 'KDVT', 'Tài xế', vaoDeHet(18, 12), 9000000, {}, 0, 'CN'],
+      ['NV014', 'Trịnh Thị Quỳnh', 'Nữ', '2000-12-12', 'KDVT', 'Nhân viên ghi thu', TL.congNgay(Y, M, D, -12), 7000000, {}, 0, 'CN'],
+      ['NV015', 'Mai Văn Sơn', 'Nam', '1979-07-07', 'TCHC', 'Bảo vệ', vaoDeHet(40, 48), 300000, {}, 1, ''],
       ['NV016', 'Hồ Thị Thu', 'Nữ', '2003-05-05', 'TCHC', 'Cộng tác viên', '2025-09-08', 30000, { AN: 0 }, 0, ''],
       ['NV017', 'Tạ Văn Tâm', 'Nam', '1990-01-20', 'KDVT', 'Nhân viên ghi thu', '2022-05-01', 7320000, {}, 0, 'T2-T7']
     ];
@@ -79,7 +81,7 @@
     var nv3 = db.nhanVien[2], nv14 = db.nhanVien[13], nv15 = db.nhanVien[14], nv16 = db.nhanVien[15], nv17 = db.nhanVien[16];
     nv3.thamGiaBH = false; nv3.ghiChu = 'Đã nghỉ hưu, làm việc theo hợp đồng – không đóng BHXH';
     nv14.trangThai = 'thu_viec'; nv14.loaiHD = 'Thử việc'; nv14.doanVien = false;
-    nv14.thuViec = { tuNgay: nv14.ngayVao, soThang: 2, denNgay: TL.denNgayThuViec(nv14.ngayVao, 2), tiLe: 85 };
+    nv14.thuViec = { tuNgay: nv14.ngayVao, soThang: 1, denNgay: TL.denNgayThuViec(nv14.ngayVao, 1), tiLe: 85 };
     nv14.ngayHetHD = nv14.thuViec.denNgay;
     nv15.hinhThuc = 'ngay'; nv15.luongBH = 6000000; nv15.loaiHD = 'Xác định thời hạn'; nv15.ngayHetHD = TL.congNgay(Y, M, D, 20);
     nv16.hinhThuc = 'gio'; nv16.thamGiaBH = false; nv16.cachTinhThue = 'khau_tru'; nv16.loaiHD = 'Thời vụ / khoán việc'; nv16.doanVien = false;
@@ -106,19 +108,27 @@
       });
       // người phụ thuộc theo số đã có
       for (var k = 0; k < (nv.soNPT || 0); k++) nv.nguoiPhuThuoc.push({ hoTen: (k === 0 && i % 2 ? 'Mẹ của ' : 'Con của ') + nv.hoTen.split(' ').pop(), quanHe: k === 0 && i % 2 ? 'Mẹ' : 'Con', ngaySinh: (2012 + k * 3) + '-0' + (k + 3) + '-15', maSo: '0' + String(80000000000 + i * 1111 + k), tuThang: (2019 + k) + '-01' });
-      // hợp đồng: thử việc 2 tháng -> xác định thời hạn 12 tháng -> không xác định thời hạn
-      var so = 0, tvHet = cong12(nv.ngayVao, 2);
-      function hd(loai, tu, den, luong) { so++; nv.hopDong.push({ id: 'hd' + i + '_' + so, so: TL.pad(so) + '/' + tu.slice(0, 4) + '/HĐLĐ-' + nv.ma, loai: loai, ngayKy: tu, tuNgay: tu, denNgay: den, chucDanh: nv.chucVu, luongCB: luong, diaDiem: db.congTy.diaChi, phuCap: 'Cơm trưa 50.000 đ/ngày làm việc' }); }
-      if (nv.trangThai === 'thu_viec') hd('Thử việc', nv.ngayVao, nv.ngayHetHD, nv.luongCB);
+      // hợp đồng theo giai đoạn: thử việc 1 tháng -> chính thức 1 năm -> chính thức 3 năm -> không xác định thời hạn
+      var so = 0;
+      function hd(loai, tu, den, luong, gd) { so++; nv.hopDong.push({ id: 'hd' + i + '_' + so, so: TL.pad(so) + '/' + tu.slice(0, 4) + '/HĐLĐ-' + nv.ma, giaiDoan: gd || '', loai: loai, ngayKy: tu, tuNgay: tu, denNgay: den, chucDanh: nv.chucVu, luongCB: luong, diaDiem: db.congTy.diaChi, phuCap: 'Cơm trưa 50.000 đ/ngày làm việc' }); }
+      if (nv.trangThai === 'thu_viec') hd('Thử việc', nv.ngayVao, nv.ngayHetHD, nv.luongCB, 'TV');
       else if (nv.hinhThuc === 'gio') hd('Thời vụ / khoán việc', nv.ngayVao, cong12(nv.ngayVao, 18), nv.luongCB);
       else {
-        hd('Thử việc', nv.ngayVao, tvHet, nv.luongCB);
-        var tu2 = TL.congNgay(+tvHet.slice(0, 4), +tvHet.slice(5, 7), +tvHet.slice(8), 1);
-        if (nv.ma === 'NV013' || nv.ma === 'NV015') { hd('Xác định thời hạn', tu2, cong12(tu2, 12), nv.luongCB); var tu3 = TL.congNgay(+nv.hopDong[1].denNgay.slice(0, 4), +nv.hopDong[1].denNgay.slice(5, 7), +nv.hopDong[1].denNgay.slice(8), 1); hd('Xác định thời hạn', tu3, TL.congNgay(Y, M, D, nv.ma === 'NV013' ? 18 : 40), nv.luongCB); }
-        else { hd('Xác định thời hạn', tu2, cong12(tu2, 12), nv.luongCB); var hdx = nv.hopDong[nv.hopDong.length - 1]; hd('Không xác định thời hạn', TL.congNgay(+hdx.denNgay.slice(0, 4), +hdx.denNgay.slice(5, 7), +hdx.denNgay.slice(8), 1), '', nv.luongCB); }
+        // ký lần lượt từng giai đoạn tới hợp đồng đang hiệu lực hôm nay; NV009 hết HĐ 3 năm chưa ký lại, NV010 đã ký trước HĐ không xác định thời hạn
+        var tuGD = nv.ngayVao;
+        [['Thử việc', 1, 'TV'], ['Xác định thời hạn', 12, 'CT1'], ['Xác định thời hạn', 36, 'CT3'], ['Không xác định thời hạn', 0, 'KXD']].some(function (g) {
+          if (tuGD > hnIso && !(nv.ma === 'NV010' && g[2] === 'KXD')) return true;
+          if (nv.ma === 'NV009' && g[2] === 'KXD') return true;
+          var den = g[1] ? TL.denNgayHD(tuGD, g[1]) : '';
+          hd(g[0], tuGD, den, nv.luongCB, g[2]);
+          if (!den) return true;
+          tuGD = TL.congNgay(+den.slice(0, 4), +den.slice(5, 7), +den.slice(8), 1);
+        });
+        if (nv.ma === 'NV010') nv.hopDong[nv.hopDong.length - 1].ngayKy = TL.congNgay(Y, M, D, -3);
+        if (nv.ma === 'NV013') nv.hopDong[nv.hopDong.length - 1].theoDoi = { tt: 'trinh', ghiChu: 'Đã gửi phiếu đánh giá cho trưởng phòng', ngay: TL.congNgay(Y, M, D, -2), nguoi: '' };
       }
       nv.hopDong.forEach(function (x) { if (x.loai === 'Thử việc') x.tiLeTV = 85; });
-      var cuoi = nv.hopDong[nv.hopDong.length - 1];
+      var cuoi = nv.hopDong.filter(function (x) { return x.tuNgay <= hnIso; }).pop() || nv.hopDong[0];
       nv.loaiHD = cuoi.loai; nv.ngayHetHD = cuoi.denNgay || '';
       nv.quyetDinh.push({ id: 'qd' + i + '_0', loai: 'tiep_nhan', so: TL.pad(i + 1) + '/QĐ-TN', ngay: nv.ngayVao, hieuLuc: nv.ngayVao, noiDung: 'Tiếp nhận vào làm việc tại ' + TL.tenPhongBan(db, { NV009: 'KDVT', NV010: 'KDVT', NV011: 'KTH' }[nv.ma] || nv.phongBan) });
     });
@@ -154,7 +164,7 @@
     var xep = {
       NV001: ['GD', 2, '2023-01-01'], NV002: ['PGD', 2, '2022-03-01'], NV003: ['TP', 2, '2021-07-01'], NV004: ['TP', 1, '2023-11-01'], NV005: ['TP', 2, '2023-09-01'],
       NV006: ['CV', 2, dau(lui(2))], NV007: ['NV', 3, '2024-11-01'], NV008: ['CV', 2, '2024-01-10'], NV009: ['CN', 3, '2025-02-01'],
-      NV010: ['NV', 2, TL.themThangISO(TL.iso(Y, M, 1), -24)], NV011: ['CN', 2, dau(lui(5))], NV012: ['NV', 3, '2025-06-01'], NV013: ['CN', 3, '2025-08-05'],
+      NV010: ['NV', 2, TL.themThangISO(TL.iso(Y, M, 1), -24)], NV011: ['CN', 2, dau(lui(5))], NV012: ['NV', 3, '2025-06-01'], NV013: ['CN', 1, null],
       NV014: ['NV', 1, null], NV017: ['NV', 2, '2023-05-01']
     };
     db.nhanVien.forEach(function (nv) { var x = xep[nv.ma]; if (x) nv.xepLuong = { bang: 'BL1', ngach: x[0], bac: x[1], ngayHuong: x[2] || nv.ngayVao }; });
