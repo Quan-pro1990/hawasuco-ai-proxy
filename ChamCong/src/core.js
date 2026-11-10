@@ -292,6 +292,10 @@
     dong.push([]);
     dong.push([{ v: o.tieuDe, s: K.tieuDe }]); gop.push('A4:' + cuoi + '4'); cao[3] = 24;
     dong.push([{ v: o.phuDe || '', s: K.phuDe }]); gop.push('A5:' + cuoi + '5');
+    (o.dongThem || []).forEach(function (t, i) {
+      gop.push(XL.oRef(dong.length, 0) + ':' + XL.oRef(dong.length, n - 1));
+      dong.push([{ v: t, s: i === 0 ? { b: true } : {} }]);
+    });
     dong.push([]);
     var coNhom = cot.some(function (c) { return c.nhom; });
     var r1 = dong.length;

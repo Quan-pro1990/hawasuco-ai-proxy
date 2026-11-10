@@ -86,6 +86,7 @@
       otToiThieuPhut: 30,       // làm quá giờ ra từ x phút mới tính làm thêm
       otLamTronPhut: 30,        // làm tròn xuống giờ làm thêm theo bội số phút
       heSoOT: { thuong: 150, nghi: 200, le: 300 },
+      otTraRieng: true,         // tiền làm thêm giờ chi bằng bảng riêng (không gộp vào lãnh kỳ II)
       tiLeNgungViec: 100,       // % lương cho ngày nghỉ / ngừng việc (ký hiệu nhóm "ngung")
       heSoCongLe: 2,            // đi làm hưởng lương thời gian vào ngày lễ được tính 2 công (SP không nhân)
       heSoCongTet: 3,           // đi làm hưởng lương thời gian vào ngày Tết được tính 3 công (SP không nhân)
@@ -136,6 +137,7 @@
       phongBan: [],
       thangLuong: [],
       dotLuong: [],
+      khoiLuong: {},
       nhanVien: [],
       ngayLe: [],
       donNghi: [],
@@ -159,6 +161,7 @@
     if (!Array.isArray(db.nhanVien)) db.nhanVien = [];
     if (!Array.isArray(db.thangLuong)) db.thangLuong = [];
     if (!Array.isArray(db.dotLuong)) db.dotLuong = [];
+    if (!db.khoiLuong || typeof db.khoiLuong !== 'object' || Array.isArray(db.khoiLuong)) db.khoiLuong = {};
     if (!db.caiDat.tamUng || typeof db.caiDat.tamUng !== 'object') db.caiDat.tamUng = { macDinh: 0, theoChucVu: [] };
     if (!Array.isArray(db.caiDat.tamUng.theoChucVu)) db.caiDat.tamUng.theoChucVu = [];
     db.thangLuong.forEach(chuanBangLuong);
@@ -657,6 +660,28 @@
     return doi;
   }
 
+  /* ----- Khối bảng lương: mỗi phòng / đội thuộc 1 bảng lương (vd Văn phòng công ty gồm Ban GĐ và các phòng;
+     mỗi đội 1 bảng), có tiêu đề, ngân hàng chi lương, số tài khoản công ty riêng ----- */
+  var KHOI_VP = 'Văn phòng công ty';
+  function khoiCuaDV(db, maPB) {
+    var p = (db.phongBan || []).filter(function (x) { return x.ma === maPB; })[0];
+    if (!p) return KHOI_VP;
+    if (p.khoi && String(p.khoi).trim()) return String(p.khoi).trim();
+    return loaiDonVi(p) === 'doi' ? p.ten : KHOI_VP;
+  }
+  function dsKhoi(db) {
+    var kq = [];
+    (db.phongBan || []).forEach(function (p) { if (p.ngung) return; var k = khoiCuaDV(db, p.ma); if (kq.indexOf(k) < 0) kq.push(k); });
+    return kq;
+  }
+  function thongTinKhoi(db, ten) {
+    var x = (db.khoiLuong || {})[ten] || {};
+    return {
+      ten: ten, tieuDe: x.tieuDe || 'BẢNG THANH TOÁN TIỀN LƯƠNG ' + String(ten).toUpperCase(),
+      nganHang: x.nganHang != null ? x.nganHang : (db.congTy.nganHangChi || ''), soTK: x.soTK != null ? x.soTK : (db.congTy.soTKChi || '')
+    };
+  }
+
   /* ----- Phòng, đội ----- */
   var LOAI_DV = { phong: 'Phòng', doi: 'Đội', ban: 'Ban', to: 'Tổ', xn: 'Xí nghiệp / chi nhánh' };
   function loaiDonVi(p) {
@@ -817,10 +842,14 @@
 
     // Làm thêm giờ: phần 100% chịu thuế, phần chênh lệch được miễn thuế
     var hs = cd.heSoOT || {};
-    var tienOT = luongGio * (c.otThuong * (+hs.thuong || 150) + c.otNghi * (+hs.nghi || 200) + c.otLe * (+hs.le || 300)) / 100;
+    var otTien = {
+      thuong: r0(luongGio * c.otThuong * (+hs.thuong || 150) / 100),
+      nghi: r0(luongGio * c.otNghi * (+hs.nghi || 200) / 100),
+      le: r0(luongGio * c.otLe * (+hs.le || 300) / 100)
+    };
+    var tienOT = otTien.thuong + otTien.nghi + otTien.le;
     var otChiuThue = luongGio * c.otTong;
-    var otMienThue = Math.max(0, tienOT - otChiuThue);
-    tienOT = r0(tienOT); otMienThue = r0(otMienThue);
+    var otMienThue = r0(Math.max(0, tienOT - otChiuThue));
 
     // Phụ cấp
     var pcList = ctx.phuCap || db.phuCap;
@@ -900,7 +929,9 @@
 
     var phatMuon = r0((+cd.phatMuonMoiLan || 0) * c.muonLan + (+cd.phatMuonMoiPhut || 0) * c.muonPhut);
     var tongKhauTru = tongBH + doanPhi + thue + phatMuon + khauTru + phatQD;   // cột "Cộng" các khoản khấu trừ (không gồm tạm ứng)
-    var thucLinh = tongThuNhap - tamUng - tongKhauTru;
+    // tiền làm thêm giờ chi riêng (bảng thanh toán làm thêm giờ) thì không gộp vào lãnh kỳ II; thuế vẫn tính trên cả tháng
+    var otRieng = cd.otTraRieng ? tienOT : 0;
+    var thucLinh = tongThuNhap - otRieng - tamUng - tongKhauTru;
     var lt = +cd.lamTron || 1;
     thucLinh = Math.round(thucLinh / lt) * lt;
     if (thucLinh < 0 && tamUng > 0) canhBao.push('Tạm ứng kỳ I lớn hơn số tiền còn được lãnh: kỳ II âm');
@@ -919,7 +950,7 @@
       thuong: thuong, thuongQD: thuongQD, phatQD: phatQD, congKhac: congKhac, tongThuNhap: tongThuNhap, qdLuong: lk.qd ? lk.qd.so || '' : '',
       luongBH: luongBH, dongBH: !!dongBH, bhxh: bhxh, bhyt: bhyt, bhtn: bhtn, tongBH: tongBH, doanPhi: doanPhi,
       tnct: tnct, giamTruBT: gtBT, soNPT: soNPT, giamTruNPT: gtNPT, tntt: tntt, thue: thue,
-      anCaVuot: anCaVuot, tamUng: tamUng, tamUngTuDong: !coTU, tamUngMacDinh: tamUngTD, khauTru: khauTru, phatMuon: phatMuon, tongKhauTru: tongKhauTru, ghiChu: dc.ghiChu || '',
+      anCaVuot: anCaVuot, otRieng: otRieng, otTien: otTien, khoi: khoiCuaDV(db, dvk.phongBan), tamUng: tamUng, tamUngTuDong: !coTU, tamUngMacDinh: tamUngTD, khauTru: khauTru, phatMuon: phatMuon, tongKhauTru: tongKhauTru, ghiChu: dc.ghiChu || '',
       thucLinh: thucLinh, dn: dn, chiPhiDN: tongThuNhap + dn.tong,
       canhBao: canhBao
     };
@@ -1077,7 +1108,7 @@
     soBacNgach: soBacNgach, giaTriBac: giaTriBac, xepLuongNV: xepLuongNV, apXepLuong: apXepLuong, themThangISO: themThangISO,
     dsDotLuong: dsDotLuong, kyHienHanh: kyHienHanh, kyCuaISO: kyCuaISO, dotTaiKy: dotTaiKy, luongCoSoKy: luongCoSoKy, mucChungPC: mucChungPC,
     bacNgach: bacNgach, chupMucKy: chupMucKy, xepLuongTheoKy: xepLuongTheoKy, cauHinhTamUng: cauHinhTamUng, tamUngTheoChucVu: tamUngTheoChucVu,
-    tamUngKy1: tamUngKy1, chuanCV: chuanCV, mienThueAnCaKy: mienThueAnCaKy,
+    tamUngKy1: tamUngKy1, chuanCV: chuanCV, mienThueAnCaKy: mienThueAnCaKy, KHOI_VP: KHOI_VP, khoiCuaDV: khoiCuaDV, dsKhoi: dsKhoi, thongTinKhoi: thongTinKhoi,
     LOAI_QD: LOAI_QD, luongTheoKy: luongTheoKy, LOAI_DV: LOAI_DV, loaiDonVi: loaiDonVi, donViTheoKy: donViTheoKy, soNPTKy: soNPTKy, thuongPhatQD: thuongPhatQD,
     ngayLamTrongKhoang: ngayLamTrongKhoang, apDungDonNghi: apDungDonNghi, boDonNghi: boDonNghi, ngayNghiHuu: ngayNghiHuu, thamNien: thamNien
   };

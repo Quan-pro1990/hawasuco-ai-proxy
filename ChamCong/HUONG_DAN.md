@@ -25,6 +25,8 @@ Khi dùng thật: trang **Tổng quan** → bấm **Xoá dữ liệu mẫu, bắ
      đếm số ngày làm việc thực tế trong kỳ. Thêm loại khác được (vd bảo vệ, trực ca).
    - **Sản phẩm (lương SP)**: tên, đơn vị tính, đơn giá – vd *Hoá đơn ghi thu 1.200 đ/HĐ*, *Lắp đặt đồng hồ … đ/cái*.
    - **Phụ cấp**: *Cơm trưa* mặc định **50.000 đ/ngày** áp dụng cho mọi nhân viên (cột *Mức chung*).
+   - **Phòng, đội**: cột *Bảng lương* cho biết phòng / đội in chung bảng lương nào (Văn phòng công ty gồm Ban GĐ và các phòng;
+     mỗi đội 1 bảng); thẻ *Bảng lương và ngân hàng chi lương*: tiêu đề in, ngân hàng chi lương, số tài khoản công ty.
    - **Phòng, đội**: thêm / đổi tên / sắp xếp (thứ tự in trên bảng), chọn loại *Phòng, Đội, Ban, Tổ, Xí nghiệp*.
    - **Thang, bảng lương**: các bảng lương, chức danh và từng bậc (mức tiền hoặc hệ số × lương cơ sở) – xem mục *Xếp lương, nâng bậc*.
    - Ký hiệu chấm công, ngày lễ (bấm *Tạo tự động* cho từng năm).
@@ -33,6 +35,8 @@ Khi dùng thật: trang **Tổng quan** → bấm **Xoá dữ liệu mẫu, bắ
    - **Sản phẩm chính** nếu có lương sản phẩm (có thể đặt đơn giá riêng cho người đó).
    - **Mức lương/HĐ**, phụ cấp riêng nếu có, có tham gia BH không, đoàn viên công đoàn, số người phụ thuộc.
      Tiền cơm **50.000 đ/ngày** đã là mức chung cho mọi người, không cần nhập; ai khác mức thì nhập mức riêng, nhập 0 = không hưởng.
+   - **Tài khoản ngân hàng nhận lương**: số tài khoản, ngân hàng, chi nhánh (dùng cho danh sách đề nghị chi lương gửi ngân hàng).
+     Danh sách nhân viên có cột tài khoản, đánh dấu ai *Chưa có*; tìm được theo số tài khoản.
    - **Mã chấm công** = số ID của người đó trên máy chấm công vân tay (nếu dùng).
 
 ## Quản lý nhân sự
@@ -130,11 +134,18 @@ Cột theo mẫu *Bảng thanh toán tiền lương*: Mức lương/HĐ · Lươ
 Phụ cấp cơm trưa (số công, số tiền) · phụ cấp khác · Thưởng · Tổng thu nhập · Tạm ứng kỳ I ·
 BHXH 8% · BHYT 1,5% · BHTN 1% · Công đoàn 0,5% · Thuế TNCN · Khấu trừ khác · Cộng · **Lãnh kỳ II** · Ký nhận.
 
-- Ô nền vàng nhập trực tiếp: **số lượng sản phẩm chính**, thưởng, khoản cộng khác, **tạm ứng kỳ I**, khấu trừ khác, ghi chú.
+- Ô nền vàng nhập trực tiếp: **số lượng sản phẩm chính**, thưởng, khoản cộng khác, khấu trừ khác, ghi chú.
+  **Tạm ứng kỳ I** tự điền theo chức vụ (chữ nghiêng); gõ số khác để nhập tay cho kỳ này (kể cả 0), xoá trống để trở về tự động.
   Người làm nhiều loại sản phẩm trong tháng: bấm nút **…** cạnh ô số lượng để nhập từng loại.
-- Lọc theo **phòng / đội** và **loại lao động** (vd chỉ in bảng lương công nhân); bảng chấm công cũng lọc được như vậy.
+- Chọn **bảng lương** (Văn phòng công ty, từng đội), lọc theo **phòng / đội** và **loại lao động**; bảng chấm công cũng lọc được.
+  Xuất Excel khi chọn *Tất cả bảng lương* thì mỗi bảng lương 1 sheet, tiêu đề riêng (vd *BẢNG THANH TOÁN TIỀN LƯƠNG ĐỘI CẤP NƯỚC SỐ 1*).
 - Bấm tên nhân viên để xem **chi tiết cách tính** từng con số.
-- **Xuất Excel** (kèm trang *Bảo hiểm*), **File chuyển khoản** cho ngân hàng, **In**.
+- **Xuất Excel** (kèm trang *Bảo hiểm*), **In**.
+- **Chi lương kỳ I, kỳ II…**: tóm tắt từng bảng lương (số người, tổng kỳ I, kỳ II, làm thêm giờ, ai thiếu số tài khoản) và xuất:
+  *Danh sách tạm ứng lương kỳ I (ký nhận)*, *Đề nghị chi lương kỳ I / kỳ II / tiền làm thêm giờ – gửi ngân hàng*
+  (mẫu: BỘ PHẬN, Kính gửi ngân hàng, Số tài khoản công ty, STT – số tài khoản – tên chủ tài khoản – số tiền ghi có – ghi chú,
+  tổng số, bằng chữ, ký), *Bảng thanh toán tiền làm thêm giờ*. Ngân hàng chi lương và số tài khoản công ty của từng bảng lương
+  khai báo ở Danh mục → Phòng, đội (thẻ *Bảng lương và ngân hàng chi lương*).
 - **Chốt lương tháng**: khoá chấm công và bảng lương của kỳ, lưu cố định số liệu (không đổi khi sau này sửa mức lương,
   tỷ lệ BH, biểu thuế). Mở khoá được khi cần sửa.
 
@@ -151,12 +162,28 @@ Cách tính chính:
   Hệ số sửa ở Cài đặt → Lương & làm thêm. Tiền cơm không nhân: mỗi ngày đi làm vẫn 1 suất.
 - Cơm trưa = 50.000 đ × số ngày có đi làm: ngày `+`, `SP`, công tác, học tập, **kể cả đi làm hoặc làm sản phẩm
   vào ngày lễ**; nửa ngày `+/2` tính 0,5. Ngày **nghỉ lễ `L`** vẫn tính công nhưng **không tính cơm**; nghỉ phép, ốm… cũng không tính cơm.
-  Mức 50.000 sửa ở Danh mục → Phụ cấp → *Mức chung*.
+  Tiền cơm thay đổi từ tháng nào thì sửa ở trang **Mức lương theo kỳ**. Phần tiền ăn giữa ca vượt **1.200.000 đ/tháng**
+  (Nghị định 253/2026, từ 01/7/2026; trước đó 730.000) tính vào thu nhập chịu thuế TNCN – vd 26 ngày × 50.000 = 1.300.000 thì 100.000 chịu thuế.
 - BH trên lương đóng BH (mặc định = mức lương + phụ cấp có đánh dấu đóng BH), có trần 20 × lương cơ sở (BHXH, BHYT)
   và 20 × lương tối thiểu vùng (BHTN). Nghỉ không lương từ 14 ngày trở lên trong kỳ thì không đóng BH.
 - Thuế TNCN biểu lũy tiến 5 bậc, giảm trừ bản thân 15,5 triệu, người phụ thuộc 6,2 triệu; phần lương làm thêm vượt
   lương thường và phụ cấp không chịu thuế được loại trừ. Hợp đồng dưới 3 tháng: khấu trừ 10%.
-- **Lãnh kỳ II** = Tổng thu nhập − Tạm ứng kỳ I − Cộng các khoản khấu trừ.
+- **Lương 2 kỳ mỗi tháng**: **kỳ I** (giữa tháng) tạm ứng theo chức vụ – mặc định theo bảng lương công ty: Chủ tịch kiêm Giám đốc,
+  Giám đốc 6.000.000; Phó Giám đốc, Kế toán trưởng 5.000.000; Trưởng phòng, Phó phòng, Đội trưởng 3.000.000; chức vụ khác 2.000.000
+  (sửa ở trang Mức lương theo kỳ; người có mức riêng thì nhập *Tạm ứng kỳ I riêng* trong hồ sơ; không có công hưởng lương thì không tạm ứng).
+  **Lãnh kỳ II** (cuối tháng) = Tổng thu nhập − Tạm ứng kỳ I − Cộng các khoản khấu trừ (BH, công đoàn, thuế, khấu trừ khác).
+- **Làm thêm giờ**: lương giờ = mức lương ÷ công chuẩn ÷ 8 giờ; ngày thường 150%, ngày nghỉ 200%, lễ Tết 300%.
+  Mặc định tiền làm thêm giờ **chi bằng bảng riêng** (Bảng thanh toán tiền làm thêm giờ, đề nghị chi riêng) – không gộp vào lãnh kỳ II;
+  thuế TNCN vẫn tính trên thu nhập cả tháng. Bỏ tuỳ chọn ở Cài đặt → Lương & làm thêm nếu muốn gộp.
+
+### Mức lương theo kỳ (bảng lương, bậc lương, lương cơ sở, tiền cơm, tạm ứng thay đổi từ một tháng)
+Menu **Thiết lập → Mức lương theo kỳ**. Mỗi lần Nhà nước / công ty thay đổi, bấm **Mức mới áp dụng từ tháng…**:
+chọn kỳ lương bắt đầu áp dụng, số quyết định; phần mềm chép toàn bộ mức đang dùng, có thể **tăng đồng loạt % các bậc**, đổi lương cơ sở,
+tiền cơm ngay trong hộp. Sau đó sửa tiếp từng số: giá trị từng bậc của thang bảng lương, lương cơ sở, tiền cơm, mức miễn thuế tiền ăn giữa ca,
+tạm ứng kỳ I theo chức vụ. Ô nào khác mức trước được tô đậm kèm % thay đổi.
+- Bảng lương mỗi kỳ tự lấy đúng mức của kỳ đó: kỳ trước giữ mức cũ, kỳ từ tháng áp dụng trở đi dùng mức mới; kỳ đã chốt không đổi.
+- Người đã xếp bậc thì lương mỗi kỳ = giá trị bậc (theo quyết định nâng bậc của kỳ đó) tại mức áp dụng của kỳ đó.
+- *Mức ban đầu* là mức dùng cho các kỳ trước mọi lần điều chỉnh. Có thể xem / sửa từng mức, xoá mức nhập nhầm, xuất Excel.
 
 ### 4. Phiếu lương, báo cáo
 - **Phiếu lương**: in 2 phiếu / trang A4 (hoặc *Lưu thành PDF* để gửi Zalo), xuất Excel.
@@ -180,7 +207,8 @@ Cài máy chủ: xem [`iis/HUONG_DAN_IIS.txt`](iis/HUONG_DAN_IIS.txt). Tài kho�
 | BH người lao động | BHXH 8%, BHYT 1,5%, BHTN 1% |
 | BH doanh nghiệp | BHXH 17,5%, BHYT 3%, BHTN 1%, KPCĐ 2% |
 | Đoàn phí công đoàn | 0,5% lương đóng BH (tối đa 10% lương cơ sở) |
-| Lương cơ sở | 2.530.000 đ (từ 01/7/2026) |
+| Lương cơ sở | 2.530.000 đ (từ 01/7/2026) – đổi theo kỳ ở trang Mức lương theo kỳ |
+| Tiền ăn giữa ca không tính thuế | 1.200.000 đ/tháng (NĐ 253/2026, từ 01/7/2026) |
 | Lương tối thiểu vùng 2026 | I 5.310.000 · II 4.730.000 · III 4.140.000 · IV 3.700.000 |
 | Giảm trừ gia cảnh | bản thân 15.500.000 · người phụ thuộc 6.200.000 |
 | Biểu thuế (thu nhập tính thuế / tháng) | ≤10 tr 5% · 10–30 tr 10% · 30–60 tr 20% · 60–100 tr 30% · >100 tr 35% |

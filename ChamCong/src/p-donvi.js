@@ -139,20 +139,34 @@
       '<p class="mo" style="margin-top:0">Nhân viên trực thuộc một phòng hoặc đội. Thứ tự ở đây là thứ tự nhóm trên bảng chấm công, bảng lương. ' +
       'Chuyển nhân viên qua lại: bấm <b>Chuyển NV</b> ở dòng đơn vị, hoặc chọn nhiều người ở trang Nhân viên → <b>Chuyển phòng / đội</b>. ' +
       'Muốn <b>xoá</b> phòng / đội còn nhân viên thì phải chuyển hết nhân viên sang đơn vị khác trước.</p>' +
-      '<div class="cuon"><table class="bang" id="dv-bang"><thead><tr><th>STT</th><th>Mã</th><th>Loại</th><th style="min-width:280px">Tên phòng / đội</th><th>Nhân viên</th><th></th></tr></thead><tbody>' +
+      '<div class="cuon"><table class="bang" id="dv-bang"><thead><tr><th>STT</th><th>Mã</th><th>Loại</th><th style="min-width:260px">Tên phòng / đội</th><th title="Đơn vị cùng bảng lương thì in chung 1 bảng (vd Ban GĐ và các phòng = Văn phòng công ty; mỗi đội 1 bảng)">Bảng lương</th><th>Nhân viên</th><th></th></tr></thead><tbody>' +
       hd.map(function (p, i) {
         return '<tr data-ma="' + h(p.ma) + '"><td class="giua">' + (i + 1) + '</td><td>' + h(p.ma) + '</td><td>' + selLoai(p.loai, 'data-f="loai" style="width:130px"') + '</td>' +
           '<td><input class="o-nhap chu" data-f="ten" value="' + h(p.ten) + '" style="width:100%"></td>' +
+          '<td><input class="o-nhap chu" data-f="khoi" list="ds-khoi" value="' + h(TL.khoiCuaDV(db, p.ma)) + '" style="width:190px"></td>' +
           '<td class="giua">' + (dem[p.ma] ? '<span class="lk" data-a="ds" title="Xem danh sách">' + dem[p.ma] + '</span>' : '<span class="mo">0</span>') + '</td>' +
           '<td style="white-space:nowrap"><button class="nut nho" data-a="len" title="Lên">▲</button> <button class="nut nho" data-a="xuong" title="Xuống">▼</button> ' +
           '<button class="nut nho" data-a="chuyen"' + (dem[p.ma] ? '' : ' disabled') + ' title="Chuyển nhân viên của đơn vị này sang đơn vị khác">Chuyển NV…</button> ' +
           '<button class="nut nho nguy" data-a="xoa" title="Xoá phòng / đội">' + App.icon('xoa') + '</button></td></tr>';
-      }).join('') + (hd.length ? '' : '<tr><td colspan="6" class="trong">Chưa có phòng / đội.</td></tr>') +
-      '</tbody></table></div>' +
+      }).join('') + (hd.length ? '' : '<tr><td colspan="7" class="trong">Chưa có phòng / đội.</td></tr>') +
+      '</tbody></table></div><datalist id="ds-khoi">' + TL.dsKhoi(db).map(function (k) { return '<option value="' + h(k) + '">'; }).join('') + '</datalist>' +
       '<div class="hang" style="margin-top:12px">' + selLoai('phong', 'id="dv-loai"') + '<input id="dv-ma" placeholder="Mã (vd D1)" style="width:110px"><input id="dv-ten" placeholder="Tên (vd Đội Cấp nước số 3)" style="width:300px">' +
       '<button class="nut chinh" id="dv-them">' + App.icon('them') + 'Thêm phòng / đội</button></div>' +
       (chuaPhan.length ? '<div class="canh-bao" style="margin-top:12px">' + chuaPhan.length + ' nhân viên chưa thuộc phòng / đội nào: ' + chuaPhan.map(function (nv) { return h(nv.hoTen); }).join(', ') +
         ' <button class="nut nho" id="dv-phan">Phân vào phòng / đội…</button></div>' : '') + '</div>' +
+      // khối bảng lương: tiêu đề, ngân hàng chi lương, số tài khoản công ty
+      '<div class="the" id="dv-khoi"><h3>Bảng lương và ngân hàng chi lương<span class="phai">' + TL.dsKhoi(db).length + ' bảng lương</span></h3>' +
+      '<p class="mo" style="margin-top:0">Mỗi bảng lương in riêng (vd <b>Văn phòng công ty</b> gồm Ban Giám đốc và các phòng; mỗi đội 1 bảng). Ngân hàng và số tài khoản công ty dùng cho ' +
+      '<b>danh sách đề nghị chi lương kỳ I, kỳ II, làm thêm giờ</b> gửi ngân hàng (Bảng lương → Chi lương kỳ I, kỳ II…). Đổi tên ở đây thì mọi phòng / đội thuộc bảng đó đổi theo.</p>' +
+      '<div class="cuon"><table class="bang"><thead><tr><th style="min-width:170px">Bảng lương</th><th style="min-width:280px">Tiêu đề in</th><th style="min-width:280px">Ngân hàng chi lương (Kính gửi)</th><th>Số TK công ty</th><th>Phòng / đội</th></tr></thead><tbody>' +
+      TL.dsKhoi(db).map(function (k) {
+        var tt = TL.thongTinKhoi(db, k), dv = hd.filter(function (p) { return TL.khoiCuaDV(db, p.ma) === k; });
+        return '<tr data-khoi="' + h(k) + '"><td><input class="o-nhap chu" data-k="ten" value="' + h(k) + '" style="width:100%"></td>' +
+          '<td><input class="o-nhap chu" data-k="tieuDe" value="' + h(tt.tieuDe) + '" style="width:100%"></td>' +
+          '<td><input class="o-nhap chu" data-k="nganHang" value="' + h(tt.nganHang) + '" placeholder="vd Ngân hàng TMCP Công Thương Việt Nam – Chi nhánh …" style="width:100%"></td>' +
+          '<td><input class="o-nhap chu" data-k="soTK" value="' + h(tt.soTK) + '" inputmode="numeric" style="width:150px"></td>' +
+          '<td class="nho">' + dv.map(function (p) { return h(p.ten); }).join(', ') + '</td></tr>';
+      }).join('') + '</tbody></table></div></div>' +
       (gt.length ? '<div class="the"><h3>Đã giải thể<span class="phai">Giữ tên để xem, in lại các kỳ cũ</span></h3><div class="cuon"><table class="bang"><thead><tr><th>Mã</th><th>Loại</th><th>Tên</th><th>Còn trong lịch sử</th><th></th></tr></thead><tbody>' +
         gt.map(function (p) {
           var t = thamChieu(p.ma), s = [];
@@ -163,10 +177,26 @@
 
     function tim(ma) { return db.phongBan.filter(function (p) { return p.ma === ma; })[0]; }
     function veLai() { App.dmDonVi(el); }
+    function doiKhoi(ten, k, v) {
+      db.khoiLuong = db.khoiLuong || {};
+      if (k === 'ten') {
+        if (!v) { veLai(); return; }
+        if (v !== ten && TL.dsKhoi(db).indexOf(v) >= 0) { App.bao('Đã có bảng lương “' + v + '”. Muốn gộp thì đổi cột Bảng lương của từng phòng / đội.', 'loi'); veLai(); return; }
+        db.phongBan.forEach(function (p) { if (TL.khoiCuaDV(db, p.ma) === ten) p.khoi = v; });
+        if (db.khoiLuong[ten]) { db.khoiLuong[v] = db.khoiLuong[ten]; delete db.khoiLuong[ten]; }
+        App.luu(); App.bao('Đã đổi tên bảng lương'); veLai(); return;
+      }
+      var x = db.khoiLuong[ten] = db.khoiLuong[ten] || {};
+      x[k] = k === 'tieuDe' ? v.toUpperCase() : k === 'soTK' ? v.replace(/\s+/g, '') : v;
+      App.luu(); App.bao('Đã lưu');
+    }
 
     el.onchange = function (e) {
+      var ik = e.target.closest('[data-k]');
+      if (ik && ik.closest('#dv-khoi')) { doiKhoi(ik.closest('tr').dataset.khoi, ik.dataset.k, ik.value.trim()); return; }
       var i = e.target.closest('[data-f]'); if (!i) return;
       var p = tim(i.closest('tr').dataset.ma); if (!p) return;
+      if (i.dataset.f === 'khoi') { p.khoi = i.value.trim() || TL.khoiCuaDV(db, ''); App.luu(); App.bao('Đã chuyển ' + p.ten + ' sang bảng lương ' + p.khoi); veLai(); return; }
       if (i.dataset.f === 'ten') { if (!i.value.trim()) { App.bao('Tên không được để trống.', 'loi'); i.value = p.ten; return; } p.ten = i.value.trim(); }
       else p.loai = i.value;
       App.luu(); App.bao('Đã lưu');

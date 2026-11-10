@@ -307,6 +307,7 @@
           '<div class="mo">Đơn giá từng sản phẩm: <a href="#danhmuc">Danh mục → Sản phẩm</a> (' + (db.sanPham || []).map(function (p) { return h(p.ten) + ' ' + App.tien(p.donGia) + ' đ/' + h(p.dvt || 'đv'); }).join('; ') + ').</div>' +
           '</div></div>' +
           '<div class="the"><h3>Làm thêm giờ, ngừng việc</h3><div class="form ba">' +
+          o('Tiền làm thêm giờ chi bằng bảng riêng (không gộp vào lãnh kỳ II)', 'caiDat.otTraRieng', 'bool') +
           o('Làm thêm ngày thường (%)', 'caiDat.heSoOT.thuong', 'so') + o('Làm thêm ngày nghỉ tuần (%)', 'caiDat.heSoOT.nghi', 'so') + o('Làm thêm ngày lễ, Tết (%)', 'caiDat.heSoOT.le', 'so') +
           o('Lương ngày nghỉ / ngừng việc (ký hiệu N) (%)', 'caiDat.tiLeNgungViec', 'so') +
           o('Đi làm (lương thời gian) ngày lễ được tính (công)', 'caiDat.heSoCongLe', 'so', 'Mặc định 2 công; nghỉ lễ (L) vẫn 1 công; làm SP không nhân') +

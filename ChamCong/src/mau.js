@@ -32,6 +32,13 @@
       { ma: 'D2', ten: 'Đội Cấp nước số 2', loai: 'doi' },
       { ma: 'DTC', ten: 'Đội Thi công – Sửa chữa', loai: 'doi' }
     ];
+    // bảng lương: Văn phòng công ty (Ban GĐ + các phòng) và mỗi đội 1 bảng; ngân hàng chi lương (số TK mẫu)
+    db.khoiLuong = {
+      'Văn phòng công ty': { nganHang: 'Ngân hàng TMCP Công Thương Việt Nam – Chi nhánh Hậu Giang', soTK: '000000000001' },
+      'Đội Cấp nước số 1': { nganHang: 'Ngân hàng Nông nghiệp và Phát triển Nông thôn Việt Nam – Chi nhánh Hậu Giang', soTK: '000000000002' },
+      'Đội Cấp nước số 2': { nganHang: 'Ngân hàng TMCP Công Thương Việt Nam – Chi nhánh Hậu Giang', soTK: '000000000001' },
+      'Đội Thi công – Sửa chữa': { nganHang: 'Ngân hàng Nông nghiệp và Phát triển Nông thôn Việt Nam – Chi nhánh Hậu Giang', soTK: '000000000002' }
+    };
     var kyThuat = function (nv) { return ['KTH', 'D1', 'D2', 'DTC'].indexOf(nv.phongBan) >= 0; };
     function lui(thang) { var t = new Date(Y, M - 1 - thang, 1); return { y: t.getFullYear(), m: t.getMonth() + 1 }; }
     var vaoTV = lui(1), nghiNV = lui(4);

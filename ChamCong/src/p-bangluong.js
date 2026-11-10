@@ -87,6 +87,7 @@
   function locRows(rows) {
     return rows.filter(function (r) {
       if (st.pb && r.phongBan !== st.pb) return false;
+      if (st.khoi && r.khoi !== st.khoi) return false;
       if (st.ld && (r.loaiLD || '') !== (st.ld === '-' ? '' : st.ld)) return false;
       if (st.tim && !App.timKhop(r.ma + ' ' + r.hoTen, st.tim)) return false;
       return true;
@@ -105,29 +106,32 @@
     var khoa = bl.khoa, ngay = TL.ngayKy(db, y, m);
     noi.innerHTML =
       '<div class="the khong-in" style="padding:12px 14px"><div class="hang">' +
+      (TL.dsKhoi(db).length > 1 ? '<select id="bl-khoi" title="Bảng lương theo khối (văn phòng công ty, từng đội)"><option value="">Tất cả bảng lương</option>' +
+        TL.dsKhoi(db).map(function (k) { return '<option' + (st.khoi === k ? ' selected' : '') + '>' + h(k) + '</option>'; }).join('') + '</select>' : '') +
       '<select id="bl-pb">' + App.optDonVi(st.pb, { tatCa: 'Tất cả phòng / đội', ngung: true }) + '</select>' +
       App.chonLoaiLD('bl-ld', st.ld) +
       '<input type="search" id="bl-tim" placeholder="Tìm nhân viên…" value="' + h(st.tim) + '" style="width:170px">' +
       '<label class="chk"><input type="checkbox" id="bl-nhom"' + (st.nhomPB ? ' checked' : '') + '> Nhóm theo phòng / đội</label>' +
       '<span class="gian"></span>' +
       '<button class="nut" id="bl-xuat">' + App.icon('tai') + 'Xuất Excel</button>' +
-      '<button class="nut" id="bl-ck">' + App.icon('ngan') + 'File chuyển khoản</button>' +
+      '<button class="nut" id="bl-ck" title="Danh sách tạm ứng kỳ I, đề nghị chi lương kỳ I / kỳ II / làm thêm giờ gửi ngân hàng">' + App.icon('ngan') + 'Chi lương kỳ I, kỳ II…</button>' +
       '<button class="nut" id="bl-in">' + App.icon('in') + 'In</button>' +
       (khoa ? '<button class="nut" id="bl-mo">' + App.icon('mo') + 'Mở khoá</button>' : '<button class="nut xanh" id="bl-chot">' + App.icon('khoa') + 'Chốt lương tháng</button>') +
       '</div>' +
       (khoa ? '<div class="canh-bao" style="margin-top:10px">Bảng lương đã <b>chốt</b> lúc ' + new Date(bl.ngayChot).toLocaleString('vi-VN') + '. Số liệu được giữ cố định, không đổi khi sửa cài đặt hay hồ sơ nhân viên. Muốn sửa, bấm <b>Mở khoá</b>.</div>'
         : '<div class="mo nho" style="margin-top:8px">Kỳ công ' + TL.hienNgay(ngay[0].iso) + ' – ' + TL.hienNgay(ngay[ngay.length - 1].iso) + '. Ô nền vàng nhập trực tiếp: sản lượng, thưởng, khoản cộng khác, khấu trừ khác. <b>Tạm ứng kỳ I</b> tự điền theo chức vụ (chữ nghiêng, sửa ở trang Mức lương theo kỳ); gõ số khác để nhập tay, xoá trống để trở về tự động. Bấm tên nhân viên để xem chi tiết cách tính.</div>') +
       '</div>' +
-      App.dauIn((db.congTy.tieuDeBangLuong || 'BẢNG THANH TOÁN TIỀN LƯƠNG').toUpperCase(), 'Tháng ' + m + ' năm ' + y) +
+      App.dauIn(st.khoi ? TL.thongTinKhoi(db, st.khoi).tieuDe : (db.congTy.tieuDeBangLuong || 'BẢNG THANH TOÁN TIỀN LƯƠNG').toUpperCase(), 'Tháng ' + m + ' năm ' + y) +
       '<div class="cuon cao"><table class="bang" id="bl-bang"></table></div>' +
       App.kyIn();
     veBangBL(bl);
     App.$('#bl-pb').onchange = function () { st.pb = this.value; veBangBL(TL.tinhBangLuong(App.db, y, m)); };
+    var sk = App.$('#bl-khoi'); if (sk) sk.onchange = function () { st.khoi = this.value; App.veLai(); };
     App.$('#bl-tim').oninput = function () { st.tim = this.value; veBangBL(TL.tinhBangLuong(App.db, y, m)); };
     App.$('#bl-ld').onchange = function () { st.ld = this.value; veBangBL(TL.tinhBangLuong(App.db, y, m)); };
     App.$('#bl-nhom').onchange = function () { st.nhomPB = this.checked; veBangBL(TL.tinhBangLuong(App.db, y, m)); };
     App.$('#bl-xuat').onclick = function () { xuatBL(TL.tinhBangLuong(App.db, y, m)); };
-    App.$('#bl-ck').onclick = function () { xuatCK(TL.tinhBangLuong(App.db, y, m)); };
+    App.$('#bl-ck').onclick = function () { hopChiLuong(TL.tinhBangLuong(App.db, y, m)); };
     App.$('#bl-in').onclick = function () { App.inTrang(); };
     var c = App.$('#bl-chot'); if (c) c.onclick = App.chotLuong;
     var mo = App.$('#bl-mo'); if (mo) mo.onclick = App.moKhoa;
@@ -374,8 +378,9 @@
     if (r.khauTru) d_('Khấu trừ khác', h(r.ghiChu), '−' + t(r.khauTru));
     if (r.phatQD) d_('Phạt, bồi thường theo quyết định kỷ luật', '', '−' + t(r.phatQD));
     d_('Cộng các khoản khấu trừ', 'BH + công đoàn + thuế + khấu trừ khác', '−' + t(r.tongKhauTru));
-    if (r.tamUng) d_('Tạm ứng kỳ I', '', '−' + t(r.tamUng));
-    d_('<b>Lãnh kỳ II</b>', 'Tổng thu nhập − tạm ứng − các khoản khấu trừ', '<b style="color:var(--chinh-dam);font-size:15px">' + t(r.thucLinh) + '</b>');
+    if (r.tamUng) d_('Tạm ứng kỳ I', r.tamUngTuDong ? 'Theo chức vụ' : 'Nhập tay kỳ này', '−' + t(r.tamUng));
+    if (r.otRieng) d_('Tiền làm thêm giờ (chi bảng riêng)', 'Bảng thanh toán tiền làm thêm giờ', '−' + t(r.otRieng));
+    d_('<b>Lãnh kỳ II</b>', 'Tổng thu nhập − tạm ứng' + (r.otRieng ? ' − làm thêm giờ chi riêng' : '') + ' − các khoản khấu trừ', '<b style="color:var(--chinh-dam);font-size:15px">' + t(r.thucLinh) + '</b>');
     d_('', '<i>' + TL.docSo(r.thucLinh) + '</i>', '');
     m_('6. Doanh nghiệp đóng thêm');
     d_('BHXH / BHYT / BHTN / KPCĐ', App.so(cd.bh.dn.bhxh) + '% / ' + App.so(cd.bh.dn.bhyt) + '% / ' + App.so(cd.bh.dn.bhtn) + '% / ' + App.so(cd.bh.dn.kpcd) + '%', t(r.dn.tong));
@@ -396,22 +401,27 @@
       return x;
     });
     cot.push({ t: 'Ký nhận', w: 11, f: function () { return ''; }, khongTong: true });
-    var rows = locRows(bl.rows), dong = [];
-    if (st.nhomPB) {
-      nhomTheoPB(rows).forEach(function (g) {
-        dong.push({ _kieu: 'nhom', _nhan: g.ten });
-        g.rows.forEach(function (r) { dong.push(r); });
-        dong.push(Object.assign(TL.congTong(g.rows, bl.phuCap), { _kieu: 'tong', _nhan: 'Cộng ' + g.ten }));
+    var tatCa = locRows(bl.rows), khois = [];
+    tatCa.forEach(function (r) { if (khois.indexOf(r.khoi) < 0) khois.push(r.khoi); });
+    var nhieu = khois.length > 1 && !st.khoi;
+    var shs = khois.map(function (k) {
+      var rows = tatCa.filter(function (r) { return r.khoi === k; }), dong = [];
+      if (st.nhomPB) {
+        nhomTheoPB(rows).forEach(function (g) {
+          dong.push({ _kieu: 'nhom', _nhan: g.ten });
+          g.rows.forEach(function (r) { dong.push(r); });
+          dong.push(Object.assign(TL.congTong(g.rows, bl.phuCap), { _kieu: 'tong', _nhan: 'Cộng ' + g.ten }));
+        });
+      } else dong = rows;
+      var tong = Object.assign(TL.congTong(rows, bl.phuCap), { _kieu: 'tong', _nhan: 'TỔNG CỘNG' });
+      var tieuDe = TL.dsKhoi(db).length > 1 ? TL.thongTinKhoi(db, k).tieuDe : (db.congTy.tieuDeBangLuong || 'BẢNG THANH TOÁN TIỀN LƯƠNG').toUpperCase();
+      return App.sheetBang({
+        ten: nhieu ? k.slice(0, 30) : 'Bảng lương T' + m, tieuDe: tieuDe, phuDe: 'Tháng ' + m + ' năm ' + y, quocHieu: true,
+        cot: cot, dong: dong, tong: tong, cotNhanTong: 1, coCot: 2,
+        dongCuoi: 'Tổng số tiền lãnh kỳ II (viết bằng chữ): ' + TL.docSo(tong.thucLinh)
       });
-    } else dong = rows;
-    var tong = Object.assign(TL.congTong(rows, bl.phuCap), { _kieu: 'tong', _nhan: 'TỔNG CỘNG' });
-    var tieuDe = (db.congTy.tieuDeBangLuong || 'BẢNG THANH TOÁN TIỀN LƯƠNG').toUpperCase();
-    var sh = App.sheetBang({
-      ten: 'Bảng lương T' + m, tieuDe: tieuDe, phuDe: 'Tháng ' + m + ' năm ' + y, quocHieu: true,
-      cot: cot, dong: dong, tong: tong, cotNhanTong: 1, coCot: 2,
-      dongCuoi: 'Tổng số tiền lãnh kỳ II (viết bằng chữ): ' + TL.docSo(tong.thucLinh)
     });
-    App.xuatExcel('Bang_luong_T' + TL.pad(m) + '_' + y, [sh, sheetBH(bl)]);
+    App.xuatExcel('Bang_luong_T' + TL.pad(m) + '_' + y + (st.khoi ? '_' + App.tenFile(st.khoi) : ''), shs.concat([sheetBH(bl)]));
   }
 
   function sheetBH(bl) {
@@ -435,20 +445,98 @@
   }
   App.sheetBH = sheetBH;
 
-  function xuatCK(bl) {
-    var y = App.ky.y, m = App.ky.m;
-    var rows = locRows(bl.rows).filter(function (r) { return r.thucLinh > 0; });
-    var thieu = rows.filter(function (r) { return !r.soTK; }).length;
-    var cot = [
-      { t: 'STT', stt: true, kieu: 'giua', w: 5 }, { t: 'Họ và tên', k: 'hoTen', w: 24 }, { t: 'Số tài khoản', k: 'soTK', w: 18 },
-      { t: 'Ngân hàng', k: 'nganHang', w: 16 }, { t: 'Số tiền', k: 'thucLinh', kieu: 'so', w: 14 },
-      { t: 'Nội dung chuyển khoản', w: 40, f: function (r) { return App.boDau('Luong thang ' + m + '/' + y + ' ' + r.hoTen).toUpperCase(); }, khongTong: true }
-    ];
-    App.xuatExcel('Chuyen_khoan_luong_T' + TL.pad(m) + '_' + y, [App.sheetBang({
-      ten: 'Chuyển khoản', tieuDe: 'DANH SÁCH CHUYỂN KHOẢN LƯƠNG KỲ II', phuDe: 'Tháng ' + m + ' năm ' + y, cot: cot, dong: rows,
-      tong: { thucLinh: rows.reduce(function (s, r) { return s + r.thucLinh; }, 0), _nhan: 'TỔNG CỘNG' }, cotNhanTong: 1
-    })]);
-    if (thieu) App.bao(thieu + ' nhân viên chưa có số tài khoản.', 'loi');
+  /* ================= Chi lương 2 kỳ: danh sách tạm ứng, đề nghị chi gửi ngân hàng, bảng làm thêm giờ ================= */
+  var MAU_CHI = {
+    ky1_ds: 'Danh sách tạm ứng lương kỳ I (ký nhận)',
+    ky1_nh: 'Đề nghị chi lương kỳ I – gửi ngân hàng',
+    ky2_nh: 'Đề nghị chi lương kỳ II – gửi ngân hàng',
+    ot_bang: 'Bảng thanh toán tiền làm thêm giờ',
+    ot_nh: 'Đề nghị chi tiền làm thêm giờ – gửi ngân hàng'
+  };
+  function hopChiLuong(bl) {
+    var db = App.db, y = App.ky.y, m = App.ky.m;
+    var rows = bl.rows.filter(function (r) { return (!st.khoi || r.khoi === st.khoi) && (!st.pb || r.phongBan === st.pb); });
+    var khois = []; rows.forEach(function (r) { if (khois.indexOf(r.khoi) < 0) khois.push(r.khoi); });
+    var sum = function (ds, f) { return ds.reduce(function (s, r) { return s + (+r[f] || 0); }, 0); };
+    var bang = '<div class="cuon"><table class="bang"><thead><tr><th>Bảng lương</th><th>Người</th><th class="so">Kỳ I (tạm ứng)</th><th class="so">Kỳ II</th><th class="so">Làm thêm giờ</th><th>Ngân hàng chi / số TK công ty</th><th>Thiếu số TK</th></tr></thead><tbody>' +
+      khois.map(function (k) {
+        var ds = rows.filter(function (r) { return r.khoi === k; }), tt = TL.thongTinKhoi(db, k);
+        var thieu = ds.filter(function (r) { return !r.soTK && (r.tamUng > 0 || r.thucLinh > 0); });
+        return '<tr><td class="ten">' + h(k) + '</td><td class="giua">' + ds.length + '</td><td class="so">' + App.tien(sum(ds, 'tamUng')) + '</td><td class="so">' + App.tien(sum(ds, 'thucLinh')) + '</td>' +
+          '<td class="so">' + App.tien(sum(ds, db.caiDat.otTraRieng ? 'otRieng' : 'tienOT')) + '</td>' +
+          '<td>' + (tt.nganHang ? h(tt.nganHang) + (tt.soTK ? ' – ' + h(tt.soTK) : '') : '<span class="the-tt cam">Chưa khai báo</span>') + '</td>' +
+          '<td>' + (thieu.length ? '<span class="the-tt do" title="' + h(thieu.map(function (r) { return r.hoTen; }).join(', ')) + '">' + thieu.length + ' người</span>' : '<span class="mo">—</span>') + '</td></tr>';
+      }).join('') + '</tbody></table></div>';
+    App.hop({
+      tieuDe: 'Chi lương tháng ' + m + '/' + y + ': kỳ I, kỳ II, làm thêm giờ', co: 'rong',
+      than: '<p class="mo" style="margin-top:0">Kỳ I (giữa tháng) tạm ứng theo chức vụ; kỳ II (cuối tháng) = tổng thu nhập − kỳ I − các khoản khấu trừ' +
+        (db.caiDat.otTraRieng ? '; tiền làm thêm giờ chi bằng bảng riêng' : '') + '. Mỗi bảng lương (khối) xuất 1 sheet. Ngân hàng chi lương và số tài khoản công ty khai báo ở <a href="#danhmuc" id="cl-dm">Danh mục → Phòng, đội</a>.</p>' + bang +
+        '<div class="form" style="grid-template-columns:1fr 1fr;margin-top:12px">' +
+        App.F.o('Mẫu', App.F.sel('mau', 'ky2_nh', App.F.cap(MAU_CHI))) +
+        App.F.o('Bảng lương', '<select name="khoi"><option value="">Tất cả (mỗi khối 1 sheet)</option>' + khois.map(function (k) { return '<option' + (st.khoi === k ? ' selected' : '') + '>' + h(k) + '</option>'; }).join('') + '</select>') + '</div>',
+      moRa: function (el, dong) { var a = App.$('#cl-dm', el); a.onclick = function () { dong(); App.moDanhMuc && App.moDanhMuc('pb'); }; },
+      nut: [{ ten: 'Đóng' }, {
+        ten: 'Xuất Excel', loai: 'chinh', bam: function (el) {
+          var v = App.F.doc(el), ks = v.khoi ? [v.khoi] : khois;
+          var shs = ks.map(function (k) { return sheetChi(v.mau, k, rows.filter(function (r) { return r.khoi === k; })); }).filter(Boolean);
+          if (!shs.length) { App.bao('Không có ai có số tiền để chi theo mẫu này.', 'loi'); return false; }
+          App.xuatExcel(App.tenFile(MAU_CHI[v.mau] + ' T' + TL.pad(m) + ' ' + y + (v.khoi ? ' ' + v.khoi : '')), shs);
+          var thieu = rows.filter(function (r) { return ks.indexOf(r.khoi) >= 0 && !r.soTK && /_nh$/.test(v.mau) && soTienChi(v.mau, r) > 0; });
+          if (thieu.length) App.bao(thieu.length + ' người chưa có số tài khoản: ' + thieu.slice(0, 5).map(function (r) { return r.hoTen; }).join(', ') + (thieu.length > 5 ? '…' : ''), 'loi');
+          return false;
+        }
+      }]
+    });
+  }
+  function soTienChi(mau, r) {
+    return /^ky1/.test(mau) ? r.tamUng : /^ky2/.test(mau) ? r.thucLinh : (App.db.caiDat.otTraRieng ? r.otRieng : r.tienOT);
+  }
+  function sheetChi(mau, khoi, rows) {
+    var db = App.db, y = App.ky.y, m = App.ky.m, tt = TL.thongTinKhoi(db, khoi), ten = khoi.slice(0, 30);
+    var ds = rows.filter(function (r) { return soTienChi(mau, r) > 0; });
+    if (!ds.length) return null;
+    var tong = ds.reduce(function (s, r) { return s + soTienChi(mau, r); }, 0);
+    if (/_nh$/.test(mau)) {
+      var loai = mau === 'ky1_nh' ? 'LƯƠNG KỲ I' : mau === 'ky2_nh' ? 'LƯƠNG KỲ II' : 'TIỀN LÀM THÊM GIỜ';
+      return App.sheetBang({
+        ten: ten, tieuDe: 'DANH SÁCH ĐỀ NGHỊ CHI ' + loai + ' THÁNG ' + m + '/' + y, phuDe: '',
+        dongThem: ['BỘ PHẬN: ' + khoi.toUpperCase(), 'Kính gửi: ' + (tt.nganHang || '................................................'), 'Số tài khoản: ' + (tt.soTK || '................................')],
+        cot: [{ t: 'STT', stt: true, w: 6, kieu: 'giua' }, { t: 'SỐ TÀI KHOẢN', w: 20, f: function (r) { return r.soTK || ''; } },
+          { t: 'TÊN CHỦ TÀI KHOẢN', w: 28, f: function (r) { return r.hoTen; } }, { t: 'SỐ TIỀN GHI CÓ', w: 16, kieu: 'so', f: function (r) { return soTienChi(mau, r); } },
+          { t: 'GHI CHÚ', w: 22, khongTong: true, f: function (r) { return r.soTK ? '' : 'Chưa có số tài khoản'; } }],
+        dong: ds, tong: { _nhan: 'TỔNG SỐ', tamUng: tong, thucLinh: tong, otRieng: tong, tienOT: tong }, cotNhanTong: 2, ngang: false,
+        dongCuoi: 'Số tiền bằng chữ: ' + TL.docSo(tong)
+      });
+    }
+    if (mau === 'ky1_ds') {
+      var dong = [];
+      nhomTheoPB(ds).forEach(function (g) { dong.push({ _kieu: 'nhom', _nhan: g.ten }); g.rows.forEach(function (r) { dong.push(r); }); });
+      return App.sheetBang({
+        ten: ten, tieuDe: 'DANH SÁCH TẠM ỨNG LƯƠNG ' + khoi.toUpperCase(), phuDe: 'Tháng ' + m + ' năm ' + y, ngang: false,
+        cot: [{ t: 'STT', stt: true, w: 6, kieu: 'giua' }, { t: 'HỌ VÀ TÊN', w: 26, k: 'hoTen' }, { t: 'CHỨC VỤ', w: 24, k: 'chucVu' },
+          { t: 'SỐ TIỀN ỨNG', w: 16, kieu: 'so', k: 'tamUng' }, { t: 'KÝ NHẬN', w: 16, khongTong: true, f: function () { return ''; } }],
+        dong: dong, tong: { _nhan: 'TỔNG CỘNG', tamUng: tong }, cotNhanTong: 1, dongCuoi: 'Tổng số tiền tạm ứng (bằng chữ): ' + TL.docSo(tong)
+      });
+    }
+    // bảng thanh toán tiền làm thêm giờ (lương giờ = mức lương / công chuẩn / số giờ làm 1 ngày)
+    var hs = db.caiDat.heSoOT || {}, sumF = function (f) { return ds.reduce(function (s, r) { return s + (+f(r) || 0); }, 0); };
+    var cotOT = [{ t: 'STT', stt: true, w: 5, kieu: 'giua' }, { t: 'Họ và tên', w: 22, k: 'hoTen' }, { t: 'Chức danh', w: 16, k: 'chucVu' },
+      { t: 'Mức lương', w: 12, kieu: 'so', k: 'luongCB', khongTong: true }, { t: 'Lương ngày', w: 11, kieu: 'so', k: 'luongNgay', khongTong: true }, { t: 'Lương giờ', w: 10, kieu: 'so', k: 'luongGio', khongTong: true },
+      { t: 'Số giờ', nhom: 'Làm thêm ngày làm việc (' + (hs.thuong || 150) + '%)', w: 7, kieu: 'cong', f: function (r) { return r.cong.otThuong; } },
+      { t: 'Thành tiền', nhom: 'Làm thêm ngày làm việc (' + (hs.thuong || 150) + '%)', w: 11, kieu: 'so', f: function (r) { return r.otTien.thuong; } },
+      { t: 'Số giờ', nhom: 'Làm thêm ngày nghỉ (' + (hs.nghi || 200) + '%)', w: 7, kieu: 'cong', f: function (r) { return r.cong.otNghi; } },
+      { t: 'Thành tiền', nhom: 'Làm thêm ngày nghỉ (' + (hs.nghi || 200) + '%)', w: 11, kieu: 'so', f: function (r) { return r.otTien.nghi; } },
+      { t: 'Số giờ', nhom: 'Làm thêm ngày lễ, Tết (' + (hs.le || 300) + '%)', w: 7, kieu: 'cong', f: function (r) { return r.cong.otLe; } },
+      { t: 'Thành tiền', nhom: 'Làm thêm ngày lễ, Tết (' + (hs.le || 300) + '%)', w: 11, kieu: 'so', f: function (r) { return r.otTien.le; } },
+      { t: 'Tổng cộng tiền', w: 13, kieu: 'so', k: 'tienOT' }, { t: 'Ký nhận', w: 10, khongTong: true, f: function () { return ''; } }];
+    var tongOT = { _nhan: 'TỔNG CỘNG', tienOT: sumF(function (r) { return r.tienOT; }) };
+    return App.sheetBang({
+      ten: ten, tieuDe: 'BẢNG THANH TOÁN TIỀN LÀM THÊM GIỜ ' + khoi.toUpperCase(), phuDe: 'Tháng ' + m + ' năm ' + y, quocHieu: true,
+      cot: cotOT, dong: ds, cotNhanTong: 1, coCot: 2,
+      tong: Object.assign(tongOT, { cong: { otThuong: sumF(function (r) { return r.cong.otThuong; }), otNghi: sumF(function (r) { return r.cong.otNghi; }), otLe: sumF(function (r) { return r.cong.otLe; }) },
+        otTien: { thuong: sumF(function (r) { return r.otTien.thuong; }), nghi: sumF(function (r) { return r.otTien.nghi; }), le: sumF(function (r) { return r.otTien.le; }) } }),
+      dongCuoi: 'Tổng số tiền làm thêm giờ (bằng chữ): ' + TL.docSo(tongOT.tienOT)
+    });
   }
 
   /* ================= Phiếu lương ================= */
@@ -498,6 +586,7 @@
     if (r.phatQD) L.push(['c', 'Phạt, bồi thường theo quyết định', r.phatQD]);
     L.push(['m', 'Cộng các khoản khấu trừ', r.tongKhauTru]);
     if (r.tamUng) L.push(['m', 'III. ĐÃ TẠM ỨNG KỲ I', r.tamUng]);
+    if (r.otRieng) L.push(['m', 'IV. LÀM THÊM GIỜ (CHI BẢNG RIÊNG)', r.otRieng]);
     L.push(['tl', 'LÃNH KỲ II', r.thucLinh]);
     return L;
   }

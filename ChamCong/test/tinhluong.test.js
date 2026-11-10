@@ -302,6 +302,25 @@ t('Mức áp dụng từ kỳ: bậc lương, tiền cơm, lương cơ sở, t�
   assert.strictEqual(TL.tinhBangLuong(db, 2026, 12).rows[0].tamUng, 0);
 });
 
+t('Làm thêm giờ chi bảng riêng: không gộp vào lãnh kỳ II (thuế vẫn tính cả tháng); khối bảng lương theo phòng / đội', function () {
+  var db = dbMau(), nv = db.nhanVien[0];
+  db.phongBan.push({ ma: 'D1', ten: 'Đội Cấp nước số 1', loai: 'doi' }, { ma: 'TC', ten: 'Phòng TC-KH', khoi: 'Văn phòng công ty' }, { ma: 'X', ten: 'Đội tạm', loai: 'doi', ngung: true });
+  db = TL.chuanHoa(db);
+  TL.thang(db, 2026, 10, true).cc[nv.id] = { 1: '+', 2: '+' };
+  TL.thang(db, 2026, 10, true).ot[nv.id] = { 1: 2 };
+  db.caiDat.otTraRieng = false; var a = TL.tinhBangLuong(db, 2026, 10).rows[0];
+  db.caiDat.otTraRieng = true; var b = TL.tinhBangLuong(db, 2026, 10).rows[0];
+  assert.ok(a.tienOT > 0); assert.strictEqual(a.otRieng, 0); assert.strictEqual(b.otRieng, b.tienOT);
+  assert.strictEqual(a.thucLinh - b.thucLinh, b.tienOT); assert.strictEqual(a.thue, b.thue);
+  assert.strictEqual(TL.khoiCuaDV(db, 'KD'), 'Văn phòng công ty');
+  assert.strictEqual(TL.khoiCuaDV(db, 'D1'), 'Đội Cấp nước số 1');
+  assert.deepStrictEqual(TL.dsKhoi(db), ['Văn phòng công ty', 'Đội Cấp nước số 1']);
+  assert.strictEqual(TL.thongTinKhoi(db, 'Đội Cấp nước số 1').tieuDe, 'BẢNG THANH TOÁN TIỀN LƯƠNG ĐỘI CẤP NƯỚC SỐ 1');
+  db.khoiLuong['Đội Cấp nước số 1'] = { nganHang: 'Ngân hàng Nông nghiệp – Chi nhánh Hậu Giang', soTK: '7001' };
+  assert.strictEqual(TL.thongTinKhoi(db, 'Đội Cấp nước số 1').soTK, '7001');
+  assert.strictEqual(b.khoi, 'Văn phòng công ty');
+});
+
 t('Phòng / đội: chuyển qua lại có hiệu lực theo kỳ, kỳ cũ vẫn thuộc đơn vị cũ', function () {
   var db = dbMau(), nv = db.nhanVien[0];
   db.phongBan = [{ ma: 'KD', ten: 'Phòng Kinh doanh - Vật tư' }, { ma: 'D1', ten: 'Đội Cấp nước số 1' }];
