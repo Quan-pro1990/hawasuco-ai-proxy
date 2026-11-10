@@ -49,7 +49,10 @@
       so: soHDMoi(), loai: nv.trangThai === 'thu_viec' ? 'Thử việc' : 'Xác định thời hạn', ngayKy: hn(), tuNgay: hn(), chucDanh: nv.chucVu || '',
       luongCB: nv.luongCB, diaDiem: db.congTy.diaChi || '', congViec: ''
     } : JSON.parse(JSON.stringify(nv.hopDong[i]));
-    if (moi) x.denNgay = themThang(x.tuNgay, x.loai === 'Thử việc' ? 2 : 12);
+    var mdTV = db.caiDat.thuViec || {}, tvNV = TL.thuViecNV(db, nv);
+    function denHD(loai, tu) { return loai === 'Thử việc' ? TL.denNgayThuViec(tu, +mdTV.soThang || 2) : themThang(tu, 12); }
+    if (moi) x.denNgay = denHD(x.loai, x.tuNgay);
+    if (x.tiLeTV == null) x.tiLeTV = tvNV ? tvNV.tiLe : (+mdTV.tiLe || 85);
     var f = F();
     App.hop({
       tieuDe: (moi ? 'Thêm hợp đồng – ' : 'Sửa hợp đồng – ') + nv.hoTen, co: 'rong',
@@ -57,11 +60,12 @@
         f.o('Số hợp đồng', f.txt('so', x.so)) + f.o('Loại hợp đồng', f.sel('loai', x.loai, App.LOAI_HD)) + f.o('Ngày ký', f.ngay('ngayKy', x.ngayKy)) +
         f.o('Có hiệu lực từ ngày', f.ngay('tuNgay', x.tuNgay)) + f.o('Đến ngày', f.ngay('denNgay', x.denNgay), 'Để trống nếu không xác định thời hạn') +
         f.o('Chức danh chuyên môn', f.txt('chucDanh', x.chucDanh)) +
-        f.o('Mức lương theo hợp đồng (đ)', f.tien('luongCB', x.luongCB)) + f.o('Phụ cấp, thưởng (ghi trong HĐ)', f.txt('phuCap', x.phuCap, 'placeholder="vd Cơm trưa 50.000 đ/ngày làm việc"'), '', '') +
+        f.o('Mức lương theo hợp đồng (đ)', f.tien('luongCB', x.luongCB), '<span id="hd-tvtinh"></span>') +
+        '<span id="hd-tv">' + f.o('Lương thử việc (% mức lương)', f.txt('tiLeTV', x.tiLeTV, 'type="number" min="1" max="100" step="1"'), 'Ít nhất 85% (Điều 26 BLLĐ 2019)') + '</span>' + f.o('Phụ cấp, thưởng (ghi trong HĐ)', f.txt('phuCap', x.phuCap, 'placeholder="vd Cơm trưa 50.000 đ/ngày làm việc"'), '', '') +
         f.o('Địa điểm làm việc', f.txt('diaDiem', x.diaDiem)) +
         f.o('Công việc phải làm', f.vung('congViec', x.congViec), '', 'ca') + f.o('Ghi chú', f.txt('ghiChu', x.ghiChu), '', 'ca') +
         '<div class="ca" id="hd-cn">' +
-        f.chk('capNhat', true, 'Cập nhật hồ sơ theo hợp đồng này (loại HĐ, ngày hết hạn, chức danh; hết thử việc thì chuyển “Đang làm việc”, hưởng 100% lương)') + '<br>' +
+        f.chk('capNhat', true, 'Cập nhật hồ sơ theo hợp đồng này (loại HĐ, ngày hết hạn, chức danh; HĐ thử việc thì ghi thời gian và lương thử việc; HĐ chính thức thì kết thúc thử việc, chuyển “Đang làm việc”, hưởng 100% lương)') + '<br>' +
         '<span id="hd-luong">' + f.chk('apLuong', false, 'Áp dụng mức lương này từ ngày hiệu lực (tạo quyết định điều chỉnh lương; các kỳ trước giữ lương cũ ' + App.tien(nv.luongCB) + ' đ)') + '</span></div>' +
         '</form>',
       moRa: function (el) {
@@ -72,12 +76,16 @@
           App.$('#hd-luong', el).style.display = l && l !== +nv.luongCB ? '' : 'none';
           fm.denNgay.disabled = fm.loai.value === 'Không xác định thời hạn';
           if (fm.denNgay.disabled) fm.denNgay.value = '';
+          var tv = fm.loai.value === 'Thử việc', p = +fm.tiLeTV.value || 0;
+          App.$('#hd-tv', el).style.display = tv ? '' : 'none';
+          App.$('#hd-tvtinh', el).innerHTML = tv && l && p ? 'Lương thử việc ' + App.so(p) + '% = <b>' + App.tien(Math.round(l * p / 100)) + '</b> đ' : '';
         }
         fm.loai.onchange = function () {
-          if (this.value === 'Thử việc' && fm.tuNgay.value) fm.denNgay.value = themThang(fm.tuNgay.value, 2);
-          else if (this.value === 'Xác định thời hạn' && fm.tuNgay.value) fm.denNgay.value = themThang(fm.tuNgay.value, 12);
+          if ((this.value === 'Thử việc' || this.value === 'Xác định thời hạn') && fm.tuNgay.value) fm.denNgay.value = denHD(this.value, fm.tuNgay.value);
           capNhat();
         };
+        fm.tuNgay.addEventListener('change', function () { if (fm.loai.value === 'Thử việc' && fm.tuNgay.value) fm.denNgay.value = denHD('Thử việc', fm.tuNgay.value); });
+        fm.tiLeTV.addEventListener('input', capNhat);
         fm.luongCB.addEventListener('change', capNhat);
         fm.luongCB.addEventListener('blur', capNhat);
         capNhat();
@@ -88,8 +96,10 @@
           var v = F().doc(el);
           if (!v.tuNgay) { App.bao('Nhập ngày hiệu lực.', 'loi'); return false; }
           if (v.denNgay && v.denNgay < v.tuNgay) { App.bao('Ngày kết thúc phải sau ngày hiệu lực.', 'loi'); return false; }
+          var tiLeTV = +v.tiLeTV;
+          if (v.loai === 'Thử việc' && !(tiLeTV > 0 && tiLeTV <= 100)) { App.bao('Lương thử việc nhập từ 1 đến 100 (% mức lương).', 'loi'); return false; }
           var hd = Object.assign(x, {
-            so: v.so.trim(), loai: v.loai, ngayKy: v.ngayKy, tuNgay: v.tuNgay, denNgay: v.loai === 'Không xác định thời hạn' ? '' : v.denNgay,
+            so: v.so.trim(), loai: v.loai, ngayKy: v.ngayKy, tuNgay: v.tuNgay, denNgay: v.loai === 'Không xác định thời hạn' ? '' : v.denNgay, tiLeTV: v.loai === 'Thử việc' ? tiLeTV : undefined,
             chucDanh: v.chucDanh.trim(), luongCB: App.docSo(v.luongCB), phuCap: v.phuCap.trim(), diaDiem: v.diaDiem.trim(), congViec: v.congViec.trim(), ghiChu: v.ghiChu.trim()
           });
           if (!hd.id) hd.id = App.uid();
@@ -103,8 +113,25 @@
           if (v.capNhat) {
             nv.loaiHD = hd.loai; nv.ngayHetHD = hd.denNgay || '';
             if (hd.chucDanh) nv.chucVu = hd.chucDanh;
-            if (nv.trangThai === 'thu_viec' && hd.loai !== 'Thử việc') { nv.trangThai = 'dang_lam'; nv.tiLeHuong = 100; tb.push('chuyển sang Đang làm việc, hưởng 100% lương'); }
-            if (hd.loai === 'Thử việc' && nv.trangThai === 'dang_lam' && !(nv.hopDong.length > 1)) nv.trangThai = 'thu_viec';
+            if (hd.loai === 'Thử việc') {
+              // HĐ thử việc: ghi thời gian thử việc và lương thử việc vào hồ sơ (tính lương theo các ngày này)
+              var den = hd.denNgay || TL.denNgayThuViec(hd.tuNgay, +mdTV.soThang || 2), sau = TL.docNgay(TL.congNgay(+den.slice(0, 4), +den.slice(5, 7), +den.slice(8), 1)), dau = TL.docNgay(hd.tuNgay);
+              var soThang = Math.max(1, (sau.y - dau.y) * 12 + sau.m - dau.m + (sau.d - dau.d >= 15 ? 1 : sau.d - dau.d <= -15 ? -1 : 0));
+              nv.thuViec = { tuNgay: hd.tuNgay, soThang: soThang, denNgay: den, tiLe: hd.tiLeTV };
+              if (nv.trangThai === 'dang_lam' && !(nv.hopDong.length > 1)) nv.trangThai = 'thu_viec';
+              tb.push('thử việc ' + TL.hienNgay(hd.tuNgay) + ' – ' + TL.hienNgay(den) + ', hưởng ' + App.so(hd.tiLeTV) + '% lương');
+            } else {
+              // HĐ chính thức ký trước ngày hết thử việc: kết thúc thử việc từ ngày HĐ có hiệu lực
+              var tvh = TL.thuViecNV(db, nv);
+              if (tvh && hd.tuNgay > tvh.tuNgay && hd.tuNgay <= tvh.denNgay) {
+                var n0 = TL.docNgay(hd.tuNgay); nv.thuViec.denNgay = TL.congNgay(n0.y, n0.m, n0.d, -1);
+                tb.push('kết thúc thử việc ngày ' + TL.hienNgay(nv.thuViec.denNgay));
+              }
+              if (nv.trangThai === 'thu_viec') {
+                nv.trangThai = 'dang_lam'; if (+nv.tiLeHuong < 100) nv.tiLeHuong = 100; tb.push('chuyển sang Đang làm việc, hưởng 100% lương');
+                if (!nv.thamGiaBH && hd.loai !== 'Thời vụ / khoán việc' && hd.loai !== 'Học việc') { nv.thamGiaBH = true; tb.push('bật tham gia BHXH, BHYT, BHTN'); }
+              }
+            }
           }
           luuVaVe(nv);
           App.bao('Đã lưu hợp đồng ' + hd.so + (tb.length ? ' (' + tb.join(', ') + ')' : ''), 'tot');
@@ -144,7 +171,7 @@
       '<p>– Thời giờ làm việc: ' + cd.gioLamNgay + ' giờ/ngày, từ ' + cd.gioVao + ' đến ' + cd.gioRa + ', nghỉ trưa ' + cd.nghiTruaTu + ' – ' + cd.nghiTruaDen + '; nghỉ hằng tuần: ' + h(nghi || 'theo lịch phân công') + '.</p>' +
       '<p>– Nghỉ lễ, Tết, nghỉ việc riêng theo Bộ luật Lao động; nghỉ hằng năm ' + pn + ' ngày/năm (tăng theo thâm niên theo quy định).</p>' +
       '<p class="dieu">Điều 3. Tiền lương, phụ cấp và các chế độ</p>' +
-      '<p>– Mức lương: <b>' + App.tien(hd.luongCB) + ' đồng/' + ({ ngay: 'ngày', gio: 'giờ' }[nv.hinhThuc] || 'tháng') + '</b> (' + TL.docSo(hd.luongCB).replace(/ đồng$/, '') + ' đồng)' + (nv.tiLeHuong && +nv.tiLeHuong !== 100 && hd.loai === 'Thử việc' ? '; trong thời gian thử việc hưởng ' + nv.tiLeHuong + '% mức lương' : '') + '.</p>' +
+      '<p>– Mức lương: <b>' + App.tien(hd.luongCB) + ' đồng/' + ({ ngay: 'ngày', gio: 'giờ' }[nv.hinhThuc] || 'tháng') + '</b> (' + TL.docSo(hd.luongCB).replace(/ đồng$/, '') + ' đồng)' + (hd.loai === 'Thử việc' ? (function (p) { return '; trong thời gian thử việc hưởng ' + App.so(p) + '% mức lương = <b>' + App.tien(Math.round(hd.luongCB * p / 100)) + ' đồng/' + ({ ngay: 'ngày', gio: 'giờ' }[nv.hinhThuc] || 'tháng') + '</b>'; })(+hd.tiLeTV || (TL.thuViecNV(App.db, nv) || {}).tiLe || 85) : '') + '.</p>' +
       (hd.phuCap ? '<p>– Phụ cấp, các khoản bổ sung: ' + h(hd.phuCap) + '.</p>' : '') +
       '<p>– Hình thức trả lương: ' + (nv.soTK ? 'chuyển khoản vào tài khoản ' + h(nv.soTK) + (nv.nganHang ? ' tại ' + h(nv.nganHang) : '') : 'tiền mặt hoặc chuyển khoản') + '; trả 2 kỳ/tháng (tạm ứng kỳ I, thanh toán kỳ II).</p>' +
       '<p>– Chế độ nâng lương, thưởng: theo quy chế của công ty và kết quả công việc.</p>' +

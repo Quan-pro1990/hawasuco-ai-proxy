@@ -105,6 +105,9 @@
         { chucVu: 'Chủ tịch kiêm Giám đốc', muc: 6000000 }, { chucVu: 'Giám đốc', muc: 6000000 },
         { chucVu: 'Phó Giám đốc', muc: 5000000 }, { chucVu: 'Kế toán trưởng', muc: 5000000 },
         { chucVu: 'Trưởng phòng', muc: 3000000 }, { chucVu: 'Phó phòng', muc: 3000000 }, { chucVu: 'Đội trưởng', muc: 3000000 }] },
+      // thử việc: số tháng mặc định, lương thử việc = tiLe % lương chính thức (Điều 26 BLLĐ 2019: ít nhất 85%),
+      // hợp đồng thử việc riêng thì thời gian thử việc không đóng BHXH, BHYT, BHTN
+      thuViec: { soThang: 2, tiLe: 85, khongDongBH: true },
       mienThueAnCa: 1200000,    // tiền ăn giữa ca không tính thuế TNCN tối đa / tháng (NĐ 253/2026, từ 01/7/2026; trước đó 730.000)
       luongToiThieuVung: 5310000,
       vung: 'I',
@@ -193,6 +196,13 @@
       if (!nv.phuCap) nv.phuCap = {};
       ['hopDong', 'quyetDinh', 'nguoiPhuThuoc', 'hoSoTep'].forEach(function (f) { if (!Array.isArray(nv[f])) nv[f] = []; });
       if (nv.lichLam) { nv.loaiLD = nv.lichLam === 'T2-T6' ? 'VP' : nv.lichLam === 'T2-T7' ? 'CN' : ''; delete nv.lichLam; }
+      // dữ liệu cũ: thử việc ghi bằng "% hưởng lương" (85) và ngày hết hạn HĐ thử việc -> chuyển sang thời gian thử việc riêng
+      if (nv.trangThai === 'thu_viec' && !nv.thuViec && nv.ngayVao) {
+        var tlc = +nv.tiLeHuong, ttv = db.caiDat.thuViec || {};
+        nv.thuViec = { tuNgay: nv.ngayVao, soThang: +ttv.soThang || 2, tiLe: tlc > 0 && tlc < 100 ? tlc : (+ttv.tiLe || 85) };
+        nv.thuViec.denNgay = nv.loaiHD === 'Thử việc' && nv.ngayHetHD > nv.ngayVao ? nv.ngayHetHD : denNgayThuViec(nv.ngayVao, nv.thuViec.soThang);
+        if (tlc > 0 && tlc < 100) nv.tiLeHuong = 100;
+      }
     });
     db.phienBan = 1;
     return db;
@@ -643,6 +653,28 @@
     var n = docNgay(ngay), t = new Date(n.y, n.m - 1 + th, 1), y = t.getFullYear(), m = t.getMonth() + 1;
     return iso(y, m, Math.min(n.d, soNgay(y, m)));
   }
+  /* ================= Thử việc ================= */
+
+  /** Ngày cuối thử việc: từ ngày + số tháng − 1 ngày (01/10 + 2 tháng -> 30/11; 31/01 + 1 tháng -> 28/02) */
+  function denNgayThuViec(tuNgay, soThang) {
+    var a = docNgay(tuNgay);
+    if (!a) return '';
+    var t = new Date(a.y, a.m - 1 + Math.max(1, Math.round(+soThang || 2)), 1), y = t.getFullYear(), m = t.getMonth() + 1;
+    return a.d > soNgay(y, m) ? iso(y, m, soNgay(y, m)) : congNgay(y, m, a.d, -1);
+  }
+  /** Thời gian thử việc của nhân viên: { tuNgay, denNgay, soThang, tiLe } hoặc null */
+  function thuViecNV(db, nv) {
+    var t = nv && nv.thuViec;
+    if (!t || !docNgay(t.tuNgay)) return null;
+    var md = (db.caiDat && db.caiDat.thuViec) || {};
+    var soThang = +t.soThang > 0 ? +t.soThang : (+md.soThang || 2);
+    var den = docNgay(t.denNgay) ? t.denNgay : denNgayThuViec(t.tuNgay, soThang);
+    var tiLe = t.tiLe == null || t.tiLe === '' ? (md.tiLe == null || md.tiLe === '' ? 85 : +md.tiLe) : +t.tiLe;
+    return { tuNgay: t.tuNgay, denNgay: den, soThang: soThang, tiLe: tiLe };
+  }
+  /** Đang thử việc vào ngày (ISO) */
+  function dangThuViec(db, nv, ngay) { var t = thuViecNV(db, nv); return !!(t && ngay >= t.tuNgay && ngay <= t.denNgay); }
+
   /** Xếp lương của nhân viên (bậc hiện tại hoặc x; giá trị theo mức áp dụng tại kỳ ky) và hạn nâng bậc tiếp theo */
   function xepLuongNV(db, nv, ky, x) {
     x = x || nv.xepLuong;
@@ -820,7 +852,24 @@
     var T = ctx.T || thang(db, y, m);
     var c = tongHopCong(db, y, m, nv, ctx);
     var cc = c.congChuan || 1;
-    var tl = (nv.tiLeHuong == null || nv.tiLeHuong === '' ? 100 : +nv.tiLeHuong) / 100;
+    var tl = (nv.tiLeHuong == null || nv.tiLeHuong === '' ? 100 : +nv.tiLeHuong) / 100, tlCT = tl;
+    // Thử việc: những ngày trong thời gian thử việc hưởng tỷ lệ thử việc (mặc định 85%) của lương chính thức.
+    // Kỳ có cả ngày thử việc và ngày chính thức: lương ngày bình quân theo số công của từng phần.
+    var tv = thuViecNV(db, nv), tvKy = null;
+    if (tv) {
+      var dsKy = ctx.ngay || ngayKy(db, y, m);
+      var dsTV = dsKy.filter(function (x) { return x.iso >= tv.tuNgay && x.iso <= tv.denNgay; });
+      if (dsTV.length) {
+        var toanKy = dsTV.length === dsKy.length;
+        var cTV = toanKy ? c : tongHopCong(db, y, m, nv, Object.assign({}, ctx, { ngay: dsTV }));
+        var tlTV = tlCT * tv.tiLe / 100, congTV = cTV.congTG, congCT = Math.max(0, c.congTG - congTV);
+        if (toanKy) tl = tlTV;
+        else if (c.congTG > 0) tl = (congTV * tlTV + congCT * tlCT) / c.congTG;
+        else tl = (dsTV.length * tlTV + (dsKy.length - dsTV.length) * tlCT) / dsKy.length;
+        tvKy = { tuNgay: tv.tuNgay, denNgay: tv.denNgay, tiLe: tv.tiLe, tiLeCT: tlCT * 100, toanKy: toanKy, soNgay: dsTV.length,
+          congTV: congTV, congCT: congCT, congHLTV: Math.max(0, cTV.congHL - cTV.congThemLeTG + cTV.sp - cTV.congThemLeSP) };
+      }
+    }
     var lk = luongTheoKy(db, nv, y, m), dvk = donViTheoKy(db, nv, y, m);
     var cb = lk.luongCB;
     var gio = +cd.gioLamNgay || 8;
@@ -911,8 +960,11 @@
       if (luongBH > 0 && luongBH < (+cd.luongToiThieuVung || 0)) canhBao.push('Lương đóng BH thấp hơn lương tối thiểu vùng');
     }
     var ngayKhongLuong = Math.max(0, cc - (c.congHL - c.congThemLeTG) - (c.sp - c.congThemLeSP));
-    var dongBH = nv.thamGiaBH && luongBH > 0 && ngayKhongLuong < (+cd.nguongNghiKhongDongBH || 14);
-    if (nv.thamGiaBH && luongBH > 0 && !dongBH) canhBao.push('Nghỉ từ ' + (cd.nguongNghiKhongDongBH || 14) + ' ngày không lương trở lên: không đóng BH tháng này');
+    // thời gian thử việc (hợp đồng thử việc riêng) không đóng BH: công thử việc coi như ngày không thuộc hợp đồng lao động
+    var tvKhongBH = !!(tvKy && (cd.thuViec || {}).khongDongBH !== false);
+    if (tvKhongBH) ngayKhongLuong += tvKy.congHLTV;
+    var dongBH = nv.thamGiaBH && luongBH > 0 && !(tvKhongBH && tvKy.toanKy) && ngayKhongLuong < (+cd.nguongNghiKhongDongBH || 14);
+    if (nv.thamGiaBH && luongBH > 0 && !dongBH && !tvKhongBH) canhBao.push('Nghỉ từ ' + (cd.nguongNghiKhongDongBH || 14) + ' ngày không lương trở lên: không đóng BH tháng này');
     var lcs = luongCoSoKy(db, kyTinh);
     var capXH = 20 * lcs, capTN = 20 * (+cd.luongToiThieuVung || 0);
     var nenXH = dongBH ? Math.min(luongBH, capXH || luongBH) : 0;
@@ -956,7 +1008,7 @@
     return {
       nvId: nv.id, ma: nv.ma, hoTen: nv.hoTen, phongBan: dvk.phongBan, tenPhongBan: tenPhongBan(db, dvk.phongBan),
       chucVu: dvk.chucVu, mst: nv.mst || '', nganHang: nv.nganHang || '', soTK: nv.soTK || '', chiNhanhNH: nv.chiNhanhNH || '',
-      hinhThuc: hinhThuc, cachTinhThue: cachThue, tiLeHuong: tl * 100,
+      hinhThuc: hinhThuc, cachTinhThue: cachThue, tiLeHuong: Math.round(tl * 10000) / 100, thuViec: tvKy,
       cong: c, congChuan: c.congChuan,
       luongCB: cb, luongNgay: r0(luongNgay), luongGio: r0(luongGio),
       maSP: maSP, slSP: slSP, donGiaSP: donGiaSP, luongSP: luongSP, spChiTiet: spChiTiet, congTinh: congTinh,
@@ -1122,6 +1174,7 @@
     chotThang: chotThang, moKhoaThang: moKhoaThang,
     tinhVaoRa: tinhVaoRa, phepNam: phepNam, docSo: docSo,
     KIEU_BL: KIEU_BL, AP_DUNG_BL: AP_DUNG_BL, chuanBangLuong: chuanBangLuong, timBangLuong: timBangLuong, timNgach: timNgach, mucCoSoBL: mucCoSoBL,
+    thuViecNV: thuViecNV, denNgayThuViec: denNgayThuViec, dangThuViec: dangThuViec,
     soBacNgach: soBacNgach, giaTriBac: giaTriBac, xepLuongNV: xepLuongNV, apXepLuong: apXepLuong, themThangISO: themThangISO,
     dsDotLuong: dsDotLuong, kyHienHanh: kyHienHanh, kyCuaISO: kyCuaISO, dotTaiKy: dotTaiKy, luongCoSoKy: luongCoSoKy, mucChungPC: mucChungPC,
     bacNgach: bacNgach, chupMucKy: chupMucKy, xepLuongTheoKy: xepLuongTheoKy, cauHinhTamUng: cauHinhTamUng, tamUngTheoChucVu: tamUngTheoChucVu,

@@ -171,7 +171,7 @@
         if (c.nhap && !khoa) { x += '<td><input class="o-nhap" data-f="' + c.nhap + '" value="' + (r[c.nhap] ? App.tien(r[c.nhap]) : '') + '" title="' + h(NHAP[c.nhap]) + '" inputmode="numeric"></td>'; return; }
         var v = gt(c, r);
         x += '<td data-c="' + ci + '" class="' + (c.kieu === 'so' ? 'so' : c.kieu === 'cong' ? 'giua' : '') + (c.ten ? ' ten dinh' : '') + (c.kieu === 'so' && v < 0 ? ' am' : '') + '"' + (c.dam ? ' style="font-weight:700"' : '') + '>' +
-          (c.ten ? '<span class="lk" data-ct="' + r.nvId + '">' + h(v) + '</span>' + (r.canhBao && r.canhBao.length ? ' <span title="' + h(r.canhBao.join('\n')) + '" style="color:var(--cam);cursor:help">⚠</span>' : '') : hien(c, v)) + '</td>';
+          (c.ten ? '<span class="lk" data-ct="' + r.nvId + '">' + h(v) + '</span>' + (r.thuViec ? ' <span class="the-tt cam" title="' + h(App.moTaThuViec(r)) + '">TV ' + App.so(r.thuViec.tiLe) + '%</span>' : '') + (r.canhBao && r.canhBao.length ? ' <span title="' + h(r.canhBao.join('\n')) + '" style="color:var(--cam);cursor:help">⚠</span>' : '') : hien(c, v)) + '</td>';
       });
       x += '<td>' + (khoa ? h(r.ghiChu) : '<input class="o-nhap chu" data-f="ghiChu" value="' + h(r.ghiChu) + '">') + '</td></tr>';
       return x;
@@ -323,9 +323,13 @@
     d_('Ngày tính cơm', 'Ngày có đi làm (gồm SP, đi làm ngày lễ); nghỉ lễ, nghỉ phép không tính', App.so(c.ngayCom));
     m_('2. Thu nhập');
     (r.spChiTiet || []).forEach(function (x) { d_('Lương sản phẩm: ' + h(x.ten), App.tien(x.sl) + ' ' + h(x.dvt) + ' × ' + t(x.donGia) + ' đ', t(x.tien)); });
-    var ht = r.hinhThuc;
-    var cachLuong = ht === 'thang' ? t(r.luongCB) + (r.tiLeHuong !== 100 ? ' × ' + App.so(r.tiLeHuong) + '%' : '') + ' ÷ ' + App.so(r.congChuan) + ' × ' + App.so(r.congTinh != null ? r.congTinh : c.congTG)
-      : ht === 'ngay' ? t(r.luongCB) + '/ngày' + (r.tiLeHuong !== 100 ? ' × ' + App.so(r.tiLeHuong) + '%' : '') + ' × ' + App.so(c.congTG)
+    var ht = r.hinhThuc, tv = r.thuViec;
+    if (tv) d_('Thử việc', App.moTaThuViec(r), '');
+    // kỳ có cả ngày thử việc và ngày chính thức: (công thử việc × % thử việc + công chính thức)
+    var phanTV = tv && !tv.toanKy ? '(' + App.so(tv.congTV) + ' × ' + App.so(tv.tiLe * tv.tiLeCT / 100) + '% + ' + App.so(tv.congCT) + (tv.tiLeCT !== 100 ? ' × ' + App.so(tv.tiLeCT) + '%' : '') + ')' : '';
+    var cachLuong = ht === 'thang' ? t(r.luongCB) + (phanTV ? ' ÷ ' + App.so(r.congChuan) + ' × ' + phanTV + (r.congTinh != null && r.congTinh < c.congTG ? ' × ' + App.so(r.congTinh) + '/' + App.so(c.congTG) : '')
+        : (r.tiLeHuong !== 100 ? ' × ' + App.so(r.tiLeHuong) + '%' : '') + ' ÷ ' + App.so(r.congChuan) + ' × ' + App.so(r.congTinh != null ? r.congTinh : c.congTG))
+      : ht === 'ngay' ? t(r.luongCB) + '/ngày' + (phanTV ? ' × ' + phanTV : (r.tiLeHuong !== 100 ? ' × ' + App.so(r.tiLeHuong) + '%' : '') + ' × ' + App.so(c.congTG))
         : ht === 'gio' ? t(r.luongCB) + '/giờ × ' + cd.gioLamNgay + ' giờ × ' + App.so(c.congTG) + ' công'
           : 'Lương khoán';
     d_('Lương thời gian', cachLuong + (r.congTinh != null && r.congTinh < c.congTG ? ' (tính tối đa ' + App.so(r.congTinh) + ' công)' : ''), t(r.luongTG));
@@ -347,7 +351,9 @@
     if (r.congKhac) d_('Khoản cộng khác', '', t(r.congKhac));
     d_('<b>Tổng thu nhập</b>', '', '<b>' + t(r.tongThuNhap) + '</b>');
     m_('3. Bảo hiểm, công đoàn (người lao động đóng)');
-    if (!r.dongBH) d_('Không đóng bảo hiểm kỳ này', r.luongBH ? 'Nghỉ không lương từ ' + cd.nguongNghiKhongDongBH + ' ngày' : 'Không tham gia / chưa có lương đóng BH', '0');
+    if (!r.dongBH) d_('Không đóng bảo hiểm kỳ này', !r.luongBH ? 'Không tham gia / chưa có lương đóng BH'
+      : r.thuViec && (cd.thuViec || {}).khongDongBH !== false ? (r.thuViec.toanKy ? 'Đang thử việc (hợp đồng thử việc)' : 'Thời gian thử việc và nghỉ không lương từ ' + cd.nguongNghiKhongDongBH + ' ngày trong kỳ')
+      : 'Nghỉ không lương từ ' + cd.nguongNghiKhongDongBH + ' ngày', '0');
     else {
       d_('Lương đóng bảo hiểm', 'Trần BHXH, BHYT: ' + t(20 * cd.luongCoSo) + ' · trần BHTN: ' + t(20 * cd.luongToiThieuVung), t(r.luongBH));
       d_('BHXH', App.so(cd.bh.nv.bhxh) + '%', t(r.bhxh));
@@ -564,7 +570,8 @@
     var cd = App.db.caiDat, c = r.cong, L = [];
     L.push(['m', 'I. THU NHẬP', '']);
     (r.spChiTiet || []).forEach(function (x) { L.push(['c', x.ten + ' (' + App.tien(x.sl) + ' ' + x.dvt + ' × ' + App.tien(x.donGia) + ' đ)', x.tien]); });
-    L.push(['c', 'Lương thời gian (' + App.so(c.congTG) + ' công' + (c.congThemLeTG ? ', gồm ' + App.so(c.congThemLeTG) + ' công tăng thêm đi làm lễ, Tết' : '') + ')', r.luongTG]);
+    L.push(['c', 'Lương thời gian (' + App.so(c.congTG) + ' công' + (c.congThemLeTG ? ', gồm ' + App.so(c.congThemLeTG) + ' công tăng thêm đi làm lễ, Tết' : '') +
+      (r.thuViec ? (r.thuViec.toanKy ? '; thử việc hưởng ' + App.so(r.thuViec.tiLe) + '% lương' : '; ' + App.so(r.thuViec.congTV) + ' công thử việc hưởng ' + App.so(r.thuViec.tiLe) + '%') : '') + ')', r.luongTG]);
     if (r.luongNgung) L.push(['c', 'Nghỉ, ngừng việc hưởng lương (' + App.so(c.ngung) + ' công)', r.luongNgung]);
     if (r.tienOT) L.push(['c', 'Làm thêm giờ (' + App.so(c.otTong) + ' giờ)', r.tienOT]);
     (bl.phuCap || []).forEach(function (pc) {

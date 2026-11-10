@@ -690,6 +690,9 @@ window.LOGO_MAC_DINH = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALAAAACwCA
         { chucVu: 'Chủ tịch kiêm Giám đốc', muc: 6000000 }, { chucVu: 'Giám đốc', muc: 6000000 },
         { chucVu: 'Phó Giám đốc', muc: 5000000 }, { chucVu: 'Kế toán trưởng', muc: 5000000 },
         { chucVu: 'Trưởng phòng', muc: 3000000 }, { chucVu: 'Phó phòng', muc: 3000000 }, { chucVu: 'Đội trưởng', muc: 3000000 }] },
+      // thử việc: số tháng mặc định, lương thử việc = tiLe % lương chính thức (Điều 26 BLLĐ 2019: ít nhất 85%),
+      // hợp đồng thử việc riêng thì thời gian thử việc không đóng BHXH, BHYT, BHTN
+      thuViec: { soThang: 2, tiLe: 85, khongDongBH: true },
       mienThueAnCa: 1200000,    // tiền ăn giữa ca không tính thuế TNCN tối đa / tháng (NĐ 253/2026, từ 01/7/2026; trước đó 730.000)
       luongToiThieuVung: 5310000,
       vung: 'I',
@@ -778,6 +781,13 @@ window.LOGO_MAC_DINH = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALAAAACwCA
       if (!nv.phuCap) nv.phuCap = {};
       ['hopDong', 'quyetDinh', 'nguoiPhuThuoc', 'hoSoTep'].forEach(function (f) { if (!Array.isArray(nv[f])) nv[f] = []; });
       if (nv.lichLam) { nv.loaiLD = nv.lichLam === 'T2-T6' ? 'VP' : nv.lichLam === 'T2-T7' ? 'CN' : ''; delete nv.lichLam; }
+      // dữ liệu cũ: thử việc ghi bằng "% hưởng lương" (85) và ngày hết hạn HĐ thử việc -> chuyển sang thời gian thử việc riêng
+      if (nv.trangThai === 'thu_viec' && !nv.thuViec && nv.ngayVao) {
+        var tlc = +nv.tiLeHuong, ttv = db.caiDat.thuViec || {};
+        nv.thuViec = { tuNgay: nv.ngayVao, soThang: +ttv.soThang || 2, tiLe: tlc > 0 && tlc < 100 ? tlc : (+ttv.tiLe || 85) };
+        nv.thuViec.denNgay = nv.loaiHD === 'Thử việc' && nv.ngayHetHD > nv.ngayVao ? nv.ngayHetHD : denNgayThuViec(nv.ngayVao, nv.thuViec.soThang);
+        if (tlc > 0 && tlc < 100) nv.tiLeHuong = 100;
+      }
     });
     db.phienBan = 1;
     return db;
@@ -1228,6 +1238,28 @@ window.LOGO_MAC_DINH = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALAAAACwCA
     var n = docNgay(ngay), t = new Date(n.y, n.m - 1 + th, 1), y = t.getFullYear(), m = t.getMonth() + 1;
     return iso(y, m, Math.min(n.d, soNgay(y, m)));
   }
+  /* ================= Thử việc ================= */
+
+  /** Ngày cuối thử việc: từ ngày + số tháng − 1 ngày (01/10 + 2 tháng -> 30/11; 31/01 + 1 tháng -> 28/02) */
+  function denNgayThuViec(tuNgay, soThang) {
+    var a = docNgay(tuNgay);
+    if (!a) return '';
+    var t = new Date(a.y, a.m - 1 + Math.max(1, Math.round(+soThang || 2)), 1), y = t.getFullYear(), m = t.getMonth() + 1;
+    return a.d > soNgay(y, m) ? iso(y, m, soNgay(y, m)) : congNgay(y, m, a.d, -1);
+  }
+  /** Thời gian thử việc của nhân viên: { tuNgay, denNgay, soThang, tiLe } hoặc null */
+  function thuViecNV(db, nv) {
+    var t = nv && nv.thuViec;
+    if (!t || !docNgay(t.tuNgay)) return null;
+    var md = (db.caiDat && db.caiDat.thuViec) || {};
+    var soThang = +t.soThang > 0 ? +t.soThang : (+md.soThang || 2);
+    var den = docNgay(t.denNgay) ? t.denNgay : denNgayThuViec(t.tuNgay, soThang);
+    var tiLe = t.tiLe == null || t.tiLe === '' ? (md.tiLe == null || md.tiLe === '' ? 85 : +md.tiLe) : +t.tiLe;
+    return { tuNgay: t.tuNgay, denNgay: den, soThang: soThang, tiLe: tiLe };
+  }
+  /** Đang thử việc vào ngày (ISO) */
+  function dangThuViec(db, nv, ngay) { var t = thuViecNV(db, nv); return !!(t && ngay >= t.tuNgay && ngay <= t.denNgay); }
+
   /** Xếp lương của nhân viên (bậc hiện tại hoặc x; giá trị theo mức áp dụng tại kỳ ky) và hạn nâng bậc tiếp theo */
   function xepLuongNV(db, nv, ky, x) {
     x = x || nv.xepLuong;
@@ -1405,7 +1437,24 @@ window.LOGO_MAC_DINH = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALAAAACwCA
     var T = ctx.T || thang(db, y, m);
     var c = tongHopCong(db, y, m, nv, ctx);
     var cc = c.congChuan || 1;
-    var tl = (nv.tiLeHuong == null || nv.tiLeHuong === '' ? 100 : +nv.tiLeHuong) / 100;
+    var tl = (nv.tiLeHuong == null || nv.tiLeHuong === '' ? 100 : +nv.tiLeHuong) / 100, tlCT = tl;
+    // Thử việc: những ngày trong thời gian thử việc hưởng tỷ lệ thử việc (mặc định 85%) của lương chính thức.
+    // Kỳ có cả ngày thử việc và ngày chính thức: lương ngày bình quân theo số công của từng phần.
+    var tv = thuViecNV(db, nv), tvKy = null;
+    if (tv) {
+      var dsKy = ctx.ngay || ngayKy(db, y, m);
+      var dsTV = dsKy.filter(function (x) { return x.iso >= tv.tuNgay && x.iso <= tv.denNgay; });
+      if (dsTV.length) {
+        var toanKy = dsTV.length === dsKy.length;
+        var cTV = toanKy ? c : tongHopCong(db, y, m, nv, Object.assign({}, ctx, { ngay: dsTV }));
+        var tlTV = tlCT * tv.tiLe / 100, congTV = cTV.congTG, congCT = Math.max(0, c.congTG - congTV);
+        if (toanKy) tl = tlTV;
+        else if (c.congTG > 0) tl = (congTV * tlTV + congCT * tlCT) / c.congTG;
+        else tl = (dsTV.length * tlTV + (dsKy.length - dsTV.length) * tlCT) / dsKy.length;
+        tvKy = { tuNgay: tv.tuNgay, denNgay: tv.denNgay, tiLe: tv.tiLe, tiLeCT: tlCT * 100, toanKy: toanKy, soNgay: dsTV.length,
+          congTV: congTV, congCT: congCT, congHLTV: Math.max(0, cTV.congHL - cTV.congThemLeTG + cTV.sp - cTV.congThemLeSP) };
+      }
+    }
     var lk = luongTheoKy(db, nv, y, m), dvk = donViTheoKy(db, nv, y, m);
     var cb = lk.luongCB;
     var gio = +cd.gioLamNgay || 8;
@@ -1496,8 +1545,11 @@ window.LOGO_MAC_DINH = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALAAAACwCA
       if (luongBH > 0 && luongBH < (+cd.luongToiThieuVung || 0)) canhBao.push('Lương đóng BH thấp hơn lương tối thiểu vùng');
     }
     var ngayKhongLuong = Math.max(0, cc - (c.congHL - c.congThemLeTG) - (c.sp - c.congThemLeSP));
-    var dongBH = nv.thamGiaBH && luongBH > 0 && ngayKhongLuong < (+cd.nguongNghiKhongDongBH || 14);
-    if (nv.thamGiaBH && luongBH > 0 && !dongBH) canhBao.push('Nghỉ từ ' + (cd.nguongNghiKhongDongBH || 14) + ' ngày không lương trở lên: không đóng BH tháng này');
+    // thời gian thử việc (hợp đồng thử việc riêng) không đóng BH: công thử việc coi như ngày không thuộc hợp đồng lao động
+    var tvKhongBH = !!(tvKy && (cd.thuViec || {}).khongDongBH !== false);
+    if (tvKhongBH) ngayKhongLuong += tvKy.congHLTV;
+    var dongBH = nv.thamGiaBH && luongBH > 0 && !(tvKhongBH && tvKy.toanKy) && ngayKhongLuong < (+cd.nguongNghiKhongDongBH || 14);
+    if (nv.thamGiaBH && luongBH > 0 && !dongBH && !tvKhongBH) canhBao.push('Nghỉ từ ' + (cd.nguongNghiKhongDongBH || 14) + ' ngày không lương trở lên: không đóng BH tháng này');
     var lcs = luongCoSoKy(db, kyTinh);
     var capXH = 20 * lcs, capTN = 20 * (+cd.luongToiThieuVung || 0);
     var nenXH = dongBH ? Math.min(luongBH, capXH || luongBH) : 0;
@@ -1541,7 +1593,7 @@ window.LOGO_MAC_DINH = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALAAAACwCA
     return {
       nvId: nv.id, ma: nv.ma, hoTen: nv.hoTen, phongBan: dvk.phongBan, tenPhongBan: tenPhongBan(db, dvk.phongBan),
       chucVu: dvk.chucVu, mst: nv.mst || '', nganHang: nv.nganHang || '', soTK: nv.soTK || '', chiNhanhNH: nv.chiNhanhNH || '',
-      hinhThuc: hinhThuc, cachTinhThue: cachThue, tiLeHuong: tl * 100,
+      hinhThuc: hinhThuc, cachTinhThue: cachThue, tiLeHuong: Math.round(tl * 10000) / 100, thuViec: tvKy,
       cong: c, congChuan: c.congChuan,
       luongCB: cb, luongNgay: r0(luongNgay), luongGio: r0(luongGio),
       maSP: maSP, slSP: slSP, donGiaSP: donGiaSP, luongSP: luongSP, spChiTiet: spChiTiet, congTinh: congTinh,
@@ -1707,6 +1759,7 @@ window.LOGO_MAC_DINH = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALAAAACwCA
     chotThang: chotThang, moKhoaThang: moKhoaThang,
     tinhVaoRa: tinhVaoRa, phepNam: phepNam, docSo: docSo,
     KIEU_BL: KIEU_BL, AP_DUNG_BL: AP_DUNG_BL, chuanBangLuong: chuanBangLuong, timBangLuong: timBangLuong, timNgach: timNgach, mucCoSoBL: mucCoSoBL,
+    thuViecNV: thuViecNV, denNgayThuViec: denNgayThuViec, dangThuViec: dangThuViec,
     soBacNgach: soBacNgach, giaTriBac: giaTriBac, xepLuongNV: xepLuongNV, apXepLuong: apXepLuong, themThangISO: themThangISO,
     dsDotLuong: dsDotLuong, kyHienHanh: kyHienHanh, kyCuaISO: kyCuaISO, dotTaiKy: dotTaiKy, luongCoSoKy: luongCoSoKy, mucChungPC: mucChungPC,
     bacNgach: bacNgach, chupMucKy: chupMucKy, xepLuongTheoKy: xepLuongTheoKy, cauHinhTamUng: cauHinhTamUng, tamUngTheoChucVu: tamUngTheoChucVu,
@@ -3343,8 +3396,9 @@ window.LOGO_MAC_DINH = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALAAAACwCA
     });
     var nv3 = db.nhanVien[2], nv14 = db.nhanVien[13], nv15 = db.nhanVien[14], nv16 = db.nhanVien[15], nv17 = db.nhanVien[16];
     nv3.thamGiaBH = false; nv3.ghiChu = 'Đã nghỉ hưu, làm việc theo hợp đồng – không đóng BHXH';
-    nv14.trangThai = 'thu_viec'; nv14.tiLeHuong = 85; nv14.thamGiaBH = false; nv14.loaiHD = 'Thử việc'; nv14.doanVien = false;
-    nv14.ngayHetHD = TL.iso(Y, M, TL.soNgay(Y, M));
+    nv14.trangThai = 'thu_viec'; nv14.loaiHD = 'Thử việc'; nv14.doanVien = false;
+    nv14.thuViec = { tuNgay: nv14.ngayVao, soThang: 2, denNgay: TL.denNgayThuViec(nv14.ngayVao, 2), tiLe: 85 };
+    nv14.ngayHetHD = nv14.thuViec.denNgay;
     nv15.hinhThuc = 'ngay'; nv15.luongBH = 6000000; nv15.loaiHD = 'Xác định thời hạn'; nv15.ngayHetHD = TL.congNgay(Y, M, D, 20);
     nv16.hinhThuc = 'gio'; nv16.thamGiaBH = false; nv16.cachTinhThue = 'khau_tru'; nv16.loaiHD = 'Thời vụ / khoán việc'; nv16.doanVien = false;
     nv17.trangThai = 'nghi_viec'; nv17.ngayNghi = TL.iso(nghiNV.y, nghiNV.m, 20);
@@ -3381,6 +3435,7 @@ window.LOGO_MAC_DINH = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALAAAACwCA
         if (nv.ma === 'NV013' || nv.ma === 'NV015') { hd('Xác định thời hạn', tu2, cong12(tu2, 12), nv.luongCB); var tu3 = TL.congNgay(+nv.hopDong[1].denNgay.slice(0, 4), +nv.hopDong[1].denNgay.slice(5, 7), +nv.hopDong[1].denNgay.slice(8), 1); hd('Xác định thời hạn', tu3, TL.congNgay(Y, M, D, nv.ma === 'NV013' ? 18 : 40), nv.luongCB); }
         else { hd('Xác định thời hạn', tu2, cong12(tu2, 12), nv.luongCB); var hdx = nv.hopDong[nv.hopDong.length - 1]; hd('Không xác định thời hạn', TL.congNgay(+hdx.denNgay.slice(0, 4), +hdx.denNgay.slice(5, 7), +hdx.denNgay.slice(8), 1), '', nv.luongCB); }
       }
+      nv.hopDong.forEach(function (x) { if (x.loai === 'Thử việc') x.tiLeTV = 85; });
       var cuoi = nv.hopDong[nv.hopDong.length - 1];
       nv.loaiHD = cuoi.loai; nv.ngayHetHD = cuoi.denNgay || '';
       nv.quyetDinh.push({ id: 'qd' + i + '_0', loai: 'tiep_nhan', so: TL.pad(i + 1) + '/QĐ-TN', ngay: nv.ngayVao, hieuLuc: nv.ngayVao, noiDung: 'Tiếp nhận vào làm việc tại ' + TL.tenPhongBan(db, { NV009: 'KDVT', NV010: 'KDVT', NV011: 'KTH' }[nv.ma] || nv.phongBan) });
@@ -3683,6 +3738,12 @@ window.LOGO_MAC_DINH = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALAAAACwCA
       if (nv.ngaySinh && +nv.ngaySinh.slice(5, 7) === m) cy.push(['🎂 Sinh nhật <span class="lk" data-hs="' + nv.id + '">' + h(nv.hoTen) + '</span>', '<span class="the-tt lam">' + nv.ngaySinh.slice(8, 10) + '/' + TL.pad(m) + '</span>']);
       var hd = App.hdHieuLuc ? App.hdHieuLuc(nv) : null, het = hd ? hd.denNgay : nv.ngayHetHD;
       if (App.hdHieuLuc && !hd) chuaHD++;
+      var tv = nv.trangThai === 'thu_viec' ? TL.thuViecNV(db, nv) : null;
+      if (tv) {
+        var conTV = Math.round((new Date(tv.denNgay) - new Date(hnIso)) / 864e5);
+        if (conTV <= 30) cy.push(['Hết thử việc (đánh giá, ký HĐ chính thức): <span class="lk" data-hs="' + nv.id + '">' + h(nv.hoTen) + '</span>', '<span class="the-tt ' + (conTV <= 7 ? 'do' : 'cam') + '">' + (conTV < 0 ? 'đã hết ' + (-conTV) + ' ngày' : 'còn ' + conTV + ' ngày') + '</span>']);
+        if (hd ? hd.loai === 'Thử việc' : nv.loaiHD === 'Thử việc') het = '';
+      }
       if (het) {
         var con = Math.round((new Date(het) - new Date(hnIso)) / 864e5);
         if (con >= -30 && con <= 30) cy.push([(nv.trangThai === 'thu_viec' ? 'Hết thử việc: ' : 'Hết hạn hợp đồng: ') + '<span class="lk" data-hs="' + nv.id + '">' + h(nv.hoTen) + '</span>', '<span class="the-tt ' + (con <= 7 ? 'do' : 'cam') + '">' + (con < 0 ? 'đã hết ' + (-con) + ' ngày' : 'còn ' + con + ' ngày') + '</span>']);
@@ -4182,6 +4243,12 @@ window.LOGO_MAC_DINH = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALAAAACwCA
 
   App.HINH_THUC = { thang: 'Lương tháng', ngay: 'Lương ngày', gio: 'Lương giờ', khoan: 'Lương khoán' };
   App.DV_LUONG = { thang: 'đ/tháng', ngay: 'đ/ngày', gio: 'đ/giờ', khoan: 'đ/tháng' };
+  /** Mô tả thử việc của 1 dòng bảng lương */
+  App.moTaThuViec = function (r) {
+    var tv = r.thuViec; if (!tv) return '';
+    return 'Thử việc ' + TL.hienNgay(tv.tuNgay) + ' – ' + TL.hienNgay(tv.denNgay) + ': hưởng ' + App.so(tv.tiLe) + '% lương chính thức' +
+      (tv.toanKy ? ' cả kỳ' : ' – ' + App.so(tv.congTV) + ' công thử việc, ' + App.so(tv.congCT) + ' công chính thức') + (r.dongBH ? '' : '; chưa đóng BH');
+  };
   App.TRANG_THAI = { dang_lam: 'Đang làm việc', thu_viec: 'Thử việc', tam_nghi: 'Tạm nghỉ', nghi_viec: 'Đã nghỉ việc' };
   App.CACH_THUE = { luy_tien: 'Lũy tiến từng phần', khau_tru: 'Khấu trừ 10%', khong: 'Không tính thuế' };
   App.LOAI_HD = ['Thử việc', 'Xác định thời hạn', 'Không xác định thời hạn', 'Thời vụ / khoán việc', 'Học việc'];
@@ -4287,7 +4354,8 @@ window.LOGO_MAC_DINH = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALAAAACwCA
         '<td class="so">' + lbh + '</td><td style="white-space:nowrap">' + (nv.soTK ? h(nv.soTK) + (nv.nganHang ? '<div class="mo nho">' + h(nv.nganHang) + '</div>' : '') : (tt === 'nghi_viec' ? '' : '<span class="the-tt cam">Chưa có</span>')) + '</td>' +
         '<td class="giua">' + (TL.soNPTKy(nv, App.ky.y, App.ky.m) || '') + '</td>' +
         '<td class="giua">' + (nv.ngayHetHD ? TL.hienNgay(nv.ngayHetHD) + App.nhanHetHan(nv.ngayHetHD) : '') + '</td>' +
-        '<td><span class="the-tt ' + ({ dang_lam: 'xanh', thu_viec: 'cam', tam_nghi: 'lam', nghi_viec: '' }[tt]) + '">' + App.TRANG_THAI[tt] + '</span></td>' +
+        '<td><span class="the-tt ' + ({ dang_lam: 'xanh', thu_viec: 'cam', tam_nghi: 'lam', nghi_viec: '' }[tt]) + '">' + App.TRANG_THAI[tt] + '</span>' +
+          (tt === 'thu_viec' && nv.thuViec ? '<div class="mo nho" style="white-space:nowrap">đến ' + TL.hienNgay(nv.thuViec.denNgay) + ' · ' + App.so(nv.thuViec.tiLe) + '% lương</div>' : '') + '</td>' +
         '<td class="khong-in"><button class="nut nho nguy xoa" title="Xoá">' + App.icon('xoa') + '</button></td></tr>';
     });
     html += '</tbody>';
@@ -4343,6 +4411,7 @@ window.LOGO_MAC_DINH = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALAAAACwCA
       ['ngayHetHD', 'Ngày hết hạn HĐ', 11, 'ngay'], ['trangThai', 'Trạng thái', 13, 'tt'], ['ngayNghi', 'Ngày nghỉ việc', 11, 'ngay'],
       ['loaiLD', 'Loại lao động', 16, 'lld'], ['congChuanRieng', 'Công chuẩn riêng', 8, 'so'],
       ['hinhThuc', 'Hình thức lương', 13, 'ht'], ['luongCB', 'Mức lương', 13, 'so'], ['tiLeHuong', '% hưởng lương', 8, 'so'],
+      ['tv:tuNgay', 'Thử việc từ ngày', 11, 'ngay'], ['tv:denNgay', 'Thử việc đến ngày', 11, 'ngay'], ['tv:tiLe', '% lương thử việc', 8, 'so'],
       ['maSP', 'Sản phẩm chính', 16, 'spm'], ['donGiaSP', 'Đơn giá SP riêng', 9, 'so'],
       ['luongBH', 'Lương đóng BH', 13, 'so'], ['thamGiaBH', 'Tham gia BH', 8, 'bool'], ['doanVien', 'Đoàn viên CĐ', 8, 'bool'],
       ['cachTinhThue', 'Cách tính thuế', 16, 'thue'], ['mst', 'MST cá nhân', 13], ['soNPT', 'Số người phụ thuộc', 8, 'so'],
@@ -4353,7 +4422,7 @@ window.LOGO_MAC_DINH = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALAAAACwCA
     return c;
   }
   function giaTriXuat(nv, c) {
-    var k = c[0], v = k.indexOf('pc:') === 0 ? (nv.phuCap || {})[k.slice(3)] : nv[k];
+    var k = c[0], v = k.indexOf('pc:') === 0 ? (nv.phuCap || {})[k.slice(3)] : k.indexOf('tv:') === 0 ? (nv.thuViec || {})[k.slice(3)] : nv[k];
     switch (c[3]) {
       case 'ngay': return TL.hienNgay(v);
       case 'pb': return TL.tenPhongBan(App.db, v);
@@ -4472,8 +4541,21 @@ window.LOGO_MAC_DINH = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALAAAACwCA
             val = pb.ma; break;
           default: val = String(raw).trim();
         }
-        if (k.indexOf('pc:') === 0) v.phuCap[k.slice(3)] = val; else v[k] = val;
+        if (k.indexOf('pc:') === 0) v.phuCap[k.slice(3)] = val;
+        else if (k.indexOf('tv:') === 0) { v.thuViec = v.thuViec || {}; v.thuViec[k.slice(3)] = val; }
+        else v[k] = val;
       });
+      // thử việc: thiếu ngày bắt đầu thì lấy ngày vào làm; trạng thái "Thử việc" mà không có cột thử việc thì theo mặc định
+      var mdTV = App.db.caiDat.thuViec || {};
+      if (!v.thuViec && v.trangThai === 'thu_viec' && v.ngayVao) v.thuViec = {};
+      if (v.thuViec) {
+        var tv = v.thuViec; tv.tuNgay = tv.tuNgay || v.ngayVao || '';
+        if (!tv.tuNgay) delete v.thuViec;
+        else {
+          tv.soThang = +mdTV.soThang || 2; tv.denNgay = tv.denNgay || TL.denNgayThuViec(tv.tuNgay, tv.soThang);
+          tv.tiLe = +tv.tiLe > 0 ? +tv.tiLe : (+mdTV.tiLe || 85);
+        }
+      }
       if (!v.hoTen) { loi.push('Dòng ' + (hd + ri + 2) + ': thiếu họ tên'); return; }
       var cu = v.ma ? App.db.nhanVien.filter(function (x) { return String(x.ma).toLowerCase() === String(v.ma).toLowerCase(); })[0] : null;
       if (cu) capNhat.push([cu, v]); else moi.push(v);
@@ -4581,12 +4663,12 @@ window.LOGO_MAC_DINH = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALAAAACwCA
     noi.innerHTML =
       '<div class="the khong-in" style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">' +
       '<div class="anh-nv">' + (d.anh ? '<img src="' + d.anh + '" alt="">' : '<span>' + h(chuDau(d.hoTen)) + '</span>') + '</div>' +
-      '<div style="flex:1;min-width:240px"><div style="font-size:20px;font-weight:700">' + h(d.hoTen || 'Nhân viên mới') + ' <span class="the-tt ' + ({ dang_lam: 'xanh', thu_viec: 'cam', tam_nghi: 'lam', nghi_viec: '' }[tt]) + '">' + App.TRANG_THAI[tt] + '</span></div>' +
+      '<div style="flex:1;min-width:240px"><div style="font-size:20px;font-weight:700">' + h(d.hoTen || 'Nhân viên mới') + ' <span class="the-tt ' + ({ dang_lam: 'xanh', thu_viec: 'cam', tam_nghi: 'lam', nghi_viec: '' }[tt]) + '">' + App.TRANG_THAI[tt] + (tt === 'thu_viec' && d.thuViec && d.thuViec.denNgay ? ' đến ' + TL.hienNgay(d.thuViec.denNgay) : '') + '</span></div>' +
       '<div class="mo">' + h(d.ma) + (d.chucVu ? ' · ' + h(d.chucVu) : '') + (d.phongBan ? ' · ' + h(TL.tenPhongBan(db, d.phongBan)) : '') + '</div>' +
       '<div class="nho" style="margin-top:4px;display:flex;gap:4px 18px;flex-wrap:wrap">' + thongTin.map(function (x) { return '<span>' + x + '</span>'; }).join('') + '</div></div>' +
       '<div class="hang"><a class="nut" href="#nhanvien">← Danh sách</a>' +
       (moi ? '' : '<button class="nut" id="hs-in">' + App.icon('in') + 'In sơ yếu lý lịch</button><button class="nut nguy" id="hs-xoa">' + App.icon('xoa') + '</button>') +
-      '<button class="nut chinh" id="hs-luu">' + (moi ? 'Thêm nhân viên' : 'Lưu hồ sơ') + '</button></div>' +
+      '<button class="nut chinh" id="hs-luu">' + (moi ? 'Thêm nhân viên' : 'Lưu hồ sơ') + (st.ban ? ' ●' : '') + '</button></div>' +
       (st.ban ? '<div class="nho" style="width:100%;color:var(--cam)">● Có thay đổi chưa lưu</div>' : '') + '</div>' +
       '<div class="tabs khong-in">' + TABS.map(function (t) {
         var tat = moi && ['canhan', 'congviec', 'bhthue'].indexOf(t[0]) < 0;
@@ -4614,13 +4696,61 @@ window.LOGO_MAC_DINH = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALAAAACwCA
     el.addEventListener('change', function (e) {
       var i = e.target; if (!st.d || !i.name || i.name.indexOf('_') === 0) return;
       var v = i.type === 'checkbox' ? i.checked : i.value;
+      if (i.name.indexOf('tv_') === 0) { danhDau(); suaThuViec(i.name.slice(3), v); return; }
+      var vaoCu = st.d.ngayVao;
       if (i.name.indexOf('pc_') === 0) { st.d['_' + i.name] = v; }
       else st.d[i.name] = v;
       if (i.name === 'hinhThuc') { var dv = App.$('#dv-luong'); if (dv) dv.textContent = '(' + App.DV_LUONG[v] + ')'; }
-      if (i.name === 'trangThai' && v === 'thu_viec') { st.d.tiLeHuong = 85; st.d.loaiHD = 'Thử việc'; App.veLai(); return; }
+      if (i.name === 'trangThai' && v === 'thu_viec') {
+        if (!st.d.thuViec) st.d.thuViec = thuViecMoi(st.d);
+        st.d.loaiHD = 'Thử việc'; st.d.ngayHetHD = st.d.thuViec.denNgay; st.ban = true; App.veLai(); return;
+      }
+      // đổi ngày vào làm thì ngày bắt đầu thử việc (đang trùng ngày vào làm) đổi theo
+      if (i.name === 'ngayVao' && v && st.d.thuViec && (!st.d.thuViec.tuNgay || st.d.thuViec.tuNgay === vaoCu)) {
+        suaThuViec('tuNgay', v); var o = App.$('input[name=tv_tuNgay]'); if (o) o.value = v;
+      }
+      if (i.name === 'luongCB' || i.name === 'hinhThuc') capNhatTV();
       if (i.name === 'ngayNghi' && v) { st.d.trangThai = 'nghi_viec'; }
-      if (!st.ban) { st.ban = true; var b = App.$('#hs-luu'); if (b) b.textContent = (st.d.moi ? 'Thêm nhân viên' : 'Lưu hồ sơ') + ' ●'; }
+      danhDau();
     });
+  }
+  function danhDau() { if (!st.ban) { st.ban = true; var b = App.$('#hs-luu'); if (b) b.textContent = (st.d.moi ? 'Thêm nhân viên' : 'Lưu hồ sơ') + ' ●'; } }
+
+  /* ---------- Thử việc ---------- */
+  function tvMacDinh() { return App.db.caiDat.thuViec || { soThang: 2, tiLe: 85, khongDongBH: true }; }
+  function thuViecMoi(d) {
+    // bắt đầu từ ngày vào làm (người mới); người đã vào làm lâu (quá 180 ngày) thì từ hôm nay
+    var md = tvMacDinh(), hn = App.homNay(), n = TL.docNgay(hn), tu = d.ngayVao && d.ngayVao >= TL.congNgay(n.y, n.m, n.d, -180) ? d.ngayVao : hn, soThang = +md.soThang || 2;
+    return { tuNgay: tu, soThang: soThang, denNgay: TL.denNgayThuViec(tu, soThang), tiLe: md.tiLe == null || md.tiLe === '' ? 85 : +md.tiLe };
+  }
+  function suaThuViec(k, v) {
+    var t = st.d.thuViec;
+    if (k === 'co') {
+      if (v) { st.d.thuViec = t || thuViecMoi(st.d); if (!st.d.ngayHetHD || st.d.loaiHD === 'Thử việc') st.d.ngayHetHD = st.d.thuViec.denNgay; }
+      else delete st.d.thuViec;
+      App.veLai(); return;
+    }
+    if (!t) return;
+    t[k] = v;
+    if (k === 'tuNgay' || k === 'soThang') {
+      t.denNgay = TL.denNgayThuViec(t.tuNgay, t.soThang) || t.denNgay;
+      var o = App.$('input[name=tv_denNgay]'); if (o) o.value = t.denNgay || '';
+    }
+    if (k !== 'tiLe' && st.d.loaiHD === 'Thử việc') { st.d.ngayHetHD = t.denNgay; var o2 = App.$('input[name=ngayHetHD]'); if (o2) o2.value = t.denNgay || ''; }
+    capNhatTV();
+  }
+  function capNhatTV() { var x = App.$('#tv-tinh'); if (x && st.d) x.innerHTML = moTaTV(st.d); }
+  /** Dòng giải thích: lương thử việc = % × mức lương chính thức, số ngày thử việc */
+  function moTaTV(d) {
+    var t = d.thuViec; if (!t) return '';
+    var md = tvMacDinh(), tiLe = t.tiLe === '' || t.tiLe == null ? +md.tiLe || 85 : +t.tiLe, cb = App.docSo(d.luongCB);
+    var s = 'Lương thử việc = ' + App.so(tiLe) + '% × ' + App.tien(cb) + ' = <b>' + App.tien(Math.round(cb * tiLe / 100)) + '</b> ' + App.DV_LUONG[d.hinhThuc || 'thang'];
+    if (tiLe < 85) s += ' <b style="color:var(--do)">– thấp hơn mức tối thiểu 85% lương của công việc (Điều 26 BLLĐ 2019)</b>';
+    var n = t.tuNgay && t.denNgay ? Math.round((new Date(t.denNgay) - new Date(t.tuNgay)) / 864e5) + 1 : 0;
+    if (t.tuNgay && t.denNgay) s += ' · thử việc ' + TL.hienNgay(t.tuNgay) + ' – ' + TL.hienNgay(t.denNgay) + ' (' + n + ' ngày)';
+    if (n <= 0 && t.tuNgay && t.denNgay) s += ' <b style="color:var(--do)">– ngày kết thúc phải sau ngày bắt đầu</b>';
+    if (n > 180) s += ' <b style="color:var(--do)">– quá 180 ngày (tối đa theo Điều 25 BLLĐ 2019)</b>';
+    return s + '. Kỳ lương có cả ngày thử việc và ngày chính thức: tính theo số công của từng phần' + (md.khongDongBH !== false ? '; thời gian thử việc không đóng BH' : '') + '.';
   }
 
   /* ---------- Lưu ---------- */
@@ -4641,6 +4771,16 @@ window.LOGO_MAC_DINH = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALAAAACwCA
     v.soTK = String(v.soTK || '').replace(/\s+/g, '');
     v.congChuanRieng = v.congChuanRieng === '' || v.congChuanRieng == null ? '' : +v.congChuanRieng;
     v.tiLeHuong = v.tiLeHuong === '' || v.tiLeHuong == null ? 100 : +v.tiLeHuong;
+    if (v.trangThai === 'thu_viec' && !v.thuViec && v.ngayVao) v.thuViec = thuViecMoi(v);
+    if (v.thuViec) {
+      var tv = v.thuViec, mdTV = tvMacDinh();
+      if (!tv.tuNgay) { App.bao('Nhập ngày bắt đầu thử việc (tab Công việc & lương) hoặc bỏ chọn “Có thời gian thử việc”.', 'loi'); return false; }
+      var soThang = Math.max(1, Math.round(+tv.soThang || +mdTV.soThang || 2)), den = tv.denNgay || TL.denNgayThuViec(tv.tuNgay, soThang);
+      if (den < tv.tuNgay) { App.bao('Ngày kết thúc thử việc phải sau ngày bắt đầu.', 'loi'); return false; }
+      var tiLe = tv.tiLe === '' || tv.tiLe == null ? +mdTV.tiLe || 85 : +tv.tiLe;
+      if (!(tiLe > 0 && tiLe <= 100)) { App.bao('Lương thử việc nhập từ 1 đến 100 (% lương chính thức).', 'loi'); return false; }
+      v.thuViec = { tuNgay: tv.tuNgay, soThang: soThang, denNgay: den, tiLe: tiLe };
+    }
     v.soNPT = +v.soNPT || 0;
     ['phepNam', 'phepTon'].forEach(function (k) { v[k] = v[k] === '' || v[k] == null ? '' : +v[k]; });
     var pcv = Object.assign({}, d.phuCap || {});
@@ -4736,6 +4876,13 @@ window.LOGO_MAC_DINH = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALAAAACwCA
       F.o('Trạng thái', F.sel('trangThai', d.trangThai, F.cap(App.TRANG_THAI))) + F.o('Ngày vào làm', F.ngay('ngayVao', d.ngayVao)) +
       F.o('Ngày nghỉ việc', F.ngay('ngayNghi', d.ngayNghi), 'Ngày làm việc cuối cùng (hoặc dùng quyết định thôi việc)') +
       F.o('Loại hợp đồng hiện tại', F.sel('loaiHD', d.loaiHD, App.LOAI_HD), 'Tự cập nhật khi thêm hợp đồng mới') + F.o('Hết hạn HĐ / thử việc', F.ngay('ngayHetHD', d.ngayHetHD)) + '<span></span>' +
+      '<h4>Thử việc</h4>' +
+      '<div class="ca">' + F.chk('tv_co', !!d.thuViec, 'Có thời gian thử việc – hưởng lương thử việc (mặc định ' + App.so(+tvMacDinh().tiLe || 85) + '% lương chính thức)') + '</div>' +
+      (d.thuViec ? F.o('Thử việc từ ngày', F.ngay('tv_tuNgay', d.thuViec.tuNgay)) +
+        F.o('Số tháng thử việc', F.txt('tv_soThang', d.thuViec.soThang, 'type="number" min="1" max="6" step="1"'), 'Tự tính ngày kết thúc') +
+        F.o('Thử việc đến ngày', F.ngay('tv_denNgay', d.thuViec.denNgay), 'Sửa được khi thử việc tính theo số ngày') +
+        F.o('Lương thử việc (% lương chính thức)', F.txt('tv_tiLe', d.thuViec.tiLe, 'type="number" min="1" max="100" step="1"'), 'Ít nhất 85% (Điều 26 BLLĐ 2019)') +
+        '<div class="ca mo nho" id="tv-tinh">' + moTaTV(d) + '</div>' : '') +
       '<h4>Lương</h4>' + oBacLuong(db, d) +
       F.o('Hình thức trả lương', F.sel('hinhThuc', d.hinhThuc || 'thang', F.cap(App.HINH_THUC))) +
       (theoBang ? F.o('Mức lương / HĐ <span id="dv-luong">(' + App.DV_LUONG[d.hinhThuc || 'thang'] + ')</span>',
@@ -4745,7 +4892,7 @@ window.LOGO_MAC_DINH = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALAAAACwCA
         coQDLuong ? 'Mức hiện hành. Các kỳ trước ngày hiệu lực quyết định nâng lương vẫn tính lương cũ.' : 'Nâng lương có hiệu lực từ 1 ngày: dùng tab Quá trình công tác → Quyết định nâng lương')) +
       F.o('Tạm ứng kỳ I riêng (đ)', F.tien('tamUngRieng', d.tamUngRieng, 'Theo chức vụ: ' + App.tien(TL.tamUngTheoChucVu(db, d.chucVu))),
         'Để trống = theo chức vụ (trang Mức lương theo kỳ); 0 = không tạm ứng') +
-      F.o('Tỷ lệ hưởng lương (%)', F.txt('tiLeHuong', d.tiLeHuong == null ? 100 : d.tiLeHuong, 'type="number" min="0" max="200" step="1"'), 'Thử việc thường 85%') +
+      F.o('Tỷ lệ hưởng lương (%)', F.txt('tiLeHuong', d.tiLeHuong == null ? 100 : d.tiLeHuong, 'type="number" min="0" max="200" step="1"'), 'Thường 100%. Lương thử việc: mục Thử việc ở trên') +
       F.o('Công chuẩn riêng (ngày)', F.txt('congChuanRieng', d.congChuanRieng || '', 'type="number" min="0" step="0.5" placeholder="Theo loại lao động"')) +
       F.o('Sản phẩm chính (lương SP)', F.sel('maSP', d.maSP || '', [['', '(Sản phẩm đầu danh mục)']].concat((db.sanPham || []).map(function (p) { return [p.ma, p.ten + ' – ' + App.tien(p.donGia) + ' đ/' + (p.dvt || 'đv')]; })))) +
       F.o('Đơn giá SP riêng (đ)', F.tien('donGiaSP', d.donGiaSP, 'Theo danh mục')) +
@@ -5089,7 +5236,10 @@ window.LOGO_MAC_DINH = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALAAAACwCA
       so: soHDMoi(), loai: nv.trangThai === 'thu_viec' ? 'Thử việc' : 'Xác định thời hạn', ngayKy: hn(), tuNgay: hn(), chucDanh: nv.chucVu || '',
       luongCB: nv.luongCB, diaDiem: db.congTy.diaChi || '', congViec: ''
     } : JSON.parse(JSON.stringify(nv.hopDong[i]));
-    if (moi) x.denNgay = themThang(x.tuNgay, x.loai === 'Thử việc' ? 2 : 12);
+    var mdTV = db.caiDat.thuViec || {}, tvNV = TL.thuViecNV(db, nv);
+    function denHD(loai, tu) { return loai === 'Thử việc' ? TL.denNgayThuViec(tu, +mdTV.soThang || 2) : themThang(tu, 12); }
+    if (moi) x.denNgay = denHD(x.loai, x.tuNgay);
+    if (x.tiLeTV == null) x.tiLeTV = tvNV ? tvNV.tiLe : (+mdTV.tiLe || 85);
     var f = F();
     App.hop({
       tieuDe: (moi ? 'Thêm hợp đồng – ' : 'Sửa hợp đồng – ') + nv.hoTen, co: 'rong',
@@ -5097,11 +5247,12 @@ window.LOGO_MAC_DINH = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALAAAACwCA
         f.o('Số hợp đồng', f.txt('so', x.so)) + f.o('Loại hợp đồng', f.sel('loai', x.loai, App.LOAI_HD)) + f.o('Ngày ký', f.ngay('ngayKy', x.ngayKy)) +
         f.o('Có hiệu lực từ ngày', f.ngay('tuNgay', x.tuNgay)) + f.o('Đến ngày', f.ngay('denNgay', x.denNgay), 'Để trống nếu không xác định thời hạn') +
         f.o('Chức danh chuyên môn', f.txt('chucDanh', x.chucDanh)) +
-        f.o('Mức lương theo hợp đồng (đ)', f.tien('luongCB', x.luongCB)) + f.o('Phụ cấp, thưởng (ghi trong HĐ)', f.txt('phuCap', x.phuCap, 'placeholder="vd Cơm trưa 50.000 đ/ngày làm việc"'), '', '') +
+        f.o('Mức lương theo hợp đồng (đ)', f.tien('luongCB', x.luongCB), '<span id="hd-tvtinh"></span>') +
+        '<span id="hd-tv">' + f.o('Lương thử việc (% mức lương)', f.txt('tiLeTV', x.tiLeTV, 'type="number" min="1" max="100" step="1"'), 'Ít nhất 85% (Điều 26 BLLĐ 2019)') + '</span>' + f.o('Phụ cấp, thưởng (ghi trong HĐ)', f.txt('phuCap', x.phuCap, 'placeholder="vd Cơm trưa 50.000 đ/ngày làm việc"'), '', '') +
         f.o('Địa điểm làm việc', f.txt('diaDiem', x.diaDiem)) +
         f.o('Công việc phải làm', f.vung('congViec', x.congViec), '', 'ca') + f.o('Ghi chú', f.txt('ghiChu', x.ghiChu), '', 'ca') +
         '<div class="ca" id="hd-cn">' +
-        f.chk('capNhat', true, 'Cập nhật hồ sơ theo hợp đồng này (loại HĐ, ngày hết hạn, chức danh; hết thử việc thì chuyển “Đang làm việc”, hưởng 100% lương)') + '<br>' +
+        f.chk('capNhat', true, 'Cập nhật hồ sơ theo hợp đồng này (loại HĐ, ngày hết hạn, chức danh; HĐ thử việc thì ghi thời gian và lương thử việc; HĐ chính thức thì kết thúc thử việc, chuyển “Đang làm việc”, hưởng 100% lương)') + '<br>' +
         '<span id="hd-luong">' + f.chk('apLuong', false, 'Áp dụng mức lương này từ ngày hiệu lực (tạo quyết định điều chỉnh lương; các kỳ trước giữ lương cũ ' + App.tien(nv.luongCB) + ' đ)') + '</span></div>' +
         '</form>',
       moRa: function (el) {
@@ -5112,12 +5263,16 @@ window.LOGO_MAC_DINH = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALAAAACwCA
           App.$('#hd-luong', el).style.display = l && l !== +nv.luongCB ? '' : 'none';
           fm.denNgay.disabled = fm.loai.value === 'Không xác định thời hạn';
           if (fm.denNgay.disabled) fm.denNgay.value = '';
+          var tv = fm.loai.value === 'Thử việc', p = +fm.tiLeTV.value || 0;
+          App.$('#hd-tv', el).style.display = tv ? '' : 'none';
+          App.$('#hd-tvtinh', el).innerHTML = tv && l && p ? 'Lương thử việc ' + App.so(p) + '% = <b>' + App.tien(Math.round(l * p / 100)) + '</b> đ' : '';
         }
         fm.loai.onchange = function () {
-          if (this.value === 'Thử việc' && fm.tuNgay.value) fm.denNgay.value = themThang(fm.tuNgay.value, 2);
-          else if (this.value === 'Xác định thời hạn' && fm.tuNgay.value) fm.denNgay.value = themThang(fm.tuNgay.value, 12);
+          if ((this.value === 'Thử việc' || this.value === 'Xác định thời hạn') && fm.tuNgay.value) fm.denNgay.value = denHD(this.value, fm.tuNgay.value);
           capNhat();
         };
+        fm.tuNgay.addEventListener('change', function () { if (fm.loai.value === 'Thử việc' && fm.tuNgay.value) fm.denNgay.value = denHD('Thử việc', fm.tuNgay.value); });
+        fm.tiLeTV.addEventListener('input', capNhat);
         fm.luongCB.addEventListener('change', capNhat);
         fm.luongCB.addEventListener('blur', capNhat);
         capNhat();
@@ -5128,8 +5283,10 @@ window.LOGO_MAC_DINH = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALAAAACwCA
           var v = F().doc(el);
           if (!v.tuNgay) { App.bao('Nhập ngày hiệu lực.', 'loi'); return false; }
           if (v.denNgay && v.denNgay < v.tuNgay) { App.bao('Ngày kết thúc phải sau ngày hiệu lực.', 'loi'); return false; }
+          var tiLeTV = +v.tiLeTV;
+          if (v.loai === 'Thử việc' && !(tiLeTV > 0 && tiLeTV <= 100)) { App.bao('Lương thử việc nhập từ 1 đến 100 (% mức lương).', 'loi'); return false; }
           var hd = Object.assign(x, {
-            so: v.so.trim(), loai: v.loai, ngayKy: v.ngayKy, tuNgay: v.tuNgay, denNgay: v.loai === 'Không xác định thời hạn' ? '' : v.denNgay,
+            so: v.so.trim(), loai: v.loai, ngayKy: v.ngayKy, tuNgay: v.tuNgay, denNgay: v.loai === 'Không xác định thời hạn' ? '' : v.denNgay, tiLeTV: v.loai === 'Thử việc' ? tiLeTV : undefined,
             chucDanh: v.chucDanh.trim(), luongCB: App.docSo(v.luongCB), phuCap: v.phuCap.trim(), diaDiem: v.diaDiem.trim(), congViec: v.congViec.trim(), ghiChu: v.ghiChu.trim()
           });
           if (!hd.id) hd.id = App.uid();
@@ -5143,8 +5300,25 @@ window.LOGO_MAC_DINH = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALAAAACwCA
           if (v.capNhat) {
             nv.loaiHD = hd.loai; nv.ngayHetHD = hd.denNgay || '';
             if (hd.chucDanh) nv.chucVu = hd.chucDanh;
-            if (nv.trangThai === 'thu_viec' && hd.loai !== 'Thử việc') { nv.trangThai = 'dang_lam'; nv.tiLeHuong = 100; tb.push('chuyển sang Đang làm việc, hưởng 100% lương'); }
-            if (hd.loai === 'Thử việc' && nv.trangThai === 'dang_lam' && !(nv.hopDong.length > 1)) nv.trangThai = 'thu_viec';
+            if (hd.loai === 'Thử việc') {
+              // HĐ thử việc: ghi thời gian thử việc và lương thử việc vào hồ sơ (tính lương theo các ngày này)
+              var den = hd.denNgay || TL.denNgayThuViec(hd.tuNgay, +mdTV.soThang || 2), sau = TL.docNgay(TL.congNgay(+den.slice(0, 4), +den.slice(5, 7), +den.slice(8), 1)), dau = TL.docNgay(hd.tuNgay);
+              var soThang = Math.max(1, (sau.y - dau.y) * 12 + sau.m - dau.m + (sau.d - dau.d >= 15 ? 1 : sau.d - dau.d <= -15 ? -1 : 0));
+              nv.thuViec = { tuNgay: hd.tuNgay, soThang: soThang, denNgay: den, tiLe: hd.tiLeTV };
+              if (nv.trangThai === 'dang_lam' && !(nv.hopDong.length > 1)) nv.trangThai = 'thu_viec';
+              tb.push('thử việc ' + TL.hienNgay(hd.tuNgay) + ' – ' + TL.hienNgay(den) + ', hưởng ' + App.so(hd.tiLeTV) + '% lương');
+            } else {
+              // HĐ chính thức ký trước ngày hết thử việc: kết thúc thử việc từ ngày HĐ có hiệu lực
+              var tvh = TL.thuViecNV(db, nv);
+              if (tvh && hd.tuNgay > tvh.tuNgay && hd.tuNgay <= tvh.denNgay) {
+                var n0 = TL.docNgay(hd.tuNgay); nv.thuViec.denNgay = TL.congNgay(n0.y, n0.m, n0.d, -1);
+                tb.push('kết thúc thử việc ngày ' + TL.hienNgay(nv.thuViec.denNgay));
+              }
+              if (nv.trangThai === 'thu_viec') {
+                nv.trangThai = 'dang_lam'; if (+nv.tiLeHuong < 100) nv.tiLeHuong = 100; tb.push('chuyển sang Đang làm việc, hưởng 100% lương');
+                if (!nv.thamGiaBH && hd.loai !== 'Thời vụ / khoán việc' && hd.loai !== 'Học việc') { nv.thamGiaBH = true; tb.push('bật tham gia BHXH, BHYT, BHTN'); }
+              }
+            }
           }
           luuVaVe(nv);
           App.bao('Đã lưu hợp đồng ' + hd.so + (tb.length ? ' (' + tb.join(', ') + ')' : ''), 'tot');
@@ -5184,7 +5358,7 @@ window.LOGO_MAC_DINH = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALAAAACwCA
       '<p>– Thời giờ làm việc: ' + cd.gioLamNgay + ' giờ/ngày, từ ' + cd.gioVao + ' đến ' + cd.gioRa + ', nghỉ trưa ' + cd.nghiTruaTu + ' – ' + cd.nghiTruaDen + '; nghỉ hằng tuần: ' + h(nghi || 'theo lịch phân công') + '.</p>' +
       '<p>– Nghỉ lễ, Tết, nghỉ việc riêng theo Bộ luật Lao động; nghỉ hằng năm ' + pn + ' ngày/năm (tăng theo thâm niên theo quy định).</p>' +
       '<p class="dieu">Điều 3. Tiền lương, phụ cấp và các chế độ</p>' +
-      '<p>– Mức lương: <b>' + App.tien(hd.luongCB) + ' đồng/' + ({ ngay: 'ngày', gio: 'giờ' }[nv.hinhThuc] || 'tháng') + '</b> (' + TL.docSo(hd.luongCB).replace(/ đồng$/, '') + ' đồng)' + (nv.tiLeHuong && +nv.tiLeHuong !== 100 && hd.loai === 'Thử việc' ? '; trong thời gian thử việc hưởng ' + nv.tiLeHuong + '% mức lương' : '') + '.</p>' +
+      '<p>– Mức lương: <b>' + App.tien(hd.luongCB) + ' đồng/' + ({ ngay: 'ngày', gio: 'giờ' }[nv.hinhThuc] || 'tháng') + '</b> (' + TL.docSo(hd.luongCB).replace(/ đồng$/, '') + ' đồng)' + (hd.loai === 'Thử việc' ? (function (p) { return '; trong thời gian thử việc hưởng ' + App.so(p) + '% mức lương = <b>' + App.tien(Math.round(hd.luongCB * p / 100)) + ' đồng/' + ({ ngay: 'ngày', gio: 'giờ' }[nv.hinhThuc] || 'tháng') + '</b>'; })(+hd.tiLeTV || (TL.thuViecNV(App.db, nv) || {}).tiLe || 85) : '') + '.</p>' +
       (hd.phuCap ? '<p>– Phụ cấp, các khoản bổ sung: ' + h(hd.phuCap) + '.</p>' : '') +
       '<p>– Hình thức trả lương: ' + (nv.soTK ? 'chuyển khoản vào tài khoản ' + h(nv.soTK) + (nv.nganHang ? ' tại ' + h(nv.nganHang) : '') : 'tiền mặt hoặc chuyển khoản') + '; trả 2 kỳ/tháng (tạm ứng kỳ I, thanh toán kỳ II).</p>' +
       '<p>– Chế độ nâng lương, thưởng: theo quy chế của công ty và kết quả công việc.</p>' +
@@ -7716,7 +7890,7 @@ window.LOGO_MAC_DINH = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALAAAACwCA
         if (c.nhap && !khoa) { x += '<td><input class="o-nhap" data-f="' + c.nhap + '" value="' + (r[c.nhap] ? App.tien(r[c.nhap]) : '') + '" title="' + h(NHAP[c.nhap]) + '" inputmode="numeric"></td>'; return; }
         var v = gt(c, r);
         x += '<td data-c="' + ci + '" class="' + (c.kieu === 'so' ? 'so' : c.kieu === 'cong' ? 'giua' : '') + (c.ten ? ' ten dinh' : '') + (c.kieu === 'so' && v < 0 ? ' am' : '') + '"' + (c.dam ? ' style="font-weight:700"' : '') + '>' +
-          (c.ten ? '<span class="lk" data-ct="' + r.nvId + '">' + h(v) + '</span>' + (r.canhBao && r.canhBao.length ? ' <span title="' + h(r.canhBao.join('\n')) + '" style="color:var(--cam);cursor:help">⚠</span>' : '') : hien(c, v)) + '</td>';
+          (c.ten ? '<span class="lk" data-ct="' + r.nvId + '">' + h(v) + '</span>' + (r.thuViec ? ' <span class="the-tt cam" title="' + h(App.moTaThuViec(r)) + '">TV ' + App.so(r.thuViec.tiLe) + '%</span>' : '') + (r.canhBao && r.canhBao.length ? ' <span title="' + h(r.canhBao.join('\n')) + '" style="color:var(--cam);cursor:help">⚠</span>' : '') : hien(c, v)) + '</td>';
       });
       x += '<td>' + (khoa ? h(r.ghiChu) : '<input class="o-nhap chu" data-f="ghiChu" value="' + h(r.ghiChu) + '">') + '</td></tr>';
       return x;
@@ -7868,9 +8042,13 @@ window.LOGO_MAC_DINH = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALAAAACwCA
     d_('Ngày tính cơm', 'Ngày có đi làm (gồm SP, đi làm ngày lễ); nghỉ lễ, nghỉ phép không tính', App.so(c.ngayCom));
     m_('2. Thu nhập');
     (r.spChiTiet || []).forEach(function (x) { d_('Lương sản phẩm: ' + h(x.ten), App.tien(x.sl) + ' ' + h(x.dvt) + ' × ' + t(x.donGia) + ' đ', t(x.tien)); });
-    var ht = r.hinhThuc;
-    var cachLuong = ht === 'thang' ? t(r.luongCB) + (r.tiLeHuong !== 100 ? ' × ' + App.so(r.tiLeHuong) + '%' : '') + ' ÷ ' + App.so(r.congChuan) + ' × ' + App.so(r.congTinh != null ? r.congTinh : c.congTG)
-      : ht === 'ngay' ? t(r.luongCB) + '/ngày' + (r.tiLeHuong !== 100 ? ' × ' + App.so(r.tiLeHuong) + '%' : '') + ' × ' + App.so(c.congTG)
+    var ht = r.hinhThuc, tv = r.thuViec;
+    if (tv) d_('Thử việc', App.moTaThuViec(r), '');
+    // kỳ có cả ngày thử việc và ngày chính thức: (công thử việc × % thử việc + công chính thức)
+    var phanTV = tv && !tv.toanKy ? '(' + App.so(tv.congTV) + ' × ' + App.so(tv.tiLe * tv.tiLeCT / 100) + '% + ' + App.so(tv.congCT) + (tv.tiLeCT !== 100 ? ' × ' + App.so(tv.tiLeCT) + '%' : '') + ')' : '';
+    var cachLuong = ht === 'thang' ? t(r.luongCB) + (phanTV ? ' ÷ ' + App.so(r.congChuan) + ' × ' + phanTV + (r.congTinh != null && r.congTinh < c.congTG ? ' × ' + App.so(r.congTinh) + '/' + App.so(c.congTG) : '')
+        : (r.tiLeHuong !== 100 ? ' × ' + App.so(r.tiLeHuong) + '%' : '') + ' ÷ ' + App.so(r.congChuan) + ' × ' + App.so(r.congTinh != null ? r.congTinh : c.congTG))
+      : ht === 'ngay' ? t(r.luongCB) + '/ngày' + (phanTV ? ' × ' + phanTV : (r.tiLeHuong !== 100 ? ' × ' + App.so(r.tiLeHuong) + '%' : '') + ' × ' + App.so(c.congTG))
         : ht === 'gio' ? t(r.luongCB) + '/giờ × ' + cd.gioLamNgay + ' giờ × ' + App.so(c.congTG) + ' công'
           : 'Lương khoán';
     d_('Lương thời gian', cachLuong + (r.congTinh != null && r.congTinh < c.congTG ? ' (tính tối đa ' + App.so(r.congTinh) + ' công)' : ''), t(r.luongTG));
@@ -7892,7 +8070,9 @@ window.LOGO_MAC_DINH = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALAAAACwCA
     if (r.congKhac) d_('Khoản cộng khác', '', t(r.congKhac));
     d_('<b>Tổng thu nhập</b>', '', '<b>' + t(r.tongThuNhap) + '</b>');
     m_('3. Bảo hiểm, công đoàn (người lao động đóng)');
-    if (!r.dongBH) d_('Không đóng bảo hiểm kỳ này', r.luongBH ? 'Nghỉ không lương từ ' + cd.nguongNghiKhongDongBH + ' ngày' : 'Không tham gia / chưa có lương đóng BH', '0');
+    if (!r.dongBH) d_('Không đóng bảo hiểm kỳ này', !r.luongBH ? 'Không tham gia / chưa có lương đóng BH'
+      : r.thuViec && (cd.thuViec || {}).khongDongBH !== false ? (r.thuViec.toanKy ? 'Đang thử việc (hợp đồng thử việc)' : 'Thời gian thử việc và nghỉ không lương từ ' + cd.nguongNghiKhongDongBH + ' ngày trong kỳ')
+      : 'Nghỉ không lương từ ' + cd.nguongNghiKhongDongBH + ' ngày', '0');
     else {
       d_('Lương đóng bảo hiểm', 'Trần BHXH, BHYT: ' + t(20 * cd.luongCoSo) + ' · trần BHTN: ' + t(20 * cd.luongToiThieuVung), t(r.luongBH));
       d_('BHXH', App.so(cd.bh.nv.bhxh) + '%', t(r.bhxh));
@@ -8109,7 +8289,8 @@ window.LOGO_MAC_DINH = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALAAAACwCA
     var cd = App.db.caiDat, c = r.cong, L = [];
     L.push(['m', 'I. THU NHẬP', '']);
     (r.spChiTiet || []).forEach(function (x) { L.push(['c', x.ten + ' (' + App.tien(x.sl) + ' ' + x.dvt + ' × ' + App.tien(x.donGia) + ' đ)', x.tien]); });
-    L.push(['c', 'Lương thời gian (' + App.so(c.congTG) + ' công' + (c.congThemLeTG ? ', gồm ' + App.so(c.congThemLeTG) + ' công tăng thêm đi làm lễ, Tết' : '') + ')', r.luongTG]);
+    L.push(['c', 'Lương thời gian (' + App.so(c.congTG) + ' công' + (c.congThemLeTG ? ', gồm ' + App.so(c.congThemLeTG) + ' công tăng thêm đi làm lễ, Tết' : '') +
+      (r.thuViec ? (r.thuViec.toanKy ? '; thử việc hưởng ' + App.so(r.thuViec.tiLe) + '% lương' : '; ' + App.so(r.thuViec.congTV) + ' công thử việc hưởng ' + App.so(r.thuViec.tiLe) + '%') : '') + ')', r.luongTG]);
     if (r.luongNgung) L.push(['c', 'Nghỉ, ngừng việc hưởng lương (' + App.so(c.ngung) + ' công)', r.luongNgung]);
     if (r.tienOT) L.push(['c', 'Làm thêm giờ (' + App.so(c.otTong) + ' giờ)', r.tienOT]);
     (bl.phuCap || []).forEach(function (pc) {
@@ -8654,6 +8835,12 @@ window.LOGO_MAC_DINH = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALAAAACwCA
           o('Đi làm (lương thời gian) ngày lễ được tính (công)', 'caiDat.heSoCongLe', 'so', 'Mặc định 2 công; nghỉ lễ (L) vẫn 1 công; làm SP không nhân') +
           o('Đi làm (lương thời gian) ngày Tết được tính (công)', 'caiDat.heSoCongTet', 'so', 'Mặc định 3 công; tiền cơm vẫn tính 1 ngày') +
           '</div><p class="mo nho">Theo Bộ luật Lao động 2019: làm thêm ngày thường ít nhất 150%, ngày nghỉ hằng tuần 200%, ngày lễ 300% (chưa kể lương ngày lễ). Phần chênh lệch so với lương giờ bình thường không chịu thuế TNCN.</p></div>' +
+          '<div class="the"><h3>Thử việc</h3><div class="form ba">' +
+          o('Số tháng thử việc mặc định', 'caiDat.thuViec.soThang', 'so', 'Dùng khi chọn trạng thái Thử việc, thêm HĐ thử việc') +
+          o('Lương thử việc (% lương chính thức)', 'caiDat.thuViec.tiLe', 'so', 'Mặc định 85% – mức tối thiểu theo Điều 26 BLLĐ 2019') +
+          o('Thời gian thử việc không đóng BHXH, BHYT, BHTN (ký hợp đồng thử việc riêng)', 'caiDat.thuViec.khongDongBH', 'bool') +
+          '</div><p class="mo nho">Từng người sửa được ở hồ sơ (tab Công việc &amp; lương → Thử việc). Ngày thuộc thời gian thử việc hưởng lương thử việc; kỳ có cả ngày thử việc và ngày chính thức được tính theo số công của từng phần. ' +
+          'Thời gian thử việc tối đa (Điều 25 BLLĐ 2019): 180 ngày – quản lý doanh nghiệp; 60 ngày – trình độ cao đẳng trở lên; 30 ngày – trung cấp, công nhân kỹ thuật, nhân viên nghiệp vụ; 6 ngày làm việc – công việc khác.</p></div>' +
           '<div class="the"><h3>Khác</h3><div class="form ba">' +
           o('Làm tròn số tiền lãnh', 'caiDat.lamTron', [[1, 'Không làm tròn'], [100, 'Đến 100 đ'], [1000, 'Đến 1.000 đ']]) +
           o('Phạt đi muộn / về sớm mỗi lần (đ)', 'caiDat.phatMuonMoiLan', 'tien') + o('Phạt mỗi phút (đ)', 'caiDat.phatMuonMoiPhut', 'tien') +

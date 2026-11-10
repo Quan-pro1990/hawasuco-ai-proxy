@@ -143,6 +143,12 @@
       if (nv.ngaySinh && +nv.ngaySinh.slice(5, 7) === m) cy.push(['🎂 Sinh nhật <span class="lk" data-hs="' + nv.id + '">' + h(nv.hoTen) + '</span>', '<span class="the-tt lam">' + nv.ngaySinh.slice(8, 10) + '/' + TL.pad(m) + '</span>']);
       var hd = App.hdHieuLuc ? App.hdHieuLuc(nv) : null, het = hd ? hd.denNgay : nv.ngayHetHD;
       if (App.hdHieuLuc && !hd) chuaHD++;
+      var tv = nv.trangThai === 'thu_viec' ? TL.thuViecNV(db, nv) : null;
+      if (tv) {
+        var conTV = Math.round((new Date(tv.denNgay) - new Date(hnIso)) / 864e5);
+        if (conTV <= 30) cy.push(['Hết thử việc (đánh giá, ký HĐ chính thức): <span class="lk" data-hs="' + nv.id + '">' + h(nv.hoTen) + '</span>', '<span class="the-tt ' + (conTV <= 7 ? 'do' : 'cam') + '">' + (conTV < 0 ? 'đã hết ' + (-conTV) + ' ngày' : 'còn ' + conTV + ' ngày') + '</span>']);
+        if (hd ? hd.loai === 'Thử việc' : nv.loaiHD === 'Thử việc') het = '';
+      }
       if (het) {
         var con = Math.round((new Date(het) - new Date(hnIso)) / 864e5);
         if (con >= -30 && con <= 30) cy.push([(nv.trangThai === 'thu_viec' ? 'Hết thử việc: ' : 'Hết hạn hợp đồng: ') + '<span class="lk" data-hs="' + nv.id + '">' + h(nv.hoTen) + '</span>', '<span class="the-tt ' + (con <= 7 ? 'do' : 'cam') + '">' + (con < 0 ? 'đã hết ' + (-con) + ' ngày' : 'còn ' + con + ' ngày') + '</span>']);

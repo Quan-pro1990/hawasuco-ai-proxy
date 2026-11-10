@@ -63,8 +63,24 @@ Bấm 1 người trong danh sách để mở hồ sơ gồm các tab:
 ### Hợp đồng lao động
 - Thêm hợp đồng ở hồ sơ hoặc trang **Hợp đồng lao động**: số, loại (thử việc, xác định / không xác định thời hạn, thời vụ),
   ngày ký, hiệu lực, chức danh, mức lương, phụ cấp, địa điểm, công việc.
-- Đánh dấu *Cập nhật hồ sơ* thì loại HĐ, ngày hết hạn, chức danh được cập nhật; hết thử việc sang HĐ chính thức thì tự chuyển
-  "Đang làm việc", hưởng 100% lương. Nếu mức lương trong HĐ khác hiện tại có thể *áp dụng từ ngày hiệu lực* (tự tạo quyết định điều chỉnh lương).
+- Đánh dấu *Cập nhật hồ sơ* thì loại HĐ, ngày hết hạn, chức danh được cập nhật; HĐ thử việc ghi luôn thời gian thử việc và % lương thử việc
+  vào hồ sơ; HĐ chính thức thì tự chuyển "Đang làm việc", hưởng 100% lương (ký trước ngày hết thử việc thì thử việc kết thúc ngày trước
+  ngày HĐ có hiệu lực; người chưa tham gia BH được bật tham gia BH). Nếu mức lương trong HĐ khác hiện tại có thể *áp dụng từ ngày hiệu lực*
+  (tự tạo quyết định điều chỉnh lương).
+
+### Thử việc – lương thử việc, số tháng thử việc
+- Hồ sơ → tab **Công việc & lương** → mục **Thử việc**: đánh dấu *Có thời gian thử việc*, nhập **từ ngày**, **số tháng thử việc**
+  (tự tính **đến ngày**: 01/10 + 2 tháng → 30/11; sửa được khi thử việc tính theo số ngày) và **lương thử việc (% lương chính thức)** –
+  mặc định **85%** (mức tối thiểu theo Điều 26 BLLĐ 2019). Dòng bên dưới hiện ngay lương thử việc, ví dụ 85% × 7.000.000 = 5.950.000 đ/tháng.
+- Chọn trạng thái *Thử việc* hoặc thêm HĐ loại *Thử việc* thì phần mềm tự điền thời gian thử việc theo mặc định ở
+  **Cài đặt → Lương → Thử việc** (số tháng mặc định 2, lương thử việc 85%, thời gian thử việc không đóng BHXH, BHYT, BHTN).
+- Tính lương: những ngày nằm trong thời gian thử việc hưởng lương thử việc. Kỳ có cả ngày thử việc và ngày chính thức được tính
+  theo số công của từng phần: mức lương ÷ công chuẩn × (công thử việc × 85% + công chính thức). Bảng lương hiện nhãn **TV 85%**
+  cạnh tên, chi tiết và phiếu lương ghi rõ số công thử việc.
+- Bảo hiểm: kỳ nằm trọn trong thời gian thử việc không đóng BH; kỳ hết thử việc giữa chừng thì công thử việc tính như ngày không thuộc
+  hợp đồng lao động – từ 14 ngày trở lên thì kỳ đó chưa đóng BH. Bỏ đánh dấu ở Cài đặt nếu thử việc ghi trong hợp đồng lao động (vẫn đóng BH).
+- Trang **Tổng quan** nhắc *Hết thử việc* trước 30 ngày để đánh giá và ký HĐ chính thức. Danh sách nhân viên, Excel có cột thử việc
+  từ ngày / đến ngày / % lương thử việc. Dữ liệu cũ (trạng thái Thử việc, "% hưởng lương" 85) được tự chuyển sang mục Thử việc.
 - Trang **Hợp đồng lao động** đếm và lọc: sắp hết hạn (30 ngày), đã hết hạn, chưa có hợp đồng; **In hợp đồng** theo mẫu tham khảo
   (Bộ luật Lao động 2019) – kiểm tra điều khoản theo quy chế công ty trước khi ký.
 
@@ -227,6 +243,7 @@ Cài máy chủ: xem [`iis/HUONG_DAN_IIS.txt`](iis/HUONG_DAN_IIS.txt). Tài kho�
 | Giảm trừ gia cảnh | bản thân 15.500.000 · người phụ thuộc 6.200.000 |
 | Biểu thuế (thu nhập tính thuế / tháng) | ≤10 tr 5% · 10–30 tr 10% · 30–60 tr 20% · 60–100 tr 30% · >100 tr 35% |
 | Làm thêm giờ | ngày thường 150% · nghỉ tuần 200% · lễ 300% |
+| Thử việc | lương ít nhất 85% lương công việc; tối đa 180 ngày (quản lý DN), 60 ngày (cao đẳng trở lên), 30 ngày (trung cấp, CNKT), 6 ngày làm việc (khác) |
 
 Hãy đối chiếu lại với văn bản hiện hành của cơ quan thuế, BHXH trước khi dùng số liệu để nộp.
 

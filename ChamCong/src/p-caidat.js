@@ -313,6 +313,12 @@
           o('Đi làm (lương thời gian) ngày lễ được tính (công)', 'caiDat.heSoCongLe', 'so', 'Mặc định 2 công; nghỉ lễ (L) vẫn 1 công; làm SP không nhân') +
           o('Đi làm (lương thời gian) ngày Tết được tính (công)', 'caiDat.heSoCongTet', 'so', 'Mặc định 3 công; tiền cơm vẫn tính 1 ngày') +
           '</div><p class="mo nho">Theo Bộ luật Lao động 2019: làm thêm ngày thường ít nhất 150%, ngày nghỉ hằng tuần 200%, ngày lễ 300% (chưa kể lương ngày lễ). Phần chênh lệch so với lương giờ bình thường không chịu thuế TNCN.</p></div>' +
+          '<div class="the"><h3>Thử việc</h3><div class="form ba">' +
+          o('Số tháng thử việc mặc định', 'caiDat.thuViec.soThang', 'so', 'Dùng khi chọn trạng thái Thử việc, thêm HĐ thử việc') +
+          o('Lương thử việc (% lương chính thức)', 'caiDat.thuViec.tiLe', 'so', 'Mặc định 85% – mức tối thiểu theo Điều 26 BLLĐ 2019') +
+          o('Thời gian thử việc không đóng BHXH, BHYT, BHTN (ký hợp đồng thử việc riêng)', 'caiDat.thuViec.khongDongBH', 'bool') +
+          '</div><p class="mo nho">Từng người sửa được ở hồ sơ (tab Công việc &amp; lương → Thử việc). Ngày thuộc thời gian thử việc hưởng lương thử việc; kỳ có cả ngày thử việc và ngày chính thức được tính theo số công của từng phần. ' +
+          'Thời gian thử việc tối đa (Điều 25 BLLĐ 2019): 180 ngày – quản lý doanh nghiệp; 60 ngày – trình độ cao đẳng trở lên; 30 ngày – trung cấp, công nhân kỹ thuật, nhân viên nghiệp vụ; 6 ngày làm việc – công việc khác.</p></div>' +
           '<div class="the"><h3>Khác</h3><div class="form ba">' +
           o('Làm tròn số tiền lãnh', 'caiDat.lamTron', [[1, 'Không làm tròn'], [100, 'Đến 100 đ'], [1000, 'Đến 1.000 đ']]) +
           o('Phạt đi muộn / về sớm mỗi lần (đ)', 'caiDat.phatMuonMoiLan', 'tien') + o('Phạt mỗi phút (đ)', 'caiDat.phatMuonMoiPhut', 'tien') +

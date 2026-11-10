@@ -78,8 +78,9 @@
     });
     var nv3 = db.nhanVien[2], nv14 = db.nhanVien[13], nv15 = db.nhanVien[14], nv16 = db.nhanVien[15], nv17 = db.nhanVien[16];
     nv3.thamGiaBH = false; nv3.ghiChu = 'Đã nghỉ hưu, làm việc theo hợp đồng – không đóng BHXH';
-    nv14.trangThai = 'thu_viec'; nv14.tiLeHuong = 85; nv14.thamGiaBH = false; nv14.loaiHD = 'Thử việc'; nv14.doanVien = false;
-    nv14.ngayHetHD = TL.iso(Y, M, TL.soNgay(Y, M));
+    nv14.trangThai = 'thu_viec'; nv14.loaiHD = 'Thử việc'; nv14.doanVien = false;
+    nv14.thuViec = { tuNgay: nv14.ngayVao, soThang: 2, denNgay: TL.denNgayThuViec(nv14.ngayVao, 2), tiLe: 85 };
+    nv14.ngayHetHD = nv14.thuViec.denNgay;
     nv15.hinhThuc = 'ngay'; nv15.luongBH = 6000000; nv15.loaiHD = 'Xác định thời hạn'; nv15.ngayHetHD = TL.congNgay(Y, M, D, 20);
     nv16.hinhThuc = 'gio'; nv16.thamGiaBH = false; nv16.cachTinhThue = 'khau_tru'; nv16.loaiHD = 'Thời vụ / khoán việc'; nv16.doanVien = false;
     nv17.trangThai = 'nghi_viec'; nv17.ngayNghi = TL.iso(nghiNV.y, nghiNV.m, 20);
@@ -116,6 +117,7 @@
         if (nv.ma === 'NV013' || nv.ma === 'NV015') { hd('Xác định thời hạn', tu2, cong12(tu2, 12), nv.luongCB); var tu3 = TL.congNgay(+nv.hopDong[1].denNgay.slice(0, 4), +nv.hopDong[1].denNgay.slice(5, 7), +nv.hopDong[1].denNgay.slice(8), 1); hd('Xác định thời hạn', tu3, TL.congNgay(Y, M, D, nv.ma === 'NV013' ? 18 : 40), nv.luongCB); }
         else { hd('Xác định thời hạn', tu2, cong12(tu2, 12), nv.luongCB); var hdx = nv.hopDong[nv.hopDong.length - 1]; hd('Không xác định thời hạn', TL.congNgay(+hdx.denNgay.slice(0, 4), +hdx.denNgay.slice(5, 7), +hdx.denNgay.slice(8), 1), '', nv.luongCB); }
       }
+      nv.hopDong.forEach(function (x) { if (x.loai === 'Thử việc') x.tiLeTV = 85; });
       var cuoi = nv.hopDong[nv.hopDong.length - 1];
       nv.loaiHD = cuoi.loai; nv.ngayHetHD = cuoi.denNgay || '';
       nv.quyetDinh.push({ id: 'qd' + i + '_0', loai: 'tiep_nhan', so: TL.pad(i + 1) + '/QĐ-TN', ngay: nv.ngayVao, hieuLuc: nv.ngayVao, noiDung: 'Tiếp nhận vào làm việc tại ' + TL.tenPhongBan(db, { NV009: 'KDVT', NV010: 'KDVT', NV011: 'KTH' }[nv.ma] || nv.phongBan) });

@@ -425,6 +425,51 @@ t('Làm thêm giờ: phần chênh lệch không chịu thuế', function () {
   assert.strictEqual(r.otMienThue, 125000);
 });
 
+t('Thử việc: 85% lương chính thức, số tháng, kỳ có cả ngày thử việc và chính thức, không đóng BH', function () {
+  assert.strictEqual(TL.denNgayThuViec('2026-10-01', 2), '2026-11-30');
+  assert.strictEqual(TL.denNgayThuViec('2026-10-15', 2), '2026-12-14');
+  assert.strictEqual(TL.denNgayThuViec('2026-01-31', 1), '2026-02-28');
+  assert.strictEqual(TL.denNgayThuViec('2026-03-01', 1), '2026-03-31');
+  var db = TL.duLieuMoi(); db.ngayLe = [];
+  db.caiDat.congChuan = { cach: 'co_dinh', soNgay: 26 };
+  var nv = { id: 'tv', ma: 'TV', hoTen: 'Thử Việc', hinhThuc: 'thang', luongCB: 10000000, thamGiaBH: true, cachTinhThue: 'khong', phuCap: {},
+    ngayVao: '2026-10-01', trangThai: 'thu_viec', thuViec: { tuNgay: '2026-10-01', soThang: 2 } };
+  db.nhanVien = [nv];
+  function chamDu(m) { var T = TL.thang(db, 2026, m, true); T.cc.tv = {}; for (var d = 1; d <= 26; d++) T.cc.tv[d] = '+'; }
+  [10, 11, 12].forEach(chamDu);
+  assert.deepStrictEqual(TL.thuViecNV(db, nv), { tuNgay: '2026-10-01', denNgay: '2026-11-30', soThang: 2, tiLe: 85 });
+  assert.ok(TL.dangThuViec(db, nv, '2026-11-30')); assert.ok(!TL.dangThuViec(db, nv, '2026-12-01'));
+  // cả kỳ thử việc: 85% lương, không đóng BH (không cảnh báo)
+  var r = TL.tinhBangLuong(db, 2026, 10).rows[0];
+  assert.strictEqual(r.luongTG, 8500000); assert.strictEqual(r.tiLeHuong, 85); assert.ok(r.thuViec.toanKy);
+  assert.strictEqual(r.dongBH, false); assert.strictEqual(r.tongBH, 0); assert.deepStrictEqual(r.canhBao, []);
+  // hết thử việc: 100%, đóng BH
+  r = TL.tinhBangLuong(db, 2026, 12).rows[0];
+  assert.strictEqual(r.luongTG, 10000000); assert.strictEqual(r.thuViec, null); assert.strictEqual(r.bhxh, 800000);
+  // thử việc đến 10/11: 10 công × 85% + 16 công × 100%; còn 10 ngày thuộc thử việc (< 14) nên vẫn đóng BH
+  nv.thuViec.denNgay = '2026-11-10';
+  r = TL.tinhBangLuong(db, 2026, 11).rows[0];
+  assert.strictEqual(r.thuViec.congTV, 10); assert.strictEqual(r.thuViec.congCT, 16); assert.ok(!r.thuViec.toanKy);
+  assert.strictEqual(r.luongTG, Math.round(10000000 / 26 * (10 * 0.85 + 16)));
+  assert.strictEqual(r.dongBH, true);
+  // thử việc đến 20/11: 20 công thử việc (≥ 14) -> không đóng BH tháng 11
+  nv.thuViec.denNgay = '2026-11-20';
+  r = TL.tinhBangLuong(db, 2026, 11).rows[0];
+  assert.strictEqual(r.luongTG, Math.round(10000000 / 26 * (20 * 0.85 + 6))); assert.strictEqual(r.dongBH, false);
+  // tắt "không đóng BH khi thử việc" -> vẫn đóng
+  db.caiDat.thuViec.khongDongBH = false;
+  assert.strictEqual(TL.tinhBangLuong(db, 2026, 11).rows[0].dongBH, true);
+  // tỷ lệ riêng 90%
+  db.caiDat.thuViec.khongDongBH = true; nv.thuViec = { tuNgay: '2026-10-01', soThang: 2, tiLe: 90 };
+  assert.strictEqual(TL.tinhBangLuong(db, 2026, 10).rows[0].luongTG, 9000000);
+  // dữ liệu cũ: trạng thái thử việc + "% hưởng lương" 85 -> thời gian thử việc riêng, % hưởng lương về 100
+  var cu = TL.duLieuMoi();
+  cu.nhanVien = [{ id: 'c', ma: 'C', hoTen: 'C', trangThai: 'thu_viec', tiLeHuong: 85, ngayVao: '2026-10-05', loaiHD: 'Thử việc', ngayHetHD: '2026-12-04' }];
+  TL.chuanHoa(cu);
+  assert.deepStrictEqual(cu.nhanVien[0].thuViec, { tuNgay: '2026-10-05', soThang: 2, tiLe: 85, denNgay: '2026-12-04' });
+  assert.strictEqual(cu.nhanVien[0].tiLeHuong, 100);
+});
+
 t('Giờ vào / ra', function () {
   var cd = TL.caiDatMacDinh();
   var k = TL.tinhVaoRa(cd, 'thuong', TL.phut('08:12'), TL.phut('18:10'));

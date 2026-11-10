@@ -5,6 +5,12 @@
 
   App.HINH_THUC = { thang: 'Lương tháng', ngay: 'Lương ngày', gio: 'Lương giờ', khoan: 'Lương khoán' };
   App.DV_LUONG = { thang: 'đ/tháng', ngay: 'đ/ngày', gio: 'đ/giờ', khoan: 'đ/tháng' };
+  /** Mô tả thử việc của 1 dòng bảng lương */
+  App.moTaThuViec = function (r) {
+    var tv = r.thuViec; if (!tv) return '';
+    return 'Thử việc ' + TL.hienNgay(tv.tuNgay) + ' – ' + TL.hienNgay(tv.denNgay) + ': hưởng ' + App.so(tv.tiLe) + '% lương chính thức' +
+      (tv.toanKy ? ' cả kỳ' : ' – ' + App.so(tv.congTV) + ' công thử việc, ' + App.so(tv.congCT) + ' công chính thức') + (r.dongBH ? '' : '; chưa đóng BH');
+  };
   App.TRANG_THAI = { dang_lam: 'Đang làm việc', thu_viec: 'Thử việc', tam_nghi: 'Tạm nghỉ', nghi_viec: 'Đã nghỉ việc' };
   App.CACH_THUE = { luy_tien: 'Lũy tiến từng phần', khau_tru: 'Khấu trừ 10%', khong: 'Không tính thuế' };
   App.LOAI_HD = ['Thử việc', 'Xác định thời hạn', 'Không xác định thời hạn', 'Thời vụ / khoán việc', 'Học việc'];
@@ -110,7 +116,8 @@
         '<td class="so">' + lbh + '</td><td style="white-space:nowrap">' + (nv.soTK ? h(nv.soTK) + (nv.nganHang ? '<div class="mo nho">' + h(nv.nganHang) + '</div>' : '') : (tt === 'nghi_viec' ? '' : '<span class="the-tt cam">Chưa có</span>')) + '</td>' +
         '<td class="giua">' + (TL.soNPTKy(nv, App.ky.y, App.ky.m) || '') + '</td>' +
         '<td class="giua">' + (nv.ngayHetHD ? TL.hienNgay(nv.ngayHetHD) + App.nhanHetHan(nv.ngayHetHD) : '') + '</td>' +
-        '<td><span class="the-tt ' + ({ dang_lam: 'xanh', thu_viec: 'cam', tam_nghi: 'lam', nghi_viec: '' }[tt]) + '">' + App.TRANG_THAI[tt] + '</span></td>' +
+        '<td><span class="the-tt ' + ({ dang_lam: 'xanh', thu_viec: 'cam', tam_nghi: 'lam', nghi_viec: '' }[tt]) + '">' + App.TRANG_THAI[tt] + '</span>' +
+          (tt === 'thu_viec' && nv.thuViec ? '<div class="mo nho" style="white-space:nowrap">đến ' + TL.hienNgay(nv.thuViec.denNgay) + ' · ' + App.so(nv.thuViec.tiLe) + '% lương</div>' : '') + '</td>' +
         '<td class="khong-in"><button class="nut nho nguy xoa" title="Xoá">' + App.icon('xoa') + '</button></td></tr>';
     });
     html += '</tbody>';
@@ -166,6 +173,7 @@
       ['ngayHetHD', 'Ngày hết hạn HĐ', 11, 'ngay'], ['trangThai', 'Trạng thái', 13, 'tt'], ['ngayNghi', 'Ngày nghỉ việc', 11, 'ngay'],
       ['loaiLD', 'Loại lao động', 16, 'lld'], ['congChuanRieng', 'Công chuẩn riêng', 8, 'so'],
       ['hinhThuc', 'Hình thức lương', 13, 'ht'], ['luongCB', 'Mức lương', 13, 'so'], ['tiLeHuong', '% hưởng lương', 8, 'so'],
+      ['tv:tuNgay', 'Thử việc từ ngày', 11, 'ngay'], ['tv:denNgay', 'Thử việc đến ngày', 11, 'ngay'], ['tv:tiLe', '% lương thử việc', 8, 'so'],
       ['maSP', 'Sản phẩm chính', 16, 'spm'], ['donGiaSP', 'Đơn giá SP riêng', 9, 'so'],
       ['luongBH', 'Lương đóng BH', 13, 'so'], ['thamGiaBH', 'Tham gia BH', 8, 'bool'], ['doanVien', 'Đoàn viên CĐ', 8, 'bool'],
       ['cachTinhThue', 'Cách tính thuế', 16, 'thue'], ['mst', 'MST cá nhân', 13], ['soNPT', 'Số người phụ thuộc', 8, 'so'],
@@ -176,7 +184,7 @@
     return c;
   }
   function giaTriXuat(nv, c) {
-    var k = c[0], v = k.indexOf('pc:') === 0 ? (nv.phuCap || {})[k.slice(3)] : nv[k];
+    var k = c[0], v = k.indexOf('pc:') === 0 ? (nv.phuCap || {})[k.slice(3)] : k.indexOf('tv:') === 0 ? (nv.thuViec || {})[k.slice(3)] : nv[k];
     switch (c[3]) {
       case 'ngay': return TL.hienNgay(v);
       case 'pb': return TL.tenPhongBan(App.db, v);
@@ -295,8 +303,21 @@
             val = pb.ma; break;
           default: val = String(raw).trim();
         }
-        if (k.indexOf('pc:') === 0) v.phuCap[k.slice(3)] = val; else v[k] = val;
+        if (k.indexOf('pc:') === 0) v.phuCap[k.slice(3)] = val;
+        else if (k.indexOf('tv:') === 0) { v.thuViec = v.thuViec || {}; v.thuViec[k.slice(3)] = val; }
+        else v[k] = val;
       });
+      // thử việc: thiếu ngày bắt đầu thì lấy ngày vào làm; trạng thái "Thử việc" mà không có cột thử việc thì theo mặc định
+      var mdTV = App.db.caiDat.thuViec || {};
+      if (!v.thuViec && v.trangThai === 'thu_viec' && v.ngayVao) v.thuViec = {};
+      if (v.thuViec) {
+        var tv = v.thuViec; tv.tuNgay = tv.tuNgay || v.ngayVao || '';
+        if (!tv.tuNgay) delete v.thuViec;
+        else {
+          tv.soThang = +mdTV.soThang || 2; tv.denNgay = tv.denNgay || TL.denNgayThuViec(tv.tuNgay, tv.soThang);
+          tv.tiLe = +tv.tiLe > 0 ? +tv.tiLe : (+mdTV.tiLe || 85);
+        }
+      }
       if (!v.hoTen) { loi.push('Dòng ' + (hd + ri + 2) + ': thiếu họ tên'); return; }
       var cu = v.ma ? App.db.nhanVien.filter(function (x) { return String(x.ma).toLowerCase() === String(v.ma).toLowerCase(); })[0] : null;
       if (cu) capNhat.push([cu, v]); else moi.push(v);
