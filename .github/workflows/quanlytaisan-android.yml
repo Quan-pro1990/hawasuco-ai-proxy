@@ -53,7 +53,7 @@ jobs:
           aapt dump badging ra/app-moi.apk | head -1
           # kiểm thử đọc QR chạy trên Android (ART) bằng chính mã DocQR + ZXing trong APK: chỉ dex lớp ThuDocQR
           ZX=$HOME/.cache/quanlytaisan/zxing-core-3.5.3.jar
-          javac -encoding UTF-8 -nowarn -d /tmp/thu-cls -cp "$ZX" QuanLyTaiSan/android/app/src/main/java/vn/com/hawasuco/taisan/DocQR.java QuanLyTaiSan/android/kiem-thu/ThuDocQR.java
+          javac --release 8 -encoding UTF-8 -nowarn -d /tmp/thu-cls -cp "$ZX" QuanLyTaiSan/android/app/src/main/java/vn/com/hawasuco/taisan/DocQR.java QuanLyTaiSan/android/kiem-thu/ThuDocQR.java
           rm /tmp/thu-cls/vn/com/hawasuco/taisan/DocQR.class
           dalvik-exchange --dex --min-sdk-version=21 --output="$PWD/ra/thu-docqr.jar" /tmp/thu-cls
 
