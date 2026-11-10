@@ -10,6 +10,8 @@
     muon: { ten: 'Đi muộn / về sớm (phút)', kho: 'muon' }
   };
   var st = { che: 'kh', pb: '', ld: '', tim: '', anc: null, act: null, sel: null, keo: false, undo: [], kyUndo: '' };
+  /** Mở bảng chấm công lọc sẵn 1 phòng / đội (từ màn hình Tổng quan đơn vị) */
+  App.moChamCong = function (pb) { st.pb = pb || ''; if (location.hash !== '#chamcong') location.hash = '#chamcong'; else App.veLai(); };
   var C = null; // ngữ cảnh đang hiển thị
   var oSua = null;
 

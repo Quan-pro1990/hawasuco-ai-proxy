@@ -9,14 +9,47 @@
   var MC = App.mayChu = { bat: false, phienBan: 0, nguoi: '', capNhat: '', toi: null, canLuu: false, dangLuu: false, loi: '', luuLuc: null };
   var hen = null, henHoi = null;
   var KHO_CONG = ['cc', 'ot', 'muon', 'vr'];
-  var VAI_TRO = { quan_tri: 'Quản trị', nhap_lieu: 'Nhập liệu (toàn bộ dữ liệu)', cham_cong: 'Chấm công theo phòng / đội' };
+  var VAI_TRO = { quan_tri: 'Quản trị', nhap_lieu: 'Cấp công ty', cham_cong: 'Cấp phòng / đội' };
 
-  /* ---------------- phân quyền: tài khoản chấm công chỉ thấy bảng chấm công, giờ vào / ra của phòng / đội mình ---------------- */
+  /* ---------------- phân quyền ----------------
+     Cấp: quản trị (toàn quyền, tài khoản, sao lưu) · cấp công ty (mọi phòng, đội) · cấp phòng / đội (chỉ nhân viên của đơn vị được giao).
+     Mỗi phần Chấm công, Nhân sự, Tiền lương, Thiết lập: Không / Xem / Sửa. Máy chủ kiểm tra lại quyền khi trả và nhận dữ liệu. */
+  var PHAN = { cc: 'Chấm công', ns: 'Nhân sự', lg: 'Tiền lương', tl: 'Thiết lập' };
+  var MUC = ['Không', 'Xem', 'Sửa'];
+  var TRANG_PHAN = { chamcong: 'cc', vaora: 'cc', nhanvien: 'ns', hoso: 'ns', hopdong: 'ns', theodoihd: 'ns', quyetdinh: 'ns', nghiphep: 'ns', bcnhansu: 'ns',
+    nangbac: 'lg', bangluong: 'lg', phieuluong: 'lg', baocao: 'lg', mucluong: 'lg', danhmuc: 'tl', caidat: 'tl' };
+  var MAU_QUYEN = [
+    { ma: 'qt', ten: 'Quản trị – toàn quyền, quản lý tài khoản', vaiTro: 'quan_tri', quyen: { cc: 2, ns: 2, lg: 2, tl: 2 } },
+    { ma: 'nl', ten: 'Nhập liệu công ty – sửa tất cả', vaiTro: 'nhap_lieu', quyen: { cc: 2, ns: 2, lg: 2, tl: 2 } },
+    { ma: 'ktl', ten: 'Kế toán tiền lương công ty', vaiTro: 'nhap_lieu', quyen: { cc: 1, ns: 1, lg: 2, tl: 2 } },
+    { ma: 'tchc', ten: 'Cán bộ tổ chức – nhân sự công ty', vaiTro: 'nhap_lieu', quyen: { cc: 2, ns: 2, lg: 1, tl: 1 } },
+    { ma: 'ld', ten: 'Lãnh đạo – xem tất cả', vaiTro: 'nhap_lieu', quyen: { cc: 1, ns: 1, lg: 1, tl: 1 } },
+    { ma: 'dt', ten: 'Trưởng phòng, đội trưởng – chấm công, hồ sơ đơn vị, xem lương', vaiTro: 'cham_cong', quyen: { cc: 2, ns: 2, lg: 1, tl: 0 } },
+    { ma: 'ccd', ten: 'Chấm công đơn vị – chỉ chấm công', vaiTro: 'cham_cong', quyen: { cc: 2, ns: 0, lg: 0, tl: 0 } },
+    { ma: 'nsd', ten: 'Nhân sự đơn vị – chấm công, xem hồ sơ', vaiTro: 'cham_cong', quyen: { cc: 2, ns: 1, lg: 0, tl: 0 } }
+  ];
   function laCC() { return !!(MC.bat && MC.toi && MC.toi.vaiTro === 'cham_cong'); }
+  function quyenToi() {
+    if (!MC.bat || !MC.toi) return { cc: 2, ns: 2, lg: 2, tl: 2 };
+    return MC.toi.quyen || (laCC() ? { cc: 2, ns: 0, lg: 0, tl: 0 } : { cc: 2, ns: 2, lg: 2, tl: 2 });
+  }
+  /** Quyền của tài khoản đang dùng với 1 phần (cc, ns, lg, tl): 0 không, 1 xem, 2 sửa. Chạy 1 file trên máy: toàn quyền. */
+  App.quyen = function (p) { return +quyenToi()[p] || 0; };
   App.laTaiKhoanChamCong = laCC;
-  App.duocXem = function (id) { return !laCC() || id === 'chamcong' || id === 'vaora'; };
-  App.trangDau = function () { return laCC() ? 'chamcong' : 'dashboard'; };
+  App.laCapDonVi = laCC;
+  App.duocXem = function (id) {
+    if (!MC.bat) return true;
+    if (id === 'tongquandoi') return true;
+    if (id === 'dashboard') return !laCC() && App.quyen('lg') >= 1;
+    var p = TRANG_PHAN[id];
+    return !p || App.quyen(p) >= 1;
+  };
+  App.trangDau = function () { return App.duocXem('dashboard') ? 'dashboard' : 'tongquandoi'; };
   App.dvChamCong = function () { return laCC() ? (MC.toi.donVi || []) : null; };
+  function moTaQuyen(q, vaiTro) {
+    if (vaiTro === 'quan_tri') return 'Toàn quyền';
+    return Object.keys(PHAN).filter(function (k) { return +q[k] > 0; }).map(function (k) { return PHAN[k].toLowerCase() + (+q[k] === 2 ? '' : ' (xem)'); }).join(', ') || 'không có quyền';
+  }
 
   /** Phần chấm công của dữ liệu (để so ô nào vừa sửa) */
   function phanCong(thang) {
@@ -45,6 +78,25 @@
     db = db || App.db;
     MC.goc = phanCong(db.thang);
     MC.gocKhac = laCC() ? null : boCong(db);
+    MC.gocNS = laCC() ? chupNS(db) : null;
+  }
+  /** Ảnh hồ sơ nhân viên, đơn nghỉ (tài khoản cấp phòng / đội chỉ gửi những hồ sơ vừa sửa) */
+  function chupNS(db) {
+    var nv = {}, dn = {};
+    (db.nhanVien || []).forEach(function (x) { nv[x.id] = JSON.stringify(x); });
+    (db.donNghi || []).forEach(function (x) { dn[x.id] = JSON.stringify(x); });
+    return { nv: nv, dn: dn };
+  }
+  function taoNS() {
+    var g = MC.gocNS || { nv: {}, dn: {} }, dv = MC.toi.donVi || [], kq = { nhanVien: [], donNghi: { luu: [], xoa: [] }, boQua: [] }, co = {};
+    (App.db.nhanVien || []).forEach(function (x) {
+      if (g.nv[x.id] === JSON.stringify(x)) return;
+      if (dv.indexOf(x.phongBan) < 0) kq.boQua.push(x.hoTen); else kq.nhanVien.push(x);
+    });
+    (App.db.donNghi || []).forEach(function (x) { co[x.id] = 1; if (g.dn[x.id] !== JSON.stringify(x)) kq.donNghi.luu.push(x); });
+    Object.keys(g.dn).forEach(function (id) { if (!co[id]) kq.donNghi.xoa.push(id); });
+    kq.n = kq.nhanVien.length + kq.donNghi.luu.length + kq.donNghi.xoa.length;
+    return kq;
   }
   /** Áp các ô người khác vừa sửa (máy chủ khác bản gốc) vào dữ liệu đang có; ô mình cũng sửa thì giữ của mình */
   function gopO(sv) {
@@ -254,14 +306,25 @@
   };
 
   /* ---------------- lưu ---------------- */
-  var luuCucBo = App.luuNgay, henCucBo = App.luu;
+  var luuCucBo = App.luuNgay, henCucBo = App.luu, henXem = null, boQuaDen = 0;
+  /** Trang thuộc phần tài khoản chỉ được xem: không lưu, báo và tải lại bản trên máy chủ */
+  function chiXem() {
+    var p = TRANG_PHAN[App.trangHienTai];
+    if (!MC.bat || !p || App.quyen(p) >= 2) return false;
+    if (Date.now() < boQuaDen) return true;
+    App.bao('Tài khoản của bạn chỉ được xem phần ' + PHAN[p] + ' – thay đổi không được lưu.', 'loi');
+    clearTimeout(henXem); henXem = setTimeout(function () { boQuaDen = Date.now() + 2000; MC.canLuu = false; taiLai(false); }, 300);
+    return true;
+  }
   App.luu = function () {
     if (!MC.bat) return henCucBo();
+    if (chiXem()) return;
     MC.canLuu = true; veTrangThai();
     clearTimeout(hen); hen = setTimeout(guiLuu, 1200);
   };
   App.luuNgay = function () {
     if (!MC.bat) return luuCucBo();
+    if (chiXem()) return;
     MC.canLuu = true;
     clearTimeout(hen); guiLuu();
   };
@@ -269,13 +332,17 @@
   function guiLuu(ghiDe) {
     if (MC.dangLuu) { MC.lai = true; return; }
     if (!MC.canLuu && !ghiDe) return;
-    // tài khoản chấm công: chỉ gửi các ô vừa sửa, máy chủ ghép theo từng ô (không ghi đè ô người khác)
-    var cc = laCC(), va = cc ? taoVa() : null, chup = cc ? phanCong(App.db.thang) : null;
+    // tài khoản cấp phòng / đội: chỉ gửi các ô chấm công, hồ sơ, đơn nghỉ vừa sửa; máy chủ ghép (không ghi đè phần người khác)
+    var cc = laCC(), va = cc && App.quyen('cc') >= 2 ? taoVa() : { n: 0 }, ns = cc && App.quyen('ns') >= 2 ? taoNS() : { n: 0 };
+    var chup = cc ? phanCong(App.db.thang) : null, chupN = cc ? chupNS(App.db) : null, soYC = (va.n ? 1 : 0) + (ns.n ? 1 : 0);
     MC.canLuu = false;
-    if (cc && !va.n) { veTrangThai(); return; }
+    if (cc && ns.boQua && ns.boQua.length) App.bao('Không lưu thay đổi hồ sơ của ' + ns.boQua.join(', ') + ' (không thuộc phòng / đội được giao).', 'loi');
+    if (cc && !soYC) { veTrangThai(); return; }
     MC.dangLuu = true; MC.loi = ''; veTrangThai();
     var guiDi = cc ? null : JSON.stringify(App.db);
-    var yc = cc ? api('chamcong', { method: 'PUT', json: { thang: va.thay } }) : nen(guiDi).then(function (n) {
+    var yc = cc ? [va.n ? function () { return api('chamcong', { method: 'PUT', json: { thang: va.thay } }); } : null,
+      ns.n ? function () { return api('nhansu', { method: 'PUT', json: { nhanVien: ns.nhanVien, donNghi: ns.donNghi } }); } : null]
+      .filter(Boolean).reduce(function (p, f) { return p.then(function (r) { return r && !r.ok ? r : f(); }); }, Promise.resolve(null)) : nen(guiDi).then(function (n) {
       var hd = { 'X-Phien-Ban': String(ghiDe ? ghiDe : MC.phienBan), 'Content-Type': 'application/json' };
       if (n.gzip) hd['Content-Encoding'] = 'gzip';
       return api('dulieu', { method: 'PUT', headers: hd, body: n.body });
@@ -285,12 +352,12 @@
       if (r.status === 200) {
         if (cc) {
           // có người khác lưu xen giữa thì để lần hỏi định kỳ tải lại bản mới
-          MC.goc = chup; MC.phienBan = r.data.phienBan === MC.phienBan + 1 ? r.data.phienBan : r.data.phienBan - 1;
+          MC.goc = chup; MC.gocNS = chupN; MC.phienBan = r.data.phienBan === MC.phienBan + soYC ? r.data.phienBan : r.data.phienBan - 1;
         } else { MC.phienBan = r.data.phienBan; try { chupGoc(TL.chuanHoa(JSON.parse(guiDi))); } catch (e) { MC.gocKhac = null; } }
         MC.nguoi = r.data.nguoi; MC.capNhat = r.data.capNhat; MC.luuLuc = new Date();
       }
       else if (cc && (r.status === 400 || r.status === 403 || r.status === 409 || r.status === 423)) {
-        App.bao('Không lưu được chấm công: ' + ((r.data && r.data.loi) || 'lỗi ' + r.status) + ' Đã tải lại dữ liệu trên máy chủ.', 'loi');
+        App.bao('Không lưu được: ' + ((r.data && r.data.loi) || 'lỗi ' + r.status) + ' Đã tải lại dữ liệu trên máy chủ.', 'loi');
         taiLai(false);
       }
       else if (r.status === 409) { MC.canLuu = true; tuGop(r.data); }
@@ -326,6 +393,7 @@
   function taiLai(bao) {
     return taiDuLieu().then(function (dl) {
       if (!dl) return;
+      boQuaDen = Date.now() + 2000;
       App.db = TL.chuanHoa(dl);
       MC.canLuu = false; chupGoc();
       App.veLai(); veTrangThai();
@@ -362,7 +430,7 @@
       : MC.dangLuu ? '<span class="tt-cham cam"></span>Đang lưu lên máy chủ…'
         : MC.canLuu ? '<span class="tt-cham cam"></span>Có thay đổi chưa lưu'
           : '<span class="tt-cham xanh"></span>Đã lưu trên máy chủ' + (MC.luuLuc ? ' ' + MC.luuLuc.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '');
-    var vt = !MC.toi ? '' : MC.toi.vaiTro === 'quan_tri' ? ' (quản trị)' : laCC() ? ' (chấm công: ' + (MC.toi.donVi || []).map(function (m) { return TL.tenPhongBan(App.db, m) || m; }).join(', ') + ')' : '';
+    var vt = !MC.toi ? '' : MC.toi.vaiTro === 'quan_tri' ? ' (quản trị)' : laCC() ? ' (' + (MC.toi.donVi || []).map(function (m) { return TL.tenPhongBan(App.db, m) || m; }).join(', ') + ')' : ' (cấp công ty)';
     el.innerHTML = '<div>' + tt + '</div><div class="mo">' + h((MC.toi ? MC.toi.ten : '') + vt) +
       ' · <a href="#" id="doi-mk">Đổi mật khẩu</a> · <a href="#" id="dang-xuat">Đăng xuất</a></div>';
     App.$('#dang-xuat', el).onclick = function (e) { e.preventDefault(); App.dangXuat(); };
@@ -381,8 +449,9 @@
       '<label class="nut">' + App.icon('nhap') + 'Khôi phục từ file…<input type="file" id="dl-mo" accept=".json" class="an"></label>' +
       '<button class="nut" id="mc-doimk">Đổi mật khẩu của tôi</button><button class="nut" id="mc-dx">Đăng xuất</button></div></div>' +
       (qt ? '<div class="the"><h3>Bản sao lưu hằng ngày trên máy chủ<span class="phai" id="mc-thumuc"></span></h3><div class="cuon" style="max-height:300px"><table class="bang" id="mc-sl"><tbody><tr><td class="trong">Đang tải…</td></tr></tbody></table></div></div>' +
-        '<div class="the"><h3>Tài khoản đăng nhập<span class="phai"><button class="nut nho" id="mc-tk-nhanh">Tạo tài khoản chấm công cho từng phòng / đội…</button> <button class="nut nho chinh" id="mc-tk-them">' + App.icon('them') + 'Thêm tài khoản</button></span></h3><div class="cuon"><table class="bang" id="mc-tk"><tbody><tr><td class="trong">Đang tải…</td></tr></tbody></table></div>' +
-        '<p class="mo nho"><b>Quản trị</b>: mọi chức năng, quản lý tài khoản, sao lưu. <b>Nhập liệu</b>: mọi chức năng chấm công, lương, nhân sự. ' +
+        '<div class="the"><h3>Tài khoản đăng nhập<span class="phai"><button class="nut nho" id="mc-tk-nhanh">Tạo tài khoản cho từng phòng / đội…</button> <button class="nut nho chinh" id="mc-tk-them">' + App.icon('them') + 'Thêm tài khoản</button></span></h3><div class="cuon"><table class="bang" id="mc-tk"><tbody><tr><td class="trong">Đang tải…</td></tr></tbody></table></div>' +
+        '<p class="mo nho"><b>Quản trị</b>: mọi chức năng, quản lý tài khoản, sao lưu. <b>Cấp công ty</b>: mọi phòng, đội. <b>Cấp phòng / đội</b>: chỉ nhân viên của đơn vị được giao (tiền lương tối đa được xem, không sửa danh mục, cài đặt). ' +
+        'Mỗi phần <b>Chấm công, Nhân sự, Tiền lương, Thiết lập</b> chọn Không / Xem / Sửa; máy chủ kiểm tra lại quyền: phần không được xem thì không gửi về máy, phần chỉ được xem thì thay đổi không được lưu. ' +
         '<b>Chấm công theo phòng / đội</b>: chỉ thấy bảng chấm công và giờ vào / ra của nhân viên thuộc phòng / đội được giao, không xem lương; máy chủ chặn sửa nhân viên ngoài đơn vị và kỳ đã chốt lương.</p></div>' +
         '<div class="the"><h3>Nhật ký máy chủ (300 dòng gần nhất)</h3><pre id="mc-nk" style="max-height:260px;overflow:auto;font-size:12px;background:#f6f8fb;padding:10px;border-radius:8px;margin:0">Đang tải…</pre></div>'
         : '<div class="the mo">Tài khoản quản trị mới xem được bản sao lưu, tài khoản và nhật ký máy chủ.</div>');
@@ -426,16 +495,18 @@
     api('taikhoan').then(function (r) {
       if (!r.ok) return;
       dsTK = r.data;
-      App.$('#mc-tk', el).innerHTML = '<thead><tr><th>Tên đăng nhập</th><th>Vai trò</th><th>Phòng / đội được chấm công</th><th>Tạo lúc</th><th></th></tr></thead><tbody>' +
+      App.$('#mc-tk', el).innerHTML = '<thead><tr><th>Tên đăng nhập</th><th>Cấp</th><th>Phạm vi</th>' + Object.keys(PHAN).map(function (k) { return '<th class="giua">' + PHAN[k] + '</th>'; }).join('') + '<th>Tạo lúc</th><th></th></tr></thead><tbody>' +
         r.data.map(function (x) {
-          return '<tr data-ten="' + h(x.ten) + '" data-vt="' + h(x.vaiTro) + '" data-dv="' + h((x.donVi || []).join(',')) + '"><td class="ten">' + h(x.ten) + (MC.toi && x.ten === MC.toi.ten ? ' <span class="the-tt lam">bạn</span>' : '') + '</td>' +
-            '<td>' + h(VAI_TRO[x.vaiTro] || x.vaiTro) + '</td><td>' + (x.vaiTro === 'cham_cong' ? h((x.donVi || []).map(function (m) { return TL.tenPhongBan(App.db, m) || m; }).join(', ')) : '<span class="mo">Tất cả</span>') + '</td><td class="giua">' + (x.taoLuc ? new Date(x.taoLuc).toLocaleDateString('vi-VN') : '') + '</td>' +
+          var q = x.quyen || {};
+          return '<tr data-ten="' + h(x.ten) + '" data-vt="' + h(x.vaiTro) + '" data-dv="' + h((x.donVi || []).join(',')) + '" data-q="' + h(JSON.stringify(q)) + '"><td class="ten">' + h(x.ten) + (MC.toi && x.ten === MC.toi.ten ? ' <span class="the-tt lam">bạn</span>' : '') + '</td>' +
+            '<td>' + h(VAI_TRO[x.vaiTro] || x.vaiTro) + '</td><td>' + (x.vaiTro === 'cham_cong' ? h((x.donVi || []).map(function (m) { return TL.tenPhongBan(App.db, m) || m; }).join(', ')) : '<span class="mo">Toàn công ty</span>') + '</td>' +
+            Object.keys(PHAN).map(function (k) { var v = x.vaiTro === 'quan_tri' ? 2 : +q[k] || 0; return '<td class="giua"><span class="the-tt' + (v === 2 ? ' xanh' : v === 1 ? ' lam' : '') + '">' + MUC[v] + '</span></td>'; }).join('') + '<td class="giua">' + (x.taoLuc ? new Date(x.taoLuc).toLocaleDateString('vi-VN') : '') + '</td>' +
             '<td><button class="nut nho" data-a="sua">Đặt lại mật khẩu / vai trò</button> ' + (MC.toi && x.ten === MC.toi.ten ? '' : '<button class="nut nho nguy" data-a="xoa">' + App.icon('xoa') + '</button>') + '</td></tr>';
         }).join('') + '</tbody>';
       App.$('#mc-tk', el).onclick = function (e) {
         var b = e.target.closest('[data-a]'); if (!b) return;
         var tr = b.closest('tr');
-        if (b.dataset.a === 'sua') formTaiKhoan({ ten: tr.dataset.ten, vaiTro: tr.dataset.vt, donVi: tr.dataset.dv ? tr.dataset.dv.split(',') : [] }, el);
+        if (b.dataset.a === 'sua') formTaiKhoan({ ten: tr.dataset.ten, vaiTro: tr.dataset.vt, donVi: tr.dataset.dv ? tr.dataset.dv.split(',') : [], quyen: JSON.parse(tr.dataset.q || '{}') }, el);
         else App.xacNhan('Xoá tài khoản <b>' + h(tr.dataset.ten) + '</b>?', { nut: 'Xoá', nguy: true }).then(function (ok) {
           if (!ok) return;
           api('taikhoan?ten=' + encodeURIComponent(tr.dataset.ten), { method: 'DELETE' }).then(function (r2) {
@@ -453,19 +524,42 @@
       than: '<form class="form" style="grid-template-columns:1fr" onsubmit="return false">' +
         f.o('Tên đăng nhập', tk ? '<input name="ten" value="' + h(tk.ten) + '" readonly>' : f.txt('ten', '', 'autocomplete="off"')) +
         f.o(tk ? 'Mật khẩu mới (để trống = giữ nguyên)' : 'Mật khẩu (ít nhất 6 ký tự)', '<input name="matKhau" type="password" autocomplete="new-password">') +
-        f.o('Vai trò', f.sel('vaiTro', tk ? tk.vaiTro : 'nhap_lieu', f.cap(VAI_TRO))) +
-        '<div class="o" id="tk-dv">Phòng / đội được chấm công<div class="tk-dv">' + App.dsDonVi({ chi: null }).map(function (p) {
+        f.o('Mẫu phân quyền', '<select name="_mau"><option value="">(Chọn mẫu để điền nhanh)</option>' + MAU_QUYEN.map(function (m) { return '<option value="' + m.ma + '">' + h(m.ten) + '</option>'; }).join('') + '</select>') +
+        f.o('Cấp', f.sel('vaiTro', tk ? tk.vaiTro : 'nhap_lieu', f.cap(VAI_TRO))) +
+        '<div class="o" id="tk-dv">Phòng / đội được giao<div class="tk-dv">' + App.dsDonVi({ chi: null }).map(function (p) {
           return '<label class="chk"><input type="checkbox" data-dv="' + h(p.ma) + '"' + (tk && (tk.donVi || []).indexOf(p.ma) >= 0 ? ' checked' : '') + '> ' + h(p.ten) + '</label>';
-        }).join('') + '</div><span class="gc">Tài khoản chỉ thấy và chấm công nhân viên thuộc các đơn vị này.</span></div></form>',
+        }).join('') + '</div><span class="gc">Tài khoản chỉ thấy nhân viên thuộc các đơn vị này.</span></div>' +
+        '<div class="o" id="tk-q">Quyền từng phần<table class="bang" style="margin-top:4px"><tbody>' + Object.keys(PHAN).map(function (k) {
+          var v = tk && tk.quyen ? +tk.quyen[k] || 0 : 2;
+          return '<tr><td>' + PHAN[k] + '<div class="mo nho">' + { cc: 'Bảng chấm công, giờ vào / ra', ns: 'Hồ sơ, hợp đồng, quyết định, nghỉ phép, theo dõi HĐ', lg: 'Bảng lương, phiếu lương, xếp lương, mức lương', tl: 'Danh mục, cài đặt' }[k] + '</div></td>' +
+            '<td><select name="q_' + k + '">' + MUC.map(function (t, i) { return '<option value="' + i + '"' + (v === i ? ' selected' : '') + '>' + t + '</option>'; }).join('') + '</select></td></tr>';
+        }).join('') + '</tbody></table><span class="gc" id="tk-q-gc"></span></div></form>',
       moRa: function (el) {
-        var fm = App.$('form', el), hien = function () { App.$('#tk-dv', el).style.display = fm.vaiTro.value === 'cham_cong' ? '' : 'none'; };
-        fm.vaiTro.onchange = hien; hien();
+        var fm = App.$('form', el), hien = function () {
+          var dv = fm.vaiTro.value === 'cham_cong';
+          App.$('#tk-dv', el).style.display = dv ? '' : 'none';
+          App.$('#tk-q', el).style.display = fm.vaiTro.value === 'quan_tri' ? 'none' : '';
+          // cấp phòng / đội: tiền lương tối đa Xem, không có thiết lập
+          Array.prototype.forEach.call(fm.q_lg.options, function (o) { o.disabled = dv && o.value === '2'; });
+          if (dv && fm.q_lg.value === '2') fm.q_lg.value = '1';
+          fm.q_tl.disabled = dv; if (dv) fm.q_tl.value = '0';
+          App.$('#tk-q-gc', el).textContent = dv ? 'Cấp phòng / đội: tiền lương tối đa được xem, không sửa danh mục, cài đặt.' : '';
+        };
+        fm.vaiTro.onchange = hien;
+        fm._mau.onchange = function () {
+          var m = MAU_QUYEN.filter(function (x) { return x.ma === fm._mau.value; })[0]; if (!m) return;
+          fm.vaiTro.value = m.vaiTro; Object.keys(PHAN).forEach(function (k) { fm['q_' + k].value = String(m.quyen[k]); });
+          hien();
+        };
+        hien();
       },
       nut: [{ ten: 'Huỷ' }, {
         ten: 'Lưu', loai: 'chinh', bam: function (el) {
           var v = f.doc(el), dv = App.$$('[data-dv]:checked', el).map(function (c) { return c.dataset.dv; });
-          if (v.vaiTro === 'cham_cong' && !dv.length) { App.bao('Chọn ít nhất 1 phòng / đội cho tài khoản chấm công.', 'loi'); return false; }
-          api('taikhoan', { method: 'POST', json: { ten: v.ten, matKhau: v.matKhau, vaiTro: v.vaiTro, donVi: dv } }).then(function (r) {
+          if (v.vaiTro === 'cham_cong' && !dv.length) { App.bao('Chọn ít nhất 1 phòng / đội cho tài khoản cấp phòng / đội.', 'loi'); return false; }
+          var q = {}; Object.keys(PHAN).forEach(function (k) { q[k] = +v['q_' + k] || 0; });
+          if (v.vaiTro !== 'quan_tri' && !Object.keys(q).some(function (k) { return q[k] > 0; })) { App.bao('Chọn ít nhất 1 quyền Xem hoặc Sửa.', 'loi'); return false; }
+          api('taikhoan', { method: 'POST', json: { ten: v.ten, matKhau: v.matKhau, vaiTro: v.vaiTro, donVi: dv, quyen: q } }).then(function (r) {
             if (!r.ok) { App.bao((r.data && r.data.loi) || 'Không lưu được.', 'loi'); return; }
             App.bao('Đã lưu tài khoản ' + v.ten, 'tot'); App.$('.mo-nen .dong').click(); veTaiKhoan(elCha);
           });
@@ -495,8 +589,10 @@
       return { p: p, ten: ten, co: daCo[p.ma], nv: dem[p.ma] || 0 };
     });
     App.hop({
-      tieuDe: 'Tạo tài khoản chấm công cho từng phòng / đội', co: 'rong',
-      than: '<p class="mo" style="margin-top:0">Mỗi đơn vị được chọn có 1 tài khoản chỉ chấm công nhân viên của đơn vị đó. Mật khẩu tạo ngẫu nhiên, hiện một lần sau khi tạo để in / phát cho người chấm công (họ nên đổi mật khẩu ở thanh bên sau khi đăng nhập).</p>' +
+      tieuDe: 'Tạo tài khoản cho từng phòng / đội', co: 'rong',
+      than: '<div class="hang" style="margin-bottom:10px"><b>Quyền:</b><select id="tn-mau">' + MAU_QUYEN.filter(function (m) { return m.vaiTro === 'cham_cong'; }).map(function (m) {
+          return '<option value="' + m.ma + '">' + h(m.ten) + '</option>'; }).join('') + '</select></div>' +
+        '<p class="mo" style="margin-top:0">Mỗi đơn vị được chọn có 1 tài khoản riêng, chỉ thấy nhân viên của đơn vị đó (màn hình Tổng quan đơn vị riêng của đội). Mật khẩu tạo ngẫu nhiên, hiện một lần sau khi tạo để in / phát cho người chấm công (họ nên đổi mật khẩu ở thanh bên sau khi đăng nhập).</p>' +
         '<div class="cuon"><table class="bang"><thead><tr><th></th><th>Phòng / đội</th><th>Nhân viên</th><th>Tên đăng nhập</th><th>Ghi chú</th></tr></thead><tbody>' +
         ds.map(function (x, i) {
           return '<tr data-i="' + i + '"><td class="giua"><input type="checkbox" data-chon' + (!x.co && x.nv ? ' checked' : '') + '></td><td>' + h(x.p.ten) + '</td><td class="giua">' + x.nv + '</td>' +
@@ -507,13 +603,14 @@
           var chon = App.$$('tr[data-i]', el).filter(function (tr) { return App.$('[data-chon]', tr).checked; }).map(function (tr) {
             return { p: ds[+tr.dataset.i].p, ten: App.$('[data-ten]', tr).value.trim(), mk: matKhauNgauNhien() };
           });
+          var mau = MAU_QUYEN.filter(function (m) { return m.ma === App.$('#tn-mau', el).value; })[0] || MAU_QUYEN[6];
           if (!chon.length) { App.bao('Chọn ít nhất 1 phòng / đội.', 'loi'); return false; }
           var kq = [], i = 0;
           (function tiep() {
             if (i >= chon.length) { ketQua(kq); veTaiKhoan(elCha); return; }
             var x = chon[i++];
-            api('taikhoan', { method: 'POST', json: { ten: x.ten, matKhau: x.mk, vaiTro: 'cham_cong', donVi: [x.p.ma] } }).then(function (r) {
-              x.loi = r.ok ? '' : (r.data && r.data.loi) || 'Lỗi ' + r.status; kq.push(x); tiep();
+            api('taikhoan', { method: 'POST', json: { ten: x.ten, matKhau: x.mk, vaiTro: 'cham_cong', donVi: [x.p.ma], quyen: mau.quyen } }).then(function (r) {
+              x.loi = r.ok ? '' : (r.data && r.data.loi) || 'Lỗi ' + r.status; x.quyen = moTaQuyen(mau.quyen); kq.push(x); tiep();
             }, function () { x.loi = 'Mất kết nối'; kq.push(x); tiep(); });
           })();
         }
@@ -523,17 +620,17 @@
 
   function ketQua(kq) {
     var ct = App.db.congTy, dc = location.origin + location.pathname;
-    var bang = '<table class="bang"><thead><tr><th>STT</th><th>Phòng / đội</th><th>Tên đăng nhập</th><th>Mật khẩu</th><th>Kết quả</th></tr></thead><tbody>' +
+    var bang = '<table class="bang"><thead><tr><th>STT</th><th>Phòng / đội</th><th>Tên đăng nhập</th><th>Mật khẩu</th><th>Quyền</th><th>Kết quả</th></tr></thead><tbody>' +
       kq.map(function (x, i) {
-        return '<tr><td class="giua">' + (i + 1) + '</td><td>' + h(x.p.ten) + '</td><td><b>' + h(x.ten) + '</b></td><td><code style="font-size:15px">' + (x.loi ? '' : h(x.mk)) + '</code></td><td>' + (x.loi ? '<span style="color:var(--do)">' + h(x.loi) + '</span>' : 'Đã tạo') + '</td></tr>';
+        return '<tr><td class="giua">' + (i + 1) + '</td><td>' + h(x.p.ten) + '</td><td><b>' + h(x.ten) + '</b></td><td><code style="font-size:15px">' + (x.loi ? '' : h(x.mk)) + '</code></td><td>' + h(x.quyen || '') + '</td><td>' + (x.loi ? '<span style="color:var(--do)">' + h(x.loi) + '</span>' : 'Đã tạo') + '</td></tr>';
       }).join('') + '</tbody></table>';
     App.hop({
-      tieuDe: 'Tài khoản chấm công đã tạo', co: 'rong',
+      tieuDe: 'Tài khoản phòng / đội đã tạo', co: 'rong',
       than: '<div class="canh-bao" style="margin-bottom:10px">Mật khẩu chỉ hiện <b>một lần</b>. Hãy in hoặc ghi lại ngay.</div>' + bang +
         '<p class="mo nho">Địa chỉ đăng nhập: <b>' + h(dc) + '</b></p>',
       nut: [{ ten: 'In danh sách', bam: function () {
-        App.inNoiDung('<div class="vb"><p style="text-align:center"><b>' + h(ct.ten || '') + '</b></p><h2 style="text-align:center">TÀI KHOẢN CHẤM CÔNG CÁC PHÒNG, ĐỘI</h2>' +
-          '<p>Địa chỉ phần mềm: <b>' + h(dc) + '</b>. Đăng nhập rồi đổi mật khẩu (thanh bên → Đổi mật khẩu). Mỗi tài khoản chỉ chấm công nhân viên thuộc đơn vị mình.</p>' + bang + '</div>');
+        App.inNoiDung('<div class="vb"><p style="text-align:center"><b>' + h(ct.ten || '') + '</b></p><h2 style="text-align:center">TÀI KHOẢN PHẦN MỀM CÁC PHÒNG, ĐỘI</h2>' +
+          '<p>Địa chỉ phần mềm: <b>' + h(dc) + '</b>. Đăng nhập rồi đổi mật khẩu (thanh bên → Đổi mật khẩu). Mỗi tài khoản chỉ thấy nhân viên thuộc đơn vị mình.</p>' + bang + '</div>');
         return false;
       } }, { ten: 'Đóng', loai: 'chinh' }]
     });

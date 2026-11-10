@@ -246,11 +246,41 @@ tạm ứng kỳ I theo chức vụ. Ô nào khác mức trước được tô �
 
 ## Dùng chung trên máy chủ, phân quyền
 
-Cài máy chủ: xem [`iis/HUONG_DAN_IIS.txt`](iis/HUONG_DAN_IIS.txt). Tài khoản quản trị vào **Cài đặt & dữ liệu → Dữ liệu**:
-- **Quản trị** / **Nhập liệu**: toàn bộ chức năng (quản trị thêm: tài khoản, sao lưu, khôi phục, nhật ký).
-- **Chấm công theo phòng / đội**: chỉ thấy *Bảng chấm công* và *Giờ vào / ra* của nhân viên thuộc đơn vị được giao, mở sẵn kỳ
-  chứa hôm nay để chấm hằng ngày; không thấy lương; máy chủ chặn sửa người ngoài đơn vị và kỳ đã chốt lương.
-- **Tạo tài khoản chấm công cho từng phòng / đội…**: mỗi đơn vị 1 tài khoản, mật khẩu ngẫu nhiên, in danh sách để phát.
+Cài máy chủ: xem [`iis/HUONG_DAN_IIS.txt`](iis/HUONG_DAN_IIS.txt). Tài khoản quản trị vào **Cài đặt & dữ liệu → Dữ liệu → Tài khoản**.
+
+**Cấp của tài khoản**
+- **Quản trị**: toàn quyền, quản lý tài khoản, sao lưu, khôi phục, nhật ký.
+- **Cấp công ty**: làm việc với mọi phòng, đội.
+- **Cấp phòng / đội**: chỉ thấy nhân viên của các phòng / đội được giao (kể cả người vừa chuyển đi trong 62 ngày để chấm nốt kỳ cũ).
+
+**Quyền từng phần** – mỗi phần chọn *Không / Xem / Sửa*:
+
+| Phần | Gồm các trang |
+|---|---|
+| Chấm công | Bảng chấm công, Giờ vào / ra |
+| Nhân sự | Hồ sơ nhân viên, hợp đồng, theo dõi hợp đồng, quyết định, đơn nghỉ phép, báo cáo nhân sự, hồ sơ scan |
+| Tiền lương | Bảng lương, phiếu lương, báo cáo lương, xếp lương – nâng bậc, mức lương theo kỳ |
+| Thiết lập | Danh mục, cài đặt |
+
+Cấp phòng / đội: tiền lương tối đa *Xem*, không có thiết lập. **Mẫu phân quyền** điền nhanh: nhập liệu công ty, kế toán tiền lương,
+cán bộ tổ chức – nhân sự, lãnh đạo (xem tất cả), trưởng phòng / đội trưởng (chấm công, hồ sơ đơn vị, xem lương), chấm công đơn vị,
+nhân sự đơn vị (chấm công, xem hồ sơ).
+
+**Máy chủ kiểm tra lại quyền** (không chỉ ẩn trên màn hình):
+- Phần *Không* được xem thì máy chủ không gửi về máy – vd tài khoản không có quyền tiền lương không nhận mức lương, phụ cấp, xếp bậc,
+  lương trong hợp đồng, quyết định, bảng lương đã chốt.
+- Phần *Xem*: sửa trên màn hình thì phần mềm báo "chỉ được xem" và tải lại; máy chủ cũng giữ nguyên phần đó như dữ liệu đang lưu.
+- Cấp phòng / đội chỉ gửi lên các ô chấm công, hồ sơ, đơn nghỉ vừa sửa của nhân viên trong đơn vị; máy chủ chặn sửa người ngoài
+  đơn vị, chuyển nhân viên sang đơn vị khác (nhờ cán bộ nhân sự công ty), sửa kỳ đã chốt lương, tải hồ sơ scan của người ngoài đơn vị.
+  Nhân viên do cấp đội thêm mới không có mức lương – người có quyền sửa tiền lương nhập sau.
+
+**Màn hình riêng của từng đội – Tổng quan đơn vị** (menu đầu tiên; tài khoản cấp phòng / đội và tài khoản không có quyền tiền lương
+vào thẳng màn hình này): chọn phòng / đội (tài khoản đội chỉ có đơn vị mình) → số nhân viên, người thử việc, ô chấm công còn trống
+tính đến hôm nay, ai nghỉ hôm nay, đơn nghỉ chờ duyệt, hợp đồng hết hạn trong 30 ngày, thực lĩnh kỳ II của đơn vị (theo quyền);
+bảng nhân viên với công, nghỉ phép, nghỉ không lương, ô còn trống, hợp đồng; nút **Chấm công đơn vị** mở bảng chấm công đã lọc sẵn đơn vị.
+
+- **Tạo tài khoản cho từng phòng / đội…**: chọn quyền (mặc định trưởng phòng / đội trưởng), mỗi đơn vị 1 tài khoản, mật khẩu
+  ngẫu nhiên hiện 1 lần, in danh sách để phát. Tài khoản cũ (Nhập liệu, Chấm công theo phòng / đội) giữ nguyên quyền như trước.
 - Dữ liệu tự lưu lên máy chủ; ô chấm công của các đội được ghép từng ô nên không ghi đè lẫn nhau. Máy chủ tự sao lưu mỗi ngày
   vào ổ D (giữ 120 bản).
 

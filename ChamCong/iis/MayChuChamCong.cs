@@ -418,12 +418,14 @@ namespace ChamCong
             if (d == "/dulieu" && pt == "GET")
             {
                 string json = kho.DocDuLieuKemTrangThai();
-                if (tk.vaiTro == "cham_cong")
+                var qd = Quyen.Cua(tk);
+                if (qd.donVi || qd.lg == 0)
                 {
-                    // tài khoản chấm công: chỉ nhận nhân viên, chấm công của phòng / đội được giao, không có lương
+                    // cấp phòng / đội: chỉ nhân viên của đơn vị được giao; không có quyền tiền lương: bỏ phần lương
                     var goc = Js().DeserializeObject(json) as Dictionary<string, object>;
-                    var dl0 = goc != null ? D(goc["duLieu"]) : null;
-                    if (dl0 != null) goc["duLieu"] = LocChoChamCong(dl0, tk);
+                    object o0 = null;
+                    var dl0 = goc != null && goc.TryGetValue("duLieu", out o0) ? D(o0) : null;
+                    if (dl0 != null) goc["duLieu"] = qd.donVi ? LocChoDonVi(dl0, tk, qd) : AnLuong(dl0);
                     return TraLoi.Json(goc);
                 }
                 return new TraLoi { Status = 200, Loai = "application/json; charset=utf-8", Than = Encoding.UTF8.GetBytes(json) };
@@ -431,21 +433,36 @@ namespace ChamCong
 
             if (d == "/chamcong" && pt == "PUT")
             {
-                if (tk.vaiTro != "cham_cong") return TraLoi.Loi(403, "Chỉ dùng cho tài khoản chấm công.");
+                var qc = Quyen.Cua(tk);
+                if (!qc.donVi) return TraLoi.Loi(403, "Chỉ dùng cho tài khoản cấp phòng / đội.");
+                if (qc.cc < 2) return TraLoi.Loi(403, "Tài khoản không có quyền sửa chấm công.");
                 var v = DocJson(ctx);
                 var thay = v.ContainsKey("thang") ? D(v["thang"]) : null;
                 if (thay == null) throw new LoiApi(400, "Thiếu dữ liệu chấm công.");
                 return TraLoi.Json(kho.SuaDuLieu(dl => GopChamCong(dl, thay, tk), tk.ten, ctx.Ip));
             }
 
+            if (d == "/nhansu" && pt == "PUT")
+            {
+                // cấp phòng / đội có quyền sửa nhân sự: gửi các hồ sơ, đơn nghỉ vừa sửa của đơn vị mình, máy chủ ghép vào dữ liệu chung
+                var qn = Quyen.Cua(tk);
+                if (!qn.donVi) return TraLoi.Loi(403, "Chỉ dùng cho tài khoản cấp phòng / đội.");
+                if (qn.ns < 2) return TraLoi.Loi(403, "Tài khoản không có quyền sửa hồ sơ nhân sự.");
+                var v = DocJson(ctx);
+                return TraLoi.Json(kho.SuaDuLieu(dl => GopNhanSu(dl, v, tk), tk.ten, ctx.Ip));
+            }
+
             if (d == "/dulieu" && pt == "PUT")
             {
-                if (tk.vaiTro == "cham_cong") return TraLoi.Loi(403, "Tài khoản chấm công chỉ được sửa bảng chấm công của phòng / đội mình.");
+                var qp = Quyen.Cua(tk);
+                if (qp.donVi) return TraLoi.Loi(403, "Tài khoản cấp phòng / đội chỉ được lưu phần của đơn vị mình.");
+                if (qp.cc < 2 && qp.ns < 2 && qp.lg < 2 && qp.tl < 2) return TraLoi.Loi(403, "Tài khoản chỉ có quyền xem, không lưu được thay đổi.");
                 long goc;
                 if (!long.TryParse(ctx.Header("X-Phien-Ban"), out goc)) return TraLoi.Loi(400, "Thiếu số phiên bản dữ liệu (X-Phien-Ban).");
                 string than = Encoding.UTF8.GetString(ctx.Than);
                 KiemTraDuLieu(than);
-                Dictionary<string, object> kq = kho.LuuDuLieu(than, goc, tk.ten, ctx.Ip);
+                // thiếu quyền sửa phần nào thì giữ nguyên phần đó như trên máy chủ
+                Dictionary<string, object> kq = qp.DuQuyen ? kho.LuuDuLieu(than, goc, tk.ten, ctx.Ip) : kho.LuuDuLieuCo(than, goc, tk.ten, ctx.Ip, (moi, cu) => ApQuyen(moi, cu, qp));
                 if (kq.ContainsKey("xungDot")) return TraLoi.Json(kq, 409);
                 return TraLoi.Json(kq);
             }
@@ -470,7 +487,7 @@ namespace ChamCong
             if (tk.vaiTro != "quan_tri") return TraLoi.Loi(403, "Chỉ tài khoản quản trị được làm việc này.");
 
             if (d == "/taikhoan" && pt == "GET")
-                return TraLoi.Json(kho.DanhSachTaiKhoan().Select(x => (object)new Dictionary<string, object> { { "ten", x.ten }, { "vaiTro", x.vaiTro }, { "donVi", x.donVi ?? new List<string>() }, { "taoLuc", x.taoLuc } }).ToList());
+                return TraLoi.Json(kho.DanhSachTaiKhoan().Select(x => (object)new Dictionary<string, object> { { "ten", x.ten }, { "vaiTro", x.vaiTro }, { "donVi", x.donVi ?? new List<string>() }, { "quyen", Quyen.Cua(x).Dict() }, { "taoLuc", x.taoLuc } }).ToList());
             if (d == "/taikhoan" && pt == "POST")
             {
                 var v = DocJson(ctx);
@@ -482,15 +499,17 @@ namespace ChamCong
                 {
                     var mang = v.ContainsKey("donVi") ? v["donVi"] as object[] : null;
                     dv = mang == null ? new List<string>() : mang.Select(x => Convert.ToString(x, CultureInfo.InvariantCulture)).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList();
-                    if (dv.Count == 0) throw new LoiApi(400, "Tài khoản chấm công phải được giao ít nhất 1 phòng / đội.");
+                    if (dv.Count == 0) throw new LoiApi(400, "Tài khoản cấp phòng / đội phải được giao ít nhất 1 phòng / đội.");
                 }
+                string quyen = vt == "quan_tri" ? null : Quyen.Chuoi(v.ContainsKey("quyen") ? D(v["quyen"]) : null, vt == "cham_cong");
+                if (quyen != null && !Regex.IsMatch(quyen, ":[12]")) throw new LoiApi(400, "Tài khoản phải có ít nhất 1 quyền xem hoặc sửa.");
                 TaiKhoan cu = kho.TimTaiKhoan(ten);
                 if (cu == null && mk.Length < 6) throw new LoiApi(400, "Mật khẩu phải có ít nhất 6 ký tự.");
                 if (mk.Length > 0 && mk.Length < 6) throw new LoiApi(400, "Mật khẩu phải có ít nhất 6 ký tự.");
                 if (cu != null && cu.vaiTro == "quan_tri" && vt != "quan_tri" && kho.DanhSachTaiKhoan().Count(x => x.vaiTro == "quan_tri") <= 1)
                     throw new LoiApi(400, "Phải còn ít nhất 1 tài khoản quản trị.");
-                kho.DatTaiKhoan(ten, mk.Length > 0 ? mk : null, vt, mk.Length > 0, dv);
-                kho.Ghi(tk.ten, ctx.Ip, (cu == null ? "Thêm" : "Sửa") + " tài khoản " + ten + " (" + vt + (dv != null ? ": " + string.Join(", ", dv) : "") + ")");
+                kho.DatTaiKhoan(ten, mk.Length > 0 ? mk : null, vt, mk.Length > 0, dv, quyen ?? "");
+                kho.Ghi(tk.ten, ctx.Ip, (cu == null ? "Thêm" : "Sửa") + " tài khoản " + ten + " (" + vt + (dv != null ? ": " + string.Join(", ", dv) : "") + (quyen != null ? "; " + quyen : "") + ")");
                 return TraLoi.Json(new Dictionary<string, object> { { "ok", true } });
             }
             if (d == "/taikhoan" && pt == "DELETE")
@@ -542,9 +561,12 @@ namespace ChamCong
 
         static TraLoi HoSoTep(Kho kho, NguCanh ctx, TaiKhoan tk)
         {
-            if (tk.vaiTro == "cham_cong") return TraLoi.Loi(403, "Tài khoản chấm công không xem được hồ sơ nhân viên.");
+            var q = Quyen.Cua(tk);
             string pt = ctx.PhuongThuc, nv = ctx.Q("nv") ?? "";
+            if (q.ns < 1) return TraLoi.Loi(403, "Tài khoản không có quyền xem hồ sơ nhân viên.");
+            if ((pt == "POST" || pt == "DELETE") && q.ns < 2) return TraLoi.Loi(403, "Tài khoản chỉ được xem hồ sơ nhân viên.");
             if (!Regex.IsMatch(nv, "^[A-Za-z0-9_-]{1,64}$")) throw new LoiApi(400, "Mã nhân viên không hợp lệ.");
+            if (q.donVi && !NhanVienDuocCham(kho.DocDuLieuDict(), tk).Contains(nv)) return TraLoi.Loi(403, "Nhân viên không thuộc phòng / đội được giao.");
             if (pt == "POST")
             {
                 string ten = ctx.Q("ten") ?? "";
@@ -584,9 +606,144 @@ namespace ChamCong
 
         static Dictionary<string, object> ThongTinToi(TaiKhoan tk)
         {
-            var x = new Dictionary<string, object> { { "ten", tk.ten }, { "vaiTro", tk.vaiTro } };
+            var x = new Dictionary<string, object> { { "ten", tk.ten }, { "vaiTro", tk.vaiTro }, { "quyen", Quyen.Cua(tk).Dict() } };
             if (tk.vaiTro == "cham_cong") x["donVi"] = tk.donVi ?? new List<string>();
             return x;
+        }
+
+        // ----- phần lương: ẩn với tài khoản không có quyền tiền lương, giữ nguyên khi tài khoản không có quyền sửa tiền lương
+
+        static readonly string[] TruongLuongNV = { "luongCB", "luongBH", "phuCap", "xepLuong", "tamUngRieng", "donGiaSP", "tiLeHuong" };
+        static readonly string[] TruongLuongQD = { "luongCu", "luongMoi", "xepLuongCu", "xepLuongMoi" };
+        static readonly string[] PhanLuong = { "dotLuong", "thangLuong", "khoiLuong" };
+
+        static string KhoaMuc(Dictionary<string, object> x) { string id = S(x, "id"); return id != "" ? id : S(x, "so") + "|" + S(x, "tuNgay") + "|" + S(x, "hieuLuc"); }
+        static void Giu(Dictionary<string, object> moi, Dictionary<string, object> cu, string k)
+        {
+            object v;
+            if (cu != null && cu.TryGetValue(k, out v)) moi[k] = v; else moi.Remove(k);
+        }
+        /// <summary>Bản sao nhân viên không có phần lương (mức lương, phụ cấp, xếp bậc; lương ghi trong hợp đồng, quyết định).</summary>
+        static Dictionary<string, object> NvBoLuong(Dictionary<string, object> nv)
+        {
+            var x = new Dictionary<string, object>(nv);
+            foreach (string f in TruongLuongNV) x.Remove(f);
+            x["hopDong"] = Mang(nv, "hopDong").Select(o => { var h = D(o); if (h == null) return o; var y = new Dictionary<string, object>(h); y.Remove("luongCB"); return (object)y; }).ToArray();
+            x["quyetDinh"] = Mang(nv, "quyetDinh").Select(o => { var h = D(o); if (h == null) return o; var y = new Dictionary<string, object>(h); foreach (string f in TruongLuongQD) y.Remove(f); return (object)y; }).ToArray();
+            return x;
+        }
+        /// <summary>Hồ sơ goc, phần lương lấy từ luong (hợp đồng, quyết định ghép theo mã); mục mới không có trong luong thì bỏ phần lương.</summary>
+        static Dictionary<string, object> GhepLuong(Dictionary<string, object> goc, Dictionary<string, object> luong)
+        {
+            var x = new Dictionary<string, object>(goc);
+            foreach (string f in TruongLuongNV) Giu(x, luong, f);
+            var hdL = Mang(luong, "hopDong").Select(D).Where(h => h != null).GroupBy(KhoaMuc).ToDictionary(g => g.Key, g => g.First());
+            x["hopDong"] = Mang(goc, "hopDong").Select(o => { var h = D(o); if (h == null) return o; var y = new Dictionary<string, object>(h); Dictionary<string, object> l; hdL.TryGetValue(KhoaMuc(h), out l); Giu(y, l, "luongCB"); return (object)y; }).ToArray();
+            var qdL = Mang(luong, "quyetDinh").Select(D).Where(h => h != null).GroupBy(KhoaMuc).ToDictionary(g => g.Key, g => g.First());
+            x["quyetDinh"] = Mang(goc, "quyetDinh").Select(o => { var h = D(o); if (h == null) return o; var y = new Dictionary<string, object>(h); Dictionary<string, object> l; qdL.TryGetValue(KhoaMuc(h), out l); foreach (string f in TruongLuongQD) Giu(y, l, f); return (object)y; }).ToArray();
+            return x;
+        }
+        /// <summary>Dữ liệu cho tài khoản cấp công ty không có quyền tiền lương.</summary>
+        static Dictionary<string, object> AnLuong(Dictionary<string, object> dl)
+        {
+            var kq = new Dictionary<string, object>(dl);
+            foreach (string k in PhanLuong) kq.Remove(k);
+            kq["nhanVien"] = Mang(dl, "nhanVien").Select(o => D(o) == null ? o : (object)NvBoLuong(D(o))).ToArray();
+            var thang = D(dl.ContainsKey("thang") ? dl["thang"] : null);
+            var th = new Dictionary<string, object>();
+            if (thang != null)
+                foreach (var p in thang)
+                {
+                    var T = D(p.Value); if (T == null) continue;
+                    var t2 = new Dictionary<string, object>(T); t2.Remove("dc"); t2.Remove("chot"); th[p.Key] = t2;
+                }
+            kq["thang"] = th;
+            kq["anLuong"] = true;
+            return kq;
+        }
+        /// <summary>Tài khoản cấp công ty thiếu quyền sửa phần nào thì giữ nguyên phần đó như dữ liệu đang lưu trên máy chủ.</summary>
+        static void ApQuyen(Dictionary<string, object> moi, Dictionary<string, object> cu, Quyen q)
+        {
+            if (q.tl < 2) foreach (string k in new[] { "congTy", "caiDat", "kyHieu", "ngayLe" }) Giu(moi, cu, k);
+            if (q.lg < 2) foreach (string k in new[] { "dotLuong", "thangLuong", "khoiLuong", "sanPham", "phuCap" }) Giu(moi, cu, k);
+            if (q.ns < 2) foreach (string k in new[] { "phongBan", "donNghi" }) Giu(moi, cu, k);
+            var loai = new List<string>();
+            if (q.cc < 2) loai.AddRange(KhoCong);
+            if (q.lg < 2) loai.AddRange(new[] { "dc", "chot", "khoa" });
+            var tm = D(moi.ContainsKey("thang") ? moi["thang"] : null) ?? new Dictionary<string, object>();
+            var tc = D(cu.ContainsKey("thang") ? cu["thang"] : null) ?? new Dictionary<string, object>();
+            if (loai.Count > 0)
+                foreach (string k in tm.Keys.Union(tc.Keys).ToList())
+                {
+                    var T = D(tm.ContainsKey(k) ? tm[k] : null);
+                    var Tc = D(tc.ContainsKey(k) ? tc[k] : null);
+                    if (T == null) { if (Tc == null) continue; T = new Dictionary<string, object>(); tm[k] = T; }
+                    foreach (string l in loai) Giu(T, Tc, l);
+                }
+            moi["thang"] = tm;
+            if (q.ns < 2 && q.lg < 2) { Giu(moi, cu, "nhanVien"); return; }
+            if (q.ns < 2)
+            {
+                // chỉ sửa tiền lương: giữ danh sách và hồ sơ như cũ, lấy phần lương mới
+                var mTheoId = Mang(moi, "nhanVien").Select(D).Where(x => x != null).GroupBy(x => S(x, "id")).ToDictionary(g => g.Key, g => g.First());
+                moi["nhanVien"] = Mang(cu, "nhanVien").Select(o => { var c = D(o); Dictionary<string, object> m; return c != null && mTheoId.TryGetValue(S(c, "id"), out m) ? (object)GhepLuong(c, m) : o; }).ToArray();
+            }
+            else if (q.lg < 2)
+            {
+                // chỉ sửa hồ sơ: phần lương giữ như cũ; nhân viên mới không ghi lương (người có quyền tiền lương nhập)
+                var cTheoId = Mang(cu, "nhanVien").Select(D).Where(x => x != null).GroupBy(x => S(x, "id")).ToDictionary(g => g.Key, g => g.First());
+                moi["nhanVien"] = Mang(moi, "nhanVien").Select(o => { var m = D(o); Dictionary<string, object> c; if (m == null) return o; return cTheoId.TryGetValue(S(m, "id"), out c) ? (object)GhepLuong(m, c) : NvBoLuong(m); }).ToArray();
+            }
+        }
+
+        /// <summary>Ghép hồ sơ, đơn nghỉ do tài khoản cấp phòng / đội gửi lên: chỉ nhân viên thuộc đơn vị được giao, không đổi phần lương.</summary>
+        static string GopNhanSu(Dictionary<string, object> dl, Dictionary<string, object> v, TaiKhoan tk)
+        {
+            var dv = new HashSet<string>(tk.donVi ?? new List<string>());
+            var ds = Mang(dl, "nhanVien").ToList();
+            int sua = 0, them = 0, don = 0;
+            foreach (object o in Mang(v, "nhanVien"))
+            {
+                var moi = D(o); string id = S(moi, "id");
+                if (moi == null || !Regex.IsMatch(id, "^[A-Za-z0-9_-]{1,64}$")) throw new LoiApi(400, "Mã nhân viên không hợp lệ.");
+                if (!dv.Contains(S(moi, "phongBan"))) throw new LoiApi(403, "Chỉ được lưu nhân viên thuộc phòng / đội được giao (" + S(moi, "hoTen") + "). Chuyển sang đơn vị khác: nhờ cán bộ nhân sự công ty.");
+                int i = ds.FindIndex(x => S(D(x), "id") == id);
+                if (i >= 0)
+                {
+                    var cu = D(ds[i]);
+                    if (!dv.Contains(S(cu, "phongBan"))) throw new LoiApi(403, "Nhân viên " + S(cu, "hoTen") + " không thuộc phòng / đội được giao.");
+                    ds[i] = GhepLuong(moi, cu); sua++;
+                }
+                else { ds.Add(NvBoLuong(moi)); them++; }
+            }
+            dl["nhanVien"] = ds.ToArray();
+            var trongDV = new HashSet<string>(ds.Select(D).Where(x => x != null && dv.Contains(S(x, "phongBan"))).Select(x => S(x, "id")));
+            var dn = D(v.ContainsKey("donNghi") ? v["donNghi"] : null);
+            if (dn != null)
+            {
+                var dsDon = Mang(dl, "donNghi").ToList();
+                foreach (object o in Mang(dn, "luu"))
+                {
+                    var x = D(o); string id = S(x, "id");
+                    if (x == null || id == "") continue;
+                    if (!trongDV.Contains(S(x, "nvId"))) throw new LoiApi(403, "Đơn nghỉ của nhân viên ngoài phòng / đội được giao.");
+                    int i = dsDon.FindIndex(y => S(D(y), "id") == id);
+                    if (i >= 0) { if (!trongDV.Contains(S(D(dsDon[i]), "nvId"))) throw new LoiApi(403, "Đơn nghỉ của nhân viên ngoài phòng / đội được giao."); dsDon[i] = x; }
+                    else dsDon.Add(x);
+                    don++;
+                }
+                foreach (object o in Mang(dn, "xoa"))
+                {
+                    string id = Convert.ToString(o, CultureInfo.InvariantCulture);
+                    int i = dsDon.FindIndex(y => S(D(y), "id") == id);
+                    if (i < 0) continue;
+                    if (!trongDV.Contains(S(D(dsDon[i]), "nvId"))) throw new LoiApi(403, "Đơn nghỉ của nhân viên ngoài phòng / đội được giao.");
+                    dsDon.RemoveAt(i); don++;
+                }
+                dl["donNghi"] = dsDon.ToArray();
+            }
+            if (sua + them + don == 0) return null;
+            return "Nhân sự " + string.Join(", ", dv.ToArray()) + ": sửa " + sua + " hồ sơ, thêm " + them + " nhân viên, " + don + " đơn nghỉ";
         }
 
         // ----- tài khoản chấm công theo phòng / đội
@@ -620,34 +777,41 @@ namespace ChamCong
             return kq;
         }
 
-        /// <summary>Dữ liệu rút gọn cho tài khoản chấm công: danh mục, nhân viên của đơn vị (không lương), ô chấm công.</summary>
-        static Dictionary<string, object> LocChoChamCong(Dictionary<string, object> dl, TaiKhoan tk)
+        /// <summary>Dữ liệu cho tài khoản cấp phòng / đội: danh mục, nhân viên của đơn vị (hồ sơ nếu có quyền nhân sự,
+        /// phần lương nếu có quyền tiền lương), ô chấm công, đơn nghỉ của đơn vị.</summary>
+        static Dictionary<string, object> LocChoDonVi(Dictionary<string, object> dl, TaiKhoan tk, Quyen q)
         {
             var ids = NhanVienDuocCham(dl, tk);
             var kq = new Dictionary<string, object>();
-            foreach (string k in new[] { "phienBan", "congTy", "caiDat", "kyHieu", "phongBan", "ngayLe" }) if (dl.ContainsKey(k)) kq[k] = dl[k];
+            foreach (string k in new[] { "phienBan", "congTy", "caiDat", "kyHieu", "phongBan", "ngayLe", "phuCap", "sanPham" }) if (dl.ContainsKey(k)) kq[k] = dl[k];
+            if (q.lg >= 1) foreach (string k in PhanLuong) if (dl.ContainsKey(k)) kq[k] = dl[k];
             var nvs = new List<object>();
             foreach (object o in Mang(dl, "nhanVien"))
             {
                 var nv = D(o);
                 if (nv == null || !ids.Contains(S(nv, "id"))) continue;
+                if (q.ns >= 1 || q.lg >= 1) { nvs.Add(q.lg >= 1 ? nv : NvBoLuong(nv)); continue; }
                 var x = new Dictionary<string, object>();
                 foreach (string f in TruongNV) if (nv.ContainsKey(f)) x[f] = nv[f];
                 var qd = new List<object>();
                 foreach (object q0 in Mang(nv, "quyetDinh"))
                 {
-                    var q = D(q0); string l = S(q, "loai");
+                    var qx = D(q0); string l = S(qx, "loai");
                     if (l != "dieu_chuyen" && l != "bo_nhiem") continue;
                     var y = new Dictionary<string, object>();
-                    foreach (string f in new[] { "loai", "hieuLuc", "phongBanCu", "phongBanMoi", "chucVuCu", "chucVuMoi" }) if (q.ContainsKey(f)) y[f] = q[f];
+                    foreach (string f in new[] { "loai", "hieuLuc", "phongBanCu", "phongBanMoi", "chucVuCu", "chucVuMoi" }) if (qx.ContainsKey(f)) y[f] = qx[f];
                     qd.Add(y);
                 }
                 x["quyetDinh"] = qd;
                 nvs.Add(x);
             }
             kq["nhanVien"] = nvs;
+            if (q.ns >= 1) kq["donNghi"] = Mang(dl, "donNghi").Where(o => ids.Contains(S(D(o), "nvId"))).ToArray();
             var th = new Dictionary<string, object>();
             var thang = dl.ContainsKey("thang") ? D(dl["thang"]) : null;
+            var loais = new List<string>();
+            if (q.cc >= 1) loais.AddRange(KhoCong);
+            if (q.lg >= 1) loais.Add("dc");
             if (thang != null)
                 foreach (var p in thang)
                 {
@@ -655,17 +819,25 @@ namespace ChamCong
                     if (T == null) continue;
                     var t2 = new Dictionary<string, object>();
                     if (T.ContainsKey("khoa")) t2["khoa"] = T["khoa"];
-                    foreach (string loai in KhoCong)
+                    foreach (string loai in loais)
                     {
                         var m = T.ContainsKey(loai) ? D(T[loai]) : null;
                         var m2 = new Dictionary<string, object>();
                         if (m != null) foreach (var e in m) if (ids.Contains(e.Key)) m2[e.Key] = e.Value;
                         t2[loai] = m2;
                     }
+                    var chot = q.lg >= 1 && T.ContainsKey("chot") ? D(T["chot"]) : null;
+                    if (chot != null)
+                    {
+                        var c2 = new Dictionary<string, object>(chot);
+                        c2["rows"] = Mang(chot, "rows").Where(r => ids.Contains(S(D(r), "nvId"))).ToArray();
+                        t2["chot"] = c2;
+                    }
                     th[p.Key] = t2;
                 }
             kq["thang"] = th;
-            kq["chiChamCong"] = true;
+            kq["chiChamCong"] = q.ns == 0 && q.lg == 0;
+            kq["chiDonVi"] = true;
             return kq;
         }
 
@@ -847,7 +1019,46 @@ namespace ChamCong
     {
         public string ten, vaiTro, muoi, bam, taoLuc, dauPhien;
         public int lap;
-        public List<string> donVi; // tài khoản chấm công: mã các phòng / đội được giao
+        public List<string> donVi; // tài khoản cấp phòng / đội: mã các phòng / đội được giao
+        public string quyen;       // "cc:2,ns:1,lg:0,tl:0" – trống: theo vai trò (nhập liệu: sửa tất cả; chấm công: sửa chấm công)
+    }
+
+    /// <summary>Quyền theo từng phần: 0 không, 1 xem, 2 sửa. cc chấm công, ns nhân sự, lg tiền lương, tl thiết lập (danh mục, cài đặt).
+    /// Vai trò: quan_tri (toàn quyền, quản lý tài khoản), nhap_lieu (cấp công ty), cham_cong (cấp phòng / đội được giao).</summary>
+    sealed class Quyen
+    {
+        public int cc, ns, lg, tl;
+        public bool quanTri, donVi;
+
+        public static Quyen Cua(TaiKhoan tk)
+        {
+            var q = new Quyen();
+            if (tk.vaiTro == "quan_tri") { q.cc = q.ns = q.lg = q.tl = 2; q.quanTri = true; return q; }
+            q.donVi = tk.vaiTro == "cham_cong";
+            if (string.IsNullOrEmpty(tk.quyen)) { if (q.donVi) q.cc = 2; else q.cc = q.ns = q.lg = q.tl = 2; }
+            else
+                foreach (string p in tk.quyen.Split(','))
+                {
+                    string[] a = p.Split(':'); int v;
+                    if (a.Length != 2 || !int.TryParse(a[1], out v)) continue;
+                    v = Math.Max(0, Math.Min(2, v));
+                    if (a[0] == "cc") q.cc = v; else if (a[0] == "ns") q.ns = v; else if (a[0] == "lg") q.lg = v; else if (a[0] == "tl") q.tl = v;
+                }
+            if (q.donVi) { q.lg = Math.Min(q.lg, 1); q.tl = 0; }
+            return q;
+        }
+
+        /// <summary>Chuỗi lưu trữ từ quyền người quản trị chọn (cấp phòng / đội: tiền lương tối đa Xem, không có thiết lập).</summary>
+        public static string Chuoi(Dictionary<string, object> d, bool donVi)
+        {
+            Func<string, int> lay = k => { object o; int v; return d != null && d.TryGetValue(k, out o) && int.TryParse(Convert.ToString(o, CultureInfo.InvariantCulture), out v) ? Math.Max(0, Math.Min(2, v)) : 0; };
+            int cc = lay("cc"), ns = lay("ns"), lg = lay("lg"), tl = lay("tl");
+            if (donVi) { lg = Math.Min(lg, 1); tl = 0; }
+            return "cc:" + cc + ",ns:" + ns + ",lg:" + lg + ",tl:" + tl;
+        }
+
+        public Dictionary<string, object> Dict() { return new Dictionary<string, object> { { "cc", cc }, { "ns", ns }, { "lg", lg }, { "tl", tl } }; }
+        public bool DuQuyen { get { return cc == 2 && ns == 2 && lg == 2 && tl == 2; } }
     }
 
     sealed class Kho
@@ -948,6 +1159,32 @@ namespace ChamCong
             }
         }
 
+        /// <summary>Lưu như LuuDuLieu nhưng trước đó cho bienDoi(dữ liệu mới, dữ liệu đang lưu) chỉnh (giữ phần tài khoản không có quyền sửa).</summary>
+        public Dictionary<string, object> LuuDuLieuCo(string json, long goc, string ten, string ip, Action<Dictionary<string, object>, Dictionary<string, object>> bienDoi)
+        {
+            lock (khoa)
+            {
+                if (goc >= 0 && goc != phienBan) { var x = TrangThai(); x["xungDot"] = true; return x; }
+                var js = new JavaScriptSerializer { MaxJsonLength = int.MaxValue, RecursionLimit = 200 };
+                var moi = js.DeserializeObject(json) as Dictionary<string, object>;
+                if (moi == null) throw new LoiApi(400, "Dữ liệu gửi lên không đúng định dạng của phần mềm.");
+                var cu = File.Exists(tepDuLieu) ? js.DeserializeObject(File.ReadAllText(tepDuLieu, Encoding.UTF8)) as Dictionary<string, object> : null;
+                bienDoi(moi, cu ?? new Dictionary<string, object>());
+                return LuuDuLieu(js.Serialize(moi), goc, ten, ip);
+            }
+        }
+
+        /// <summary>Dữ liệu đang lưu (đã đọc JSON) – dùng khi kiểm tra phạm vi đơn vị.</summary>
+        public Dictionary<string, object> DocDuLieuDict()
+        {
+            lock (khoa)
+            {
+                if (!File.Exists(tepDuLieu)) return new Dictionary<string, object>();
+                var js = new JavaScriptSerializer { MaxJsonLength = int.MaxValue, RecursionLimit = 200 };
+                return js.DeserializeObject(File.ReadAllText(tepDuLieu, Encoding.UTF8)) as Dictionary<string, object> ?? new Dictionary<string, object>();
+            }
+        }
+
         /// <summary>Đọc – sửa – ghi dữ liệu trong cùng một khoá (dùng cho ghép chấm công theo ô). sua trả về null nếu không có gì đổi.</summary>
         public Dictionary<string, object> SuaDuLieu(Func<Dictionary<string, object>, string> sua, string ten, string ip)
         {
@@ -1036,7 +1273,7 @@ namespace ChamCong
             lock (khoa) return taiKhoan.FirstOrDefault(x => string.Equals(x.ten, ten, StringComparison.OrdinalIgnoreCase));
         }
 
-        public void DatTaiKhoan(string ten, string matKhau, string vaiTro, bool doiMatKhau, List<string> donVi)
+        public void DatTaiKhoan(string ten, string matKhau, string vaiTro, bool doiMatKhau, List<string> donVi, string quyen = null)
         {
             lock (khoa)
             {
@@ -1047,6 +1284,8 @@ namespace ChamCong
                     taiKhoan.Add(tk);
                 }
                 tk.vaiTro = vaiTro;
+                if (quyen != null) tk.quyen = quyen == "" ? null : quyen;
+                if (vaiTro == "quan_tri") tk.quyen = null;
                 if (vaiTro != "cham_cong") tk.donVi = null;
                 else if (donVi != null) tk.donVi = donVi;
                 if (doiMatKhau && matKhau != null)

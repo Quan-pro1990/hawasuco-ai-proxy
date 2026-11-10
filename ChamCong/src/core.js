@@ -501,6 +501,7 @@
   /* ================= Khung & điều hướng ================= */
   var MENU = [
     { id: 'dashboard', ten: 'Tổng quan', icon: 'tongquan' },
+    { id: 'tongquandoi', ten: 'Tổng quan đơn vị', icon: 'cocau' },
     { nhom: 'Nhân sự' },
     { id: 'nhanvien', ten: 'Hồ sơ nhân viên', icon: 'nhanvien' },
     { id: 'hopdong', ten: 'Hợp đồng lao động', icon: 'phieuluong' },
@@ -523,6 +524,7 @@
   App.MENU = MENU;
   /** Phân quyền trang (chế độ máy chủ ghi đè cho tài khoản chấm công) */
   App.duocXem = function () { return true; };
+  App.quyen = function () { return 2; };   // chạy 1 file trên máy: toàn quyền (chế độ máy chủ ghi đè)
   App.trangDau = function () { return 'dashboard'; };
   /** Mã các phòng / đội tài khoản được chấm công (null = tất cả) */
   App.dvChamCong = function () { return null; };

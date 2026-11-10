@@ -63,11 +63,15 @@ b) Chứng chỉ:
 -------------------------
 Vào Cài đặt & dữ liệu → Dữ liệu (tài khoản quản trị):
 - Quản trị: mọi chức năng, quản lý tài khoản, sao lưu, khôi phục, nhật ký.
-- Nhập liệu: mọi chức năng nhân sự, chấm công, tiền lương (kế toán, tổ chức – hành chính).
-- Chấm công theo phòng / đội: chỉ thấy Bảng chấm công và Giờ vào / ra của nhân viên thuộc
-  phòng / đội được giao, không xem lương; không sửa được kỳ đã chốt lương.
-- Nút "Tạo tài khoản chấm công cho từng phòng / đội…": mỗi đơn vị 1 tài khoản (vd cc.d1, cc.kdvt),
-  mật khẩu ngẫu nhiên hiện 1 lần – bấm "In danh sách" để phát cho người chấm công.
+- Cấp công ty: mọi phòng, đội. Cấp phòng / đội: chỉ nhân viên của đơn vị được giao.
+- Mỗi tài khoản chọn quyền Không / Xem / Sửa cho từng phần: Chấm công, Nhân sự, Tiền lương,
+  Thiết lập (cấp phòng / đội: tiền lương tối đa Xem). Có sẵn mẫu: kế toán tiền lương, tổ chức –
+  nhân sự, lãnh đạo xem, trưởng phòng / đội trưởng, chấm công đơn vị...
+- Máy chủ kiểm tra lại quyền: phần không được xem thì không gửi về máy (vd mức lương), phần chỉ
+  được xem thì không lưu thay đổi; cấp phòng / đội không sửa được người ngoài đơn vị, kỳ đã chốt.
+- Nút "Tạo tài khoản cho từng phòng / đội…": mỗi đơn vị 1 tài khoản (vd cc.d1, cc.kdvt) với quyền
+  chọn sẵn, mật khẩu ngẫu nhiên hiện 1 lần – bấm "In danh sách" để phát. Tài khoản đội vào thẳng
+  màn hình "Tổng quan đơn vị" riêng của đội.
   Người dùng tự đổi mật khẩu ở thanh bên (Đổi mật khẩu).
 Nhiều người làm cùng lúc: phần mềm tự lưu lên máy chủ; tổ chấm công lưu từng ô nên không ghi đè
 lẫn nhau; máy kế toán đang sửa mà tổ vừa chấm công thì phần mềm tự ghép.
