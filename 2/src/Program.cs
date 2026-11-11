@@ -167,7 +167,6 @@ namespace ThatThoatNuoc
                         var toi = kn.Json("GET", "toi", null, 6000);
                         kn.VaiTro = Convert.ToString(toi["vaiTro"]);
                         kn.HoTen = Convert.ToString(toi["hoTen"]);
-                        kn.PhienBanPhanMem = toi.ContainsKey("phienBanPhanMem") ? Convert.ToString(toi["phienBanPhanMem"]) : "";
                     }
                     catch (LoiMayChu ex)
                     {

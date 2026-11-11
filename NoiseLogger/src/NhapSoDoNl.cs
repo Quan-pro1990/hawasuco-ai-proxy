@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace ThatThoatNuoc
+namespace NoiseLogger
 {
     /// <summary>
     /// Nhập số đo noise logger từ file CSV / TXT / Excel xuất từ phần mềm của hãng (mỗi hãng 1 kiểu cột):
@@ -176,7 +176,7 @@ namespace ThatThoatNuoc
 
         static int DiemTieuDe(string h, int truong)
         {
-            string b = NhapExcel.BoDau(h);
+            string b = VanBan.BoDau(h);
             if (b.Length == 0 || b.Length > 60) return 0;
             int best = 0;
             string[] kws = TuKhoa[truong];
@@ -420,7 +420,7 @@ namespace ThatThoatNuoc
             var diemTheoTen = new Dictionary<string, DiemNl>();
             foreach (DiemNl p in d.Diem)
             {
-                string k = NhapExcel.BoDau(p.Ten);
+                string k = VanBan.BoDau(p.Ten);
                 if (k.Length > 0 && !diemTheoTen.ContainsKey(k)) diemTheoTen[k] = p;
             }
             var nhom = new Dictionary<Tuple<int, DateTime>, List<LanGhi>>();
@@ -453,7 +453,7 @@ namespace ThatThoatNuoc
 
                 DiemNl diem = null;
                 ThietBiNl tb = sMa.Length > 0 ? d.TimThietBiTheoMa(sMa) : null;
-                if (sDiem.Length > 0) diemTheoTen.TryGetValue(NhapExcel.BoDau(sDiem), out diem);
+                if (sDiem.Length > 0) diemTheoTen.TryGetValue(VanBan.BoDau(sDiem), out diem);
                 if (diem == null && tb != null)
                 {
                     LapDatNl lap = d.LapDatCuaThietBiNgay(tb.Id, dem);

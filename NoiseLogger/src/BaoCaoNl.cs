@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 
-namespace ThatThoatNuoc
+namespace NoiseLogger
 {
     /// <summary>
     /// File Excel / bản in của noise logger: kết quả nghe tiếng ồn 1 đêm (kèm các đêm trước, kết luận),
@@ -15,13 +15,11 @@ namespace ThatThoatNuoc
         public const int SoDemTruoc = 6;
         static readonly CultureInfo VnUpper = CultureInfo.GetCultureInfo("vi-VN");
 
-        readonly DuLieu dl;
         readonly DuLieuNl d;
 
-        public BaoCaoNl(DuLieu dl)
+        public BaoCaoNl(DuLieuNl d)
         {
-            this.dl = dl;
-            d = dl.Nl;
+            this.d = d;
         }
 
         static readonly XKieu CtyK = new XKieu { Dam = true, Co = 13, Ngang = "center" };
@@ -74,8 +72,8 @@ namespace ThatThoatNuoc
 
         void DauTrang(XTrang s, int traiDen, int phaiTu, int cuoi)
         {
-            s.GopO(1, 1, 1, traiDen, dl.CaiDat.TenCongTy1, CtyK);
-            s.GopO(2, 1, 2, traiDen, dl.CaiDat.TenCongTy2, CtyGach);
+            s.GopO(1, 1, 1, traiDen, d.CaiDat.TenCongTy1, CtyK);
+            s.GopO(2, 1, 2, traiDen, d.CaiDat.TenCongTy2, CtyGach);
             s.GopO(1, phaiTu, 1, cuoi, "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM", CtyK);
             s.GopO(2, phaiTu, 2, cuoi, "Độc lập - Tự do - Hạnh phúc", CtyGach);
             s.CaoDong[1] = 18;
@@ -84,10 +82,10 @@ namespace ThatThoatNuoc
 
         void PhanKy(XTrang s, int row, int[][] cot)
         {
-            string dia = string.IsNullOrWhiteSpace(dl.CaiDat.DiaDanh) ? "" : dl.CaiDat.DiaDanh.Trim() + ", ";
+            string dia = string.IsNullOrWhiteSpace(d.CaiDat.DiaDanh) ? "" : d.CaiDat.DiaDanh.Trim() + ", ";
             s.GopO(row, cot[2][0], row, cot[2][1], dia + So.NgayChu(DateTime.Today), NgayK);
             row++;
-            NguoiKy[] ky = dl.CaiDat.KyMacDinh;
+            NguoiKy[] ky = d.CaiDat.KyMacDinh;
             for (int i = 0; i < 3; i++)
             {
                 s.GopO(row, cot[i][0], row, cot[i][1], ky[i].Dong1, KyK);
@@ -100,7 +98,7 @@ namespace ThatThoatNuoc
 
         string TenLoc(int donViLoc)
         {
-            return donViLoc >= 0 ? DonViNlOps.Ten(dl, donViLoc) : "";
+            return donViLoc >= 0 ? DonViNlOps.Ten(d, donViLoc) : "";
         }
 
         public static string TenFileKetQua(DateTime ngay, string donVi)
@@ -129,7 +127,7 @@ namespace ThatThoatNuoc
         public XSo SoKetQua(DateTime ngay, int donViLoc)
         {
             ngay = ngay.Date;
-            var nhom = DonViNlOps.Nhom(dl, DiemCuaDem(d, ngay), donViLoc);
+            var nhom = DonViNlOps.Nhom(d, DiemCuaDem(d, ngay), donViLoc);
             if (nhom.Count == 0) throw new InvalidOperationException("Chưa có điểm đặt logger nào" + (donViLoc >= 0 ? " của " + TenLoc(donViLoc) : "") + ".");
             NguongNl n = d.Nguong;
             const int T1 = 8, NEN = T1 + SoDemTruoc, KL = NEN + 1, GC = KL + 1;
@@ -230,7 +228,7 @@ namespace ThatThoatNuoc
 
         public XSo SoRoRi(int nam, int donViLoc)
         {
-            var diemLoc = new HashSet<int>(DonViNlOps.Nhom(dl, d.Diem, donViLoc).SelectMany(g => g.Diem).Select(p => p.Id));
+            var diemLoc = new HashSet<int>(DonViNlOps.Nhom(d, d.Diem, donViLoc).SelectMany(g => g.Diem).Select(p => p.Id));
             var ds = CaCuaNam(d, nam).Where(r => diemLoc.Contains(r.DiemId) || (donViLoc < 0 && d.TimDiem(r.DiemId) == null)).ToList();
             if (ds.Count == 0) throw new InvalidOperationException("Chưa có ca rò rỉ nào" + (nam > 0 ? " năm " + nam : "") + (donViLoc >= 0 ? " của " + TenLoc(donViLoc) : "") + ".");
             const int I = 9, J = 10, K = 11, L = 12, M = 13, N = 14;
@@ -261,7 +259,7 @@ namespace ThatThoatNuoc
                 s.Dat(row, A, row - dau + 1, SttK);
                 s.Dat(row, B, So.Ngay(r.NgayPhatHien), GiuaK);
                 s.Dat(row, C, p != null ? p.Ten : "(điểm đã xoá)", TenK);
-                s.Dat(row, D, p != null ? DonViNlOps.Ten(dl, p.DonViId) : "", TenK);
+                s.Dat(row, D, p != null ? DonViNlOps.Ten(d, p.DonViId) : "", TenK);
                 s.Dat(row, E, r.ViTri, TenK);
                 s.Dat(row, F, r.HangMuc, TenK);
                 s.Dat(row, G, DuLieuNl.TenTrangThai(r.TrangThai), tt);
@@ -302,7 +300,7 @@ namespace ThatThoatNuoc
             if (den < tu) { DateTime x = tu; tu = den; den = x; }
             int soNgay = (int)(den - tu).TotalDays + 1;
             if (soNgay > 62) throw new InvalidOperationException("Chọn tối đa 62 đêm (2 tháng) để bảng vừa khổ giấy.");
-            var nhom = DonViNlOps.Nhom(dl, d.Diem.Where(p => !p.Ngung || d.SoDoCua(p.Id).Any(x => x.Ngay >= tu && x.Ngay <= den)), donViLoc);
+            var nhom = DonViNlOps.Nhom(d, d.Diem.Where(p => !p.Ngung || d.SoDoCua(p.Id).Any(x => x.Ngay >= tu && x.Ngay <= den)), donViLoc);
             if (nhom.Count == 0) throw new InvalidOperationException("Chưa có điểm đặt logger nào" + (donViLoc >= 0 ? " của " + TenLoc(donViLoc) : "") + ".");
             NguongNl n = d.Nguong;
             const int T1 = 3;

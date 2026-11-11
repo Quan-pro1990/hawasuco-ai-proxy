@@ -2,8 +2,80 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace ThatThoatNuoc
+namespace NoiseLogger
 {
+    public static class UngDung
+    {
+        public const string Ten = "Noise Logger — Dò tìm rò rỉ";
+        public const string TenNgan = "Noise Logger";
+        public const string PhienBan = "1.0.0";
+    }
+
+    public class NguoiKy
+    {
+        public string Dong1 = "";   // vd "KT. GIÁM ĐỐC"
+        public string Dong2 = "";   // vd "PHÓ GIÁM ĐỐC"
+        public string Ten = "";
+
+        public NguoiKy() { }
+
+        public NguoiKy(string dong1, string dong2, string ten)
+        {
+            Dong1 = dong1;
+            Dong2 = dong2;
+            Ten = ten;
+        }
+    }
+
+    /// <summary>Tên công ty, địa danh, người ký in trên báo cáo.</summary>
+    public class CaiDatNl
+    {
+        public const string MacDinhCongTy1 = "CÔNG TY TNHH MTV", MacDinhCongTy2 = "CẤP NƯỚC HẬU GIANG", MacDinhDiaDanh = "TP. Cần Thơ";
+
+        public string TenCongTy1 = MacDinhCongTy1;
+        public string TenCongTy2 = MacDinhCongTy2;
+        public string DiaDanh = MacDinhDiaDanh;
+        public NguoiKy[] KyMacDinh =
+        {
+            new NguoiKy("KT. GIÁM ĐỐC", "PHÓ GIÁM ĐỐC", ""),
+            new NguoiKy("PHÒNG KỸ THUẬT", "TRƯỞNG PHÒNG", ""),
+            new NguoiKy("NGƯỜI LẬP", "", "")
+        };
+        public string ThuMucXuat = "";     // thư mục lưu file Excel lần trước
+
+        /// <summary>Còn nguyên như lúc mới cài (chưa ai sửa tên công ty, người ký).</summary>
+        public bool ChuaSua
+        {
+            get
+            {
+                var md = new CaiDatNl();
+                if (TenCongTy1 != md.TenCongTy1 || TenCongTy2 != md.TenCongTy2 || DiaDanh != md.DiaDanh) return false;
+                for (int i = 0; i < 3; i++)
+                    if (KyMacDinh[i].Dong1 != md.KyMacDinh[i].Dong1 || KyMacDinh[i].Dong2 != md.KyMacDinh[i].Dong2 || KyMacDinh[i].Ten != md.KyMacDinh[i].Ten) return false;
+                return true;
+            }
+        }
+    }
+
+    public enum LoaiDonVi
+    {
+        Doi,
+        KhuVuc,
+        Dma,
+        Khac
+    }
+
+    /// <summary>Đội / khu vực / vùng DMA để xếp điểm đặt logger (cây: đơn vị con nằm trong đơn vị cha).</summary>
+    public class DonVi
+    {
+        public int Id;
+        public string Ten = "";
+        public LoaiDonVi Loai;
+        public int ChaId = -1;           // -1 = cấp ngoài cùng
+        public string GhiChu = "";
+        public int MaThatThoat = -1;     // Id dòng tương ứng trong phần mềm Quản lý thất thoát nước (khi lấy từ đó); -1 = tự thêm
+    }
+
     /// <summary>Chỗ gắn noise logger trên mạng lưới.</summary>
     public enum LoaiDiemNl
     {
@@ -49,7 +121,7 @@ namespace ThatThoatNuoc
         public int Id;
         public string Ten = "";          // vd "Van D150 ngã ba Trần Hưng Đạo – 3/2"
         public LoaiDiemNl Loai;
-        public int DonViId = -1;         // dòng đội / khu vực / DMA của báo cáo thất thoát (Muc.Id); -1 = chưa xếp
+        public int DonViId = -1;         // đội / khu vực / DMA (DonVi.Id); -1 = chưa xếp
         public string DuongOng = "";     // vd "PVC D110"
         public string ToaDo = "";        // vd "9.7845, 105.4712" (chép từ Google Maps)
         public bool Ngung;               // không dùng nữa (số đo cũ vẫn giữ)
@@ -126,14 +198,16 @@ namespace ThatThoatNuoc
         }
     }
 
-    /// <summary>Dữ liệu noise logger (dò tìm rò rỉ) — tách riêng với số liệu báo cáo thất thoát.</summary>
+    /// <summary>Toàn bộ dữ liệu của phần mềm Noise Logger (dò tìm rò rỉ).</summary>
     public class DuLieuNl
     {
         public List<ThietBiNl> ThietBi = new List<ThietBiNl>();
         public List<DiemNl> Diem = new List<DiemNl>();
         public List<LapDatNl> LapDat = new List<LapDatNl>();
         public List<RoRiNl> RoRi = new List<RoRiNl>();
+        public List<DonVi> DonVi = new List<DonVi>();
         public NguongNl Nguong = new NguongNl();
+        public CaiDatNl CaiDat = new CaiDatNl();
         public int NextId = 1;
 
         // số đo theo điểm, mỗi danh sách xếp tăng dần theo ngày
@@ -141,10 +215,12 @@ namespace ThatThoatNuoc
 
         public bool Trong
         {
-            get { return ThietBi.Count == 0 && Diem.Count == 0 && LapDat.Count == 0 && RoRi.Count == 0 && SoLuongSoDo == 0 && Nguong.MacDinh; }
+            get { return ThietBi.Count == 0 && Diem.Count == 0 && LapDat.Count == 0 && RoRi.Count == 0 && SoLuongSoDo == 0; }
         }
 
         public int CapId() { return NextId++; }
+
+        public DonVi TimDonVi(int id) { return DonVi.FirstOrDefault(x => x.Id == id); }
 
         public ThietBiNl TimThietBi(int id) { return ThietBi.FirstOrDefault(x => x.Id == id); }
         public DiemNl TimDiem(int id) { return Diem.FirstOrDefault(x => x.Id == id); }
@@ -448,15 +524,16 @@ namespace ThatThoatNuoc
         }
     }
 
-    /// <summary>Đơn vị (đội / khu vực / DMA) của báo cáo thất thoát dùng để xếp điểm logger.</summary>
+    /// <summary>Đơn vị xếp theo cây để hiện / lọc: cấp, đơn vị cha, tập Id của nó và mọi đơn vị con cháu.</summary>
     public class DonViNl
     {
         public int Id;
         public string Ten = "";
-        public VaiTro VaiTro;
-        public int Cap;                  // 0 = đội, 1 = khu vực / DMA của đội…
-        public HashSet<int> Con = new HashSet<int>();   // Id của chính nó và mọi đơn vị nằm trong khối của nó
-        public DonViNl Cha;              // đội / khu vực chứa nó (null = cấp ngoài cùng)
+        public LoaiDonVi Loai;
+        public int Cap;                  // 0 = cấp ngoài cùng (đội), 1 = khu vực / DMA của đội…
+        public HashSet<int> Con = new HashSet<int>();   // Id của chính nó và mọi đơn vị con cháu
+        public DonViNl Cha;              // đơn vị chứa nó (null = cấp ngoài cùng)
+        public DonVi Goc;
 
         /// <summary>vd "DMA Long Mỹ 1 — Đội 2"</summary>
         public string TenDayDu { get { return Cha != null ? Ten + " — " + Cha.Ten : Ten; } }
@@ -474,39 +551,36 @@ namespace ThatThoatNuoc
 
     public static class DonViNlOps
     {
-        /// <summary>Đội / khu vực / DMA theo cấu trúc tháng mới nhất (xếp như báo cáo), kèm các đơn vị con.</summary>
-        public static List<DonViNl> DanhSach(DuLieu dl)
+        /// <summary>Đơn vị xếp theo cây (cha trước, các con theo thứ tự trong danh sách ngay sau cha).</summary>
+        public static List<DonViNl> DanhSach(DuLieuNl d)
         {
             var list = new List<DonViNl>();
-            ThangBaoCao t = dl.ThangCuoi;
-            if (t == null) return list;
-            var dongs = t.Muc;
-            for (int i = 0; i < dongs.Count; i++)
-            {
-                Muc m = dongs[i];
-                if (m.VaiTro != VaiTro.Doi && m.VaiTro != VaiTro.KhuVuc && m.VaiTro != VaiTro.Dma) continue;
-                var dv = new DonViNl { Id = m.Id, Ten = m.TenTongHop, VaiTro = m.VaiTro };
-                dv.Con.Add(m.Id);
-                for (int j = i + 1; j < dongs.Count && dongs[j].Cap > m.Cap; j++) dv.Con.Add(dongs[j].Id);
-                list.Add(dv);
-            }
-            // thụt lề theo số đơn vị bao ngoài; cha = đơn vị bao ngoài gần nhất
-            foreach (DonViNl dv in list)
-            {
-                var ngoai = list.Where(x => x != dv && x.Con.Contains(dv.Id) && !dv.Con.Contains(x.Id)).ToList();
-                dv.Cap = ngoai.Count;
-                dv.Cha = ngoai.OrderBy(x => x.Con.Count).FirstOrDefault();
-            }
+            var ids = new HashSet<int>(d.DonVi.Select(x => x.Id));
+            var daXep = new HashSet<int>();
+            // đơn vị mất cha (cha đã xoá) coi như cấp ngoài cùng
+            foreach (DonVi g in d.DonVi.Where(x => x.ChaId < 0 || !ids.Contains(x.ChaId))) Them(d, g, null, 0, list, daXep);
+            // phòng vòng lặp cha — con (dữ liệu sửa tay): đơn vị chưa xếp để cuối
+            foreach (DonVi g in d.DonVi.Where(x => !daXep.Contains(x.Id))) Them(d, g, null, 0, list, daXep);
             return list;
         }
 
-        /// <summary>
-        /// Xếp điểm theo đơn vị (thứ tự như báo cáo thất thoát); [donViLoc] ≥ 0 thì chỉ lấy điểm của đơn vị đó và các đơn vị con.
-        /// Đơn vị đã bỏ khỏi cấu trúc tháng mới nhất và điểm chưa xếp đơn vị để cuối.
-        /// </summary>
-        public static List<NhomDiemNl> Nhom(DuLieu dl, IEnumerable<DiemNl> diems, int donViLoc)
+        static void Them(DuLieuNl d, DonVi g, DonViNl cha, int cap, List<DonViNl> list, HashSet<int> daXep)
         {
-            List<DonViNl> dvs = DanhSach(dl);
+            if (!daXep.Add(g.Id)) return;
+            var dv = new DonViNl { Id = g.Id, Ten = g.Ten, Loai = g.Loai, Cap = cap, Cha = cha, Goc = g };
+            dv.Con.Add(g.Id);
+            list.Add(dv);
+            foreach (DonVi c in d.DonVi.Where(x => x.ChaId == g.Id)) Them(d, c, dv, cap + 1, list, daXep);
+            for (DonViNl p = cha; p != null; p = p.Cha) p.Con.UnionWith(dv.Con);
+        }
+
+        /// <summary>
+        /// Xếp điểm theo đơn vị (thứ tự như cây đơn vị); [donViLoc] ≥ 0 thì chỉ lấy điểm của đơn vị đó và các đơn vị con.
+        /// Điểm chưa xếp đơn vị (hoặc đơn vị đã xoá) để cuối.
+        /// </summary>
+        public static List<NhomDiemNl> Nhom(DuLieuNl d, IEnumerable<DiemNl> diems, int donViLoc)
+        {
+            List<DonViNl> dvs = DanhSach(d);
             DonViNl loc = donViLoc >= 0 ? dvs.FirstOrDefault(x => x.Id == donViLoc) : null;
             var list = diems.Where(p => donViLoc < 0 || (loc != null ? loc.Con.Contains(p.DonViId) : p.DonViId == donViLoc)).ToList();
             var groups = new List<NhomDiemNl>();
@@ -515,33 +589,55 @@ namespace ThatThoatNuoc
                 var ps = list.Where(p => p.DonViId == dv.Id).ToList();
                 if (ps.Count > 0) groups.Add(new NhomDiemNl { DonViId = dv.Id, Ten = dv.TenDayDu, Diem = ps });
             }
-            foreach (var g in list.Where(p => p.DonViId >= 0 && !dvs.Any(x => x.Id == p.DonViId)).GroupBy(p => p.DonViId))
-            {
-                string ten = Ten(dl, g.Key);
-                groups.Add(new NhomDiemNl { DonViId = g.Key, Ten = ten.Length > 0 ? ten + " (không còn trong cấu trúc tháng mới nhất)" : "Đơn vị đã xoá", Diem = g.ToList() });
-            }
-            var chua = list.Where(p => p.DonViId < 0).ToList();
+            var chua = list.Where(p => p.DonViId < 0 || !dvs.Any(x => x.Id == p.DonViId)).ToList();
             if (chua.Count > 0) groups.Add(new NhomDiemNl { DonViId = -1, Ten = "Chưa xếp đội / DMA", Diem = chua });
             return groups;
         }
 
-        public static string TenDayDu(DuLieu dl, int id)
+        public static string TenDayDu(DuLieuNl d, int id)
         {
             if (id < 0) return "";
-            DonViNl dv = DanhSach(dl).FirstOrDefault(x => x.Id == id);
-            return dv != null ? dv.TenDayDu : Ten(dl, id);
+            DonViNl dv = DanhSach(d).FirstOrDefault(x => x.Id == id);
+            return dv != null ? dv.TenDayDu : "";
         }
 
-        /// <summary>Tên đơn vị theo tháng mới nhất có dòng [id] (đơn vị đã bỏ khỏi cấu trúc vẫn hiện tên cũ).</summary>
-        public static string Ten(DuLieu dl, int id)
+        public static string Ten(DuLieuNl d, int id)
         {
-            if (id < 0) return "";
-            for (int i = dl.Thang.Count - 1; i >= 0; i--)
+            DonVi g = id >= 0 ? d.TimDonVi(id) : null;
+            return g != null ? g.Ten : "";
+        }
+
+        public static string TenLoai(LoaiDonVi l)
+        {
+            switch (l)
             {
-                Muc m = dl.Thang[i].Tim(id);
-                if (m != null) return m.TenTongHop;
+                case LoaiDonVi.Doi: return "Đội";
+                case LoaiDonVi.KhuVuc: return "Khu vực";
+                case LoaiDonVi.Dma: return "Vùng DMA";
+                default: return "Khác";
             }
-            return "";
+        }
+
+        /// <summary>Id của đơn vị [id] và mọi đơn vị con cháu.</summary>
+        public static HashSet<int> ConChau(DuLieuNl d, int id)
+        {
+            DonViNl dv = DanhSach(d).FirstOrDefault(x => x.Id == id);
+            return dv != null ? new HashSet<int>(dv.Con) : new HashSet<int> { id };
+        }
+
+        /// <summary>Đổi chỗ với đơn vị cùng cha liền trước / sau.</summary>
+        public static bool DiChuyen(DuLieuNl d, DonVi g, int huong)
+        {
+            int i = d.DonVi.IndexOf(g);
+            if (i < 0) return false;
+            for (int j = i + huong; j >= 0 && j < d.DonVi.Count; j += huong)
+            {
+                if (d.DonVi[j].ChaId != g.ChaId) continue;
+                d.DonVi[i] = d.DonVi[j];
+                d.DonVi[j] = g;
+                return true;
+            }
+            return false;
         }
     }
 }

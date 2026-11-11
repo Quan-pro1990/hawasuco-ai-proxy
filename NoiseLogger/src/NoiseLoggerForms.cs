@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 
-namespace ThatThoatNuoc
+namespace NoiseLogger
 {
     /// <summary>Mục chọn đơn vị (đội / khu vực / DMA) trong ô chọn.</summary>
     class MucDonViNl
@@ -15,7 +15,7 @@ namespace ThatThoatNuoc
         public int Id { get { return DonVi != null ? DonVi.Id : -1; } }
         public override string ToString() { return DonVi != null ? DonVi.ToString() : TenRieng; }
 
-        public static void Nap(ComboBox c, DuLieu dl, string dongDau, int chon)
+        public static void Nap(ComboBox c, DuLieuNl dl, string dongDau, int chon)
         {
             c.Items.Clear();
             c.Items.Add(new MucDonViNl { TenRieng = dongDau });
@@ -25,7 +25,7 @@ namespace ThatThoatNuoc
             {
                 // đơn vị không còn trong cấu trúc tháng mới nhất: vẫn giữ để không mất
                 string ten = DonViNlOps.Ten(dl, chon);
-                m = new MucDonViNl { DonVi = new DonViNl { Id = chon, Ten = (ten.Length > 0 ? ten : "Đơn vị #" + chon) + " (đã bỏ)" } };
+                m = new MucDonViNl { DonVi = new DonViNl { Id = chon, Ten = (ten.Length > 0 ? ten : "Đơn vị #" + chon) + " (đã xoá)" } };
                 c.Items.Add(m);
             }
             c.SelectedItem = m ?? c.Items[0];
@@ -34,7 +34,7 @@ namespace ThatThoatNuoc
     }
 
     /// <summary>Thêm / sửa điểm đặt logger.</summary>
-    class DiemNlForm : HopThoaiCap1
+    class DiemNlForm : HopThoai
     {
         readonly TextBox txtTen, txtOng, txtToaDo, txtGhiChu;
         readonly ComboBox cboLoai, cboDonVi;
@@ -42,10 +42,10 @@ namespace ThatThoatNuoc
         readonly DuLieuNl d;
         readonly DiemNl diem;
 
-        public DiemNlForm(DuLieu dl, DiemNl diem, int donViMacDinh)
+        public DiemNlForm(DuLieuNl dl, DiemNl diem, int donViMacDinh)
             : base(diem == null ? "Thêm điểm đặt noise logger" : "Sửa điểm đặt noise logger", 720, diem == null ? 390 : 420)
         {
-            d = dl.Nl;
+            d = dl;
             this.diem = diem;
             txtTen = O(460, diem != null ? diem.Ten : "", "vd Van D150 ngã ba Trần Hưng Đạo – 30/4");
             Dong("Tên điểm", txtTen);
@@ -56,7 +56,7 @@ namespace ThatThoatNuoc
             cboDonVi = Ui.MakeCombo(360);
             MucDonViNl.Nap(cboDonVi, dl, "(chưa xếp đội / DMA)", diem != null ? diem.DonViId : donViMacDinh);
             Dong("Thuộc đội / khu vực / DMA", cboDonVi);
-            GhiChu("Danh sách lấy theo cấu trúc báo cáo thất thoát tháng mới nhất (dòng Đội, Khu vực, DMA) — để lọc và tổng hợp theo đội / vùng DMA.");
+            GhiChu("Danh sách đội, khu vực, vùng DMA ở mục \"Đội / vùng DMA\" của thanh menu — để lọc và tổng hợp theo đội / vùng DMA.");
             txtOng = O(200, diem != null ? diem.DuongOng : "", "vd PVC D110");
             Dong("Đường ống", Hang(txtOng, Ui.MakeLabel("vật liệu, cỡ ống (ống nhựa truyền tiếng ồn kém hơn)", Ui.Small, Ui.Muted)));
             txtToaDo = O(240, diem != null ? diem.ToaDo : "", "vd 9.7845, 105.4712");
@@ -73,10 +73,10 @@ namespace ThatThoatNuoc
 
         protected override bool KiemTra()
         {
-            string ten = NhapExcel.ChuanHoa(txtTen.Text);
+            string ten = VanBan.ChuanHoa(txtTen.Text);
             if (ten.Length == 0) { Ui.Error(this, "Nhập tên điểm."); txtTen.Focus(); return false; }
-            string k = NhapExcel.BoDau(ten);
-            if (d.Diem.Any(x => x != diem && NhapExcel.BoDau(x.Ten) == k))
+            string k = VanBan.BoDau(ten);
+            if (d.Diem.Any(x => x != diem && VanBan.BoDau(x.Ten) == k))
             {
                 Ui.Error(this, "Đã có điểm tên \"" + ten + "\". Đặt tên khác (thêm số nhà, đường) để nhập số đo theo tên điểm không bị nhầm.");
                 txtTen.Focus();
@@ -87,19 +87,19 @@ namespace ThatThoatNuoc
 
         public void GhiVao(DiemNl p)
         {
-            p.Ten = NhapExcel.ChuanHoa(txtTen.Text);
+            p.Ten = VanBan.ChuanHoa(txtTen.Text);
             p.Loai = (LoaiDiemNl)cboLoai.SelectedIndex;
             var dv = cboDonVi.SelectedItem as MucDonViNl;
             p.DonViId = dv != null ? dv.Id : -1;
-            p.DuongOng = NhapExcel.ChuanHoa(txtOng.Text);
-            p.ToaDo = NhapExcel.ChuanHoa(txtToaDo.Text);
-            p.GhiChu = NhapExcel.ChuanHoa(txtGhiChu.Text);
+            p.DuongOng = VanBan.ChuanHoa(txtOng.Text);
+            p.ToaDo = VanBan.ChuanHoa(txtToaDo.Text);
+            p.GhiChu = VanBan.ChuanHoa(txtGhiChu.Text);
             if (chkNgung != null) p.Ngung = chkNgung.Checked;
         }
     }
 
     /// <summary>Thêm / sửa 1 logger trong danh mục thiết bị.</summary>
-    class ThietBiNlForm : HopThoaiCap1
+    class ThietBiNlForm : HopThoai
     {
         readonly TextBox txtMa, txtLoai, txtGhiChu;
         readonly CheckBox chkHong;
@@ -146,14 +146,14 @@ namespace ThatThoatNuoc
         public void GhiVao(ThietBiNl t)
         {
             t.Ma = txtMa.Text.Trim();
-            t.Loai = NhapExcel.ChuanHoa(txtLoai.Text);
-            t.GhiChu = NhapExcel.ChuanHoa(txtGhiChu.Text);
+            t.Loai = VanBan.ChuanHoa(txtLoai.Text);
+            t.GhiChu = VanBan.ChuanHoa(txtGhiChu.Text);
             t.Hong = chkHong.Checked;
         }
     }
 
     /// <summary>Lắp logger vào điểm / thu logger về / chuyển logger sang điểm khác.</summary>
-    class LapDatNlForm : HopThoaiCap1
+    class LapDatNlForm : HopThoai
     {
         class MucTb
         {
@@ -319,7 +319,7 @@ namespace ThatThoatNuoc
                     parts.Add("chuyển logger " + m.Tb.Ma + " từ " + (cu != null ? cu.Ten : "điểm cũ"));
                 }
                 else parts.Add("lắp logger " + m.Tb.Ma);
-                d.LapDat.Add(new LapDatNl { Id = d.CapId(), ThietBiId = m.Tb.Id, DiemId = diem.Id, TuNgay = ngayLap, GhiChu = NhapExcel.ChuanHoa(txtGhiChu.Text) });
+                d.LapDat.Add(new LapDatNl { Id = d.CapId(), ThietBiId = m.Tb.Id, DiemId = diem.Id, TuNgay = ngayLap, GhiChu = VanBan.ChuanHoa(txtGhiChu.Text) });
                 parts[parts.Count - 1] += " từ ngày " + So.Ngay(ngayLap);
             }
             string s = string.Join(", ", parts);
@@ -328,7 +328,7 @@ namespace ThatThoatNuoc
     }
 
     /// <summary>Thêm / sửa ca rò rỉ.</summary>
-    class RoRiNlForm : HopThoaiCap1
+    class RoRiNlForm : HopThoai
     {
         class MucDiem
         {
@@ -343,10 +343,10 @@ namespace ThatThoatNuoc
         readonly Label lblTietKiem;
         double? luuLuong;
 
-        public RoRiNlForm(DuLieu dl, RoRiNl r, DiemNl diemMacDinh, DateTime ngayMacDinh)
+        public RoRiNlForm(DuLieuNl dl, RoRiNl r, DiemNl diemMacDinh, DateTime ngayMacDinh)
             : base(r == null ? "Thêm ca rò rỉ" : "Sửa ca rò rỉ", 760, 430)
         {
-            DuLieuNl d = dl.Nl;
+            DuLieuNl d = dl;
             cboDiem = Ui.MakeCombo(460);
             DiemNl chon = r != null ? d.TimDiem(r.DiemId) : diemMacDinh;
             foreach (DiemNl p in d.Diem.Where(x => !x.Ngung || x == chon))
@@ -413,16 +413,16 @@ namespace ThatThoatNuoc
             x.DiemId = ((MucDiem)cboDiem.SelectedItem).Diem.Id;
             x.NgayPhatHien = dtPhatHien.Value.Date;
             x.TrangThai = (TrangThaiRoRi)cboTrangThai.SelectedIndex;
-            x.ViTri = NhapExcel.ChuanHoa(txtViTri.Text);
-            x.HangMuc = NhapExcel.ChuanHoa(cboHangMuc.Text);
+            x.ViTri = VanBan.ChuanHoa(txtViTri.Text);
+            x.HangMuc = VanBan.ChuanHoa(cboHangMuc.Text);
             x.NgaySua = dtSua.Checked && x.TrangThai == TrangThaiRoRi.DaSua ? dtSua.Value.Date : (DateTime?)null;
             x.LuuLuong = luuLuong;
-            x.GhiChu = NhapExcel.ChuanHoa(txtGhiChu.Text);
+            x.GhiChu = VanBan.ChuanHoa(txtGhiChu.Text);
         }
     }
 
     /// <summary>Ngưỡng phân loại tiếng ồn.</summary>
-    class NguongNlForm : HopThoaiCap1
+    class NguongNlForm : HopThoai
     {
         readonly TextBox txtRo, txtTheoDoi, txtTrai, txtTang;
         readonly NumericUpDown numDem;
@@ -479,7 +479,7 @@ namespace ThatThoatNuoc
     /// <summary>Nhập số đo từ file CSV / Excel xuất từ phần mềm của hãng logger.</summary>
     class NhapSoDoNlForm : Form
     {
-        readonly PhienLam phien;
+        readonly PhienNl phien;
         readonly TextBox txtFile, txtKetQua;
         readonly ComboBox cboBang, cboTieuDe;
         readonly ComboBox[] cboCot = new ComboBox[NhapSoDoNl.SoTruong];
@@ -492,7 +492,7 @@ namespace ThatThoatNuoc
 
         public DateTime? DenNgay { get; private set; }
 
-        public NhapSoDoNlForm(PhienLam phien)
+        public NhapSoDoNlForm(PhienNl phien)
         {
             this.phien = phien;
             Text = "Nhập số đo noise logger từ file";
@@ -720,7 +720,7 @@ namespace ThatThoatNuoc
         {
             NhapSoDoNl.Bang b = Bang;
             if (b == null) return;
-            keHoach = NhapSoDoNl.LapKeHoach(b, CotDangChon(), phien.Dl.Nl, chkGhiDe.Checked);
+            keHoach = NhapSoDoNl.LapKeHoach(b, CotDangChon(), phien.Dl, chkGhiDe.Checked);
             var lines = new List<string>();
             lines.Add("Đọc " + keHoach.SoDongDoc + " dòng số đo" + (keHoach.SoDongBo > 0 ? ", bỏ qua " + keHoach.SoDongBo + " dòng" : "") + ".");
             if (keHoach.SoDo.Count > 0)
@@ -740,7 +740,7 @@ namespace ThatThoatNuoc
                 dlg.Filter = "CSV (*.csv)|*.csv";
                 dlg.FileName = "mau-so-do-noise-logger.csv";
                 if (dlg.ShowDialog(this) != DialogResult.OK) return;
-                DuLieuNl d = phien.Dl.Nl;
+                DuLieuNl d = phien.Dl;
                 var sb = new System.Text.StringBuilder();
                 sb.Append("sep=;\r\n");
                 sb.Append("Mã logger;Ngày;Giờ;Mức ồn (dB);Độ trải;Tần số (Hz);Ghi chú\r\n");
@@ -769,7 +769,7 @@ namespace ThatThoatNuoc
         {
             if (keHoach == null || keHoach.SoDo.Count == 0) return;
             try { phien.Kho.SaoLuuNgay(); } catch (Exception) { }
-            NhapSoDoNl.ApDung(keHoach, phien.Dl.Nl);
+            NhapSoDoNl.ApDung(keHoach, phien.Dl);
             DenNgay = keHoach.Den;
             phien.Luu(this);
             txtKetQua.Text = "Đã nhập " + keHoach.SoDo.Count + " đêm-điểm (" + keHoach.SoDiem + " điểm, đêm " + So.Ngay(keHoach.Tu) + " – " + So.Ngay(keHoach.Den) + "). " +

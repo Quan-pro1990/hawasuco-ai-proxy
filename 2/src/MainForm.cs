@@ -22,7 +22,6 @@ namespace ThatThoatNuoc
         readonly XuatPage xuatPage;
         readonly CauTrucPage cauTrucPage;
         readonly Cap1Page cap1Page;
-        readonly NoiseLoggerPage nlPage;
         readonly CaiDatPage caiDatPage;
         Label lblOrg, lblMayChu;
         readonly ToolTip tipMayChu = new ToolTip();
@@ -54,7 +53,6 @@ namespace ThatThoatNuoc
             xuatPage = new XuatPage(phien);
             cauTrucPage = new CauTrucPage(phien);
             cap1Page = new Cap1Page(phien);
-            nlPage = new NoiseLoggerPage(phien);
             caiDatPage = new CaiDatPage(phien);
             nhapPage.MoNhapExcel += (s, e) => caiDatPage.NhapTuExcel();
             nhapPage.MoCauTruc += (s, e) => ShowPage(5);
@@ -132,19 +130,19 @@ namespace ThatThoatNuoc
                 int w = nav.ClientSize.Width - nav.Padding.Horizontal;
                 foreach (Control c in nav.Controls) if (c is Button || c is Panel) c.Width = Math.Min(Ui.S(224), w);
             };
-            string[] names ={ "Nhập số liệu tháng", "Vùng DMA", "Tổng hợp năm", "Kế hoạch năm", "Xuất / in báo cáo","Cấu trúc mạng lưới", "Đồng hồ cấp 1", "Noise Logger", "Cài đặt" };
+            string[] names ={ "Nhập số liệu tháng", "Vùng DMA", "Tổng hợp năm", "Kế hoạch năm", "Xuất / in báo cáo","Cấu trúc mạng lưới", "Đồng hồ cấp 1", "Cài đặt" };
             Color nhomColor = Color.FromArgb(0x8A, 0x9B, 0xB0);
             for (int i = 0; i < names.Length; i++)
             {
                 int index = i;
-                if (i == 0 || i == 6 || i == 7)
+                if (i == 0 || i == 6)
                 {
-                    // nhóm: báo cáo thất thoát / khai thác nước thô (đồng hồ cấp 1) / dò tìm rò rỉ (noise logger) — 2 nhóm sau tách riêng
-                    var nhom = Ui.MakeLabel(i == 0 ? "THẤT THOÁT NƯỚC" : i == 6 ? "KHAI THÁC NƯỚC THÔ" : "DÒ TÌM RÒ RỈ", Ui.SmallBold, nhomColor);
+                    // nhóm: báo cáo thất thoát / khai thác nước thô (đồng hồ cấp 1 tách riêng)
+                    var nhom = Ui.MakeLabel(i == 0 ? "THẤT THOÁT NƯỚC" : "KHAI THÁC NƯỚC THÔ", Ui.SmallBold, nhomColor);
                     nhom.Margin = Ui.Pad(14, i == 0 ? 0 : 10, 0, 4);
                     nav.Controls.Add(nhom);
                 }
-                else if (i == 8)
+                else if (i == 7)
                     nav.Controls.Add(new Panel { Height = 1, Width = Ui.S(224), BackColor = Ui.SidebarHover, Margin = Ui.Pad(0, 8, 0, 8) });
                 var b = new Button
                 {
@@ -185,7 +183,7 @@ namespace ThatThoatNuoc
             lblMayChu.Margin = Ui.Pad(0, 0, 0, 8);
             lblMayChu.Cursor = Cursors.Hand;
             lblMayChu.Visible = false;
-            lblMayChu.Click += (s, e) => ShowPage(8);
+            lblMayChu.Click += (s, e) => ShowPage(7);
             if (phien.NguoiDung.Length > 0)
             {
                 var lblNguoi = Ui.MakeLabel("Người dùng: " + phien.NguoiDung + (phien.ChiXem ? " (chỉ xem)" : " (Admin)"), Ui.SmallBold,
@@ -193,7 +191,7 @@ namespace ThatThoatNuoc
                 lblNguoi.MaximumSize = new Size(Ui.S(214), 0);
                 lblNguoi.Margin = Ui.Pad(0, 0, 0, 6);
                 lblNguoi.Cursor = Cursors.Hand;
-                lblNguoi.Click += (s, e) => ShowPage(8);
+                lblNguoi.Click += (s, e) => ShowPage(7);
                 new ToolTip().SetToolTip(lblNguoi, phien.ChiXem ? "Tài khoản chỉ xem: xem số liệu, xuất Excel, in — không sửa được. Đổi người dùng ở Cài đặt." : "Admin: toàn quyền. Quản lý người dùng ở Cài đặt.");
                 footer.Controls.Add(lblNguoi);
             }
@@ -218,7 +216,7 @@ namespace ThatThoatNuoc
 
         Control[] Pages
         {
-            get { return new Control[] { nhapPage, dmaPage, tongHopPage, keHoachPage, xuatPage, cauTrucPage, cap1Page, nlPage, caiDatPage }; }
+            get { return new Control[] { nhapPage, dmaPage, tongHopPage, keHoachPage, xuatPage, cauTrucPage, cap1Page, caiDatPage }; }
         }
 
         void ShowPage(int index)
@@ -230,7 +228,6 @@ namespace ThatThoatNuoc
                 if (current == keHoachPage) keHoachPage.KetThucSua();
                 if (current == dmaPage) dmaPage.KetThucSua();
                 if (current == cap1Page) cap1Page.KetThucSua();
-                if (current == nlPage) nlPage.KetThucSua();
                 next.Visible = true;
                 next.BringToFront();
                 if (current != null) current.Visible = false;
@@ -259,7 +256,6 @@ namespace ThatThoatNuoc
                 case Keys.Control | Keys.D6: ShowPage(5); return true;
                 case Keys.Control | Keys.D7: ShowPage(6); return true;
                 case Keys.Control | Keys.D8: ShowPage(7); return true;
-                case Keys.Control | Keys.D9: ShowPage(8); return true;
             }
             return base.ProcessCmdKey(ref msg, keyData);
         }
@@ -315,7 +311,6 @@ namespace ThatThoatNuoc
             keHoachPage.KetThucSua();
             dmaPage.KetThucSua();
             cap1Page.KetThucSua();
-            nlPage.KetThucSua();
             DongBoMayChu d = phien.DongBo;
             if (d != null && d.CoThayDoiChuaGui && !d.CanDangNhap)
             {

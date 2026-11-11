@@ -5,10 +5,10 @@ using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Windows.Forms;
 
-namespace ThatThoatNuoc
+namespace NoiseLogger
 {
     /// <summary>
-    /// Noise logger — dò tìm rò rỉ bằng thiết bị ghi tiếng ồn ban đêm (tách riêng với báo cáo thất thoát).
+    /// Noise logger — dò tìm rò rỉ bằng thiết bị ghi tiếng ồn ban đêm.
     /// Điểm đo: mỗi đêm nhập / nhập file mức ồn, độ trải, tần số của từng điểm đặt logger → phần mềm phân loại
     /// nghi rò rỉ / cần theo dõi / bình thường theo ngưỡng và mức nền. Ca rò rỉ: theo dõi dò tìm → sửa → nước tiết kiệm.
     /// Thiết bị: danh mục logger, đang lắp ở đâu.
@@ -30,10 +30,9 @@ namespace ThatThoatNuoc
             public string Stt = "";
         }
 
-        readonly PhienLam phien;
+        readonly PhienNl phien;
         readonly ComboBox cboDonVi, cboNam;
         readonly DateTimePicker dtDem;
-        readonly Button btnXemDiem, btnXemRoRi, btnXemTb;
         readonly FlowLayoutPanel nutDiem, nutRoRi, nutTb, hangNgay, hangNam;
         readonly Button btnSuaDiem, btnXoaDiem, btnLap, btnThemRoRiDiem, btnSuaRoRi, btnXoaRoRi, btnSuaTb, btnXoaTb, btnLapTb;
         readonly CheckBox chkNgung;
@@ -41,8 +40,8 @@ namespace ThatThoatNuoc
         readonly DataGridView gridRoRi, gridTb;
         readonly BieuDoNl bieuDo;
         readonly Panel manTrong, khungBieuDo;
-        readonly Label lblTomTat, lblMayChu, huongDan;
-        readonly TheCap1[] the = new TheCap1[4];
+        readonly Label lblTomTat, lblTieuDe, huongDan;
+        readonly TheSo[] the = new TheSo[4];
         readonly ToolTip tip = new ToolTip();
         readonly ContextMenuStrip menuXuat = new ContextMenuStrip { Font = Ui.Base };
         CheDo cheDo = CheDo.Diem;
@@ -53,24 +52,19 @@ namespace ThatThoatNuoc
         List<RoRiNl> dsRoRi = new List<RoRiNl>();
         List<ThietBiNl> dsTb = new List<ThietBiNl>();
 
-        DuLieuNl Dl { get { return phien.Dl.Nl; } }
+        DuLieuNl Dl { get { return phien.Dl; } }
 
-        public NoiseLoggerPage(PhienLam phien)
+        public NoiseLoggerPage(PhienNl phien)
         {
             this.phien = phien;
             BackColor = Ui.Background;
             Font = Ui.Base;
 
-            // ---- hàng 1: tiêu đề, chế độ xem, lọc đơn vị, đêm
+            // ---- hàng 1: tiêu đề, lọc đơn vị, đêm (chọn Điểm đo / Ca rò rỉ / Thiết bị ở thanh menu bên trái)
             var top = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, WrapContents = true, Padding = Ui.Pad(0, 0, 0, 2) };
-            var title = Ui.MakeLabel("Noise Logger", Ui.Title, Ui.Text);
-            title.Margin = Ui.Pad(0, 0, 16, 0);
-            top.Controls.Add(title);
-            btnXemDiem = NutCheDo("Điểm đo", CheDo.Diem);
-            btnXemRoRi = NutCheDo("Ca rò rỉ", CheDo.RoRi);
-            btnXemTb = NutCheDo("Thiết bị", CheDo.ThietBi);
-            foreach (Button b in new[] { btnXemDiem, btnXemRoRi, btnXemTb }) top.Controls.Add(b);
-            btnXemTb.Margin = Ui.Pad(0, 4, 16, 0);
+            lblTieuDe = Ui.MakeLabel("Điểm đo", Ui.Title, Ui.Text);
+            lblTieuDe.Margin = Ui.Pad(0, 0, 16, 0);
+            top.Controls.Add(lblTieuDe);
             cboDonVi = Ui.MakeCombo(250);
             cboDonVi.Margin = Ui.Pad(0, 7, 12, 0);
             cboDonVi.SelectedIndexChanged += (s, e) =>
@@ -82,20 +76,20 @@ namespace ThatThoatNuoc
                 Nap();
             };
             top.Controls.Add(cboDonVi);
-            tip.SetToolTip(cboDonVi, "Lọc theo đội / khu vực / vùng DMA (cấu trúc báo cáo thất thoát tháng mới nhất)");
+            tip.SetToolTip(cboDonVi, "Lọc theo đội / khu vực / vùng DMA (danh sách ở mục \"Đội / vùng DMA\")");
 
             hangNgay = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0) };
             var lblDem = Ui.MakeLabel("Đêm", Ui.Base, Ui.Text);
             lblDem.Margin = Ui.Pad(0, 10, 4, 0);
             hangNgay.Controls.Add(lblDem);
-            var btnTruoc = QuyenUi.ChoXem(Ui.MakeButton("◀", false));
+            var btnTruoc = Ui.MakeButton("◀", false);
             btnTruoc.Click += (s, e) => DoiNgay(ngay.AddDays(-1));
             dtDem = Ui.MakeDatePicker(false);
             dtDem.Margin = Ui.Pad(0, 7, 4, 0);
             dtDem.ValueChanged += (s, e) => { if (!dangNap) DoiNgay(dtDem.Value.Date); };
-            var btnSau = QuyenUi.ChoXem(Ui.MakeButton("▶", false));
+            var btnSau = Ui.MakeButton("▶", false);
             btnSau.Click += (s, e) => DoiNgay(ngay.AddDays(1));
-            var btnMoiNhat = QuyenUi.ChoXem(Ui.MakeButton("Đêm mới nhất", false));
+            var btnMoiNhat = Ui.MakeButton("Đêm mới nhất", false);
             btnMoiNhat.Click += (s, e) => { DateTime? m = NgayMoiNhat(); DoiNgay(m ?? DateTime.Today); };
             foreach (Button b in new[] { btnTruoc, btnSau, btnMoiNhat })
             {
@@ -132,7 +126,7 @@ namespace ThatThoatNuoc
             btnThemRoRiDiem = Nut(nutDiem, "+ Ca rò rỉ…", false, (s, e) => ThemRoRi(), "Ghi ca rò rỉ cho điểm đang chọn: chờ dò tìm → xác định → đã sửa");
             Nut(nutDiem, "Ngưỡng…", false, (s, e) => SuaNguong(), "Ngưỡng mức ồn, độ trải, số đêm liên tiếp để kết luận nghi rò rỉ / cần theo dõi");
             NutXuat(nutDiem);
-            chkNgung = QuyenUi.ChoXem(new CheckBox { Text = "Cả điểm đã ngừng", AutoSize = true, Margin = Ui.Pad(4, 10, 0, 0) });
+            chkNgung = new CheckBox { Text = "Cả điểm đã ngừng", AutoSize = true, Margin = Ui.Pad(4, 10, 0, 0) };
             chkNgung.CheckedChanged += (s, e) => Nap();
             nutDiem.Controls.Add(chkNgung);
             btnThemDiem.Tag = "chinh";
@@ -155,24 +149,18 @@ namespace ThatThoatNuoc
             nutHost.Controls.Add(nutRoRi);
             nutHost.Controls.Add(nutTb);
 
-            lblMayChu = new Label
-            {
-                Dock = DockStyle.Top, AutoSize = false, Height = Ui.S(40), Font = Ui.SmallBold, ForeColor = Ui.Danger, BackColor = Color.FromArgb(0xFD, 0xEC, 0xEC),
-                Padding = Ui.Pad(8, 4, 8, 4), Visible = false, UseMnemonic = false
-            };
-
             // ---- thẻ số
             var theHost = new FlowLayoutPanel { Dock = DockStyle.Top, Height = Ui.S(84), WrapContents = false, Padding = Ui.Pad(0, 6, 0, 6) };
             for (int i = 0; i < the.Length; i++)
             {
-                the[i] = new TheCap1 { Lon = i == 0, Size = new Size(Ui.S(i == 0 ? 270 : 240), Ui.S(72)), Margin = Ui.Pad(0, 0, 10, 0) };
+                the[i] = new TheSo { Lon = i == 0, Size = new Size(Ui.S(i == 0 ? 270 : 240), Ui.S(72)), Margin = Ui.Pad(0, 0, 10, 0) };
                 theHost.Controls.Add(the[i]);
             }
             theHost.Resize += (s, e) =>
             {
                 int w = (theHost.ClientSize.Width - 3 * Ui.S(10) - Ui.S(2)) / 4;
                 w = Math.Max(Ui.S(170), Math.Min(Ui.S(290), w));
-                foreach (TheCap1 t in the) t.Width = w;
+                foreach (TheSo t in the) t.Width = w;
             };
             the[1].Vach = Ui.Danger;
             the[2].Vach = Color.FromArgb(0xE0, 0x9A, 0x00);
@@ -254,7 +242,6 @@ namespace ThatThoatNuoc
             Controls.Add(lblTomTat);
             Controls.Add(huongDan);
             Controls.Add(theHost);
-            Controls.Add(lblMayChu);
             Controls.Add(nutHost);
             Controls.Add(top);
             DatCheDo(CheDo.Diem, false);
@@ -262,14 +249,6 @@ namespace ThatThoatNuoc
         }
 
         // ------------------------------------------------------------------ dựng giao diện
-
-        Button NutCheDo(string text, CheDo c)
-        {
-            var b = QuyenUi.ChoXem(Ui.MakeButton(text, false));
-            b.Margin = Ui.Pad(0, 4, 2, 0);
-            b.Click += (s, e) => DatCheDo(c, true);
-            return b;
-        }
 
         static FlowLayoutPanel HangNut()
         {
@@ -288,10 +267,10 @@ namespace ThatThoatNuoc
 
         void NutXuat(FlowLayoutPanel p)
         {
-            var bx = QuyenUi.ChoXem(Ui.MakeButton("Xuất Excel ▾", false));
+            var bx = Ui.MakeButton("Xuất Excel ▾", false);
             bx.Margin = Ui.Pad(8, 4, 8, 0);
             bx.Click += (s, e) => { KetThucSua(); TaoMenuXuat(false); menuXuat.Show(bx, new Point(0, bx.Height)); };
-            var bi = QuyenUi.ChoXem(Ui.MakeButton("In ▾", false));
+            var bi = Ui.MakeButton("In ▾", false);
             bi.Margin = Ui.Pad(0, 4, 8, 0);
             bi.Click += (s, e) => { KetThucSua(); TaoMenuXuat(true); menuXuat.Show(bi, new Point(0, bi.Height)); };
             tip.SetToolTip(bi, "In thẳng (xem trước, chọn máy in) — không cần mở Excel");
@@ -326,7 +305,7 @@ namespace ThatThoatNuoc
                 "Noise logger gắn lên van / trụ cứu hoả / đồng hồ, tự ghi tiếng ồn trên ống lúc 2h–4h sáng (vắng người dùng nước). " +
                 "Rò rỉ phát ra tiếng ồn đều, liên tục cả đêm → mức ồn cao, độ trải nhỏ, lặp lại nhiều đêm.\n\n" +
                 "1. Mục \"Thiết bị\": thêm các logger (mã / số seri như trong phần mềm của hãng).\n" +
-                "2. \"+ Thêm điểm\": các vị trí lắp logger, xếp theo đội / vùng DMA của báo cáo thất thoát.\n" +
+                "2. Mục \"Đội / vùng DMA\": lập danh sách đội, khu vực, vùng DMA (hoặc lấy từ phần mềm Quản lý thất thoát nước). \"+ Thêm điểm\": các vị trí lắp logger.\n" +
                 "3. \"Lắp / thu logger…\": ghi logger nào lắp ở điểm nào từ ngày nào (chuyển logger sang DMA khác cũng ghi ở đây).\n" +
                 "4. Hằng ngày: \"Nhập số đo từ file…\" (file CSV / Excel xuất từ phần mềm của hãng) hoặc gõ mức ồn vào lưới.\n" +
                 "5. Điểm \"Nghi rò rỉ\" (tô đỏ): \"+ Ca rò rỉ…\" để giao tổ dò tìm, cập nhật đến khi sửa xong.", Ui.Base, Ui.Muted);
@@ -336,7 +315,7 @@ namespace ThatThoatNuoc
             var buttons = new FlowLayoutPanel { AutoSize = true, WrapContents = false };
             var b1 = Ui.MakeButton("+ Thêm điểm đầu tiên…", true);
             b1.Click += (s, e) => ThemDiem();
-            var b2 = QuyenUi.ChoXem(Ui.MakeButton("Danh mục logger…", false));
+            var b2 = Ui.MakeButton("Danh mục logger…", false);
             b2.Click += (s, e) => DatCheDo(CheDo.ThietBi, true);
             buttons.Controls.Add(b1);
             buttons.Controls.Add(b2);
@@ -346,18 +325,23 @@ namespace ThatThoatNuoc
             return p;
         }
 
+        /// <summary>0 = Điểm đo, 1 = Ca rò rỉ, 2 = Thiết bị.</summary>
+        public int CheDoXem { get { return (int)cheDo; } }
+
+        /// <summary>Đổi chế độ xem (thanh menu bên trái đổi theo).</summary>
+        public event EventHandler DoiCheDo;
+
+        public void Xem(int cheDoXem)
+        {
+            DatCheDo((CheDo)cheDoXem, true);
+        }
+
         void DatCheDo(CheDo c, bool nap)
         {
             KetThucSua();
+            bool doi = cheDo != c;
             cheDo = c;
-            foreach (var p in new[] { new { B = btnXemDiem, C = CheDo.Diem }, new { B = btnXemRoRi, C = CheDo.RoRi }, new { B = btnXemTb, C = CheDo.ThietBi } })
-            {
-                bool on = p.C == c;
-                p.B.BackColor = on ? Ui.Primary : Ui.Surface;
-                p.B.ForeColor = on ? Color.White : Ui.Text;
-                p.B.Font = on ? Ui.BaseBold : Ui.Base;
-                p.B.FlatAppearance.MouseOverBackColor = on ? Ui.PrimaryHover : Ui.HeaderBack;
-            }
+            lblTieuDe.Text = c == CheDo.Diem ? "Điểm đo" : c == CheDo.RoRi ? "Ca rò rỉ" : "Thiết bị (noise logger)";
             nutDiem.Visible = c == CheDo.Diem;
             nutRoRi.Visible = c == CheDo.RoRi;
             nutTb.Visible = c == CheDo.ThietBi;
@@ -373,6 +357,8 @@ namespace ThatThoatNuoc
                   "Biểu đồ: mức ồn của điểm trước và sau khi sửa — sửa đúng chỗ thì tiếng ồn giảm hẳn."
                 : "Danh mục noise logger. Mã logger phải giống mã trong file xuất từ phần mềm của hãng. Lắp logger vào điểm: mục \"Điểm đo\" → chọn điểm → \"Lắp / thu logger…\".";
             if (nap) Nap();
+            EventHandler h = DoiCheDo;
+            if (doi && h != null) h(this, EventArgs.Empty);
         }
 
         // ------------------------------------------------------------------ nạp
@@ -414,20 +400,7 @@ namespace ThatThoatNuoc
             {
                 dangNap = false;
             }
-            CapNhatMayChu();
             Nap();
-        }
-
-        /// <summary>Máy chủ IIS chạy phần mềm bản cũ (chưa biết noise logger) sẽ bỏ mất số liệu khi đồng bộ.</summary>
-        void CapNhatMayChu()
-        {
-            DongBoMayChu db = phien.DongBo;
-            string pb = db != null ? db.Kn.PhienBanPhanMem : "";
-            bool cu = db != null && pb.Length > 0 && MayChuKetNoi.SoSanhPhienBan(pb, UngDung.PhienBan) < 0;
-            lblMayChu.Visible = cu;
-            if (cu)
-                lblMayChu.Text = "Máy chủ IIS đang chạy phần mềm bản " + pb + " — bản này chưa lưu số liệu Noise Logger, số liệu nhập ở đây có thể mất khi đồng bộ. " +
-                                 "Cập nhật máy chủ: Cài đặt → Máy chủ dữ liệu → Tạo gói cài IIS…, chép sang máy chủ, chạy lại CaiDat-IIS.bat (không mất dữ liệu).";
         }
 
         void DoiNgay(DateTime d)
@@ -633,7 +606,7 @@ namespace ThatThoatNuoc
             int lap = tatCa.Count(x => x.LapDat != null);
             lblTomTat.Text = "Đêm " + So.Ngay(ngay) + ": " + tatCa.Count + " điểm" + (donViLoc >= 0 ? " của đơn vị đang chọn" : "") + ", " + lap + " điểm có logger, " +
                              coSo + " điểm có số đo" + (lap > coSo ? " (còn " + (lap - coSo) + " điểm có logger chưa có số)" : "") +
-                             ". Mọi thay đổi được lưu ngay; số liệu noise logger tách riêng, không ảnh hưởng báo cáo thất thoát.";
+                             ". Mọi thay đổi được lưu ngay.";
         }
 
         bool CoTheSua(int r, int c)
@@ -1132,7 +1105,7 @@ namespace ThatThoatNuoc
             the[3].Ten = "Ca rò rỉ năm " + nam;
             the[3].GiaTri = "Đã sửa " + sua;
             the[3].Phu = "đang xử lý " + cas.Count(r => r.DangMo) + (tk > 0 ? " · tiết kiệm ≈ " + So.M3(Math.Round(tk)) + " m³/tháng" : "");
-            foreach (TheCap1 t in the) t.Invalidate();
+            foreach (TheSo t in the) t.Invalidate();
         }
 
         void CapNhatNut()
@@ -1176,11 +1149,11 @@ namespace ThatThoatNuoc
             DateTime n = ngay;
             int nam = cheDo == CheDo.RoRi ? NamChon : ngay.Year;
             menuXuat.Items.Add(lam + "kết quả nghe tiếng ồn đêm " + So.Ngay(n) + them + "…", null, (s, e) =>
-                XuatPage.XuatHoacIn(this, phien, () => new BaoCaoNl(phien.Dl).SoKetQua(n, dv), BaoCaoNl.TenFileKetQua(n, tenDv), inRa));
+                XuatFile.XuatHoacIn(this, phien, () => new BaoCaoNl(phien.Dl).SoKetQua(n, dv), BaoCaoNl.TenFileKetQua(n, tenDv), inRa));
             menuXuat.Items.Add(lam + "bảng mức ồn 31 đêm đến " + So.Ngay(n) + them + "…", null, (s, e) =>
-                XuatPage.XuatHoacIn(this, phien, () => new BaoCaoNl(phien.Dl).SoLichSu(n.AddDays(-30), n, dv), BaoCaoNl.TenFileLichSu(n.AddDays(-30), n, tenDv), inRa));
+                XuatFile.XuatHoacIn(this, phien, () => new BaoCaoNl(phien.Dl).SoLichSu(n.AddDays(-30), n, dv), BaoCaoNl.TenFileLichSu(n.AddDays(-30), n, tenDv), inRa));
             menuXuat.Items.Add(lam + "danh sách ca rò rỉ " + (nam > 0 ? "năm " + nam : "(tất cả các năm)") + them + "…", null, (s, e) =>
-                XuatPage.XuatHoacIn(this, phien, () => new BaoCaoNl(phien.Dl).SoRoRi(nam, dv), BaoCaoNl.TenFileRoRi(nam, tenDv), inRa));
+                XuatFile.XuatHoacIn(this, phien, () => new BaoCaoNl(phien.Dl).SoRoRi(nam, dv), BaoCaoNl.TenFileRoRi(nam, tenDv), inRa));
         }
     }
 
