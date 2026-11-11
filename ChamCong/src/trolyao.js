@@ -12,7 +12,14 @@
   var DUNG = {};
   ('la cua cho the nao gi toi minh em anh chi muon lam nhu co khong duoc bao nhieu o dau trong va voi cac nhung mot hay xin giup can de ve ' +
     'thi ma khi nay do phan mem a nhe vay oi hoi biet cach xem tim kiem hien tai duoc khong roi chua ban oi cho minh').split(' ').forEach(function (w) { DUNG[w] = 1; });
-  function boHoi(q) { return q.replace(/(^| )(lam|tai|vi) sao( |$)/g, ' ').trim(); }
+  function boHoi(q) {
+    // "sao không…" (tại sao) – khác "sao lưu"
+    q = q.replace(/(^| )(lam|tai|vi) sao( |$)/g, ' ').replace(/^sao (?=(khong|ko|chua|lai|toi|minh|em|phan mem|bi|cu) )/, '').trim();
+    // "hướng dẫn (cách) nâng bậc lương" -> "nâng bậc lương"
+    var m = /^huong dan (su dung |cach |ve )?(.*)$/.exec(q);
+    if (m && !/^su dung( phan mem)?$/.test(m[2]) && m[2].split(' ').length >= 2) q = m[2];
+    return q;
+  }
   function tuKhoa(q) { return boHoi(q).split(' ').filter(function (w) { return w && !DUNG[w]; }); }
   function laHoiCach(q) { return /(^| )(cach|lam sao|lam the nao|nhu the nao|the nao|huong dan|o dau|bang cach|cac buoc|quy trinh|tai sao|vi sao|y nghia)( |$)/.test(q); }
 
@@ -68,6 +75,8 @@
       });
       cap.forEach(function (p) { if (c.chu.indexOf(' ' + p + ' ') >= 0) { d += 3; capChu++; } if (c.tdChu.indexOf(' ' + p + ' ') >= 0) { d += 9 / Math.sqrt(c.tdSo); capTD++; } });
       if (c.muc === 'Giới thiệu') d *= 0.8;
+      if (c.muc === 'Câu hỏi thường gặp' && !/(khong|chua|loi|bi|quen|khac|sai|sao)( |$)/.test(q)) d *= 0.6;   // câu hỏi sự cố
+      if (/^(Trợ lý ảo|Hướng dẫn sử dụng từng phần)/.test(c.muc) && !/(tro ly|huong dan su dung|tung phan|giong noi|micro)/.test(q)) d *= 0.45;   // mục nói về trợ giúp, có câu hỏi ví dụ
       if (c.thuTu === 0) d *= 1.15;   // đoạn mở đầu của mục thường là cách làm chính
       return { c: c, d: trung ? d * (0.5 + trung / tk.length) : 0, quaTD: capTD > 0 && (!capChu || hoiCach) };
     }).filter(function (x) { return x.d > 2.5; }).sort(function (a, b) { return b.d - a.d; });
@@ -95,6 +104,8 @@
   }
   // mục hướng dẫn -> trang mở được
   var MUC_TRANG = [
+    ['khong them duoc tai khoan', { cd: 'dl', ten: 'Cài đặt → Dữ liệu & tài khoản' }], ['quen mat khau', { cd: 'dl', ten: 'Cài đặt → Dữ liệu & tài khoản' }],
+    ['khong sua duoc', { trang: 'bangluong', ten: 'Bảng lương' }], ['khac tinh tay', { trang: 'bangluong', ten: 'Bảng lương' }],
     ['thu viec', { trang: 'nhanvien', ten: 'Hồ sơ nhân viên' }], ['giai doan ky hop dong', { dm: 'hd', ten: 'Danh mục → Giai đoạn hợp đồng' }],
     ['theo doi hop dong', { trang: 'theodoihd', ten: 'Theo dõi hợp đồng' }], ['hop dong lao dong', { trang: 'hopdong', ten: 'Hợp đồng lao động' }],
     ['muc luong theo ky', { trang: 'mucluong', ten: 'Mức lương theo kỳ' }], ['xep luong', { trang: 'nangbac', ten: 'Xếp lương, nâng bậc' }],
@@ -102,8 +113,8 @@
     ['phong doi', { dm: 'pb', ten: 'Danh mục → Phòng, đội' }], ['don nghi phep', { trang: 'nghiphep', ten: 'Đơn nghỉ phép' }],
     ['bao cao nhan su', { trang: 'bcnhansu', ten: 'Báo cáo nhân sự' }], ['bang cham cong', { trang: 'chamcong', ten: 'Bảng chấm công' }],
     ['gio vao', { trang: 'vaora', ten: 'Giờ vào / ra' }], ['phieu luong', { trang: 'phieuluong', ten: 'Phiếu lương' }],
-    ['bang luong', { trang: 'bangluong', ten: 'Bảng lương' }], ['dung chung tren may chu', { cd: 'dl', ten: 'Cài đặt → Dữ liệu, tài khoản' }],
-    ['tham so phap ly', { cd: 'bh', ten: 'Cài đặt → Bảo hiểm' }], ['thiet lap ban dau', { cd: 'cty', ten: 'Cài đặt' }], ['quan ly nhan su', { trang: 'nhanvien', ten: 'Hồ sơ nhân viên' }]
+    ['bang luong', { trang: 'bangluong', ten: 'Bảng lương' }], ['dung chung tren may chu', { cd: 'dl', ten: 'Cài đặt → Dữ liệu & tài khoản' }],
+    ['tham so phap ly', { cd: 'bh', ten: 'Cài đặt → Bảo hiểm' }], ['thiet lap ban dau', { cd: 'cty', ten: 'Cài đặt' }], ['huong dan su dung tung phan', { trang: 'huongdan', ten: 'Hướng dẫn sử dụng' }], ['quan ly nhan su', { trang: 'nhanvien', ten: 'Hồ sơ nhân viên' }]
   ];
   function trangCuaMuc(td) { var t = cn(td); for (var i = 0; i < MUC_TRANG.length; i++) if (t.indexOf(MUC_TRANG[i][0]) >= 0) return MUC_TRANG[i][1]; return null; }
 
@@ -114,7 +125,7 @@
     { ten: 'Cài đặt → Lương & làm thêm', tu: 'lam them gio ot he so ngung viec thu viec ty le luong thu viec lam tron phat di muon tra rieng luong san pham', cd: 'luong' },
     { ten: 'Cài đặt → Bảo hiểm & công đoàn', tu: 'ty le dong bao hiem bhxh bhyt bhtn kpcd doan phi cong doan luong toi thieu vung tran dong nghi khong luong', cd: 'bh' },
     { ten: 'Cài đặt → Thuế TNCN', tu: 'thue tncn giam tru gia canh ban than nguoi phu thuoc bieu thue luy tien khau tru 10%', cd: 'thue' },
-    { ten: 'Cài đặt → Sao lưu dữ liệu, tài khoản', tu: 'sao luu khoi phuc du lieu tai khoan phan quyen mat khau nhat ky xoa du lieu mau', cd: 'dl' },
+    { ten: 'Cài đặt → Sao lưu, tài khoản', tu: 'sao luu khoi phuc du lieu tai khoan phan quyen mat khau nhat ky xoa du lieu mau', cd: 'dl' },
     { ten: 'Danh mục → Phòng, đội', tu: 'phong doi don vi bo phan khoi bang luong ngan hang chi luong', dm: 'pb' },
     { ten: 'Danh mục → Loại lao động & công chuẩn', tu: 'loai lao dong cong chuan 22 cong 26 cong van phong cong nhan', dm: 'ld' },
     { ten: 'Danh mục → Giai đoạn hợp đồng', tu: 'giai doan hop dong thoi han hop dong 1 nam 3 nam so thang thu viec', dm: 'hd' },
@@ -130,7 +141,7 @@
     hopdong: 'hop dong lao dong danh sach hop dong', theodoihd: 'theo doi hop dong ky lai hop dong', quyetdinh: 'quyet dinh',
     nangbac: 'xep luong nang bac nang luong', nghiphep: 'don nghi phep nghi phep', bcnhansu: 'bao cao nhan su', chamcong: 'bang cham cong cham cong',
     vaora: 'gio vao ra may cham cong', bangluong: 'bang luong tinh luong', phieuluong: 'phieu luong', baocao: 'bao cao luong',
-    mucluong: 'muc luong theo ky', danhmuc: 'danh muc', caidat: 'cai dat du lieu'
+    mucluong: 'muc luong theo ky', danhmuc: 'danh muc', caidat: 'cai dat du lieu', huongdan: 'huong dan su dung tai lieu huong dan'
   };
 
   /* ================= Tiện ích trả lời ================= */
@@ -455,6 +466,9 @@
     if (!nguoi.length && /^(\p{Lu}\p{Ll}*\s+){1,4}\p{Lu}\p{Ll}*$/u.test(String(goc).trim())) cx(['lac', 1200, '🤷']);
     if (!nguoi.length && /^(\p{Lu}\p{Ll}*\s+){1,4}\p{Lu}\p{Ll}*$/u.test(String(goc).trim()))
       return 'Không tìm thấy nhân viên <b>' + h(String(goc).trim()) + '</b>' + (App.laCapDonVi && App.laCapDonVi() ? ' trong phòng / đội của tài khoản' : '') + '. Thử gõ mã NV, số điện thoại hoặc một phần họ tên.';
+    // hỏi đúng tên một phần hướng dẫn chung (quy trình hằng tháng, tài khoản & phân quyền, câu hỏi thường gặp…)
+    var phan = phanHuongDan(q);
+    if (phan) { cx(['gat', 1200, '📖']); return phan; }
     // hỏi cách làm / tìm trong hướng dẫn và nơi thiết lập
     var hd = timHuongDan(q, 3), noi = timNoi(q);
     if (hd.length || noi) cx(['gat', 1200, '📖']);
@@ -470,13 +484,34 @@
     var hd = timHuongDan(q, n);
     return hd.length ? '<div class="tl-lq">Hướng dẫn liên quan: ' + hd.map(function (x) { return '<a href="#" data-tl="hd:' + x.c.i + '">' + h(x.c.tieuDe) + '</a>'; }).join(' · ') + '</div>' : '';
   }
+  /** Phần hướng dẫn chung (không gắn 1 trang) mà câu hỏi nêu đủ các từ của tên phần -> trả lời bằng nội dung phần đó */
+  function phanHuongDan(q) {
+    if (!App.HD) return null;
+    var g = App.HD.tatCa().filter(function (x) {
+      if (x.trang.length) return false;
+      var tu = tuKhoa(cn(x.tieuDe));
+      return tu.length >= 2 && tu.every(function (w) { return co(q, w); });
+    })[0];
+    if (!g) return null;
+    var phan = App.HD.noiDung(g, { boTieuDe: true }).split('<h2>'), con = phan.length > 3;
+    return '<div class="tl-muc">' + h(g.tieuDe) + '</div><div class="tl-hdp">' + phan.slice(0, 3).join('<h2>') + '</div>' +
+      (con ? '<div class="mo nho">… còn ' + (phan.length - 3) + ' mục nữa.</div>' : '') + nutHang(nut('Mở hướng dẫn: ' + g.tieuDe, 'hdp:' + g.id));
+  }
+  /** Nút mở hướng dẫn từng bước (trang Hướng dẫn sử dụng) của phần tương ứng */
+  function nutHDPhan(tr, c) {
+    if (!App.HD) return '';
+    var id = tr && (tr.trang || (tr.dm ? 'danhmuc' : tr.cd ? 'caidat' : '')), g = id ? App.HD.theoTrang(id)[0] : null;
+    if (/may chu|phan quyen|tai khoan/.test(cn(c.muc + ' ' + c.tieuDe))) g = App.HD.lay('tai-khoan-phan-quyen') || g;
+    if (/tro ly/.test(cn(c.muc))) g = App.HD.lay('tro-ly-ao') || g;
+    return g ? nut('Hướng dẫn từng bước: ' + g.tieuDe, 'hdp:' + g.id) : '';
+  }
   function veHuongDan(ds, noi, noiTruoc) {
     var s = '', khoiNoi = noi ? 'Thiết lập ở <b>' + h(noi.ten) + '</b>.' + nutHang(nutNoi(noi)) : '';
     if (noi && noiTruoc) { s = '<div>' + khoiNoi + '</div>'; noi = null; if (ds.length) s += '<div class="tl-lq" style="border:0;margin-top:4px;padding-top:0">Hướng dẫn:</div>'; }
     if (ds.length) {
       var c = ds[0].c, tr = trangCuaMuc(c.tieuDe) || trangCuaMuc(c.muc), doan = [c];
       if (ds[0].quaTD) doan = khoHuongDan().ds.filter(function (x) { return x.tieuDe === c.tieuDe && x.muc === c.muc; }).slice(0, 3);
-      s += '<div class="tl-muc">' + h(c.tieuDe) + '</div>' + doan.map(function (x) { return mdHtml(x.md); }).join('') + nutHang(tr ? nutNoi(tr) : '');
+      s += '<div class="tl-muc">' + h(c.tieuDe) + '</div>' + doan.map(function (x) { return mdHtml(x.md); }).join('') + nutHang((tr ? nutNoi(tr) : '') + nutHDPhan(tr, c));
       var khac = ds.slice(1).filter(function (x) { return doan.indexOf(x.c) < 0; });
       if (khac.length) s += '<div class="tl-lq">Xem thêm: ' + khac.map(function (x) { return '<a href="#" data-tl="hd:' + x.c.i + '">' + h(x.c.tieuDe) + ': ' + h(x.c.md.replace(/[*`#>|]/g, '').replace(/^\s*([-*]|\d+\.)\s*/, '').slice(0, 50)) + '…</a>'; }).join('<br>') + '</div>';
     }
@@ -946,6 +981,7 @@
   function dieuHuong(v) {
     var p = v.split(':'), loai = p[0], a = p[1], b = p[2];
     if (loai === 'trang') location.hash = '#' + a;
+    else if (loai === 'hdp') location.hash = '#huongdan?p=' + a;
     else if (loai === 'dm') App.moDanhMuc(a);
     else if (loai === 'cd') { if (App.moCaiDat) App.moCaiDat(a); else location.hash = '#caidat'; }
     else if (loai === 'hs') App.moHoSo(a, b || 'canhan');

@@ -1,0 +1,34 @@
+# Câu hỏi thường gặp
+<!-- trang: | nhom: Trợ giúp -->
+
+## Không thêm được tài khoản người dùng / tài khoản chấm công
+Chỉ **tài khoản quản trị** trên **máy chủ** mới thêm được: Cài đặt & dữ liệu → **Dữ liệu & tài khoản** → *Tài khoản đăng nhập* →
+**Thêm tài khoản** hoặc **Tạo tài khoản cho từng phòng / đội…**. Chạy 1 file trên máy thì không có tài khoản.
+Tài khoản cấp phòng / đội phải đánh dấu ít nhất 1 phòng / đội; tên đăng nhập không có dấu cách; mật khẩu từ 6 ký tự.
+Chi tiết: [Tài khoản & phân quyền](#huongdan?p=tai-khoan-phan-quyen).
+
+## Sao lưu, khôi phục dữ liệu
+- Chạy 1 file trên máy: **Cài đặt & dữ liệu → Sao lưu dữ liệu → Sao lưu ra file** mỗi tuần (chép file `.json` ra USB, Google Drive…);
+  sang máy khác: **Khôi phục từ file…**.
+- Trên máy chủ: máy chủ tự sao lưu mỗi ngày vào ổ D (giữ 120 ngày gần nhất); **Cài đặt & dữ liệu → Dữ liệu & tài khoản** →
+  **Tải bản sao lưu về máy** để cất riêng; tài khoản quản trị xem và khôi phục các bản sao lưu hằng ngày.
+
+## Quên mật khẩu
+Nhờ tài khoản quản trị: Dữ liệu & tài khoản → dòng tài khoản → **Đặt lại mật khẩu / vai trò**.
+
+## Bảng chấm công / bảng lương không sửa được
+Kỳ đã **chốt lương** (dấu 🔒 cạnh tháng): Bảng lương → **Mở khoá** (cần quyền sửa tiền lương). Hoặc tài khoản chỉ có quyền *Xem*.
+
+## Lương sai so với tính tay
+Bấm tên người trên bảng lương để xem chi tiết. Kiểm tra: loại lao động / công chuẩn, ký hiệu chấm công, mức lương theo kỳ, thời gian thử việc,
+quyết định nâng lương có ngày hiệu lực, người phụ thuộc theo tháng.
+
+## Có người vừa lưu dữ liệu, phần mềm hỏi tải bản mới
+Chọn **Tải bản mới nhất** (bỏ thay đổi vừa làm, làm lại) hoặc **Ghi đè** (mất thay đổi của người kia). Chấm công theo ô thì phần mềm tự ghép.
+
+## Đổi máy / chạy 1 file bị mất dữ liệu
+Chạy 1 file: dữ liệu nằm trong trình duyệt – thường xuyên **Sao lưu ra file**, sang máy mới **Khôi phục từ file**. Trên máy chủ dữ liệu
+nằm ở ổ D và tự sao lưu mỗi ngày.
+
+## Micro / giọng đọc của trợ lý không chạy
+Dùng Chrome / Edge, cho phép micro trên thanh địa chỉ; cài giọng tiếng Việt trong Windows; kiểm tra Cài đặt → Đơn vị & chữ ký → Trợ lý ảo.

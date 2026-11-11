@@ -13,6 +13,14 @@ Khi dùng thật: trang **Tổng quan** → bấm **Xoá dữ liệu mẫu, bắ
 > Dữ liệu lưu trong trình duyệt của máy đang dùng. Vào **Cài đặt & dữ liệu → Sao lưu dữ liệu** mỗi tuần để có file `.json`
 > dự phòng; muốn chuyển sang máy khác thì sao lưu ở máy cũ rồi **Khôi phục từ file** ở máy mới.
 
+## Hướng dẫn sử dụng từng phần
+
+Mỗi phần của phần mềm có hướng dẫn riêng từng bước (Dùng để · Cách làm · Lưu ý), gồm cả *Quy trình hằng tháng* và *Câu hỏi thường gặp*:
+- **Trong phần mềm**: menu *Trợ giúp* → **Hướng dẫn sử dụng** (mục lục theo nhóm, ô tìm, in từng phần hoặc in toàn bộ);
+  nút **Hướng dẫn** cạnh tiêu đề mỗi trang mở ngăn bên phải với hướng dẫn của đúng trang đang xem (đổi theo khi chuyển trang).
+- **Tài liệu rời**: `HUONG_DAN_SU_DUNG.html` (trong bộ cài) – mở bằng trình duyệt để đọc, in hoặc gửi cho người dùng.
+- Nội dung soạn trong thư mục `huong-dan/` (mỗi phần 1 tệp `.md`); sửa xong chạy `node build.js`.
+
 ## Trợ lý ảo Hawasuco
 
 Linh vật robot ở góc phải dưới (giống trợ lý ảo trên web.capnuochaugiang.vn) – bấm vào hoặc nhấn **Ctrl + K** để hỏi.
@@ -278,7 +286,12 @@ tạm ứng kỳ I theo chức vụ. Ô nào khác mức trước được tô �
 
 ## Dùng chung trên máy chủ, phân quyền
 
-Cài máy chủ: xem [`iis/HUONG_DAN_IIS.txt`](iis/HUONG_DAN_IIS.txt). Tài khoản quản trị vào **Cài đặt & dữ liệu → Dữ liệu → Tài khoản**.
+Cài máy chủ: xem [`iis/HUONG_DAN_IIS.txt`](iis/HUONG_DAN_IIS.txt). Tài khoản quản trị vào **Cài đặt & dữ liệu → Dữ liệu & tài khoản**
+→ mục *Tài khoản đăng nhập* → **Thêm tài khoản** (hoặc **Tạo tài khoản cho từng phòng / đội…**).
+
+**Không thêm được tài khoản?** Chạy 1 file trên máy (mở tệp `.html`) thì không có tài khoản – phải dùng bản trên máy chủ;
+chỉ tài khoản *quản trị* mới thấy mục tài khoản; tên đăng nhập 2–40 ký tự, không dấu cách; mật khẩu từ 6 ký tự;
+tài khoản cấp phòng / đội phải đánh dấu ít nhất 1 phòng / đội và có ít nhất 1 quyền Xem / Sửa.
 
 **Cấp của tài khoản**
 - **Quản trị**: toàn quyền, quản lý tài khoản, sao lưu, khôi phục, nhật ký.
@@ -316,6 +329,30 @@ bảng nhân viên với công, nghỉ phép, nghỉ không lương, ô còn tr�
 - Dữ liệu tự lưu lên máy chủ; ô chấm công của các đội được ghép từng ô nên không ghi đè lẫn nhau. Máy chủ tự sao lưu mỗi ngày
   vào ổ D (giữ 120 bản).
 
+## Câu hỏi thường gặp
+
+### Không thêm được tài khoản người dùng, tài khoản chấm công
+Chỉ **tài khoản quản trị** trên **máy chủ** thêm được tài khoản: **Cài đặt & dữ liệu → Dữ liệu & tài khoản** → *Tài khoản đăng nhập*
+→ **Thêm tài khoản** hoặc **Tạo tài khoản cho từng phòng / đội…**. Chạy 1 file trên máy (mở tệp `.html`) thì không có tài khoản.
+Báo lỗi khi lưu: tên đăng nhập 2–40 ký tự, không dấu cách; mật khẩu từ 6 ký tự; tài khoản cấp phòng / đội phải đánh dấu ít nhất
+1 phòng / đội; phải có ít nhất 1 quyền Xem / Sửa. Vừa cập nhật phần mềm: chạy lại `CaiDat-MayChu-IIS.bat` của bộ cài mới trên máy chủ.
+
+### Sao lưu, khôi phục dữ liệu
+- Chạy 1 file trên máy: **Cài đặt & dữ liệu → Sao lưu dữ liệu → Sao lưu ra file** mỗi tuần (chép file `.json` ra USB, Google Drive…);
+  sang máy khác: **Khôi phục từ file…**.
+- Trên máy chủ: máy chủ tự sao lưu mỗi ngày vào ổ D (giữ 120 ngày gần nhất); **Cài đặt & dữ liệu → Dữ liệu & tài khoản** →
+  **Tải bản sao lưu về máy** để cất riêng; tài khoản quản trị xem và khôi phục các bản sao lưu hằng ngày.
+
+### Quên mật khẩu
+Nhờ tài khoản quản trị: Dữ liệu & tài khoản → dòng tài khoản → **Đặt lại mật khẩu / vai trò**.
+
+### Bảng chấm công, bảng lương không sửa được
+Kỳ đã **chốt lương** (dấu 🔒 cạnh tháng): Bảng lương → **Mở khoá** (cần quyền sửa tiền lương); hoặc tài khoản chỉ có quyền *Xem*.
+
+### Lương tính ra khác tính tay
+Bấm tên người trên bảng lương để xem chi tiết cách tính. Kiểm tra loại lao động / công chuẩn, ký hiệu chấm công, mức lương theo kỳ,
+thời gian thử việc, quyết định nâng lương (ngày hiệu lực), người phụ thuộc theo tháng.
+
 ## Tham số pháp lý mặc định (sửa ở Cài đặt khi Nhà nước thay đổi)
 
 | Tham số | Mặc định |
@@ -335,8 +372,11 @@ Hãy đối chiếu lại với văn bản hiện hành của cơ quan thuế, B
 
 ## Dành cho người sửa phần mềm
 
-- Mã nguồn trong `src/` (mở thẳng `src/index.html` cũng chạy được). Sửa xong chạy `node build.js` để đóng gói lại
-  thành `ChamCong_TinhLuong.html` (1 file duy nhất, không dùng thư viện ngoài).
+- Mã nguồn trong `src/`. Sửa xong chạy `node build.js` để đóng gói lại thành `ChamCong_TinhLuong.html`
+  (1 file duy nhất, không dùng thư viện ngoài) và `HUONG_DAN_SU_DUNG.html` (tài liệu hướng dẫn từ `huong-dan/*.md`).
+- Hướng dẫn từng phần: `huong-dan/NN-ten-phan.md`, dòng đầu `# Tiêu đề`, dòng 2 `<!-- trang: id trang | nhom: Nhóm | them: id trang -->`
+  (trang = trang phần mềm mà nút *Hướng dẫn* mở phần này; them = hiện thêm ở ngăn hướng dẫn của trang đó). Liên kết:
+  `[chữ](#huongdan?p=ten-phan)` sang phần khác, `[chữ](#chamcong)` mở trang. `src/md.js` đọc Markdown, `src/huongdan.js` trang + ngăn hướng dẫn.
 - `src/tinhluong.js`: toàn bộ cách tính (kỳ công, công chuẩn, lương, BH, thuế, lương theo quyết định, người phụ thuộc,
   đơn nghỉ, tuổi nghỉ hưu). `src/amlich.js`: lịch âm để tạo ngày lễ. `src/xlsx.js`: đọc / ghi Excel.
   Các trang giao diện: `src/p-*.js` (`p-hoso.js` hồ sơ nhân viên, `p-nhansu.js` hợp đồng – quyết định – đơn nghỉ – báo cáo nhân sự,

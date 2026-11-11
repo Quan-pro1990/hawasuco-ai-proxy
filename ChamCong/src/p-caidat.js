@@ -319,7 +319,8 @@
   }
 
   function veCD(noi) {
-    noi.innerHTML = '<div class="tabs">' + TABS_CD.map(function (t) { return '<button data-t="' + t[0] + '"' + (st.tabCD === t[0] ? ' class="chon"' : '') + '>' + t[1] + '</button>'; }).join('') + '</div><div id="cd-noi"></div>';
+    var mcBat = !!(App.mayChu && App.mayChu.bat);
+    noi.innerHTML = '<div class="tabs">' + TABS_CD.map(function (t) { return '<button data-t="' + t[0] + '"' + (st.tabCD === t[0] ? ' class="chon"' : '') + '>' + (t[0] === 'dl' && mcBat ? 'Dữ liệu & tài khoản' : t[1]) + '</button>'; }).join('') + '</div><div id="cd-noi"></div>';
     App.$('.tabs', noi).onclick = function (e) { var b = e.target.closest('[data-t]'); if (b) { st.tabCD = b.dataset.t; App.veLai(); } };
     var el = App.$('#cd-noi'), db = App.db, cd = db.caiDat, html = '';
     switch (st.tabCD) {
@@ -428,7 +429,11 @@
           '<div class="hang"><button class="nut chinh" id="dl-luu">' + App.icon('tai') + 'Sao lưu ra file</button><label class="nut">' + App.icon('nhap') + 'Khôi phục từ file…<input type="file" id="dl-mo" accept=".json" class="an"></label></div>' +
           '<p class="mo nho">Khôi phục sẽ thay toàn bộ dữ liệu hiện tại bằng dữ liệu trong file sao lưu. Muốn dùng trên máy khác: sao lưu ở máy này rồi khôi phục ở máy kia.</p></div>' +
           '<div class="the"><h3>Làm lại từ đầu</h3><div class="hang"><button class="nut" id="dl-mau">Nạp lại dữ liệu mẫu</button><button class="nut nguy" id="dl-xoa">' + App.icon('xoa') + 'Xoá toàn bộ dữ liệu</button></div>' +
-          '<p class="mo nho">Cả hai thao tác đều xoá dữ liệu hiện tại – hãy sao lưu trước.</p></div>';
+          '<p class="mo nho">Cả hai thao tác đều xoá dữ liệu hiện tại – hãy sao lưu trước.</p></div>' +
+          '<div class="the"><h3>Tài khoản đăng nhập, phân quyền</h3><p style="margin-top:0">Đang <b>chạy 1 file trên máy này</b> nên không có tài khoản đăng nhập. ' +
+          'Muốn nhiều người cùng làm (mỗi phòng / đội 1 tài khoản chấm công, phân quyền xem / sửa): cài phần mềm lên <b>máy chủ IIS</b> bằng <code>CaiDat-MayChu-IIS.bat</code> trong bộ cài, ' +
+          'đăng nhập tài khoản quản trị → <b>Cài đặt &amp; dữ liệu → Dữ liệu &amp; tài khoản</b> → <b>Thêm tài khoản</b>.</p>' +
+          '<a class="nut nho" href="#huongdan?p=tai-khoan-phan-quyen">' + App.icon('sach') + 'Hướng dẫn tài khoản &amp; phân quyền</a></div>';
         break;
     }
     el.innerHTML = html;

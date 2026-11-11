@@ -75,7 +75,9 @@
     chuyen: '<path d="M4 8h13l-3-3M20 16H7l3 3"/>',
     bac: '<path d="M4 20h4v-5h4v-5h4V5h4"/>',
     cocau: '<circle cx="12" cy="12" r="9"/><path d="M12 3v9l7 5"/>',
-    theodoi: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="M9 12.5l2 2 4-4"/>'
+    theodoi: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="M9 12.5l2 2 4-4"/>',
+    sach: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M8 7h8M8 11h6"/>',
+    hoi: '<circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8 1c0 1.7-2.4 2.2-2.4 3.7"/><path d="M12 17.2h.01"/>'
   };
   App.icon = function (ten) {
     return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (P[ten] || '') + '</svg>';
@@ -519,7 +521,9 @@
     { nhom: 'Thiết lập' },
     { id: 'mucluong', ten: 'Mức lương theo kỳ', icon: 'bac' },
     { id: 'danhmuc', ten: 'Danh mục', icon: 'danhmuc' },
-    { id: 'caidat', ten: 'Cài đặt & dữ liệu', icon: 'caidat' }
+    { id: 'caidat', ten: 'Cài đặt & dữ liệu', icon: 'caidat' },
+    { nhom: 'Trợ giúp' },
+    { id: 'huongdan', ten: 'Hướng dẫn sử dụng', icon: 'sach' }
   ];
   App.MENU = MENU;
   /** Phân quyền trang (chế độ máy chủ ghi đè cho tài khoản chấm công) */
@@ -544,6 +548,7 @@
       }).join('') +
       '</nav><div class="tt-mc" id="tt-maychu"></div><div class="chan" id="chan-sb"></div></aside>' +
       '<div class="chinh-khung"><header class="tb"><button class="menu" aria-label="Menu">' + App.icon('menu') + '</button><h1 id="tieu-de"></h1>' +
+      '<button class="nut nho tb-hd" id="tb-hd" hidden aria-expanded="false" title="Hướng dẫn sử dụng trang này">' + App.icon('hoi') + '<span>Hướng dẫn</span></button>' +
       '<div class="ky" id="chon-ky"></div></header><main class="noi" id="noi"></main></div>';
     App.$('.menu', root).onclick = function () { root.classList.toggle('mo-menu'); };
     App.$('nav', root).addEventListener('click', function () { root.classList.remove('mo-menu'); });
@@ -589,6 +594,7 @@
     if (th) th.innerHTML = App.khoiThuongHieu(App.db.congTy, false);
     App.datFavicon();
     if (App.veTrangThaiMayChu) App.veTrangThaiMayChu();
+    if (App.HD) App.HD.capNhat(id);
   };
 
   /* ================= Logo, tên công ty ================= */
