@@ -636,4 +636,5 @@
 
   App.trang.bangluong = { ve: veBL };
   App.trang.phieuluong = { ve: vePL };
+  App.moPhieuLuong = function (id) { st.pl = id || ''; if (location.hash !== '#phieuluong') location.hash = '#phieuluong'; else App.veLai(); };
 })();

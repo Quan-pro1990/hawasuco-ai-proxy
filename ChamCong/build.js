@@ -4,11 +4,17 @@
 var fs = require('fs'), path = require('path');
 var src = path.join(__dirname, 'src');
 var html = fs.readFileSync(path.join(src, 'index.html'), 'utf8');
+function anh(f) { return 'data:image/png;base64,' + fs.readFileSync(path.join(src, 'anh', f)).toString('base64'); }
 html = html.replace(/<link rel="stylesheet" href="([^"]+)">/g, function (_, f) {
   return '<style>\n' + fs.readFileSync(path.join(src, f), 'utf8') + '\n</style>';
 });
 html = html.replace(/<script src="([^"]+)"><\/script>/g, function (_, f) {
-  var js = fs.readFileSync(path.join(src, f), 'utf8').replace(/<\/script/gi, '<\\/script');
+  // hướng dẫn sử dụng đóng gói kèm để trợ lý ảo tìm và trả lời
+  var js = f === 'huongdan.md.js' ? 'window.HUONG_DAN_MD = ' + JSON.stringify(fs.readFileSync(path.join(__dirname, 'HUONG_DAN.md'), 'utf8')) + ';'
+    // ảnh linh vật trợ lý ảo (giống trợ lý ảo trên web.capnuochaugiang.vn)
+    : f === 'anh-troly.js' ? 'window.ANH_TROLY = ' + JSON.stringify({ than: anh('robot-than.png'), dau: anh('robot-dau.png') }) + ';'
+    : fs.readFileSync(path.join(src, f), 'utf8');
+  js = js.replace(/<\/script/gi, '<\\/script');
   return '<script>\n/* ===== ' + f + ' ===== */\n' + js + '\n</script>';
 });
 var out = path.join(__dirname, 'ChamCong_TinhLuong.html');

@@ -86,4 +86,5 @@
   }
 
   App.trang.tongquandoi = { ve: ve };
+  App.moTongQuanDoi = function (dv) { st.dv = dv || ''; if (location.hash !== '#tongquandoi') location.hash = '#tongquandoi'; else App.veLai(); };
 })();

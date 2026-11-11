@@ -210,5 +210,6 @@
   }
 
   App.veTheoDoiHD = ve;
+  App.duLieuKyLai = duLieu;
   App.trang.theodoihd = { ve: function (noi) { ve(noi, false); }, khongKy: true };
 })();

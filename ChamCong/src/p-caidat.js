@@ -10,6 +10,7 @@
   /* ================= DANH MỤC ================= */
   var TABS_DM = [['pb', 'Phòng, đội'], ['ld', 'Loại lao động & công chuẩn'], ['hd', 'Giai đoạn hợp đồng'], ['bl', 'Thang, bảng lương'], ['sp', 'Sản phẩm (lương SP)'], ['pc', 'Phụ cấp'], ['kh', 'Ký hiệu chấm công'], ['le', 'Ngày lễ, Tết']];
 
+  App.moCaiDat = function (t) { st.tabCD = t; if (location.hash !== '#caidat') location.hash = '#caidat'; else App.veLai(); };
   App.moDanhMuc = function (t) { st.tab = t; if (location.hash !== '#danhmuc') location.hash = '#danhmuc'; else App.veLai(); };
 
   function veDM(noi) {

@@ -13,6 +13,19 @@ Khi dùng thật: trang **Tổng quan** → bấm **Xoá dữ liệu mẫu, bắ
 > Dữ liệu lưu trong trình duyệt của máy đang dùng. Vào **Cài đặt & dữ liệu → Sao lưu dữ liệu** mỗi tuần để có file `.json`
 > dự phòng; muốn chuyển sang máy khác thì sao lưu ở máy cũ rồi **Khôi phục từ file** ở máy mới.
 
+## Trợ lý ảo Hawasuco
+
+Linh vật robot ở góc phải dưới (giống trợ lý ảo trên web.capnuochaugiang.vn) – bấm vào hoặc nhấn **Ctrl + K** để hỏi.
+Trợ lý chạy ngay trong phần mềm, **không gửi dữ liệu ra ngoài**, trả lời theo quyền của tài khoản đang dùng:
+- **Hướng dẫn cách làm**: "cách chấm công", "nâng bậc lương thế nào", "sao lưu dữ liệu", "sửa tỷ lệ bảo hiểm ở đâu"… – trả lời từ
+  hướng dẫn sử dụng này, kèm nút mở đúng trang / thẻ cài đặt.
+- **Tìm nhanh**: gõ tên, mã NV, số điện thoại, số hợp đồng, quyết định, tên phòng / đội ("đội 1").
+- **Hỏi số liệu**: ai sắp hết hạn hợp đồng (trong 60 ngày, tháng 12…), ai đang thử việc, hôm nay ai nghỉ, đơn nghỉ chờ duyệt,
+  ô chấm công còn trống, sinh nhật tháng này, sắp nghỉ hưu, số nhân viên từng đơn vị, lương / chấm công / hợp đồng của một người,
+  lương cơ sở, tiền cơm, tạm ứng kỳ I, ngày lễ sắp tới, tỷ lệ bảo hiểm, giảm trừ gia cảnh, ký hiệu chấm công, quyền của tôi.
+- **Mở trang**: "mở bảng lương", "vào chấm công".
+Gõ không dấu cũng được. Mũi tên lên / xuống để gọi lại câu đã hỏi; Esc để đóng.
+
 ## Thiết lập ban đầu (làm 1 lần)
 
 1. **Cài đặt & dữ liệu → Đơn vị & chữ ký**: tên đơn vị, địa danh (vd *Cần Thơ*), mẫu biểu theo TT 133 hay TT 200,
