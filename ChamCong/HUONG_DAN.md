@@ -26,6 +26,18 @@ Trợ lý chạy ngay trong phần mềm, **không gửi dữ liệu ra ngoài**
 - **Mở trang**: "mở bảng lương", "vào chấm công".
 Gõ không dấu cũng được. Mũi tên lên / xuống để gọi lại câu đã hỏi; Esc để đóng.
 
+**Giao tiếp bằng giọng nói** (Chrome, Edge):
+- Bấm **micro** 🎤 cạnh ô nhập rồi nói câu hỏi tiếng Việt – nói xong trợ lý tự gửi và **đọc câu trả lời** (robot há miệng khi nghe,
+  nhép miệng khi nói). Lần đầu trình duyệt hỏi quyền dùng micro: chọn *Cho phép*.
+- Nút **loa** 🔊 trên đầu khung: bật để đọc cả câu trả lời của câu hỏi gõ tay; bấm khi đang đọc để dừng. Nút loa nhỏ trên từng câu trả lời: đọc lại.
+- Nút **cài đặt giọng nói**: chọn giọng đọc, tốc độ, **nói chuyện liên tục** (đọc xong tự nghe câu tiếp theo).
+  Lệnh nói: “dừng”, “đọc lại”, “kết thúc”.
+- Đọc câu trả lời dùng **giọng tiếng Việt cài trên máy**. Máy chưa có: Windows → Cài đặt → Thời gian & ngôn ngữ → Giọng nói →
+  Thêm giọng nói → Tiếng Việt (hoặc chọn giọng “trực tuyến” của Edge – văn bản câu trả lời được gửi tới dịch vụ đọc của trình duyệt).
+- Nói câu hỏi: trình duyệt chuyển giọng nói thành chữ (Chrome, Edge gửi âm thanh câu hỏi tới dịch vụ nhận dạng giọng nói của
+  Google / Microsoft, cần Internet). Dữ liệu nhân sự vẫn chỉ xử lý trên máy. Đơn vị có thể tắt micro ở
+  **Cài đặt & dữ liệu → Đơn vị & chữ ký → Trợ lý ảo**. Micro cần trang mở bằng https (máy chủ) hoặc mở file trực tiếp trên máy.
+
 ## Thiết lập ban đầu (làm 1 lần)
 
 1. **Cài đặt & dữ liệu → Đơn vị & chữ ký**: tên đơn vị, địa danh (vd *Cần Thơ*), mẫu biểu theo TT 133 hay TT 200,

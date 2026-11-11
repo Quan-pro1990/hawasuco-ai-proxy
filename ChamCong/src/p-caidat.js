@@ -341,7 +341,10 @@
           o('Người lập biểu', 'congTy.nguoiLap', 'chu') + o('Kế toán trưởng', 'congTy.keToan', 'chu') + o('Giám đốc', 'congTy.giamDoc', 'chu') + '<span></span>' +
           '<h4>Người ký trên bảng chấm công (mẫu 01a-LĐTL)</h4>' +
           o('Người chấm công', 'congTy.nguoiChamCong', 'chu') + o('Phụ trách bộ phận', 'congTy.phuTrachBP', 'chu') + o('Người duyệt', 'congTy.nguoiDuyet', 'chu') +
-          '</div></div>';
+          '</div></div>' +
+          '<div class="the"><h3>Trợ lý ảo</h3><div class="form">' + o('Cho phép nói câu hỏi bằng giọng nói (micro)', 'caiDat.troLyGiongNoi', 'bool') + '</div>' +
+          '<p class="mo nho">Nói câu hỏi: trình duyệt chuyển giọng nói thành chữ – Chrome, Edge gửi âm thanh câu hỏi tới dịch vụ nhận dạng giọng nói của Google / Microsoft (cần Internet). ' +
+          'Câu trả lời và dữ liệu nhân sự vẫn chỉ xử lý trên máy. Đọc câu trả lời mặc định dùng giọng tiếng Việt cài trên máy; mỗi người chọn giọng, tốc độ ở nút cài đặt giọng nói trong khung trợ lý.</p></div>';
         break;
       case 'cong':
         var thu = [1, 2, 3, 4, 5, 6, 0];

@@ -265,13 +265,21 @@ table.cc tfoot td.dinh3 { z-index: 3; text-align: left; padding: 0 6px; }
 @keyframes tlNghi { 0%, 100% { transform: rotate(9deg); } 50% { transform: rotate(5deg); } }
 @keyframes tlLat { 0% { transform: scaleX(1); } 50% { transform: scaleX(-1); } 100% { transform: scaleX(1); } }
 @keyframes tlLed { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+.tl-nut.dang-nghe .m-cuoi, .tl-nut.dang-noi .m-cuoi { opacity: 0; }
+.tl-nut.dang-nghe .m-o { opacity: 1; }
+.tl-nut.dang-nghe .tl-led { animation-duration: .5s; }
+.tl-nut.dang-nghe .tl-dau { animation: tlNghe 1.2s ease-in-out infinite; }
+.tl-nut.dang-noi .m-noi { opacity: 1; }
+.tl-nut.dang-noi .m-vui { opacity: 1; }
+.tl-nut.dang-noi .tl-than { animation: tlNoi .36s ease-in-out infinite alternate; }
+@keyframes tlNghe { 0%, 100% { transform: rotate(-7deg); } 50% { transform: rotate(-3deg); } }
 @media (prefers-reduced-motion: reduce) { .tl-than, .tl-bong, .tl-dau, .tl-led, .tl-tn.go span { animation: none !important; } }
 .tl-khung { position: fixed; right: 18px; bottom: 150px; z-index: 46; width: 390px; max-width: calc(100vw - 32px); height: min(600px, calc(100vh - 170px));
   display: flex; flex-direction: column; background: #fff; border-radius: 12px; box-shadow: 0 12px 40px rgba(10,40,80,.28); overflow: hidden; border: 1px solid #dde5ee; }
 .tl-khung[hidden] { display: none !important; }
 .tl-khung header { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: linear-gradient(135deg, #135f99, #1f7fc6); color: #fff; }
 .tl-khung header div { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.tl-khung header b { font-size: 15px; } .tl-khung header small { opacity: .85; font-size: 12px; }
+.tl-khung header b { font-size: 15px; } .tl-khung header small { opacity: .85; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tl-av { position: relative; width: 38px; height: 38px; border-radius: 50%; background: #fff; display: grid; place-items: center; flex: none; box-shadow: 0 0 0 2px rgba(255,255,255,.5); }
 .tl-av-svg { width: 36px; height: 30px; display: block; }
 .tl-on { position: absolute; right: -1px; bottom: 0; width: 10px; height: 10px; border-radius: 50%; background: #2ecc71; border: 2px solid #1f7fc6; }
@@ -300,6 +308,22 @@ table.cc tfoot td.dinh3 { z-index: 3; text-align: left; padding: 0 6px; }
 .tl-f input:focus { border-color: #1f7fc6; box-shadow: 0 0 0 3px rgba(31,127,198,.15); }
 .tl-f button { width: 40px; height: 40px; border: 0; border-radius: 50%; background: #1f7fc6; color: #fff; cursor: pointer; display: grid; place-items: center; flex: none; padding: 0; }
 .tl-f button svg { width: 18px; height: 18px; }
+.tl-f button[hidden] { display: none; }
+.tl-f .tl-mic { background: #eaf4fc; color: #1f7fc6; }
+.tl-f .tl-mic:hover { background: #d6eafa; }
+.tl-f .tl-mic.on { background: #d9262c; color: #fff; animation: tlMic 1.2s ease-out infinite; }
+@keyframes tlMic { 0% { box-shadow: 0 0 0 0 rgba(217,38,44,.5); } 100% { box-shadow: 0 0 0 12px rgba(217,38,44,0); } }
+.tl-x svg { width: 21px; height: 21px; display: block; }
+.tl-loa .gach { display: none; } .tl-loa.tat .gach { display: inline; } .tl-loa.tat .song { display: none; } .tl-loa.tat { opacity: .7; }
+.tl-loa.dang { animation: tlLed .9s ease-in-out infinite; }
+.tl-doclai { float: right; margin: -3px -6px 2px 8px; border: 0; background: none; color: #9aa8b6; cursor: pointer; padding: 2px; line-height: 0; }
+.tl-doclai svg { width: 17px; height: 17px; } .tl-doclai:hover { color: #135f99; }
+.tl-doclai .gach { display: none; }
+.tl-cdgn { position: absolute; top: 64px; right: 10px; z-index: 2; width: 310px; max-width: calc(100% - 20px); background: #fff; border: 1px solid #dde5ee; border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(10,40,80,.22); padding: 12px; display: grid; gap: 9px; font-size: 13px; color: #26323f; }
+.tl-cdgn[hidden] { display: none; }
+.tl-cdgn label:not(.chk) { display: grid; gap: 4px; }
+.tl-cdgn select, .tl-cdgn input[type=range] { width: 100%; }
 .tl-note { margin: 0; padding: 0 12px 8px; font-size: 11px; color: #8894a0; background: #fff; }
 @media (max-width: 600px) {
   .tl-nut { right: 6px; bottom: 4px; } .tl-bot { width: 64px; height: 80px; } .tl-nhan, .tl-noi { display: none; }

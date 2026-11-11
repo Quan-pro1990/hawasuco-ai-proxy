@@ -530,7 +530,8 @@
   var MIENG = '<g class="tl-mieng" ' + GLOW + '><path class="tl-mi m-cuoi" d="M166 165 Q182 180 198 164" stroke="#3ee0ff" stroke-width="4" fill="none" stroke-linecap="round"/>' +
     '<g class="tl-mi m-ha"><path d="M164 164 Q182 167 200 163 Q197 184 182 184 Q167 184 164 164z" fill="#0b1216" stroke="#3ee0ff" stroke-width="3" stroke-linejoin="round"/><ellipse cx="182" cy="178.5" rx="9" ry="3.6" fill="#ff7aa0" opacity=".9"/></g>' +
     '<g class="tl-mi m-noi"><rect x="168" y="164" width="28" height="14" rx="7" fill="#0b1216" stroke="#3ee0ff" stroke-width="2.8"/><path d="M174 171h.01M179 168v6M184 167v8M189 169v4M193 171h.01" stroke="#3ee0ff" stroke-width="2.6" stroke-linecap="round"/></g>' +
-    '<path class="tl-mi m-bang" d="M170 172 L194 170" stroke="#3ee0ff" stroke-width="4" fill="none" stroke-linecap="round"/></g>';
+    '<path class="tl-mi m-bang" d="M170 172 L194 170" stroke="#3ee0ff" stroke-width="4" fill="none" stroke-linecap="round"/>' +
+    '<ellipse class="tl-mi m-o" cx="182" cy="172" rx="6.5" ry="8" fill="#0b1216" stroke="#3ee0ff" stroke-width="3"/></g>';
   var MUI = '<rect x="176" y="146" width="12" height="8" rx="4" fill="url(#tlKim)" stroke="#7d8996" stroke-width="1"/><ellipse cx="179.6" cy="148.2" rx="2.4" ry="1" fill="#fff" opacity=".95"/>';
   var MA = '<g class="tl-ma"><ellipse cx="112" cy="168" rx="10" ry="4.6" fill="#ff9bb3" opacity=".5"/><ellipse cx="250" cy="164" rx="10" ry="4.6" fill="#ff9bb3" opacity=".5"/></g>';
   function svgLinhVat() {
@@ -554,6 +555,133 @@
       '<path d="M166 165 Q182 180 198 164" stroke="#3ee0ff" stroke-width="5" fill="none" stroke-linecap="round"/></svg>';
   }
   var ICON_GUI = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20l18-8L3 4v6l12 2-12 2z" fill="currentColor"/></svg>';
+  /* ================= Giọng nói: nói câu hỏi (micro) và đọc câu trả lời ================= */
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  function docKho(k, md) { try { var v = localStorage.getItem(k); return v == null ? md : v; } catch (e) { return md; } }
+  function ghiKho(k, v) { try { localStorage.setItem(k, String(v)); } catch (e) { /* bỏ qua */ } }
+  var GN = { rec: null, nghe: false, noi: false, tuMic: false, cuoi: '', trenMay: false, daBao: false,
+    docTuDong: docKho('tl_doc', '0') === '1', lienTuc: docKho('tl_lientuc', '0') === '1', tenGiong: docKho('tl_giong', ''), toc: +docKho('tl_toc', '1') || 1 };
+  function choNoi() { return !!SR && App.db && App.db.caiDat.troLyGiongNoi !== false; }
+  function coDoc() { return 'speechSynthesis' in window && typeof window.SpeechSynthesisUtterance === 'function'; }
+  function dsGiong() {
+    if (!coDoc()) return [];
+    return speechSynthesis.getVoices().filter(function (v) { return /^vi([-_]|$)/i.test(v.lang); })
+      .sort(function (a, b) { return (b.localService - a.localService) || ((/natural|neural/i.test(b.name)) - (/natural|neural/i.test(a.name))); });
+  }
+  /** Giọng đọc: giọng đã chọn; mặc định chỉ dùng giọng cài trên máy (giọng trực tuyến gửi văn bản ra dịch vụ của trình duyệt) */
+  function giong() {
+    var ds = dsGiong();
+    return ds.filter(function (v) { return v.name === GN.tenGiong; })[0] || ds.filter(function (v) { return v.localService; })[0] || null;
+  }
+  // (không gọi SpeechRecognition.available để dò nhận dạng trên máy: trên một số bản Chromium lệnh này làm treo trang)
+
+  var VIET_TAT = [['HĐLĐ', 'hợp đồng lao động'], ['HĐ', 'hợp đồng'], ['BHXH', 'bảo hiểm xã hội'], ['BHYT', 'bảo hiểm y tế'], ['BHTN', 'bảo hiểm thất nghiệp'],
+    ['KPCĐ', 'kinh phí công đoàn'], ['BH', 'bảo hiểm'], ['TNCN', 'thu nhập cá nhân'], ['QĐ', 'quyết định'], ['ĐT', 'điện thoại'], ['CCCD', 'căn cước công dân'],
+    ['SP', 'sản phẩm'], ['NV', 'nhân viên'], ['BLLĐ', 'Bộ luật Lao động'], ['NĐ', 'Nghị định'], ['TT', 'Thông tư']];
+  /** Chữ để đọc: bỏ nút, đọc số tiền, ngày tháng, chữ viết tắt cho dễ nghe; dài quá thì đọc phần đầu */
+  function chuDoc(html) {
+    var d = document.createElement('div'); d.innerHTML = html;
+    Array.prototype.forEach.call(d.querySelectorAll('.tl-nuts, .tl-goi, .tl-lq, .tl-doclai, button'), function (x) { x.remove(); });
+    Array.prototype.forEach.call(d.querySelectorAll('li, p, div, tr'), function (x) { x.insertAdjacentText('afterbegin', ' '); x.insertAdjacentText('beforeend', '. '); });
+    var t = d.textContent.replace(/\s+/g, ' ');
+    t = t.replace(/(\d{1,3})((?:\.\d{3})+)(?!\d)/g, function (_, a, b) { return a + b.replace(/\./g, ''); })
+      .replace(/(\d{1,2})\/(\d{1,2})\/(\d{4})/g, 'ngày $1 tháng $2 năm $3').replace(/tháng (\d{1,2})\/(\d{4})/g, 'tháng $1 năm $2')
+      .replace(/(\d{1,2})\/(\d{4})/g, 'tháng $1 năm $2').replace(/(\d{1,2})\/(\d{1,2})(?![\d\/])/g, 'ngày $1 tháng $2')
+      .replace(/ đ\/ngày/g, ' đồng một ngày').replace(/ đ\/tháng/g, ' đồng một tháng').replace(/(\d) ?đ(?![\p{L}])/gu, '$1 đồng')
+      .replace(/−\s?/g, 'trừ ').replace(/→/g, ', sang ').replace(/[–·•]/g, ', ').replace(/×/g, ' nhân ').replace(/÷/g, ' chia ').replace(/=/g, ' bằng ').replace(/[“”"*_`]/g, '');
+    VIET_TAT.forEach(function (x) { t = t.replace(new RegExp('(^|[^\\p{L}\\p{N}])' + x[0] + '(?=[^\\p{L}]|$)', 'gu'), '$1' + x[1] + ' '); });
+    t = t.replace(/(\s*\.\s*){2,}/g, '. ').replace(/:\s*\./g, ':').replace(/\s+/g, ' ').replace(/\s+([.,:;])/g, '$1').replace(/,\s*,/g, ',').trim();
+    if (t.length > 700) { var cat = t.slice(0, 700), vt = cat.lastIndexOf('. '); t = (vt > 300 ? cat.slice(0, vt + 1) : cat) + ' Mời bạn xem chi tiết trên màn hình.'; }
+    return t;
+  }
+  function trangThai(chu) { var s = el && el.querySelector('.tl-tt'); if (s) s.textContent = chu || 'Hướng dẫn, tìm thông tin trong phần mềm'; }
+  function datNoi(v) {
+    GN.noi = v; if (nutLV) nutLV.classList.toggle('dang-noi', v); trangThai(v ? 'Đang nói… (bấm 🔊 để dừng)' : '');
+    var l = el && el.querySelector('.tl-loa'); if (l) l.classList.toggle('dang', v);
+  }
+  /** Đọc câu trả lời; sauKhi chạy khi đọc xong (dùng cho nói chuyện liên tục) */
+  function doc(html, sauKhi) {
+    if (!coDoc()) return false;
+    var g = giong();
+    if (!g) return false;
+    speechSynthesis.cancel();
+    var t = chuDoc(html); if (!t) return false;
+    var cau = t.match(/[^.!?;]+[.!?;]*/g) || [t], xong = false;   // chia câu ngắn: trình duyệt hay ngắt giọng đọc dài
+    function het() { if (xong) return; xong = true; datNoi(false); if (sauKhi) sauKhi(); }
+    cau.forEach(function (c, i) {
+      var u = new SpeechSynthesisUtterance(c.trim()); u.voice = g; u.lang = g.lang; u.rate = GN.toc;
+      if (i === 0) u.onstart = function () { datNoi(true); };
+      if (i === cau.length - 1) u.onend = het;
+      u.onerror = function (e) { if (e.error !== 'interrupted' && e.error !== 'canceled') het(); else { xong = true; datNoi(false); } };
+      speechSynthesis.speak(u);
+    });
+    return true;
+  }
+  function ngungDoc() { if (coDoc()) speechSynthesis.cancel(); datNoi(false); }
+  function datNghe(v) {
+    GN.nghe = v; if (nutLV) nutLV.classList.toggle('dang-nghe', v);
+    var m = el && el.querySelector('.tl-mic'), o = el && el.querySelector('.tl-f input');
+    if (m) { m.classList.toggle('on', v); m.setAttribute('aria-label', v ? 'Đang nghe – bấm để dừng' : 'Nói câu hỏi bằng giọng nói'); }
+    if (o) o.placeholder = v ? 'Đang nghe… mời bạn nói câu hỏi' : 'Nhập câu hỏi, tên, mã NV, số HĐ…';
+    trangThai(v ? 'Đang nghe…' : '');
+  }
+  function batNghe() {
+    if (GN.nghe) { try { GN.rec.stop(); } catch (e) { /* bỏ qua */ } return; }
+    if (!SR) { them('tl', 'Trình duyệt này chưa hỗ trợ nói câu hỏi bằng giọng nói. Hãy dùng <b>Chrome</b> hoặc <b>Edge</b> bản mới.'); return; }
+    if (!choNoi()) { them('tl', 'Đơn vị đã tắt tính năng nói câu hỏi bằng giọng nói (Cài đặt & dữ liệu → Đơn vị & chữ ký → Trợ lý ảo).'); return; }
+    ngungDoc();
+    var rec = new SR(), o = el.querySelector('.tl-f input'), cuoi = '', giu = o.value.trim();
+    rec.lang = 'vi-VN'; rec.interimResults = true; rec.continuous = false; rec.maxAlternatives = 1;
+    rec.onresult = function (e) {
+      var tam = '';
+      for (var i = e.resultIndex; i < e.results.length; i++) { var t = e.results[i][0].transcript; if (e.results[i].isFinal) cuoi += t; else tam += t; }
+      o.value = ((giu ? giu + ' ' : '') + cuoi + tam).replace(/\s+/g, ' ').trim();
+    };
+    rec.onerror = function (e) {
+      datNghe(false);
+      var m = { 'not-allowed': 'Trình duyệt chưa cho phép dùng micro. Bấm biểu tượng ổ khoá / cài đặt trang trên thanh địa chỉ → cho phép <b>Micrô</b>, rồi thử lại.',
+        'service-not-allowed': 'Trình duyệt chưa cho phép nhận dạng giọng nói trên trang này.', 'no-speech': 'Tôi chưa nghe thấy gì. Bấm micro và nói lại nhé.',
+        'audio-capture': 'Không tìm thấy micro trên máy.', 'network': 'Nhận dạng giọng nói của trình duyệt cần kết nối Internet. Bạn có thể gõ câu hỏi.',
+        'language-not-supported': 'Trình duyệt chưa hỗ trợ nhận dạng tiếng Việt.' }[e.error];
+      if (m && !(e.error === 'no-speech' && GN.phien)) them('tl', m);
+      GN.phien = false;
+    };
+    rec.onend = function () {
+      datNghe(false);
+      var t = o.value.trim();
+      if (cuoi.trim() && t) { o.value = ''; GN.tuMic = true; hoiTL(t); } else GN.phien = false;
+    };
+    try { rec.start(); GN.rec = rec; datNghe(true); o.focus(); } catch (e) { datNghe(false); return; }
+    if (!GN.daBao && !GN.trenMay) {
+      GN.daBao = true;
+      them('tl', '<span class="mo nho">🎤 Giọng nói được trình duyệt chuyển thành chữ (Chrome / Edge gửi âm thanh câu hỏi tới dịch vụ nhận dạng giọng nói của Google / Microsoft). ' +
+        'Câu trả lời và dữ liệu nhân sự vẫn chỉ xử lý trên máy này.</span>');
+    }
+  }
+  function moCaiDatGiong() {
+    var p = el.querySelector('.tl-cdgn');
+    if (!p.hidden) { p.hidden = true; return; }
+    var ds = dsGiong(), g = giong();
+    p.innerHTML = '<b>Giọng nói</b>' +
+      '<label class="chk"><input type="checkbox" data-gn="doc"' + (GN.docTuDong ? ' checked' : '') + '> Tự đọc câu trả lời (cả khi gõ câu hỏi)</label>' +
+      '<label class="chk"><input type="checkbox" data-gn="lienTuc"' + (GN.lienTuc ? ' checked' : '') + '> Nói chuyện liên tục: đọc xong tự nghe câu tiếp theo (nói “kết thúc” để dừng)</label>' +
+      '<label>Giọng đọc<select data-gn="giong">' + (ds.length ? ds.map(function (v) { return '<option value="' + h(v.name) + '"' + (g && g.name === v.name ? ' selected' : '') + '>' + h(v.name) + (v.localService ? '' : ' (trực tuyến)') + '</option>'; }).join('') +
+        (g ? '' : '<option value="" selected>(Chưa chọn – máy chưa có giọng tiếng Việt cài sẵn)</option>') : '<option>Máy chưa có giọng đọc tiếng Việt</option>') + '</select></label>' +
+      '<label>Tốc độ đọc <input type="range" min="0.7" max="1.5" step="0.1" value="' + GN.toc + '" data-gn="toc"></label>' +
+      '<div class="hang"><button type="button" class="nut nho" data-tl="thugiong"' + (ds.length ? '' : ' disabled') + '>Nghe thử</button><button type="button" class="nut nho" data-tl="cdgn">Đóng</button></div>' +
+      '<p class="mo nho" style="margin:0">' + (ds.length ? 'Giọng “trực tuyến” gửi văn bản câu trả lời tới dịch vụ đọc của trình duyệt; giọng cài trên máy thì không. ' : '') +
+      'Thêm giọng tiếng Việt trên Windows: Cài đặt → Thời gian &amp; ngôn ngữ → Giọng nói → Thêm giọng nói → Tiếng Việt.' + (choNoi() ? '' : '<br>Nói câu hỏi bằng micro đang tắt ở Cài đặt của đơn vị.') + '</p>';
+    p.hidden = false;
+  }
+  function nutLoa() {
+    var l = el && el.querySelector('.tl-loa'); if (!l) return;
+    l.classList.toggle('tat', !GN.docTuDong);
+    l.title = GN.docTuDong ? 'Đang tự đọc câu trả lời – bấm để tắt' : 'Bấm để tự đọc câu trả lời bằng giọng nói';
+  }
+  var ICON_MIC = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3.5 3.5 0 0 0 3.5-3.5v-6a3.5 3.5 0 0 0-7 0v6A3.5 3.5 0 0 0 12 15z" fill="currentColor"/><path d="M18.5 11.5a6.5 6.5 0 0 1-13 0M12 18v3.2M8.5 21.2h7" stroke="currentColor" stroke-width="1.9" fill="none" stroke-linecap="round"/></svg>';
+  var ICON_LOA = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path class="song" d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" stroke="currentColor" stroke-width="1.9" fill="none" stroke-linecap="round"/><path class="gach" d="M16 9.5l5 5M21 9.5l-5 5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>';
+  var ICON_CD = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="16" cy="7" r="2.2" stroke="currentColor" stroke-width="1.9" fill="none"/><circle cx="10" cy="17" r="2.2" stroke="currentColor" stroke-width="1.9" fill="none"/></svg>';
+
 
   var el = null, nutLV = null, daChao = false, henCu = [];
   function gan() {
@@ -563,12 +691,24 @@
     nutLV.innerHTML = '<span class="tl-noi" aria-hidden="true">Xin chào! 👋</span>' + svgLinhVat() + '<span class="tl-nhan">Hỏi đáp</span>';
     el = document.createElement('section');
     el.className = 'tl-khung khong-in'; el.setAttribute('aria-label', 'Trợ lý ảo'); el.hidden = true;
-    el.innerHTML = '<header><span class="tl-av">' + svgAvatar() + '<i class="tl-on"></i></span><div><b>Trợ lý ảo Hawasuco</b><small>Hướng dẫn, tìm thông tin trong phần mềm</small></div>' +
+    el.innerHTML = '<header><span class="tl-av">' + svgAvatar() + '<i class="tl-on"></i></span><div><b>Trợ lý ảo Hawasuco</b><small class="tl-tt">Hướng dẫn, tìm thông tin trong phần mềm</small></div>' +
+      (coDoc() ? '<button type="button" class="tl-x tl-loa" data-tl="loa" aria-label="Đọc câu trả lời bằng giọng nói">' + ICON_LOA + '</button>' : '') +
+      ((coDoc() || SR) ? '<button type="button" class="tl-x tl-icon" data-tl="cdgn" title="Cài đặt giọng nói" aria-label="Cài đặt giọng nói">' + ICON_CD + '</button>' : '') +
       '<button type="button" class="tl-x" data-tl="xoa" title="Bắt đầu lại" aria-label="Bắt đầu lại">⟲</button><button type="button" class="tl-x" data-tl="dong" title="Đóng (Esc)" aria-label="Đóng">×</button></header>' +
-      '<div class="tl-ds" aria-live="polite"></div>' +
-      '<form class="tl-f" onsubmit="return false"><input maxlength="300" autocomplete="off" placeholder="Nhập câu hỏi, tên, mã NV, số HĐ…" aria-label="Câu hỏi"><button aria-label="Gửi">' + ICON_GUI + '</button></form>' +
-      '<p class="tl-note">Trả lời từ dữ liệu trong phần mềm và hướng dẫn sử dụng, theo quyền tài khoản; không gửi dữ liệu ra ngoài.</p>';
+      '<div class="tl-cdgn" hidden></div><div class="tl-ds" aria-live="polite"></div>' +
+      '<form class="tl-f" onsubmit="return false"><input maxlength="300" autocomplete="off" placeholder="Nhập câu hỏi, tên, mã NV, số HĐ…" aria-label="Câu hỏi">' +
+      (SR ? '<button type="button" class="tl-mic" data-tl="mic" title="Bấm để nói (tiếng Việt)" aria-label="Nói câu hỏi bằng giọng nói">' + ICON_MIC + '</button>' : '') +
+      '<button aria-label="Gửi">' + ICON_GUI + '</button></form>' +
+      '<p class="tl-note">Trả lời từ dữ liệu trong phần mềm và hướng dẫn sử dụng, theo quyền tài khoản; dữ liệu nhân sự không gửi ra ngoài.</p>';
     document.body.appendChild(nutLV); document.body.appendChild(el);
+    nutLoa();
+    el.addEventListener('change', function (e) {
+      var i = e.target, k = i.dataset.gn; if (!k) return;
+      if (k === 'doc') { GN.docTuDong = i.checked; ghiKho('tl_doc', i.checked ? 1 : 0); nutLoa(); if (!i.checked) ngungDoc(); }
+      else if (k === 'lienTuc') { GN.lienTuc = i.checked; ghiKho('tl_lientuc', i.checked ? 1 : 0); }
+      else if (k === 'giong') { GN.tenGiong = i.value; ghiKho('tl_giong', i.value); }
+      else if (k === 'toc') { GN.toc = +i.value || 1; ghiKho('tl_toc', GN.toc); }
+    });
     nutLV.onclick = function () { bat(el.hidden); };
     var o = el.querySelector('input'), lichSu = [], vt = -1;
     el.querySelector('form').onsubmit = function () { var v = o.value.trim(); if (!v) return false; lichSu.push(v); vt = lichSu.length; o.value = ''; hoiTL(v); return false; };
@@ -581,6 +721,17 @@
       e.preventDefault();
       var v = a.dataset.tl;
       if (v === 'dong') { bat(false); return; }
+      if (v === 'mic') { batNghe(); return; }
+      if (v === 'cdgn') { moCaiDatGiong(); return; }
+      if (v === 'thugiong') { if (!doc('Xin chào, tôi là trợ lý ảo Hawasuco. Lương cơ sở hiện nay là 2.530.000 đ/tháng.')) them('tl', 'Chưa chọn được giọng đọc tiếng Việt.'); return; }
+      if (v === 'loa') {
+        if (GN.noi) { ngungDoc(); return; }
+        if (!giong()) { moCaiDatGiong(); them('tl', 'Máy chưa có <b>giọng đọc tiếng Việt</b> cài sẵn. Trên Windows: Cài đặt → Thời gian &amp; ngôn ngữ → Giọng nói → Thêm giọng nói → <b>Tiếng Việt</b>; hoặc chọn giọng “trực tuyến” trong ô Giọng đọc.'); return; }
+        GN.docTuDong = !GN.docTuDong; ghiKho('tl_doc', GN.docTuDong ? 1 : 0); nutLoa();
+        if (GN.docTuDong) { var cuoiTN = el.querySelectorAll('.tl-tn.tl'); if (cuoiTN.length) doc(cuoiTN[cuoiTN.length - 1].innerHTML); }
+        return;
+      }
+      if (v === 'doc') { var tn = a.closest('.tl-tn'); if (tn) doc(tn.innerHTML); return; }
       if (v === 'xoa') { el.querySelector('.tl-ds').innerHTML = ''; them('tl', chao()); return; }
       if (v.indexOf('hoi:') === 0) { hoiTL(v.slice(4)); return; }
       if (v === 'mk') { var l = document.getElementById('doi-mk'); if (l) l.click(); return; }
@@ -589,7 +740,7 @@
     });
     document.addEventListener('keydown', function (e) {
       if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) { e.preventDefault(); bat(true); }
-      else if (e.key === 'Escape' && !el.hidden && !document.querySelector('.mo-nen')) bat(false);
+      else if (e.key === 'Escape' && !el.hidden && !document.querySelector('.mo-nen')) { if (GN.noi || GN.nghe) { ngungDoc(); if (GN.nghe) try { GN.rec.abort(); } catch (x) { /* bỏ qua */ } } else bat(false); }
     });
     // linh vật: chớp mắt, chào hỏi
     setInterval(function () { if (!nutLV.dataset.g && !document.hidden) cuChi('chop', 180); }, 4800);
@@ -610,27 +761,39 @@
     el.hidden = !mo; nutLV.classList.toggle('on', mo); nutLV.setAttribute('aria-expanded', mo);
     if (mo) {
       cuChi('nhay', 900); nutLV.querySelector('.tl-noi').classList.remove('hien');
+      var mic = el.querySelector('.tl-mic'); if (mic) mic.hidden = !choNoi();
       if (!daChao) { them('tl', chao()); daChao = true; }
       setTimeout(function () { el.querySelector('input').focus(); }, 40);
-    } else cuChi('vay', 1300);
+    } else { cuChi('vay', 1300); ngungDoc(); GN.phien = false; if (GN.nghe) try { GN.rec.abort(); } catch (e) { /* bỏ qua */ } }
   }
   function them(ai, html) {
     var ds = el.querySelector('.tl-ds'), d = document.createElement('div');
     d.className = 'tl-tn ' + ai; d.innerHTML = html;
+    if (ai === 'tl' && coDoc() && html.length > 20) d.insertAdjacentHTML('afterbegin', '<button type="button" class="tl-doclai" data-tl="doc" title="Đọc câu trả lời" aria-label="Đọc câu trả lời">' + ICON_LOA + '</button>');
     ds.appendChild(d);
     if (ai === 'tl') d.scrollIntoView({ block: 'nearest' }); else ds.scrollTop = ds.scrollHeight;
     return d;
   }
   function hoiTL(cau) {
-    them('toi', h(cau));
+    var tuMic = GN.tuMic; GN.tuMic = false;
+    if (tuMic && GN.lienTuc) GN.phien = true;
+    them('toi', (tuMic ? '🎤 ' : '') + h(cau));
+    // lệnh giọng nói
+    var qn = cn(cau);
+    if (/^(dung|dung lai|thoi|im|im lang|ngung|ngung doc|stop)$/.test(qn)) { ngungDoc(); GN.phien = false; them('tl', 'Đã dừng.'); return; }
+    if (/^(doc lai|nhac lai|noi lai)$/.test(qn)) { if (GN.cuoi) { them('tl', GN.cuoi); doc(GN.cuoi); } return; }
+    if (/^(ket thuc|tam biet|bye|chao tam biet)$/.test(qn)) { GN.phien = false; var tb = 'Tạm biệt! Khi cần, bạn cứ bấm vào tôi hoặc nhấn Ctrl + K nhé.'; them('tl', tb); if (tuMic || GN.docTuDong) doc(tb); cuChi('vay', 1500); return; }
     var dang = them('tl go', '<span></span><span></span><span></span>');
     cuChi('nghi', 600);
     setTimeout(function () {
       var kq;
       try { kq = traLoi(cau); } catch (e) { kq = 'Xin lỗi, có lỗi khi tìm câu trả lời: ' + h(e.message); if (window.console) console.error(e); }
       dang.remove();
-      them('tl', kq);
+      them('tl', kq); GN.cuoi = kq;
       cuChi(/^(Rất vui|Xin chào)/.test(kq) ? 'vay' : 'noi', 1400);
+      // hỏi bằng giọng nói (hoặc bật tự đọc) thì đọc câu trả lời; nói chuyện liên tục: đọc xong tự nghe tiếp
+      var tiep = GN.phien && GN.lienTuc ? function () { if (GN.phien && !el.hidden) setTimeout(batNghe, 350); } : null;
+      if ((tuMic || GN.docTuDong) && !doc(kq, tiep)) { if (tiep) tiep(); }
     }, 350);
   }
   function dieuHuong(v) {
@@ -648,5 +811,5 @@
   // gắn sau khi giao diện chính đã dựng (có dữ liệu, đã đăng nhập)
   var goc = App.batDauGiaoDien;
   App.batDauGiaoDien = function () { var r = goc.apply(this, arguments); gan(); return r; };
-  App.TroLy = { traLoi: traLoi, timHuongDan: timHuongDan, timNguoi: timNguoi, timDonVi: timDonVi, bat: function (mo) { gan(); bat(mo !== false); }, hoi: function (c) { gan(); bat(true); hoiTL(c); } };
+  App.TroLy = { chuDoc: chuDoc, traLoi: traLoi, timHuongDan: timHuongDan, timNguoi: timNguoi, timDonVi: timDonVi, bat: function (mo) { gan(); bat(mo !== false); }, hoi: function (c) { gan(); bat(true); hoiTL(c); } };
 })();

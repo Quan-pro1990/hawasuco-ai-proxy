@@ -125,6 +125,7 @@
       ],
       thueKhauTru: 10, nguongKhauTru: 2000000,
       lamTron: 1,               // làm tròn thực lĩnh: 1, 100, 1000
+      troLyGiongNoi: true,      // trợ lý ảo: cho phép nói câu hỏi bằng micro (nhận dạng giọng nói của trình duyệt)
       phepNam: 12
     };
   }
