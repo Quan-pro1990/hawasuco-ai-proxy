@@ -389,45 +389,81 @@
   }
 
   /* ================= Xử lý câu hỏi ================= */
+  var CX = null;
+  function cx(c) { CX = c; }
+  // cảm xúc theo loại câu trả lời dữ liệu: [cử chỉ, ms, biểu tượng]
+  var CX_YD = { hd_het: ['ngac', 1500, '📋'], chua_hd: ['ngac', 1500, '📄'], thu_viec: ['gat', 1200, '📝'], nghi_nay: ['gat', 1200, '🏖️'], don_cho: ['gat', 1200, '📨'],
+    cc_trong: ['gat', 1200, '🗓️'], sinh_nhat: ['mua', 1800, '🎂'], nghi_huu: ['gat', 1200, '🌅'], quan_so: ['gat', 1200, '👥'], luong_cs: ['gat', 1200, '💰'], com: ['yeu', 1400, '🍚'],
+    tam_ung: ['gat', 1200, '💵'], ngay_le: ['mung', 1600, '🎉'], ky_hieu: ['gat', 1200, '✏️'], ky_cong: ['gat', 1200, '📅'], bh: ['gat', 1200, '🛡️'], thue: ['gat', 1200, '🧾'],
+    mat_khau: ['gat', 1200, '🔑', 'nhaymat'], quyen: ['gat', 1200, '🔐'] };
+  /** Trò chuyện xã giao: hỏi tên, hỏi thăm, khen, chê, nhờ nhảy múa… */
+  function troChuyen(q) {
+    if (/(ban la ai|ban ten gi|ten ban la gi|ban la gi|em la ai|em ten gi)/.test(q)) { cx(['vay', 1500, '🤖']); return 'Tôi là <b>Trợ lý ảo Hawasuco</b> – robot hướng dẫn và tra cứu thông tin nhân sự, chấm công, tiền lương trong phần mềm này. Rất vui được làm việc cùng bạn!'; }
+    if (/(ban khoe khong|em khoe khong|khoe khong)/.test(q)) { cx(['then', 1600, '😊']); return 'Tôi khỏe lắm, pin đầy 100% 🔋. Cảm ơn bạn đã hỏi thăm! Bạn cần tôi tra cứu gì không?'; }
+    if (/^(nhay|mua|nhay di|mua di|nhay mua|dance)( (di|nao|cho xem|xem nao))?$/.test(q)) { cx(['mua', 2400, '🎵']); return 'Xem tôi nhảy nè! 💃🕺'; }
+    if (/^(xoay|quay|xoay vong|quay vong|lon vong)( (di|nao|cho xem|xem nao))?$/.test(q)) { cx(['xoay', 950, '🌀']); return 'Xoay vòng vòng… ôi chóng mặt quá! 😵‍💫'; }
+    if (/(ke chuyen cuoi|chuyen cuoi|noi gi vui)/.test(q)) { cx(['cuoi', 1600, '😆']); return 'Vì sao bảng chấm công lúc nào cũng vui? Vì ngày nào cũng có dấu “+”! 😄'; }
+    if (/(toi buon|minh buon|met qua|cang thang|chan qua|ap luc)/.test(q)) { cx(['yeu', 1800, '🤗']); return 'Đừng buồn nha! Nghỉ tay uống ngụm nước, hít thở sâu rồi làm tiếp – có việc gì cần tra cứu cứ để tôi lo! 💪'; }
+    if (/^(gioi|gioi qua|gioi lam|tuyet|tuyet voi|hay qua|xuat sac|tot lam|dang yeu|de thuong|cute)( qua| lam| ghe)?$/.test(q)) { cx(['then', 1800, '🥰']); return 'Cảm ơn bạn! Tôi sẽ cố gắng hơn nữa 🥰'; }
+    if (/^(ngu qua|ngoc|do qua|te qua|vo dung|sai roi|sai bet|kem qua|chan)( qua| the)?$/.test(q)) { cx(['lac', 1200, '😥']); return 'Xin lỗi bạn 😥. Bạn thử hỏi cụ thể hơn (vd “hợp đồng của Nguyễn Văn An”, “cách nâng bậc lương”) hoặc chọn một gợi ý nhé.' + '<div class="tl-goi">' + GOI_Y.slice(0, 4).map(hoi).join('') + '</div>'; }
+    return null;
+  }
   function traLoi(goc) {
+    CX = null;
     var q = cn(goc);
     if (!q) return chao();
-    if (/^(xin chao|chao|hello|hi|alo)( |$)/.test(q)) return chao();
-    if (/^(cam on|thank)/.test(q)) return 'Rất vui được giúp bạn!';
+    if (/^(xin chao|chao|hello|hi|alo)( |$)/.test(q)) { cx(['vay', 1500, '👋']); return chao(); }
+    if (/^(cam on|thank)/.test(q)) { cx(['yeu', 1800, '💙']); return 'Rất vui được giúp bạn!'; }
+    var xg = troChuyen(q); if (xg) return xg;
     // mở trang: "mở bảng lương", "vào chấm công"
     var mo = /^(mo|vao|di toi|di den|chuyen den|chuyen sang|toi|den) (trang |muc )?(.+)$/.exec(q);
     if (mo) {
       var dich = timTrang(mo[3]);
-      if (dich) { dieuHuong('trang:' + dich.id); return 'Đã mở trang <b>' + h(dich.ten) + '</b>.'; }
+      if (dich) { dieuHuong('trang:' + dich.id); cx(['gat', 900, '👉']); return 'Đã mở trang <b>' + h(dich.ten) + '</b>.'; }
       var cam = timTrang(mo[3], true);
+      if (cam) cx(['lac', 1200, '🔒']);
       if (cam) return 'Tài khoản của bạn không mở được trang <b>' + h(cam.ten) + '</b>. Cần thêm quyền thì liên hệ người quản trị phần mềm.';
     }
     // số hợp đồng / quyết định
     var so = /(\d{1,4}\/\d{4}\/[a-z0-9\-\/]+|\d{1,4}\/qd[a-z\-]*)/.exec(q);
-    if (so) { var tim = timSoVanBan(so[1]); if (tim) return tim; }
+    if (so) { var tim = timSoVanBan(so[1]); if (tim) { cx(['gat', 1200, '📄']); return tim; } }
     var nguoi = timNguoi(q), dv = nguoi.length ? null : timDonVi(q), ctx = { nv: nguoi.length === 1 ? nguoi[0] : null, dv: dv };
     var hoiCach = laHoiCach(q);
     // câu hỏi dữ liệu
     for (var i = 0; i < Y.length; i++) {
       var y = Y[i];
       if (!y.dk(q, ctx)) continue;
-      if (y.quyen && App.quyen(y.quyen) < 1) return khongQuyen(y.quyen);
+      if (y.quyen && App.quyen(y.quyen) < 1) { cx(['lac', 1200, '🔒']); return khongQuyen(y.quyen); }
       var kq = y.chay(q, ctx, goc);
-      if (kq) return kq + (hoiCach ? lienQuan(q, 2) : '');
+      if (kq) {
+        // tin tốt (không có gì phải lo) thì mừng; có việc quá hạn thì ngạc nhiên
+        cx(/không có quyền/.test(kq) ? ['lac', 1200, '🔒'] : /quá hạn/.test(kq) ? ['ngac', 1600, '⚠️'] :
+          /^(Không có|Hiện không có|Mọi nhân viên|Tháng \d+ không có)|đã chấm đủ/.test(kq) ? ['mung', 1500, '✅'] : CX_YD[y.ma] || ['gat', 1200]);
+        return kq + (hoiCach ? lienQuan(q, 2) : '');
+      }
     }
     // nói tới 1 người
-    if (!hoiCach && nguoi.length === 1) return veNguoi(nguoi[0], q);
+    if (!hoiCach && nguoi.length === 1) {
+      var tn = veNguoi(nguoi[0], q);
+      cx(/không có quyền/.test(tn) ? ['lac', 1200, '🔒'] : /(luong|thuc linh|thu nhap|phieu luong)/.test(q) ? ['gat', 1200, '💰'] : /(cong|phep)/.test(q) ? ['gat', 1200, '🗓️'] : /hop dong/.test(q) ? ['gat', 1200, '📋'] : ['vay', 1300, '🙋']);
+      return tn;
+    }
+    if (!hoiCach && nguoi.length > 1) cx(['gat', 1200, '👥']);
     if (!hoiCach && nguoi.length > 1) return 'Có <b>' + nguoi.length + ' người</b> khớp:' + dsGon(nguoi, function (nv) { return lienKetNV(nv) + ' – ' + h(nv.ma) + ', ' + h(TL.tenPhongBan(App.db, nv.phongBan)); });
-    if (!hoiCach && dv && tuKhoa(q).length <= 5) return veDonVi(dv);
+    if (!hoiCach && dv && tuKhoa(q).length <= 5) { cx(['gat', 1200, '🏢']); return veDonVi(dv); }
     // gõ một họ tên (viết hoa chữ đầu) mà không có trong dữ liệu đang xem
+    if (!nguoi.length && /^(\p{Lu}\p{Ll}*\s+){1,4}\p{Lu}\p{Ll}*$/u.test(String(goc).trim())) cx(['lac', 1200, '🤷']);
     if (!nguoi.length && /^(\p{Lu}\p{Ll}*\s+){1,4}\p{Lu}\p{Ll}*$/u.test(String(goc).trim()))
       return 'Không tìm thấy nhân viên <b>' + h(String(goc).trim()) + '</b>' + (App.laCapDonVi && App.laCapDonVi() ? ' trong phòng / đội của tài khoản' : '') + '. Thử gõ mã NV, số điện thoại hoặc một phần họ tên.';
     // hỏi cách làm / tìm trong hướng dẫn và nơi thiết lập
     var hd = timHuongDan(q, 3), noi = timNoi(q);
+    if (hd.length || noi) cx(['gat', 1200, '📖']);
     if (hd.length || noi) return veHuongDan(hd, noi, !!noi && ((noi.diem >= 7 && !laHoiCach(q)) || noi.diem >= 10 || /(sua|o dau|cai dat|thiet lap|thay doi|chinh|them)( |$)/.test(q)));
     // tìm rộng: tên nhân viên gần đúng
     var gan = timGanDung(q);
+    if (gan.length) cx(['ngac', 1200, '🤔']);
     if (gan.length) return 'Tôi chưa hiểu rõ câu hỏi. Có phải bạn tìm:' + dsGon(gan, function (nv) { return lienKetNV(nv) + ' – ' + h(nv.ma) + ', ' + h(TL.tenPhongBan(App.db, nv.phongBan)); }, 8);
+    cx(['lac', 1200, '🤔']);
     return 'Tôi chưa tìm thấy thông tin phù hợp. Bạn thử hỏi ngắn gọn theo mẫu:' + '<div class="tl-goi">' + GOI_Y.slice(0, 6).map(hoi).join('') + '</div>';
   }
   function lienQuan(q, n) {
@@ -527,11 +563,23 @@
     '<g class="tl-mat m-doc">' + nenMat(135, 128) + '<circle cx="135" cy="128" r="21" fill="none" stroke="#3ee0ff" stroke-width="5" ' + GLOW + '/><circle cx="136" cy="136" r="11" fill="#06121a"/><circle cx="139" cy="132" r="3.6" fill="#fff"/>' +
       '<path d="M108.3 118 A28.5 28.5 0 0 1 161.7 118 Q135 127 108.3 118z" fill="#dfe4e9"/>' + nenMat(229, 124) + '<circle cx="229" cy="124" r="21" fill="none" stroke="#3ee0ff" stroke-width="5" ' + GLOW + '/>' +
       '<circle cx="230" cy="132" r="11" fill="#06121a"/><circle cx="233" cy="128" r="3.6" fill="#fff"/><path d="M202.3 114 A28.5 28.5 0 0 1 255.7 114 Q229 123 202.3 114z" fill="#dfe4e9"/></g>';
+  function conNguoi(x, y) { return '<circle cx="' + (x + 1) + '" cy="' + (y + 3) + '" r="11" fill="#06121a"/><circle cx="' + (x + 4) + '" cy="' + (y - 1) + '" r="3.6" fill="#fff"/>'; }
+  MAT += '<g class="tl-mat m-thuong">' + nenMat(135, 128) + '<circle cx="135" cy="128" r="21" fill="none" stroke="#3ee0ff" stroke-width="5" ' + GLOW + '/>' + nenMat(229, 124) +
+      '<circle cx="229" cy="124" r="21" fill="none" stroke="#3ee0ff" stroke-width="5" ' + GLOW + '/><g class="tl-con">' + conNguoi(135, 128) + conNguoi(229, 124) + '</g></g>' +
+    '<g class="tl-mat m-ngac">' + nenMat(135, 128) + '<circle cx="135" cy="128" r="24" fill="none" stroke="#3ee0ff" stroke-width="4" ' + GLOW + '/><circle cx="135" cy="128" r="7" fill="#06121a"/><circle cx="137.5" cy="125.5" r="2.6" fill="#fff"/>' +
+      nenMat(229, 124) + '<circle cx="229" cy="124" r="24" fill="none" stroke="#3ee0ff" stroke-width="4" ' + GLOW + '/><circle cx="229" cy="124" r="7" fill="#06121a"/><circle cx="231.5" cy="121.5" r="2.6" fill="#fff"/></g>' +
+    '<g class="tl-mat m-tim">' + nenMat(135, 128) + nenMat(229, 124) + '<g fill="#ff5c8a" ' + GLOW + '><path transform="translate(135 130) scale(2.6)" d="M0 5l-5-5a3.1 3.1 0 0 1 5-3.6 3.1 3.1 0 0 1 5 3.6z"/>' +
+      '<path transform="translate(229 126) scale(2.6)" d="M0 5l-5-5a3.1 3.1 0 0 1 5-3.6 3.1 3.1 0 0 1 5 3.6z"/></g></g>' +
+    '<g class="tl-mat m-chong">' + nenMat(135, 128) + '<path d="M125 118l20 20M145 118l-20 20" stroke="#3ee0ff" stroke-width="5" fill="none" stroke-linecap="round" ' + GLOW + '/>' + nenMat(229, 124) +
+      '<path d="M219 114l20 20M239 114l-20 20" stroke="#3ee0ff" stroke-width="5" fill="none" stroke-linecap="round" ' + GLOW + '/></g>' +
+    '<g class="tl-mat m-nhay">' + nenMat(229, 124) + '<path d="M216 129 Q229 111 242 129" stroke="#3ee0ff" stroke-width="5" fill="none" stroke-linecap="round" ' + GLOW + '/></g>';
   var MIENG = '<g class="tl-mieng" ' + GLOW + '><path class="tl-mi m-cuoi" d="M166 165 Q182 180 198 164" stroke="#3ee0ff" stroke-width="4" fill="none" stroke-linecap="round"/>' +
     '<g class="tl-mi m-ha"><path d="M164 164 Q182 167 200 163 Q197 184 182 184 Q167 184 164 164z" fill="#0b1216" stroke="#3ee0ff" stroke-width="3" stroke-linejoin="round"/><ellipse cx="182" cy="178.5" rx="9" ry="3.6" fill="#ff7aa0" opacity=".9"/></g>' +
     '<g class="tl-mi m-noi"><rect x="168" y="164" width="28" height="14" rx="7" fill="#0b1216" stroke="#3ee0ff" stroke-width="2.8"/><path d="M174 171h.01M179 168v6M184 167v8M189 169v4M193 171h.01" stroke="#3ee0ff" stroke-width="2.6" stroke-linecap="round"/></g>' +
     '<path class="tl-mi m-bang" d="M170 172 L194 170" stroke="#3ee0ff" stroke-width="4" fill="none" stroke-linecap="round"/>' +
-    '<ellipse class="tl-mi m-o" cx="182" cy="172" rx="6.5" ry="8" fill="#0b1216" stroke="#3ee0ff" stroke-width="3"/></g>';
+    '<ellipse class="tl-mi m-o" cx="182" cy="172" rx="6.5" ry="8" fill="#0b1216" stroke="#3ee0ff" stroke-width="3"/>' +
+    '<path class="tl-mi m-buon" d="M168 178 Q182 166 196 177" stroke="#3ee0ff" stroke-width="4" fill="none" stroke-linecap="round"/>' +
+    '<g class="tl-mi m-luoi"><path d="M166 165 Q182 179 198 164" stroke="#3ee0ff" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M177 171 Q177 184 184 184 Q191 184 190 170z" fill="#ff7aa0"/></g></g>';
   var MUI = '<rect x="176" y="146" width="12" height="8" rx="4" fill="url(#tlKim)" stroke="#7d8996" stroke-width="1"/><ellipse cx="179.6" cy="148.2" rx="2.4" ry="1" fill="#fff" opacity=".95"/>';
   var MA = '<g class="tl-ma"><ellipse cx="112" cy="168" rx="10" ry="4.6" fill="#ff9bb3" opacity=".5"/><ellipse cx="250" cy="164" rx="10" ry="4.6" fill="#ff9bb3" opacity=".5"/></g>';
   function svgLinhVat() {
@@ -547,7 +595,7 @@
       '<circle cx="226" cy="280" r="6" fill="#3ee0ff" opacity=".55"/><path d="M182 236V293" stroke="#b8ac90" stroke-width="2"/><g class="tl-lat"><path d="M182 236 Q216 228 250 234 L251 291 Q216 285 182 293z" fill="#fffef9" stroke="#cfc6b0" stroke-width="1.4"/>' +
       '<path d="M194 247h40M194 256h44M194 265h34" stroke="#c3d2de" stroke-width="2.4" stroke-linecap="round"/></g>' +
       '<ellipse cx="103" cy="266" rx="11" ry="15" fill="#2a323b"/><ellipse cx="100" cy="260" rx="3" ry="5" fill="#fff" opacity=".25"/><ellipse cx="261" cy="266" rx="11" ry="15" fill="#2a323b"/><ellipse cx="264" cy="260" rx="3" ry="5" fill="#fff" opacity=".2"/></g>' +
-      '<g class="tl-dau">' + (A.dau ? '<image href="' + A.dau + '" x="0" y="0" width="360" height="194"/>' : '') + MA + MAT + TAI_NGHE + MUI + MIENG + '</g></g></svg>';
+      '<g class="tl-nhin"><g class="tl-dau">' + (A.dau ? '<image href="' + A.dau + '" x="0" y="0" width="360" height="194"/>' : '') + MA + MAT + TAI_NGHE + MUI + MIENG + '</g></g></g></svg>';
   }
   function svgAvatar() {
     return '<svg class="tl-av-svg" viewBox="58 14 232 186" aria-hidden="true">' + (A.dau ? '<image href="' + A.dau + '" x="0" y="0" width="360" height="194"/>' : '') + TAI_NGHE +
@@ -560,7 +608,7 @@
   function docKho(k, md) { try { var v = localStorage.getItem(k); return v == null ? md : v; } catch (e) { return md; } }
   function ghiKho(k, v) { try { localStorage.setItem(k, String(v)); } catch (e) { /* bỏ qua */ } }
   var GN = { rec: null, nghe: false, noi: false, tuMic: false, cuoi: '', trenMay: false, daBao: false,
-    docTuDong: docKho('tl_doc', '0') === '1', lienTuc: docKho('tl_lientuc', '0') === '1', tenGiong: docKho('tl_giong', ''), toc: +docKho('tl_toc', '1') || 1 };
+    hoatDong: docKho('tl_hoatdong', '1') === '1', docTuDong: docKho('tl_doc', '0') === '1', lienTuc: docKho('tl_lientuc', '0') === '1', tenGiong: docKho('tl_giong', ''), toc: +docKho('tl_toc', '1') || 1 };
   function choNoi() { return !!SR && App.db && App.db.caiDat.troLyGiongNoi !== false; }
   function coDoc() { return 'speechSynthesis' in window && typeof window.SpeechSynthesisUtterance === 'function'; }
   function dsGiong() {
@@ -596,7 +644,7 @@
   }
   function trangThai(chu) { var s = el && el.querySelector('.tl-tt'); if (s) s.textContent = chu || 'Hướng dẫn, tìm thông tin trong phần mềm'; }
   function datNoi(v) {
-    GN.noi = v; if (nutLV) nutLV.classList.toggle('dang-noi', v); trangThai(v ? 'Đang nói… (bấm 🔊 để dừng)' : '');
+    GN.noi = v; if (nutLV) nutLV.classList.toggle('dang-noi', v); trangThaiLV('noi', v); trangThai(v ? 'Đang nói… (bấm 🔊 để dừng)' : '');
     var l = el && el.querySelector('.tl-loa'); if (l) l.classList.toggle('dang', v);
   }
   /** Đọc câu trả lời; sauKhi chạy khi đọc xong (dùng cho nói chuyện liên tục) */
@@ -619,7 +667,7 @@
   }
   function ngungDoc() { if (coDoc()) speechSynthesis.cancel(); datNoi(false); }
   function datNghe(v) {
-    GN.nghe = v; if (nutLV) nutLV.classList.toggle('dang-nghe', v);
+    GN.nghe = v; if (nutLV) nutLV.classList.toggle('dang-nghe', v); trangThaiLV('nghe', v); if (v) camXuc('🎤');
     var m = el && el.querySelector('.tl-mic'), o = el && el.querySelector('.tl-f input');
     if (m) { m.classList.toggle('on', v); m.setAttribute('aria-label', v ? 'Đang nghe – bấm để dừng' : 'Nói câu hỏi bằng giọng nói'); }
     if (o) o.placeholder = v ? 'Đang nghe… mời bạn nói câu hỏi' : 'Nhập câu hỏi, tên, mã NV, số HĐ…';
@@ -662,7 +710,8 @@
     var p = el.querySelector('.tl-cdgn');
     if (!p.hidden) { p.hidden = true; return; }
     var ds = dsGiong(), g = giong();
-    p.innerHTML = '<b>Giọng nói</b>' +
+    p.innerHTML = '<b>Giọng nói &amp; linh vật</b>' +
+      '<label class="chk"><input type="checkbox" data-gn="hoatDong"' + (GN.hoatDong ? ' checked' : '') + '> Linh vật chuyển động, chào hỏi, ngủ gật khi rảnh</label>' +
       '<label class="chk"><input type="checkbox" data-gn="doc"' + (GN.docTuDong ? ' checked' : '') + '> Tự đọc câu trả lời (cả khi gõ câu hỏi)</label>' +
       '<label class="chk"><input type="checkbox" data-gn="lienTuc"' + (GN.lienTuc ? ' checked' : '') + '> Nói chuyện liên tục: đọc xong tự nghe câu tiếp theo (nói “kết thúc” để dừng)</label>' +
       '<label>Giọng đọc<select data-gn="giong">' + (ds.length ? ds.map(function (v) { return '<option value="' + h(v.name) + '"' + (g && g.name === v.name ? ' selected' : '') + '>' + h(v.name) + (v.localService ? '' : ' (trực tuyến)') + '</option>'; }).join('') +
@@ -688,7 +737,7 @@
     if (el) return;
     nutLV = document.createElement('button');
     nutLV.className = 'tl-nut khong-in'; nutLV.type = 'button'; nutLV.title = 'Trợ lý ảo Hawasuco – bấm để hỏi đáp (Ctrl + K)'; nutLV.setAttribute('aria-label', 'Mở trợ lý ảo');
-    nutLV.innerHTML = '<span class="tl-noi" aria-hidden="true">Xin chào! 👋</span>' + svgLinhVat() + '<span class="tl-nhan">Hỏi đáp</span>';
+    nutLV.innerHTML = '<span class="tl-noi" aria-hidden="true">Xin chào! 👋</span><span class="tl-emo" aria-hidden="true"></span>' + svgLinhVat() + '<span class="tl-nhan">Hỏi đáp</span>';
     el = document.createElement('section');
     el.className = 'tl-khung khong-in'; el.setAttribute('aria-label', 'Trợ lý ảo'); el.hidden = true;
     el.innerHTML = '<header><span class="tl-av">' + svgAvatar() + '<i class="tl-on"></i></span><div><b>Trợ lý ảo Hawasuco</b><small class="tl-tt">Hướng dẫn, tìm thông tin trong phần mềm</small></div>' +
@@ -706,6 +755,7 @@
       var i = e.target, k = i.dataset.gn; if (!k) return;
       if (k === 'doc') { GN.docTuDong = i.checked; ghiKho('tl_doc', i.checked ? 1 : 0); nutLoa(); if (!i.checked) ngungDoc(); }
       else if (k === 'lienTuc') { GN.lienTuc = i.checked; ghiKho('tl_lientuc', i.checked ? 1 : 0); }
+      else if (k === 'hoatDong') { GN.hoatDong = i.checked; ghiKho('tl_hoatdong', i.checked ? 1 : 0); if (!i.checked) { trangThaiLV('ngu', false); nutLV.querySelector('.tl-emo').classList.remove('lap'); } else cuChi('mung', 1400, '✨'); }
       else if (k === 'giong') { GN.tenGiong = i.value; ghiKho('tl_giong', i.value); }
       else if (k === 'toc') { GN.toc = +i.value || 1; ghiKho('tl_toc', GN.toc); }
     });
@@ -742,16 +792,113 @@
       if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) { e.preventDefault(); bat(true); }
       else if (e.key === 'Escape' && !el.hidden && !document.querySelector('.mo-nen')) { if (GN.noi || GN.nghe) { ngungDoc(); if (GN.nghe) try { GN.rec.abort(); } catch (x) { /* bỏ qua */ } } else bat(false); }
     });
-    // linh vật: chớp mắt, chào hỏi
-    setInterval(function () { if (!nutLV.dataset.g && !document.hidden) cuChi('chop', 180); }, 4800);
-    setTimeout(function () { if (el.hidden) { noi('Xin chào! 👋 Cần giúp gì không?', 4500); cuChi('vay', 1600); } }, 2500);
+    veMat(); songDong();
   }
-  /** Cử chỉ của linh vật trong một lúc: vay (vẫy, cười), nhay (nhảy mừng), chop (chớp mắt), nghi (suy nghĩ), noi (đang nói) */
-  function cuChi(g, ms) {
+  /* ================= Cảm xúc, cử chỉ của linh vật ================= */
+  // cử chỉ = chuyển động + nét mặt [mắt, miệng]; trạng thái kéo dài (đang nói, đang nghe, ngủ gật) dùng khi không có cử chỉ
+  var CU_CHI = {
+    vay: ['vui', 'ha'], nhay: ['vui', 'ha'], gat: ['vui', 'cuoi'], lac: ['thuong', 'buon'], mung: ['vui', 'ha'], yeu: ['tim', 'cuoi'],
+    mua: ['nhay', 'luoi'], cuoi: ['vui', 'ha'], xoay: ['chong', 'o'], tambiet: ['vui', 'cuoi'], nghi: ['doc', 'bang'], noi: [null, 'noi'],
+    ngac: ['ngac', 'o'], then: ['vui', 'cuoi'], nhaymat: ['nhay', 'luoi'], chong: ['chong', 'bang'], buon: ['thuong', 'buon']
+  };
+  var TT_MAT = { noi: ['vui', 'noi'], nghe: ['ngac', 'o'], ngu: ['nham', 'o'] };
+  var CU = { g: null, fx: null, st: {} }, henG = 0, henFx = 0;
+  function veMat() {
     if (!nutLV) return;
-    nutLV.dataset.g = g;
-    clearTimeout(henCu[0]); henCu[0] = setTimeout(function () { if (nutLV.dataset.g === g) delete nutLV.dataset.g; }, ms);
+    var m = null, mi = null;
+    function lay(x) { if (x) { if (!m && x[0]) m = x[0]; if (!mi && x[1]) mi = x[1]; } }
+    if (CU.st.noi) mi = 'noi'; else if (CU.st.nghe) mi = 'o';   // đang nói / nghe: miệng theo giọng nói
+    lay(CU_CHI[CU.g]); lay(CU_CHI[CU.fx]); ['noi', 'nghe', 'ngu'].forEach(function (k) { if (CU.st[k]) lay(TT_MAT[k]); });
+    nutLV.dataset.mat = m || 'thuong'; nutLV.dataset.mieng = mi || 'cuoi';
   }
+  /** Cử chỉ trong ms (mili giây); emo: biểu tượng cảm xúc bay lên cạnh đầu */
+  function cuChi(g, ms, emo) {
+    if (!nutLV) return;
+    nutLV.removeAttribute('data-g'); void nutLV.getBoundingClientRect();   // chạy lại hiệu ứng nếu đang cùng cử chỉ
+    nutLV.dataset.g = g; CU.g = g; veMat();
+    clearTimeout(henG); henG = setTimeout(function () { if (CU.g === g) { CU.g = null; nutLV.removeAttribute('data-g'); veMat(); } }, ms || 1500);
+    if (emo) camXuc(emo);
+    if (g === 'xoay') setTimeout(function () { netMat('chong', 1300); }, 950);
+  }
+  /** Chỉ đổi nét mặt một lúc: nhaymat, ngac, then, chong, buon */
+  function netMat(fx, ms) { CU.fx = fx; veMat(); clearTimeout(henFx); henFx = setTimeout(function () { CU.fx = null; veMat(); }, ms || 1400); }
+  function trangThaiLV(st, v) { CU.st[st] = !!v; if (nutLV) nutLV.classList.toggle('st-' + st, !!v); veMat(); }
+  function camXuc(t, lap) {
+    var e = nutLV && nutLV.querySelector('.tl-emo'); if (!e) return;
+    e.textContent = t; e.classList.remove('pop', 'lap'); void e.offsetWidth; e.classList.add(lap ? 'lap' : 'pop');
+  }
+  /** Áp cảm xúc dạng [cử chỉ, ms, biểu tượng, nét mặt thêm] */
+  function bieuCam(c) { if (!c) return; cuChi(c[0], c[1], c[2]); if (c[3]) setTimeout(function () { netMat(c[3], 1600); }, 60); }
+  /** Cảm xúc theo lời người dùng: cảm ơn, chào, cười, khen, chê */
+  function camXucLoi(qn) {
+    if (/(cam on|thank|tks|cam ta)/.test(qn)) return ['yeu', 1800, '💙'];
+    if (/^(xin chao|chao|hello|hi|alo)( |$)/.test(qn)) return ['vay', 1500, '👋'];
+    if (/(haha|hihi|hehe|kaka|vui qua|buon cuoi)/.test(qn)) return ['cuoi', 1300, '😆'];
+    if (/(gioi qua|gioi lam|tuyet|hay qua|xuat sac|tot lam|dang yeu|de thuong|cute)/.test(qn)) return ['mung', 1500, '🥰'];
+    if (/(ngu qua|ngoc|do qua|te qua|vo dung|sai roi|sai bet|chan qua|kem qua)/.test(qn)) return ['lac', 1200, '😥'];
+    return null;
+  }
+  function hoatDong() { return GN.hoatDong && !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
+  var LOI = [['Xin chào! 👋 Cần giúp gì không?', 'vay'], ['Hỏi tôi về chấm công, lương nhé!', 'gat', '💬'], ['Ai sắp hết hạn hợp đồng? Hỏi tôi!', 'mung', '📋'],
+    ['Nói với tôi cũng được nè 🎤', 'nhaymat'], ['Bấm vào tôi để hỏi nha!', 'yeu', '💙'], ['Xem tôi xoay nè! 🌀', 'xoay'], ['Nhớ uống đủ nước nha! 💧', 'then'],
+    ['Cuối tháng nhớ chốt lương nhé! 💰', 'gat'], ['Tôi trực cả ngày nè!', 'mua', '✨']];
+  /** Linh vật "sống": chào hỏi, thỉnh thoảng làm trò, chớp mắt, nhìn theo chuột, ngủ gật khi lâu không ai làm gì */
+  function songDong() {
+    var i = 0, cuoiTD = Date.now(), ngu = false, demLoi = 0;
+    setTimeout(function () { if (el.hidden && hoatDong()) { noi('Xin chào! 👋 Cần giúp gì không?', 4500); cuChi('vay', 1600); } }, 2500);
+    setInterval(function () {
+      if (!hoatDong() || ngu || document.hidden || !el.hidden || demLoi >= 12 || Date.now() - cuoiTD > 55000) return;
+      var x = LOI[i++ % LOI.length]; demLoi++; noi(x[0], 4500);
+      if (x[1] === 'nhaymat' || x[1] === 'then') { cuChi('gat', 900); netMat(x[1], 2200); } else cuChi(x[1], 1800, x[2]);
+    }, 25000);
+    function thuc() {
+      cuoiTD = Date.now(); if (!ngu) return;
+      ngu = false; trangThaiLV('ngu', false); nutLV.querySelector('.tl-emo').classList.remove('lap');
+      cuChi('nhay', 900, '😃'); noi('A, bạn đây rồi!', 3000);
+    }
+    ['pointermove', 'pointerdown', 'keydown', 'scroll', 'touchstart'].forEach(function (ev) { window.addEventListener(ev, thuc, { passive: true }); });
+    setInterval(function () {
+      if (hoatDong() && !ngu && el.hidden && !GN.nghe && !GN.noi && Date.now() - cuoiTD > 90000) {
+        ngu = true; nutLV.querySelector('.tl-noi').classList.remove('hien'); trangThaiLV('ngu', true); camXuc('💤', true);
+      }
+    }, 5000);
+    function chop1() { nutLV.classList.add('chop'); setTimeout(function () { nutLV.classList.remove('chop'); }, 130); }
+    (function chop() {
+      setTimeout(function () {
+        if (hoatDong() && !ngu && /^(thuong|vui|doc)$/.test(nutLV.dataset.mat)) { chop1(); if (Math.random() < 0.25) setTimeout(chop1, 260); }
+        chop();
+      }, 2200 + Math.random() * 3200);
+    })();
+    // đầu nghiêng, con ngươi nhìn theo con trỏ chuột; không có chuột thì thỉnh thoảng đảo mắt
+    var raf = 0, mx = 0, my = 0, diChuot = 0;
+    window.addEventListener('pointermove', function (e) {
+      if (!hoatDong()) return;
+      mx = e.clientX; my = e.clientY; diChuot = Date.now();
+      if (raf) return;
+      raf = requestAnimationFrame(function () {
+        raf = 0;
+        var r = nutLV.getBoundingClientRect(), dx = mx - (r.left + r.width / 2), dy = my - (r.top + r.height * 0.3);
+        var lk = nutLV.querySelector('.tl-nhin'), con = nutLV.querySelector('.tl-con');
+        if (lk) lk.style.transform = 'translateY(' + Math.max(-3, Math.min(2, dy / 120)).toFixed(1) + 'px) rotate(' + (Math.tanh(dx / 350) * 9).toFixed(1) + 'deg)';
+        if (con) con.style.transform = 'translate(' + Math.max(-6, Math.min(6, dx / 45)).toFixed(1) + 'px,' + Math.max(-5, Math.min(5, dy / 55)).toFixed(1) + 'px)';
+      });
+    }, { passive: true });
+    setInterval(function () {
+      if (!hoatDong() || Date.now() - diChuot < 4000) return;
+      var con = nutLV.querySelector('.tl-con'), k = Math.random();
+      if (con) con.style.transform = 'translate(' + (k < 0.3 ? -5 : k < 0.6 ? 5 : 0) + 'px,' + (Math.random() < 0.3 ? -4 : 0) + 'px)';
+    }, 3500);
+    // rê chuột vào: vẫy chào, nháy mắt; để lâu thì cười khúc khích
+    var henRe = 0;
+    nutLV.addEventListener('mouseenter', function () {
+      if (!hoatDong()) return;
+      if (!CU.g) cuChi('vay', 1400);
+      netMat('nhaymat', 1200);
+      clearTimeout(henRe); henRe = setTimeout(function () { cuChi('cuoi', 1300, '😆'); if (el.hidden) noi('Hihi, nhột quá!', 2200); }, 2600);
+    });
+    nutLV.addEventListener('mouseleave', function () { clearTimeout(henRe); });
+  }
+
   function noi(chu, ms) {
     var b = nutLV.querySelector('.tl-noi'); b.textContent = chu; b.classList.add('hien');
     clearTimeout(henCu[1]); henCu[1] = setTimeout(function () { b.classList.remove('hien'); }, ms || 3000);
@@ -764,7 +911,7 @@
       var mic = el.querySelector('.tl-mic'); if (mic) mic.hidden = !choNoi();
       if (!daChao) { them('tl', chao()); daChao = true; }
       setTimeout(function () { el.querySelector('input').focus(); }, 40);
-    } else { cuChi('vay', 1300); ngungDoc(); GN.phien = false; if (GN.nghe) try { GN.rec.abort(); } catch (e) { /* bỏ qua */ } }
+    } else { cuChi('tambiet', 1300, '👋'); ngungDoc(); GN.phien = false; if (GN.nghe) try { GN.rec.abort(); } catch (e) { /* bỏ qua */ } }
   }
   function them(ai, html) {
     var ds = el.querySelector('.tl-ds'), d = document.createElement('div');
@@ -782,15 +929,15 @@
     var qn = cn(cau);
     if (/^(dung|dung lai|thoi|im|im lang|ngung|ngung doc|stop)$/.test(qn)) { ngungDoc(); GN.phien = false; them('tl', 'Đã dừng.'); return; }
     if (/^(doc lai|nhac lai|noi lai)$/.test(qn)) { if (GN.cuoi) { them('tl', GN.cuoi); doc(GN.cuoi); } return; }
-    if (/^(ket thuc|tam biet|bye|chao tam biet)$/.test(qn)) { GN.phien = false; var tb = 'Tạm biệt! Khi cần, bạn cứ bấm vào tôi hoặc nhấn Ctrl + K nhé.'; them('tl', tb); if (tuMic || GN.docTuDong) doc(tb); cuChi('vay', 1500); return; }
-    var dang = them('tl go', '<span></span><span></span><span></span>');
-    cuChi('nghi', 600);
+    if (/^(ket thuc|tam biet|bye|chao tam biet)$/.test(qn)) { GN.phien = false; var tb = 'Tạm biệt! Khi cần, bạn cứ bấm vào tôi hoặc nhấn Ctrl + K nhé.'; them('tl', tb); if (tuMic || GN.docTuDong) doc(tb); cuChi('tambiet', 1500, '👋'); return; }
+    var dang = them('tl go', '<span></span><span></span><span></span>'), loi = camXucLoi(qn);
+    if (loi) bieuCam(loi); else cuChi('nghi', 600, '🔍');
     setTimeout(function () {
       var kq;
       try { kq = traLoi(cau); } catch (e) { kq = 'Xin lỗi, có lỗi khi tìm câu trả lời: ' + h(e.message); if (window.console) console.error(e); }
       dang.remove();
       them('tl', kq); GN.cuoi = kq;
-      cuChi(/^(Rất vui|Xin chào)/.test(kq) ? 'vay' : 'noi', 1400);
+      bieuCam(CX || ['noi', 1400]);
       // hỏi bằng giọng nói (hoặc bật tự đọc) thì đọc câu trả lời; nói chuyện liên tục: đọc xong tự nghe tiếp
       var tiep = GN.phien && GN.lienTuc ? function () { if (GN.phien && !el.hidden) setTimeout(batNghe, 350); } : null;
       if ((tuMic || GN.docTuDong) && !doc(kq, tiep)) { if (tiep) tiep(); }
@@ -811,5 +958,5 @@
   // gắn sau khi giao diện chính đã dựng (có dữ liệu, đã đăng nhập)
   var goc = App.batDauGiaoDien;
   App.batDauGiaoDien = function () { var r = goc.apply(this, arguments); gan(); return r; };
-  App.TroLy = { chuDoc: chuDoc, traLoi: traLoi, timHuongDan: timHuongDan, timNguoi: timNguoi, timDonVi: timDonVi, bat: function (mo) { gan(); bat(mo !== false); }, hoi: function (c) { gan(); bat(true); hoiTL(c); } };
+  App.TroLy = { cuChi: function (g, ms, emo) { gan(); cuChi(g, ms, emo); }, netMat: function (f, ms) { gan(); netMat(f, ms); }, chuDoc: chuDoc, traLoi: traLoi, timHuongDan: timHuongDan, timNguoi: timNguoi, timDonVi: timDonVi, bat: function (mo) { gan(); bat(mo !== false); }, hoi: function (c) { gan(); bat(true); hoiTL(c); } };
 })();

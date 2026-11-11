@@ -26,6 +26,13 @@ Trợ lý chạy ngay trong phần mềm, **không gửi dữ liệu ra ngoài**
 - **Mở trang**: "mở bảng lương", "vào chấm công".
 Gõ không dấu cũng được. Mũi tên lên / xuống để gọi lại câu đã hỏi; Esc để đóng.
 
+**Cảm xúc, cử chỉ của linh vật**: robot chớp mắt, nghiêng đầu và đưa mắt nhìn theo con trỏ chuột, vẫy chào khi rê chuột vào
+(để lâu thì cười khúc khích), thỉnh thoảng nhắc một câu, ngủ gật 💤 khi lâu không ai thao tác và thức dậy khi có người dùng.
+Khi trả lời, robot biểu lộ theo nội dung: gật đầu khi tra được thông tin, ngạc nhiên ⚠️ khi có hợp đồng quá hạn, mừng ✅ khi
+không có việc phải lo, nhảy múa 🎂 khi có sinh nhật, mắt tim 💙 khi được cảm ơn, lắc đầu 😥 khi không tìm thấy hoặc không có quyền…
+Trò chuyện vui: “bạn là ai”, “bạn khỏe không”, “nhảy đi”, “xoay đi”, “kể chuyện cười”. Tắt chuyển động ở nút cài đặt giọng nói
+(ô *Linh vật chuyển động, chào hỏi, ngủ gật khi rảnh*); máy đặt *giảm chuyển động* trong hệ điều hành thì robot tự đứng yên.
+
 **Giao tiếp bằng giọng nói** (Chrome, Edge):
 - Bấm **micro** 🎤 cạnh ô nhập rồi nói câu hỏi tiếng Việt – nói xong trợ lý tự gửi và **đọc câu trả lời** (robot há miệng khi nghe,
   nhép miệng khi nói). Lần đầu trình duyệt hỏi quyền dùng micro: chọn *Cho phép*.

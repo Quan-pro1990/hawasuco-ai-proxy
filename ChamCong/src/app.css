@@ -244,13 +244,46 @@ table.cc tfoot td.dinh3 { z-index: 3; text-align: left; padding: 0 6px; }
 .tl-led { animation: tlLed 1.6s ease-in-out infinite; }
 .tl-ma { opacity: .7; }
 .tl-mat, .tl-mi { opacity: 0; transition: opacity .12s; }
-.tl-mi.m-cuoi { opacity: 1; }
-.tl-nut:hover .m-vui, .tl-nut[data-g=vay] .m-vui, .tl-nut[data-g=nhay] .m-vui, .tl-nut[data-g=noi] .m-vui { opacity: 1; }
-.tl-nut[data-g=chop] .m-nham { opacity: 1; }
-.tl-nut[data-g=vay] .m-ha, .tl-nut[data-g=nhay] .m-ha { opacity: 1; }
-.tl-nut[data-g=noi] .m-noi { opacity: 1; }
-.tl-nut[data-g=nghi] .m-doc, .tl-nut[data-g=nghi] .m-bang { opacity: 1; }
-.tl-nut[data-g=vay] .m-cuoi, .tl-nut[data-g=nhay] .m-cuoi, .tl-nut[data-g=noi] .m-cuoi, .tl-nut[data-g=nghi] .m-cuoi { opacity: 0; }
+/* nét mặt: mắt theo data-mat, miệng theo data-mieng (đặt bằng JS từ cử chỉ, trạng thái) */
+.tl-nut:not([data-mat]) .m-thuong, .tl-nut[data-mat=thuong] .m-thuong, .tl-nut[data-mat=vui] .m-vui, .tl-nut[data-mat=nham] .m-nham, .tl-nut[data-mat=doc] .m-doc,
+.tl-nut[data-mat=ngac] .m-ngac, .tl-nut[data-mat=tim] .m-tim, .tl-nut[data-mat=chong] .m-chong, .tl-nut[data-mat=nhay] .m-thuong, .tl-nut[data-mat=nhay] .m-nhay { opacity: 1; }
+.tl-nut:not([data-mieng]) .m-cuoi, .tl-nut[data-mieng=cuoi] .m-cuoi, .tl-nut[data-mieng=ha] .m-ha, .tl-nut[data-mieng=noi] .m-noi, .tl-nut[data-mieng=bang] .m-bang,
+.tl-nut[data-mieng=o] .m-o, .tl-nut[data-mieng=buon] .m-buon, .tl-nut[data-mieng=luoi] .m-luoi { opacity: 1; }
+.tl-nut.chop .tl-mat { opacity: 0; transition: none; } .tl-nut.chop .tl-mat.m-nham { opacity: 1; }
+.tl-ma { transition: opacity .3s; }
+.tl-nut[data-mat=tim] .tl-ma, .tl-nut[data-mat=vui] .tl-ma, .tl-nut[data-g=then] .tl-ma { opacity: 1; }
+.tl-nhin { transform-origin: 182px 176px; transition: transform .35s ease-out; }
+.tl-con { transition: transform .25s ease-out; }
+/* chuyển động của từng cử chỉ */
+.tl-nut[data-g=gat] .tl-dau { animation: tlGat .45s ease-in-out 2; }
+.tl-nut[data-g=lac] .tl-dau, .tl-nut[data-g=buon] .tl-dau { animation: tlLacDau .3s ease-in-out 3; }
+.tl-nut[data-g=mung] .tl-than { animation: tlNhay .7s cubic-bezier(.3,.7,.4,1) 2; }
+.tl-nut[data-g=yeu] .tl-than { animation: tlYeu .45s ease-in-out 4 alternate; }
+.tl-nut[data-g=mua] .tl-than { animation: tlMua .45s ease-in-out infinite alternate; }
+.tl-nut[data-g=mua] .tl-dau { animation: tlLac .225s ease-in-out infinite alternate; }
+.tl-nut[data-g=cuoi] .tl-than { animation: tlRung .1s linear infinite alternate; }
+.tl-nut[data-g=xoay] .tl-bot { animation: tlXoay .9s cubic-bezier(.4,0,.2,1); }
+.tl-nut[data-g=tambiet] .tl-dau { animation: tlLac .25s ease-in-out 4 alternate; }
+.tl-nut[data-g=tambiet] .tl-than { animation: tlChao 1.3s ease-in-out; }
+.tl-nut[data-g=then] .tl-dau { animation: tlThen 1.6s ease-in-out; }
+.tl-nut.st-ngu .tl-than { animation: tlTho 3.2s ease-in-out infinite; }
+.tl-nut.st-ngu .tl-dau { animation: none; transform: rotate(7deg); }
+.tl-nut.st-ngu .tl-led { animation: none; opacity: .3; }
+@keyframes tlGat { 0%, 100% { transform: rotate(0) translateY(0); } 50% { transform: rotate(2deg) translateY(5px); } }
+@keyframes tlLacDau { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-9deg); } 75% { transform: rotate(9deg); } }
+@keyframes tlYeu { from { transform: scale(1); } to { transform: scale(1.04) translateY(-3px); } }
+@keyframes tlMua { from { transform: rotate(-8deg) translateX(-4px); } to { transform: rotate(8deg) translateX(4px); } }
+@keyframes tlRung { from { transform: translateX(-1.5px) rotate(-1deg); } to { transform: translateX(1.5px) rotate(1deg); } }
+@keyframes tlXoay { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+@keyframes tlChao { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(4px) scale(1, .97); } }
+@keyframes tlThen { 0%, 100% { transform: rotate(0); } 30%, 70% { transform: rotate(8deg) translateY(2px); } }
+@keyframes tlTho { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.015, .985) translateY(2px); } }
+/* biểu tượng cảm xúc bay lên cạnh đầu */
+.tl-emo { position: absolute; right: 0; top: -4px; font-size: 22px; line-height: 1; opacity: 0; pointer-events: none; filter: drop-shadow(0 2px 3px rgba(10,40,80,.25)); }
+.tl-emo.pop { animation: tlEmo 1.8s ease-out forwards; }
+.tl-emo.lap { animation: tlZzz 2.4s ease-in-out infinite; }
+@keyframes tlEmo { 0% { opacity: 0; transform: translateY(10px) scale(.4); } 15% { opacity: 1; transform: translateY(0) scale(1.15); } 30% { transform: scale(1); } 80% { opacity: 1; transform: translateY(-14px); } 100% { opacity: 0; transform: translateY(-22px); } }
+@keyframes tlZzz { 0% { opacity: 0; transform: translate(0, 6px) scale(.7); } 30% { opacity: 1; } 100% { opacity: 0; transform: translate(10px, -18px) scale(1.1); } }
 .tl-nut[data-g=nhay] .tl-than { animation: tlNhay .8s cubic-bezier(.3,.7,.4,1); }
 .tl-nut[data-g=vay] .tl-dau { animation: tlLac .25s ease-in-out 5 alternate; }
 .tl-nut[data-g=noi] .tl-than { animation: tlNoi .36s ease-in-out infinite alternate; }
@@ -265,15 +298,11 @@ table.cc tfoot td.dinh3 { z-index: 3; text-align: left; padding: 0 6px; }
 @keyframes tlNghi { 0%, 100% { transform: rotate(9deg); } 50% { transform: rotate(5deg); } }
 @keyframes tlLat { 0% { transform: scaleX(1); } 50% { transform: scaleX(-1); } 100% { transform: scaleX(1); } }
 @keyframes tlLed { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
-.tl-nut.dang-nghe .m-cuoi, .tl-nut.dang-noi .m-cuoi { opacity: 0; }
-.tl-nut.dang-nghe .m-o { opacity: 1; }
 .tl-nut.dang-nghe .tl-led { animation-duration: .5s; }
 .tl-nut.dang-nghe .tl-dau { animation: tlNghe 1.2s ease-in-out infinite; }
-.tl-nut.dang-noi .m-noi { opacity: 1; }
-.tl-nut.dang-noi .m-vui { opacity: 1; }
 .tl-nut.dang-noi .tl-than { animation: tlNoi .36s ease-in-out infinite alternate; }
 @keyframes tlNghe { 0%, 100% { transform: rotate(-7deg); } 50% { transform: rotate(-3deg); } }
-@media (prefers-reduced-motion: reduce) { .tl-than, .tl-bong, .tl-dau, .tl-led, .tl-tn.go span { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .tl-than, .tl-bong, .tl-dau, .tl-led, .tl-bot, .tl-tn.go span { animation: none !important; } .tl-nhin, .tl-con { transition: none; } }
 .tl-khung { position: fixed; right: 18px; bottom: 150px; z-index: 46; width: 390px; max-width: calc(100vw - 32px); height: min(600px, calc(100vh - 170px));
   display: flex; flex-direction: column; background: #fff; border-radius: 12px; box-shadow: 0 12px 40px rgba(10,40,80,.28); overflow: hidden; border: 1px solid #dde5ee; }
 .tl-khung[hidden] { display: none !important; }
@@ -326,7 +355,7 @@ table.cc tfoot td.dinh3 { z-index: 3; text-align: left; padding: 0 6px; }
 .tl-cdgn select, .tl-cdgn input[type=range] { width: 100%; }
 .tl-note { margin: 0; padding: 0 12px 8px; font-size: 11px; color: #8894a0; background: #fff; }
 @media (max-width: 600px) {
-  .tl-nut { right: 6px; bottom: 4px; } .tl-bot { width: 64px; height: 80px; } .tl-nhan, .tl-noi { display: none; }
+  .tl-nut { right: 6px; bottom: 4px; } .tl-bot { width: 64px; height: 80px; } .tl-nhan, .tl-noi { display: none; } .tl-emo { font-size: 17px; }
   .tl-khung { left: 0; right: 0; bottom: 0; width: 100%; max-width: none; height: min(88vh, calc(100vh - 20px)); border-radius: 14px 14px 0 0; }
 }
 @media print { .tl-nut, .tl-khung { display: none !important; } }
