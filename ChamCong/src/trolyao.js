@@ -489,6 +489,9 @@
     // hỏi đúng tên một phần hướng dẫn chung (quy trình hằng tháng, tài khoản & phân quyền, câu hỏi thường gặp…)
     var phan = phanHuongDan(q);
     if (phan) { cx(['gat', 1200, '📖']); return phan; }
+    // mức lương theo chức danh trong thang, bảng lương ("lương trưởng phòng bao nhiêu", "bậc lương A01")
+    var blq = !nguoi.length && App.KienThuc && App.KienThuc.bacLuong(q);
+    if (blq && !/(cach|o dau|sua|them|nhap)( |$)/.test(q)) { cx(blq.cx); return blq.html; }
     // kiến thức lao động – tiền lương (luật, chế độ) hay hướng dẫn dùng phần mềm?
     var kt = App.KienThuc ? App.KienThuc.tim(q) : [];
     var hoiPM = /(^| )(phan mem|nhap lieu|nhap tu|nhap vao|cach nhap|nhap du lieu|bam|man hinh|o dau|cai dat|thiet lap|sua|chon|xuat|in|trang|tab|nut|tao|lap|duyet|them moi|them nhan vien|them hop dong|them ngay|xoa|mo|dang nhap|tai khoan dang nhap|excel)( |$)/.test(q);

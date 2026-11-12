@@ -554,6 +554,35 @@ t('Lương đóng BH theo bậc lương hiện tại (+ phụ cấp đóng BH), 
   assert.strictEqual(r11.bhTheoBac, 0); assert.strictEqual(r11.luongBH, 8000000 + 500000);
 });
 
+t('Thang bảng lương theo Quy chế trả lương 2026 (QĐ 16/QĐ-CNHG): đúng phụ lục, nạp, gợi ý chuyển xếp', function () {
+  var ds = TL.thangLuongQuyChe(), giaTri = {};
+  ds.forEach(function (b) { b.ngach.forEach(function (g) { giaTri[g.ma] = g.bac.filter(function (x) { return x !== ''; }).map(function (x) { return x / 1000; }); }); });
+  assert.deepStrictEqual(giaTri, {
+    C01: [23000, 26000], C02: [18500, 20000], C03: [17000, 18500], D01: [15500, 17000], D02: [13000, 15000],
+    D03: [8000, 9500, 11000], D04: [7000, 8000, 9000], D05: [6000, 7000, 8000], D06: [5000, 6000],
+    A01: [6360, 7320, 8040], A02: [7000, 8000, 9000], A03: [8000, 9000, 10000]
+  });
+  ds.forEach(function (b) { assert.strictEqual(b.apDung, 'ca_hai'); assert.strictEqual(b.namNang, 3); assert.strictEqual(b.quyChe, '16/QĐ-CNHG'); });
+  assert.strictEqual(TL.soBacNgach(ds[0].ngach[0]), 2); assert.strictEqual(TL.soBacNgach(ds[0].ngach[5]), 3);
+  // dữ liệu mới có sẵn; dữ liệu cũ nạp thêm, giữ bảng khác, sửa tay thì cập nhật lại đúng quy chế
+  assert.strictEqual(TL.duLieuMoi().thangLuong.length, 2);
+  var db = dbMau(); db.thangLuong = [{ ma: 'BL1', ten: 'Bảng cũ', kieu: 'tien', apDung: 'cb', ngach: [{ ma: 'X', ten: 'X', bac: [1, 2] }] }];
+  assert.deepStrictEqual(TL.apDungThangLuongQuyChe(db), { them: 2, capNhat: 0 });
+  TL.timNgach(TL.timBangLuong(db, 'A'), 'A01').bac[0] = 1;
+  assert.deepStrictEqual(TL.apDungThangLuongQuyChe(db), { them: 0, capNhat: 2 });
+  assert.strictEqual(TL.timNgach(TL.timBangLuong(db, 'A'), 'A01').bac[0], 6360000); assert.strictEqual(db.thangLuong.length, 3);
+  // gợi ý (Điều 9): chức danh theo chức vụ / trình độ; quản lý giữ bậc cũ, còn lại căn cứ mức lương cũ
+  function gy(nv) { var x = TL.goiYXepQuyChe(db, nv); return x.ngach + '/' + x.bac; }
+  assert.strictEqual(gy({ chucVu: 'Giám đốc', xepLuong: { bang: 'BL1', ngach: 'X', bac: 2 } }), 'C01/2');
+  assert.strictEqual(gy({ chucVu: 'Phó trưởng phòng' }), 'D02/1');
+  assert.strictEqual(gy({ chucVu: 'Nhân viên ghi thu', luongCB: 7320000 }), 'A01/2');
+  assert.strictEqual(gy({ chucVu: 'CN LĐ-SC', luongCB: 8500000 }), 'A02/3');
+  assert.strictEqual(gy({ chucVu: 'Kế toán viên', trinhDoCM: 'Đại học', luongCB: 9000000 }), 'D03/2');
+  assert.strictEqual(gy({ chucVu: 'Văn thư', trinhDoCM: 'Trung cấp', luongCB: 6500000 }), 'D04/1');
+  assert.strictEqual(gy({ chucVu: 'Bảo vệ', luongCB: 5500000 }), 'D06/2');
+  assert.strictEqual(gy({ chucVu: 'Công nhân trực ca', luongCB: 12000000 }), 'A03/3');
+});
+
 t('Giờ vào / ra', function () {
   var cd = TL.caiDatMacDinh();
   var k = TL.tinhVaoRa(cd, 'thuong', TL.phut('08:12'), TL.phut('18:10'));

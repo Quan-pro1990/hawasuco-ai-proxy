@@ -23,6 +23,83 @@
     return xl.ngach.ten + ', bậc ' + xl.bac + '/' + xl.soBac + (xl.heSo != null ? ' (hệ số ' + App.soHS(xl.heSo) + ')' : '');
   };
 
+  /** Thẻ "Theo Quy chế trả lương của công ty" ở Danh mục → Thang, bảng lương */
+  function theQuyChe() {
+    var QC = TL.QUY_CHE_LUONG, co = App.db.thangLuong.some(function (x) { return x.quyChe === QC.so; });
+    return '<div class="the the-qc"><h3>Theo Quy chế trả lương của công ty<span class="phai">QĐ ' + h(QC.so) + ' ngày ' + TL.hienNgay(QC.ngay) + ' · áp dụng từ kỳ lương tháng ' + QC.tuKy.slice(5) + '/' + QC.tuKy.slice(0, 4) + '</span></h3>' +
+      '<p class="mo nho" style="margin:0 0 8px">' + h(QC.ten) + ' (thay QĐ ' + h(QC.thay) + '): <b>bảng lương quản lý, chuyên môn, nghiệp vụ thừa hành, phục vụ</b> (mã C01–C03, D01–D06) và ' +
+      '<b>bảng lương công nhân, nhân viên trực tiếp sản xuất kinh doanh, phục vụ</b> (mã A01–A03). Mức lương trong thang là mức ghi trên hợp đồng, dùng trả lương thời gian và làm căn cứ đóng BHXH, BHYT, BHTN; ' +
+      'niên hạn nâng lương 3 năm.</p><div class="hang"><button class="nut' + (co ? '' : ' chinh') + '" id="tl-quyche">' + App.icon(co ? 'chuyen' : 'nhap') + (co ? 'Cập nhật lại theo quy chế' : 'Nạp thang bảng lương theo quy chế') + '</button>' +
+      (co ? '<a class="nut chinh" href="#nangbac" id="tl-xepqc">' + App.icon('bac') + 'Chuyển xếp lương nhân viên theo quy chế…</a>' : '') + '</div></div>';
+  }
+
+  /** Chuyển xếp lương nhân viên sang thang bảng lương theo quy chế (Điều 9): lập quyết định có hiệu lực từ kỳ lương tháng 5/2026,
+      các kỳ trước giữ lương cũ; bảo lưu thời gian nâng bậc. */
+  App.chuyenXepQuyChe = function () {
+    var db = App.db, QC = TL.QUY_CHE_LUONG, bangQC = db.thangLuong.filter(function (x) { return x.quyChe === QC.so; });
+    if (!bangQC.length) { App.bao('Chưa có thang bảng lương theo quy chế – vào Danh mục → Thang, bảng lương bấm “Nạp thang bảng lương theo quy chế”.', 'loi'); return; }
+    var hl0 = TL.batDauKy(db, +QC.tuKy.slice(0, 4), +QC.tuKy.slice(5)), maQC = bangQC.map(function (b) { return b.ma; });
+    var optCD = bangQC.map(function (b) { return '<optgroup label="' + h(b.ten) + '">' + b.ngach.map(function (g) { var t = g.ma + ' – ' + g.ten; return '<option value="' + h(b.ma + '|' + g.ma) + '" title="' + h(t) + '">' + h(t.length > 48 ? t.slice(0, 46) + '…' : t) + '</option>'; }).join('') + '</optgroup>'; }).join('');
+    var ds = db.nhanVien.filter(function (nv) { return nv.trangThai !== 'nghi_viec'; }).sort(function (a, b) { return String(a.ma).localeCompare(String(b.ma), 'vi', { numeric: true }); });
+    var rows = ds.map(function (nv) {
+      var cu = TL.xepLuongNV(db, nv), da = nv.xepLuong && maQC.indexOf(nv.xepLuong.bang) >= 0, gy = da ? { bang: nv.xepLuong.bang, ngach: nv.xepLuong.ngach, bac: +nv.xepLuong.bac, lyDo: 'đã xếp theo quy chế' } : TL.goiYXepQuyChe(db, nv);
+      var thang = (nv.hinhThuc || 'thang') === 'thang' || nv.hinhThuc === 'khoan', chon = gy && !da && thang;
+      return '<tr data-id="' + nv.id + '"><td class="giua"><input type="checkbox" data-c' + (chon ? ' checked' : '') + (da ? ' disabled' : '') + '></td><td>' + h(nv.ma) + '</td><td>' + h(nv.hoTen) + '<div class="mo nho">' + h(nv.chucVu || '') + (nv.trinhDoCM ? ' · ' + h(nv.trinhDoCM) : '') + '</div></td>' +
+        '<td class="nho" style="white-space:normal;max-width:170px">' + (cu ? h(cu.ngach.ten) + ', bậc ' + cu.bac : '<span class="mo">chưa xếp</span>') + '<div>' + App.tien(nv.luongCB) + (thang ? '' : ' <span class="mo">' + h(App.DV_LUONG[nv.hinhThuc] || '') + '</span>') + '</div></td>' +
+        '<td><select data-g style="max-width:270px"' + (da ? ' disabled' : '') + '>' + optCD.replace('value="' + h(gy ? gy.bang + '|' + gy.ngach : '') + '"', 'value="' + h(gy ? gy.bang + '|' + gy.ngach : '') + '" selected') + '</select><div class="mo nho" style="white-space:normal;max-width:270px">' + h(gy ? gy.lyDo : 'chưa gợi ý được') + '</div></td>' +
+        '<td><select data-b' + (da ? ' disabled' : '') + '></select></td><td class="so" data-m></td></tr>';
+    }).join('');
+    var hop = App.hop({
+      tieuDe: 'Chuyển xếp lương theo ' + QC.ten, co: 'rong', khongFocus: true,
+      than: '<div class="form ba"><label class="o">Số quyết định<input name="so" value="' + h(QC.so) + '"></label>' +
+        '<label class="o">Ngày hiệu lực<input type="date" name="hieuLuc" value="' + hl0 + '"><span class="gc">Mặc định đầu kỳ lương tháng ' + QC.tuKy.slice(5) + '/' + QC.tuKy.slice(0, 4) + ' (Điều 15 quy chế); các kỳ trước giữ lương cũ</span></label>' +
+        '<label class="chk" style="align-self:end"><input type="checkbox" name="baoLuu" checked> Bảo lưu thời gian nâng bậc (Điều 9 khoản 3c)</label></div>' +
+        '<p class="mo nho">Gợi ý theo Điều 9: chức danh theo chức vụ (nhân viên văn phòng theo trình độ chuyên môn); quản lý C01–D02 giữ bậc cũ, còn lại căn cứ mức lương cũ – bậc thấp nhất không thấp hơn lương cũ. ' +
+        'Kiểm tra, sửa từng dòng rồi bấm <b>Lập quyết định</b>: mỗi người 1 quyết định chuyển xếp lương, mức lương và lương đóng BH lấy theo bậc mới.</p>' +
+        '<div class="cuon" style="max-height:52vh"><table class="bang"><thead><tr><th><input type="checkbox" data-tatca checked></th><th>Mã NV</th><th>Họ tên, chức vụ</th><th>Đang xếp · mức lương</th><th>Chức danh theo quy chế</th><th>Bậc</th><th class="so">Mức mới</th></tr></thead><tbody>' + rows + '</tbody></table></div>',
+      giu: true,
+      nut: [{ ten: 'Huỷ' }, { ten: 'Lập quyết định', loai: 'chinh', bam: function (el) {
+        var so = el.querySelector('[name=so]').value.trim(), hl = el.querySelector('[name=hieuLuc]').value, baoLuu = el.querySelector('[name=baoLuu]').checked;
+        if (!hl) { App.bao('Chọn ngày hiệu lực.', 'loi'); return false; }
+        var ky = TL.kyCuaISO(db, hl), xong = 0, loi = [];
+        Array.prototype.forEach.call(el.querySelectorAll('tr[data-id]'), function (tr) {
+          if (!tr.querySelector('[data-c]').checked) return;
+          var nv = App.timNV(tr.dataset.id), v = tr.querySelector('[data-g]').value.split('|'), bac = +tr.querySelector('[data-b]').value;
+          var b = TL.timBangLuong(db, v[0]), g = TL.timNgach(b, v[1]), gt = g ? TL.giaTriBac(db, b, g, bac, ky) : null;
+          if (!gt) { loi.push(nv.hoTen + ': chưa chọn chức danh, bậc'); return; }
+          var thang = (nv.hinhThuc || 'thang') === 'thang' || nv.hinhThuc === 'khoan';
+          var e = App.themNangLuong(nv, { so: so, ngay: QC.ngay, hieuLuc: hl, luongMoi: thang ? gt.tien : +nv.luongCB || 0, luongBHMoi: gt.tien,
+            xepLuongMoi: { bang: b.ma, ngach: g.ma, bac: bac, ngayHuong: baoLuu && nv.xepLuong && nv.xepLuong.ngayHuong ? nv.xepLuong.ngayHuong : hl },
+            noiDung: 'Chuyển xếp lương theo ' + QC.ten + ' (QĐ ' + QC.so + '): ' + g.ma + ' – ' + g.ten + ', bậc ' + bac });
+          if (e) loi.push(nv.hoTen + ': ' + e); else xong++;
+        });
+        App.luu(); App.veLai();
+        App.bao('Đã lập ' + xong + ' quyết định chuyển xếp lương.' + (loi.length ? ' ' + loi.length + ' người chưa chuyển được.' : ''), loi.length ? 'loi' : 'tot');
+        if (loi.length) App.thongBao ? App.thongBao(loi.join('<br>')) : App.hop({ tieuDe: 'Chưa chuyển được', than: '<ul><li>' + loi.map(h).join('</li><li>') + '</li></ul>', nut: [{ ten: 'Đóng' }] });
+      } }]
+    });
+    var nen = hop.el;
+    function capNhatDong(tr) {
+      var v = tr.querySelector('[data-g]').value.split('|'), b = TL.timBangLuong(db, v[0]), g = TL.timNgach(b, v[1]), sb = tr.querySelector('[data-b]');
+      var bacCu = +sb.value || +(sb.dataset.goiy || 1), n = g ? TL.soBacNgach(g) : 0, ky = TL.kyCuaISO(db, nen.querySelector('[name=hieuLuc]').value || hl0), s = '';
+      for (var k = 1; k <= n; k++) s += '<option value="' + k + '"' + (k === Math.min(bacCu, n) ? ' selected' : '') + '>Bậc ' + ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'][k - 1] + '</option>';
+      sb.innerHTML = s;
+      var gt = g ? TL.giaTriBac(db, b, g, +sb.value, ky) : null;
+      tr.querySelector('[data-m]').innerHTML = gt ? '<b>' + App.tien(gt.tien) + '</b>' : '';
+    }
+    Array.prototype.forEach.call(nen.querySelectorAll('tr[data-id]'), function (tr) {
+      var nv = App.timNV(tr.dataset.id), da = nv.xepLuong && maQC.indexOf(nv.xepLuong.bang) >= 0, gy = da ? { bac: +nv.xepLuong.bac } : TL.goiYXepQuyChe(db, nv);
+      tr.querySelector('[data-b]').dataset.goiy = gy ? gy.bac : 1;
+      capNhatDong(tr);
+    });
+    nen.addEventListener('change', function (e) {
+      var tr = e.target.closest('tr[data-id]');
+      if (e.target.hasAttribute('data-tatca')) { Array.prototype.forEach.call(nen.querySelectorAll('[data-c]:not(:disabled)'), function (c) { c.checked = e.target.checked; }); return; }
+      if (e.target.name === 'hieuLuc') { Array.prototype.forEach.call(nen.querySelectorAll('tr[data-id]'), capNhatDong); return; }
+      if (tr && (e.target.hasAttribute('data-g') || e.target.hasAttribute('data-b'))) capNhatDong(tr);
+    });
+  };
+
   function dsXep(maBang, maNgach, bac) {
     return App.db.nhanVien.filter(function (nv) {
       var x = nv.xepLuong;
@@ -55,6 +132,7 @@
       'Xếp bậc cho từng người ở trang <a href="#nangbac">Xếp lương, nâng bậc</a> hoặc trong hồ sơ nhân viên. ' +
       'Bảng lương thay đổi từ một tháng (bậc, lương cơ sở, tiền cơm, tạm ứng): dùng trang <a href="#mucluong">Mức lương theo kỳ</a> – các kỳ trước giữ mức cũ.</p>' +
       '<div style="margin-top:10px"><div class="mo nho" style="margin-bottom:4px">Giá trị các bậc bên dưới là của mức:</div>' + App.ML.thanh(false) + '</div></div>' +
+      theQuyChe() +
       ds.map(theBang).join('') +
       '<div class="the"><h3>Thêm bảng lương</h3><div class="hang"><input id="tl-ten" placeholder="Tên bảng (vd Bảng lương chức vụ quản lý)" style="width:340px">' +
       '<select id="tl-kieu">' + opts(TL.KIEU_BL, 'tien') + '</select><select id="tl-apdung">' + opts(TL.AP_DUNG_BL, 'cb') + '</select>' +
@@ -94,6 +172,18 @@
     el.onclick = function (e) {
       var cm = e.target.closest('[data-muc]');
       if (cm) { App.ML.datChon(cm.dataset.muc); veLai(); return; }
+      if (e.target.closest('#tl-quyche')) {
+        var QC = TL.QUY_CHE_LUONG, co = ds.some(function (x) { return x.quyChe === QC.so; });
+        App.xacNhan((co ? 'Cập nhật lại' : 'Nạp') + ' 2 bảng lương theo <b>' + h(QC.ten) + '</b> (Quyết định ' + h(QC.so) + ' ngày ' + TL.hienNgay(QC.ngay) + ')?<br>' +
+          'Bảng quản lý, chuyên môn, nghiệp vụ, phục vụ (C01–C03, D01–D06) và bảng công nhân, nhân viên trực tiếp (A01–A03); mức tiền đúng phụ lục, dùng cho mức lương và lương đóng BH, nâng bậc 3 năm. ' +
+          'Các bảng lương khác giữ nguyên.' + (co ? '<br><b>Giá trị bậc đang sửa tay của 2 bảng này sẽ trở về đúng quy chế.</b>' : ''), { nut: co ? 'Cập nhật' : 'Nạp' }).then(function (ok) {
+          if (!ok) return;
+          var kq = TL.apDungThangLuongQuyChe(App.db);
+          App.luu(); if (App.apDungBangLuong) App.apDungBangLuong(null, true); veLai();
+          App.bao((kq.them ? 'Đã nạp ' + kq.them + ' bảng lương' : 'Đã cập nhật ' + kq.capNhat + ' bảng lương') + ' theo quy chế. Tiếp theo: Xếp lương, nâng bậc → Chuyển xếp theo quy chế.', 'tot');
+        });
+        return;
+      }
       if (e.target.closest('#tl-them')) {
         var ten = App.$('#tl-ten').value.trim();
         if (!ten) { App.bao('Nhập tên bảng lương.', 'loi'); App.$('#tl-ten').focus(); return; }
@@ -324,6 +414,7 @@
       '<select id="nb-pb">' + App.optDonVi(st.pb, { tatCa: 'Tất cả phòng / đội' }) + '</select>' +
       '<label class="chk"><input type="checkbox" id="nb-chua"' + (st.chuaXep ? ' checked' : '') + '> Chỉ người chưa xếp</label><span class="gian"></span>' +
       (lech ? '<button class="nut" id="nb-ap" title="Ghi mức theo bảng vào mức lương / lương đóng BH của những người đang lệch">Áp lương theo bảng (' + lech + ')</button>' : '') +
+      (db.thangLuong.some(function (x) { return x.quyChe === TL.QUY_CHE_LUONG.so; }) ? '<button class="nut" id="nb-qc" title="Chuyển xếp lương sang thang bảng lương theo Quy chế trả lương 2026 (QĐ ' + h(TL.QUY_CHE_LUONG.so) + ')">' + App.icon('bac') + 'Chuyển xếp theo quy chế…</button>' : '') +
       '<button class="nut" id="nb-xuat">' + App.icon('tai') + 'Xuất Excel</button></div>' +
       '<p class="mo nho" style="margin:8px 0 0">Chọn bảng – chức danh – bậc để <b>xếp lương ban đầu</b> hoặc sửa sai: mức theo bảng ghi ngay vào mức lương / lương đóng BH (tuỳ “Dùng cho” của bảng), áp dụng cho các kỳ chưa chốt. ' +
       '<b>Nâng bậc</b> có hiệu lực từ một ngày thì bấm “Nâng bậc…” để lập quyết định: các kỳ trước ngày hiệu lực vẫn tính lương cũ.</p></div>' +
@@ -336,6 +427,7 @@
     App.$('#nb-pb').onchange = function () { st.pb = this.value; App.veLai(); };
     App.$('#nb-chua').onchange = function () { st.chuaXep = this.checked; App.veLai(); };
     var ba = App.$('#nb-ap'); if (ba) ba.onclick = function () { App.apDungBangLuong(); App.luu(); App.veLai(); };
+    var bq = App.$('#nb-qc'); if (bq) bq.onclick = App.chuyenXepQuyChe;
     App.$('#nb-xuat').onclick = function () { xuatXep(ds); };
     var bang = App.$('#nb-bang');
     bang.onchange = function (e) {

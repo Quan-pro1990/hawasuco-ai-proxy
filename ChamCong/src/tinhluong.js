@@ -143,7 +143,7 @@
       phuCap: phuCapMacDinh(),
       sanPham: sanPhamMacDinh(),
       phongBan: [],
-      thangLuong: [],
+      thangLuong: thangLuongQuyChe(),   // thang bảng lương theo Quy chế trả lương của công ty
       dotLuong: [],
       khoiLuong: {},
       nhanVien: [],
@@ -571,6 +571,75 @@
     b.ngach.forEach(function (g) { while (g.bac.length < b.soBac) g.bac.push(''); if (g.bac.length > b.soBac) g.bac.length = b.soBac; });
     return b;
   }
+  /* ----- Thang, bảng lương theo Quy chế trả lương của công ty
+     (Quyết định 16/QĐ-CNHG ngày 26/5/2026 – điều chỉnh, bổ sung năm 2026, áp dụng từ kỳ lương tháng 5/2026).
+     Mức lương trong thang là mức ghi trên hợp đồng, dùng trả lương thời gian và làm căn cứ đóng BHXH, BHYT, BHTN (Điều 3);
+     niên hạn nâng lương 3 năm (Điều 10). Đơn vị trong phụ lục: 1.000 đ. ----- */
+  var QUY_CHE_LUONG = { so: '16/QĐ-CNHG', ngay: '2026-05-26', tuKy: '2026-05', ten: 'Quy chế trả lương điều chỉnh, bổ sung năm 2026', thay: '101/QĐ-CNHG ngày 31/5/2023' };
+  function thangLuongQuyChe() {
+    function g(ma, ten, bac) { return { ma: ma, ten: ten, soBac: bac.length, bac: bac.map(function (x) { return Math.round(x * 1000); }) }; }
+    return [
+      chuanBangLuong({ ma: 'CD', ten: 'Bảng lương quản lý, chuyên môn, nghiệp vụ thừa hành, phục vụ (mã số C, D)', kieu: 'tien', apDung: 'ca_hai', namNang: 3, quyChe: QUY_CHE_LUONG.so, ngach: [
+        g('C01', 'Chủ tịch kiêm Giám đốc', [23000, 26000]),
+        g('C02', 'Phó Giám đốc Công ty', [18500, 20000]),
+        g('C03', 'Kế toán trưởng; Người phụ trách kế toán Công ty', [17000, 18500]),
+        g('D01', 'Trưởng phòng', [15500, 17000]),
+        g('D02', 'Phó trưởng phòng; Đội trưởng', [13000, 15000]),
+        g('D03', 'Nhân viên văn phòng có trình độ đại học trở lên; Nhân viên hoá nghiệm; Thủ kho Công ty', [8000, 9500, 11000]),
+        g('D04', 'Nhân viên văn phòng có trình độ cao đẳng, trung cấp', [7000, 8000, 9000]),
+        g('D05', 'Nhân viên văn phòng chưa qua đào tạo; Nhân viên thu tiền nước tại quầy (không xét đến trình độ CM)', [6000, 7000, 8000]),
+        g('D06', 'Nhân viên tạp vụ, bảo vệ', [5000, 6000])
+      ] }),
+      chuanBangLuong({ ma: 'A', ten: 'Bảng lương công nhân, nhân viên lao động trực tiếp sản xuất kinh doanh và phục vụ (mã số A)', kieu: 'tien', apDung: 'ca_hai', namNang: 3, quyChe: QUY_CHE_LUONG.so, ngach: [
+        g('A01', 'Nhân viên ghi, thu', [6360, 7320, 8040]),
+        g('A02', 'Công nhân sửa chữa, lắp đặt; tài xế (ô tô tải, chuyên dùng)', [7000, 8000, 9000]),
+        g('A03', 'Công nhân trực ca (đã bao gồm 30% tiền lương làm ca đêm)', [8000, 9000, 10000])
+      ] })
+    ];
+  }
+  /** Nạp / cập nhật 2 bảng lương theo quy chế vào danh mục (giữ các bảng, chức danh khác). Trả { them, capNhat } */
+  function apDungThangLuongQuyChe(db) {
+    var kq = { them: 0, capNhat: 0 };
+    if (!Array.isArray(db.thangLuong)) db.thangLuong = [];
+    thangLuongQuyChe().forEach(function (moi) {
+      var cu = timBangLuong(db, moi.ma);
+      if (!cu) { db.thangLuong.push(moi); kq.them++; return; }
+      ['ten', 'kieu', 'apDung', 'namNang', 'quyChe'].forEach(function (k) { cu[k] = moi[k]; });
+      moi.ngach.forEach(function (g) {
+        var c = timNgach(cu, g.ma);
+        if (c) { c.ten = g.ten; c.soBac = g.soBac; c.bac = g.bac.slice(); delete c.namNang; } else cu.ngach.push(g);
+      });
+      chuanBangLuong(cu); kq.capNhat++;
+    });
+    return kq;
+  }
+  /** Gợi ý chuyển xếp 1 người sang thang bảng lương theo quy chế (Điều 9): chức danh theo chức vụ / trình độ,
+      bậc: quản lý (C01–D02) giữ bậc cũ; còn lại căn cứ mức lương cũ – bậc thấp nhất không thấp hơn lương cũ. */
+  var GOI_Y_XEP = [['C02', /pho giam doc/], ['C01', /(chu tich|giam doc)/], ['C03', /(ke toan truong|phu trach ke toan)/],
+    ['D02', /(pho (truong )?phong|doi truong|pho doi)/], ['D01', /truong phong/], ['D06', /(tap vu|bao ve|ve sinh|lao cong)/],
+    ['D05', /(thu tien (nuoc )?tai quay|thu ngan)/], ['D03', /(hoa nghiem|thu kho)/], ['A03', /(truc ca|van hanh)/],
+    ['A01', /(ghi thu|ghi chi so|ghi so|ghi dong ho|thu tien|thu hoa don)/], ['A02', /((^| )cn( |$)|cong nhan|lap dat|sua chua|tai xe|lai xe)/]];
+  function goiYXepQuyChe(db, nv) {
+    var cv = chuanCV(nv.chucVu), ma = null, lyDo = '';
+    for (var i = 0; i < GOI_Y_XEP.length && !ma; i++) if (GOI_Y_XEP[i][1].test(cv)) { ma = GOI_Y_XEP[i][0]; lyDo = 'theo chức vụ'; }
+    if (!ma) {
+      var td = chuanCV(nv.trinhDoCM);
+      ma = /(dai hoc|thac si|tien si|ky su|cu nhan)/.test(td) ? 'D03' : /(cao dang|trung cap)/.test(td) ? 'D04' : 'D05';
+      lyDo = 'nhân viên văn phòng theo trình độ' + (nv.trinhDoCM ? ' (' + nv.trinhDoCM + ')' : ' (chưa nhập trình độ)');
+    }
+    var b = null, g = null;
+    (db.thangLuong || []).forEach(function (x) { var y = timNgach(x, ma); if (y && !g) { b = x; g = y; } });
+    if (!g) return null;
+    var n = soBacNgach(g), ky = QUY_CHE_LUONG.tuKy, bac = 1, cu = nv.xepLuong;
+    if (/^(C0|D0[12])/.test(ma) && cu && +cu.bac > 0) { bac = Math.min(+cu.bac, n); lyDo += ', giữ bậc cũ'; }
+    else {
+      var luong = +nv.luongCB || 0; bac = n;
+      for (var k = 1; k <= n; k++) { var v = giaTriBac(db, b, g, k, ky); if (v && v.tien >= luong) { bac = k; break; } }
+      lyDo += ', theo mức lương cũ';
+    }
+    return { bang: b.ma, ngach: g.ma, bac: bac, lyDo: lyDo };
+  }
+
   function timBangLuong(db, ma) { return (db.thangLuong || []).filter(function (b) { return b.ma === ma; })[0] || null; }
   function timNgach(b, ma) { return b ? (b.ngach || []).filter(function (g) { return g.ma === ma; })[0] || null : null; }
 
@@ -1261,7 +1330,7 @@
     thuViecNV: thuViecNV, denNgayThuViec: denNgayThuViec, denNgayHD: denNgayThuViec, dangThuViec: dangThuViec,
     giaiDoanHDMacDinh: giaiDoanHDMacDinh, dsGiaiDoan: dsGiaiDoan, timGiaiDoan: timGiaiDoan, soThangThuViec: soThangThuViec, soThangGiua: soThangGiua,
     hdTheoNgay: hdTheoNgay, giaiDoanCacHD: giaiDoanCacHD, giaiDoanCuaHD: giaiDoanCuaHD, hdTiepTheo: hdTiepTheo,
-    soBacNgach: soBacNgach, giaTriBac: giaTriBac, xepLuongNV: xepLuongNV, apXepLuong: apXepLuong, themThangISO: themThangISO,
+    soBacNgach: soBacNgach, giaTriBac: giaTriBac, QUY_CHE_LUONG: QUY_CHE_LUONG, thangLuongQuyChe: thangLuongQuyChe, apDungThangLuongQuyChe: apDungThangLuongQuyChe, goiYXepQuyChe: goiYXepQuyChe, xepLuongNV: xepLuongNV, apXepLuong: apXepLuong, themThangISO: themThangISO,
     dsDotLuong: dsDotLuong, kyHienHanh: kyHienHanh, kyCuaISO: kyCuaISO, dotTaiKy: dotTaiKy, luongCoSoKy: luongCoSoKy, mucChungPC: mucChungPC,
     bacNgach: bacNgach, chupMucKy: chupMucKy, xepLuongTheoKy: xepLuongTheoKy, cauHinhTamUng: cauHinhTamUng, tamUngTheoChucVu: tamUngTheoChucVu,
     tamUngKy1: tamUngKy1, chuanCV: chuanCV, mienThueAnCaKy: mienThueAnCaKy, KHOI_VP: KHOI_VP, khoiCuaDV: khoiCuaDV, dsKhoi: dsKhoi, thongTinKhoi: thongTinKhoi,

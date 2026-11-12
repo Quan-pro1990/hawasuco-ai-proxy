@@ -10,6 +10,10 @@
 - **Giai đoạn hợp đồng**: thứ tự ký hợp đồng (thử việc 1 tháng → chính thức 1 năm → 3 năm → không xác định thời hạn), sửa tên, số tháng, thứ tự.
 - **Thang, bảng lương**: bảng lương, chức danh, **số bậc** từng chức danh (− / +), giá trị bậc (mức tiền hoặc hệ số × lương cơ sở);
   **Tách…** một chức danh thành hai từ một kỳ lương.
+  - Thẻ **Theo Quy chế trả lương của công ty** (QĐ 16/QĐ-CNHG ngày 26/5/2026, áp dụng từ kỳ lương tháng 5/2026): bấm **Nạp thang bảng lương theo quy chế**
+    để có đúng 2 bảng của phụ lục – bảng quản lý, chuyên môn, nghiệp vụ thừa hành, phục vụ (C01–C03, D01–D06) và bảng công nhân,
+    nhân viên trực tiếp (A01–A03); mức tiền đúng phụ lục, dùng cho mức lương và lương đóng BH, nâng bậc 3 năm. Dữ liệu mới có sẵn 2 bảng này.
+  - Sau đó bấm **Chuyển xếp lương nhân viên theo quy chế…** (xem [Xếp lương, nâng bậc](#huongdan?p=xep-luong-nang-bac)).
 - **Sản phẩm (lương SP)**: tên, đơn vị tính, đơn giá (vd hoá đơn ghi thu 1.200 đ/HĐ).
 - **Phụ cấp**: cơm trưa (mức chung 50.000 đ/ngày), phụ cấp khác; cách tính theo ngày / theo công / cố định; chịu thuế, đóng BH.
 - **Ký hiệu chấm công**: ký hiệu, ý nghĩa, số công đi làm / hưởng lương, nhóm (đi làm, phép, BHXH, không lương…).

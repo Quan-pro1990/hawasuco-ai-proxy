@@ -446,6 +446,17 @@
         '<li>Không được ép người lao động chi tiêu lương vào hàng hoá, dịch vụ của công ty; không giữ lương để ràng buộc.</li></ul>' +
         '<div class="mo nho">Ở công ty: tạm ứng kỳ I giữa tháng, kỳ II cuối tháng (Bảng lương → Chi lương kỳ I, kỳ II…); phiếu lương in ở trang Phiếu lương.</div>'; },
       ng: 'Điều 94–97 Bộ luật Lao động 2019', lk: ['bangluong', 'phieuluong'] },
+    { ma: 'quy_che', td: 'Quy chế trả lương của công ty', tu: 'quy che tra luong|quy che luong|quy che|nguyen tac tra luong|tra luong may lan|may lan mot thang|tam ung bao nhieu|luong thang 13|hieu qua cong viec|nang luong truoc han|dieu kien nang luong|nien han nang luong|bao lau nang luong|bao lau duoc nang|may nam nang|xep luong|chuyen xep|16 qd cnhg',
+      nd: function () { var QC = TL.QUY_CHE_LUONG; return '<b>' + h(QC.ten) + '</b> (Quyết định ' + h(QC.so) + ' ngày ' + TL.hienNgay(QC.ngay) + ', áp dụng từ kỳ lương tháng ' + QC.tuKy.slice(5) + '/' + QC.tuKy.slice(0, 4) + ', thay QĐ ' + h(QC.thay) + '):<ul>' +
+        '<li><b>Hình thức trả lương</b>: khoán sản phẩm (ghi chỉ số thủy lượng kế, thu hoá đơn tiền nước × đơn giá khoán) và theo thời gian: lương = mức lương theo công việc (ghi trên HĐLĐ) ÷ số ngày công quy định × ngày công thực tế.</li>' +
+        '<li><b>Thanh toán 2 lần / tháng</b>: lần 1 tạm ứng không quá 50% lương từ ngày 10 đến 15; lần 2 thanh toán phần còn lại từ ngày 25 đến 30.</li>' +
+        '<li>Thử việc hưởng <b>85%</b> mức lương của công việc. Mức lương trong thang, bảng lương là mức ghi trên hợp đồng và là <b>căn cứ đóng BHXH, BHYT, BHTN</b>.</li>' +
+        '<li><b>Thang, bảng lương</b>: bảng quản lý, chuyên môn, nghiệp vụ thừa hành, phục vụ (C01–C03, D01–D06) và bảng công nhân, nhân viên trực tiếp (A01–A03) – xếp theo đúng chức danh, công việc; đổi chức danh thì đổi lương theo chức danh mới.</li>' +
+        '<li><b>Nâng lương</b>: đủ <b>3 năm</b> ở một mức, hoàn thành tốt nhiệm vụ, không vi phạm nội quy, không bị kỷ luật từ khiển trách bằng văn bản trở lên còn hiệu lực; nâng trước hạn khi có thành tích đặc biệt. Phòng Hành chính – Quản trị rà soát hằng tháng, trình Chủ tịch kiêm Giám đốc quyết định.</li>' +
+        '<li><b>Làm thêm giờ</b>: trả theo Điều 98 BLLĐ; chỉ tính cho công nhân được huy động sửa chữa sự cố ống bể ngoài khung 7 giờ – 17 giờ và người làm ngày Lễ, Tết theo danh sách được duyệt; công việc cá nhân phụ trách (lương trọn gói) không tính làm thêm.</li>' +
+        '<li>Nghỉ phép năm hưởng nguyên lương; nghỉ ốm, thai sản do BHXH trả; đi học theo kế hoạch của công ty hưởng lương như ngày làm việc. Cuối năm có thể chi lương theo hiệu quả công việc (lương tháng 13…) nếu đạt kế hoạch.</li></ul>' +
+        '<div class="mo nho">Hỏi “lương trưởng phòng bao nhiêu”, “bậc lương A01” để xem mức từng chức danh.</div>'; },
+      ng: 'Quy chế trả lương của công ty (QĐ 16/QĐ-CNHG ngày 26/5/2026)', lk: ['nangbac', 'danhmuc'] },
     { ma: 'thang_luong', pm: 1, td: 'Thang lương, bảng lương, nâng lương', tu: 'thang luong|bang luong|nang luong|nang bac|xay dung thang bang luong|dinh muc lao dong|che do nang luong|bac luong',
       nd: function () { return 'Doanh nghiệp tự xây dựng <b>thang lương, bảng lương, định mức lao động</b> làm cơ sở tuyển dụng, trả lương, đóng BHXH; phải tham khảo ý kiến tổ chức đại diện người lao động và công bố công khai tại nơi làm việc (Điều 93 BLLĐ 2019). ' +
         'Điều kiện, thời hạn nâng bậc, nâng lương thực hiện theo quy chế của công ty và thoả thuận trong hợp đồng.' +
@@ -487,8 +498,48 @@
       (khac && khac.length ? '<div class="tl-lq">Liên quan: ' + khac.map(function (x) { return '<a href="#" data-tl="hoi:' + h(x.k.td) + '">' + h(x.k.td) + '</a>'; }).join(' · ') + '</div>' : '') };
   }
 
+  /* ================= Mức lương theo chức danh trong thang, bảng lương ================= */
+  function boHai(s) { var w = cn(s).split(' '), kq = []; for (var i = 0; i + 1 < w.length; i++) if (!/^(cong ty|da bao|bao gom|ma so)$/.test(w[i] + ' ' + w[i + 1])) kq.push(w[i] + ' ' + w[i + 1]); return kq; }
+  function bacLuong(q) {
+    var ds = (App.db && App.db.thangLuong) || [];
+    if (!ds.length || !/(^| )(luong|bac|muc luong|he so|thang luong|bang luong|ma so)( |$)/.test(q)) return null;
+    var duocXem = typeof App.quyen !== 'function' || App.quyen('lg') >= 1 || App.quyen('tl') >= 1;
+    var ky = kyHT(), t = ' ' + q + ' ', tot = [];
+    ds.forEach(function (b) {
+      (b.ngach || []).forEach(function (g) {
+        if (t.indexOf(' ' + cn(g.ma) + ' ') >= 0) { tot.push({ b: b, g: g, ti: 2, khop: 9 }); return; }
+        String(g.ten).split(/[;,(]/).forEach(function (cum) {
+          var hai = boHai(cum); if (!hai.length) return;
+          var khop = hai.filter(function (x) { return t.indexOf(' ' + x + ' ') >= 0; }).length;
+          if (khop) tot.push({ b: b, g: g, ti: khop / hai.length, khop: khop });
+        });
+      });
+    });
+    var chung = /(thang luong|bang luong|bac luong|cac bac|muc luong)( (cua )?(cong ty|hien nay|hien tai|theo quy che|moi))/.test(q) || /^(thang|bang) (bang )?luong( cong ty)?$/.test(q);
+    if (!tot.length && !chung) return null;
+    if (!duocXem) return { cx: ['lac', 1200, '🔒'], html: 'Tài khoản của bạn không xem được thang, bảng lương (cần quyền Tiền lương hoặc Thiết lập).' };
+    function dongBac(b, g) {
+      var n = TL.soBacNgach(g), s = [];
+      for (var k = 1; k <= n; k++) { var v = TL.giaTriBac(App.db, b, g, k, ky); if (v) s.push('Bậc ' + ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'][k - 1] + ': <b>' + App.tien(v.tien) + '</b>'); }
+      return s.join(' · ');
+    }
+    if (!tot.length || chung) {
+      return { cx: ['gat', 1300, '📊'], html: 'Thang, bảng lương đang áp dụng (kỳ ' + ky.slice(5) + '/' + ky.slice(0, 4) + ', đồng/tháng):' + ds.map(function (b) {
+        return '<div class="tl-muc" style="margin-top:6px">' + h(b.ten) + '</div><ul>' + b.ngach.map(function (g) { return '<li><b>' + h(g.ma) + '</b> ' + h(g.ten) + ': ' + dongBac(b, g) + '</li>'; }).join('') + '</ul>';
+      }).join('') + hang(nutTrang('nangbac', 'Mở Xếp lương, nâng bậc')) };
+    }
+    tot.sort(function (a, b) { return b.ti - a.ti || b.khop - a.khop; });
+    var dau = tot[0], cung = tot.filter(function (x) { return x.ti === dau.ti && x.khop === dau.khop && x.g !== dau.g; });
+    var chon = [dau].concat(cung).filter(function (x, i, a) { return a.findIndex(function (y) { return y.g === x.g; }) === i; }).slice(0, 3);
+    return { cx: ['gat', 1300, '📊'], html: chon.map(function (x) {
+      var dang = App.db.nhanVien.filter(function (nv) { return nv.trangThai !== 'nghi_viec' && nv.xepLuong && nv.xepLuong.bang === x.b.ma && nv.xepLuong.ngach === x.g.ma; }).length;
+      return '<div class="tl-muc">' + h(x.g.ma) + ' – ' + h(x.g.ten) + '</div><div>' + dongBac(x.b, x.g) + ' đ/tháng</div>' +
+        '<div class="mo nho">' + h(x.b.ten) + ' · nâng bậc ' + (+x.g.namNang || +x.b.namNang || 3) + ' năm · dùng cho ' + ({ cb: 'mức lương', bh: 'lương đóng BH', ca_hai: 'mức lương và lương đóng BH' })[x.b.apDung] + (dang ? ' · ' + dang + ' người đang xếp' : '') + '</div>';
+    }).join('') + (dau.b.quyChe ? '<div class="mo nho tl-nguon">📚 Theo Quy chế trả lương (QĐ ' + h(dau.b.quyChe) + ').</div>' : '') + hang(nutTrang('nangbac', 'Mở Xếp lương, nâng bậc')) };
+  }
+
   App.KienThuc = {
-    ten: TEN, banThan: banThan, tinh: tinh, tim: tim, ve: veKT, chuDe: function () { return KT.map(function (k) { return k.td; }); },
+    ten: TEN, banThan: banThan, tinh: tinh, tim: tim, ve: veKT, bacLuong: bacLuong, chuDe: function () { return KT.map(function (k) { return k.td; }); },
     lamDuocGi: lamDuocGi, docTien: docTien
   };
 })();

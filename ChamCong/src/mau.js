@@ -143,31 +143,19 @@
     var dauKy = (function () { var k = TL.kyCuaNgay(db, Y, M, D); return TL.batDauKy(db, k.y, k.m); })();
     qd('NV011', { loai: 'dieu_chuyen', so: '98/QĐ-CT', ngay: TL.congNgay(+dauKy.slice(0, 4), +dauKy.slice(5, 7), +dauKy.slice(8), -5), hieuLuc: dauKy, phongBanCu: 'KTH', phongBanMoi: 'D1', chucVuCu: 'CN LĐ-SC', chucVuMoi: 'CN LĐ-SC', noiDung: 'Điều chuyển đến Đội Cấp nước số 1' });
     qd('NV010', { loai: 'dieu_chuyen', so: '99/QĐ-CT', ngay: TL.congNgay(+dauKy.slice(0, 4), +dauKy.slice(5, 7), +dauKy.slice(8), -5), hieuLuc: dauKy, phongBanCu: 'KDVT', phongBanMoi: 'D2', chucVuCu: 'Nhân viên ghi thu', chucVuMoi: 'Nhân viên ghi thu', noiDung: 'Điều chuyển đến Đội Cấp nước số 2' });
-    var nl1 = qd('NV006', { loai: 'nang_luong', so: '88/QĐ-CT', ngay: dau(lui(2)), hieuLuc: dau(lui(2)), luongCu: 8500000, luongMoi: 9000000, noiDung: 'Nâng bậc lương thường xuyên' });
-    var nl2 = qd('NV011', { loai: 'nang_luong', so: '61/QĐ-CT', ngay: dau(lui(5)), hieuLuc: dau(lui(5)), luongCu: 7500000, luongMoi: 8000000, noiDung: 'Nâng bậc lương thường xuyên' });
+    var nl1 = qd('NV006', { loai: 'nang_luong', so: '88/QĐ-CT', ngay: dau(lui(2)), hieuLuc: dau(lui(2)), luongCu: 8000000, luongMoi: 9500000, noiDung: 'Nâng bậc lương thường xuyên' });
+    var nl2 = qd('NV011', { loai: 'nang_luong', so: '61/QĐ-CT', ngay: dau(lui(5)), hieuLuc: dau(lui(5)), luongCu: 7000000, luongMoi: 8000000, noiDung: 'Nâng bậc lương thường xuyên' });
     [nl1, nl2].forEach(function (nv) { nv.hopDong[nv.hopDong.length - 1].luongCB = nv.quyetDinh[nv.quyetDinh.length - 1].luongCu; });
 
-    // ---- Thang, bảng lương (mức tiền) và xếp bậc ----
-    db.thangLuong = [TL.chuanBangLuong({
-      // từ Đội trưởng trở lên 2 bậc, còn lại 3 bậc
-      ma: 'BL1', ten: 'Thang lương, bảng lương của công ty', kieu: 'tien', apDung: 'cb', namNang: 3,
-      ngach: [
-        { ma: 'GD', ten: 'Giám đốc', soBac: 2, bac: [28000000, 30000000] },
-        { ma: 'PGD', ten: 'Phó Giám đốc, Kế toán trưởng', soBac: 2, bac: [17000000, 18000000] },
-        { ma: 'TP', ten: 'Trưởng phòng', soBac: 2, bac: [14000000, 15000000] },
-        { ma: 'DT', ten: 'Đội trưởng', soBac: 2, bac: [14000000, 15000000] },
-        { ma: 'CV', ten: 'Chuyên viên, kỹ sư, kế toán viên', soBac: 3, bac: [8500000, 9000000, 9500000] },
-        { ma: 'NV', ten: 'Nhân viên nghiệp vụ (ghi thu, thủ kho)', soBac: 3, namNang: 2, bac: [7000000, 7320000, 8040000] },
-        { ma: 'CN', ten: 'Công nhân lắp đặt – sửa chữa, lái xe', soBac: 3, namNang: 2, bac: [7500000, 8000000, 9000000] }
-      ]
-    })];
+    // ---- Thang, bảng lương theo Quy chế trả lương của công ty (QĐ 16/QĐ-CNHG, 2026) và xếp bậc ----
+    db.thangLuong = TL.thangLuongQuyChe();
     var xep = {
-      NV001: ['GD', 2, '2023-01-01'], NV002: ['PGD', 2, '2022-03-01'], NV003: ['TP', 2, '2021-07-01'], NV004: ['TP', 1, '2023-11-01'], NV005: ['TP', 2, '2023-09-01'],
-      NV006: ['CV', 2, dau(lui(2))], NV007: ['NV', 3, '2024-11-01'], NV008: ['CV', 2, '2024-01-10'], NV009: ['CN', 3, '2025-02-01'],
-      NV010: ['NV', 2, TL.themThangISO(TL.iso(Y, M, 1), -24)], NV011: ['CN', 2, dau(lui(5))], NV012: ['NV', 3, '2025-06-01'], NV013: ['CN', 1, null],
-      NV014: ['NV', 1, null], NV017: ['NV', 2, '2023-05-01']
+      NV001: ['CD', 'C01', 2, '2023-01-01'], NV002: ['CD', 'C03', 2, '2022-03-01'], NV003: ['CD', 'D01', 2, '2021-07-01'], NV004: ['CD', 'D01', 1, '2023-11-01'], NV005: ['CD', 'D01', 2, '2023-09-01'],
+      NV006: ['CD', 'D03', 2, dau(lui(2))], NV007: ['A', 'A01', 3, '2024-11-01'], NV008: ['CD', 'D03', 2, '2024-01-10'], NV009: ['A', 'A02', 3, '2025-02-01'],
+      NV010: ['A', 'A01', 2, TL.themThangISO(TL.iso(Y, M, 1), -24)], NV011: ['A', 'A02', 2, dau(lui(5))], NV012: ['CD', 'D03', 2, '2025-06-01'], NV013: ['A', 'A02', 1, null],
+      NV014: ['A', 'A01', 1, null], NV017: ['A', 'A01', 2, '2023-05-01']
     };
-    db.nhanVien.forEach(function (nv) { var x = xep[nv.ma]; if (x) nv.xepLuong = { bang: 'BL1', ngach: x[0], bac: x[1], ngayHuong: x[2] || nv.ngayVao }; });
+    db.nhanVien.forEach(function (nv) { var x = xep[nv.ma]; if (x) nv.xepLuong = { bang: x[0], ngach: x[1], bac: x[2], ngayHuong: x[3] || nv.ngayVao }; });
     [nl1, nl2].forEach(function (nv) {
       var q = nv.quyetDinh[nv.quyetDinh.length - 1];
       q.xepLuongMoi = Object.assign({}, nv.xepLuong); q.xepLuongCu = Object.assign({}, nv.xepLuong, { bac: nv.xepLuong.bac - 1, ngayHuong: '' });
@@ -175,10 +163,15 @@
     });
     // ---- Mức lương áp dụng từ kỳ 01 năm sau (mẫu): các bậc tăng 5%, tiền cơm 55.000 đ/ngày ----
     var kyMoi = (Y + 1) + '-01', dot = Object.assign({ id: 'dot_mau', tuKy: kyMoi, soQD: '01/QĐ-CT (mẫu)', ghiChu: 'Điều chỉnh lương năm ' + (Y + 1) + ' (dữ liệu mẫu)' }, TL.chupMucKy(db, kyMoi));
-    Object.keys(dot.bang.BL1.ngach).forEach(function (m) { dot.bang.BL1.ngach[m] = dot.bang.BL1.ngach[m].map(function (x) { return +x > 0 ? Math.round(x * 1.05 / 1000) * 1000 : x; }); });
+    Object.keys(dot.bang).forEach(function (mb) { Object.keys(dot.bang[mb].ngach).forEach(function (m) { dot.bang[mb].ngach[m] = dot.bang[mb].ngach[m].map(function (x) { return +x > 0 ? Math.round(x * 1.05 / 1000) * 1000 : x; }); }); });
     dot.phuCap.AN = 55000;
     db.dotLuong = [dot];
-    db.nhanVien.forEach(function (nv) { TL.apXepLuong(db, nv); });
+    db.nhanVien.forEach(function (nv) {
+      TL.apXepLuong(db, nv);
+      // hợp đồng hiện tại ghi đúng mức lương theo bậc (người chưa có quyết định nâng lương)
+      var hd = (nv.hopDong || [])[nv.hopDong ? nv.hopDong.length - 1 : 0];
+      if (hd && nv.xepLuong && !(nv.quyetDinh || []).some(function (q) { return q.loai === 'nang_luong'; })) hd.luongCB = nv.luongCB;
+    });
     nv16.tamUngRieng = 0;   // cộng tác viên theo giờ: không tạm ứng kỳ I
     qd('NV010', { loai: 'khen_thuong', so: '95/QĐ-CT', ngay: TL.congNgay(Y, M, D, -10), hieuLuc: TL.congNgay(Y, M, D, -10), hinhThuc: 'Tiền thưởng', soTien: 1000000, kyLuong: kyTruoc, noiDung: 'Hoàn thành vượt chỉ tiêu thu tiền nước' });
     qd('NV013', { loai: 'ky_luat', so: '96/QĐ-CT', ngay: TL.congNgay(Y, M, D, -8), hieuLuc: TL.congNgay(Y, M, D, -8), hinhThuc: 'Khiển trách', soTien: 300000, kyLuong: kyTruoc, noiDung: 'Bồi thường chi phí sửa xe do vi phạm quy định vận hành' });

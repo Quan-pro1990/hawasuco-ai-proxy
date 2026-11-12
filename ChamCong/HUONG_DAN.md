@@ -187,6 +187,27 @@ Tiếp nhận, bổ nhiệm, điều chuyển, **nâng lương**, **khen thưở
   Đơn vị còn trong lịch sử (quyết định cũ, người đã nghỉ, bảng lương đã chốt) được chuyển vào mục *Đã giải thể* (khôi phục được).
 
 ### Xếp lương, nâng bậc
+- **Thang, bảng lương theo Quy chế trả lương của công ty** (QĐ 16/QĐ-CNHG ngày 26/5/2026, áp dụng từ kỳ lương tháng 5/2026):
+  Danh mục → Thang, bảng lương → **Nạp thang bảng lương theo quy chế** (dữ liệu mới có sẵn). Đơn vị: đồng/tháng.
+
+  | Mã | Chức danh | Bậc I | Bậc II | Bậc III |
+  |---|---|---|---|---|
+  | C01 | Chủ tịch kiêm Giám đốc | 23.000.000 | 26.000.000 | |
+  | C02 | Phó Giám đốc Công ty | 18.500.000 | 20.000.000 | |
+  | C03 | Kế toán trưởng; người phụ trách kế toán | 17.000.000 | 18.500.000 | |
+  | D01 | Trưởng phòng | 15.500.000 | 17.000.000 | |
+  | D02 | Phó trưởng phòng; Đội trưởng | 13.000.000 | 15.000.000 | |
+  | D03 | NV văn phòng đại học trở lên; hoá nghiệm; thủ kho | 8.000.000 | 9.500.000 | 11.000.000 |
+  | D04 | NV văn phòng cao đẳng, trung cấp | 7.000.000 | 8.000.000 | 9.000.000 |
+  | D05 | NV văn phòng chưa qua đào tạo; thu tiền nước tại quầy | 6.000.000 | 7.000.000 | 8.000.000 |
+  | D06 | Tạp vụ, bảo vệ | 5.000.000 | 6.000.000 | |
+  | A01 | Nhân viên ghi, thu | 6.360.000 | 7.320.000 | 8.040.000 |
+  | A02 | Công nhân sửa chữa, lắp đặt; tài xế | 7.000.000 | 8.000.000 | 9.000.000 |
+  | A03 | Công nhân trực ca (gồm 30% lương ca đêm) | 8.000.000 | 9.000.000 | 10.000.000 |
+
+  Mức lương trong thang là mức ghi trên hợp đồng, dùng trả lương thời gian và làm căn cứ đóng BHXH, BHYT, BHTN; nâng bậc sau 3 năm.
+  Chuyển xếp: trang Xếp lương, nâng bậc → **Chuyển xếp theo quy chế…** – gợi ý chức danh, bậc theo Điều 9 (sửa được),
+  lập quyết định có hiệu lực từ đầu kỳ lương tháng 5/2026, bảo lưu thời gian nâng bậc.
 - **Danh mục → Thang, bảng lương**: tạo bảng (vd *Thang lương, bảng lương của công ty*), chọn kiểu **mức tiền** hoặc **hệ số ×
   mức lương cơ sở**, *Dùng cho* mức lương, lương đóng BH hoặc cả hai, thời gian nâng bậc (năm). Thêm chức danh / nhóm công việc
   rồi nhập từng bậc. **Số bậc riêng từng chức danh**: cột *Số bậc* bấm **−** / **+** (vd từ Đội trưởng trở lên 2 bậc, còn lại 3 bậc);
