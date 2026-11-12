@@ -77,6 +77,8 @@
     cocau: '<circle cx="12" cy="12" r="9"/><path d="M12 3v9l7 5"/>',
     theodoi: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="M9 12.5l2 2 4-4"/>',
     sach: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M8 7h8M8 11h6"/>',
+    sang: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+    toi: '<path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"/>',
     hoi: '<circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8 1c0 1.7-2.4 2.2-2.4 3.7"/><path d="M12 17.2h.01"/>'
   };
   App.icon = function (ten) {
@@ -194,8 +196,8 @@
     var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + App.h(o.nhan || 'Biểu đồ') + '">';
     for (var i = 0; i <= 4; i++) {
       var v = max * i / 4, y = m.t + ih - ih * i / 4;
-      s += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + y + '" y2="' + y + '" stroke="' + (i ? '#eceff3' : '#c5ccd6') + '"/>';
-      s += '<text x="' + (m.l - 8) + '" y="' + (y + 4) + '" text-anchor="end" font-size="11" fill="#6b7480">' + App.gon(v) + '</text>';
+      s += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + y + '" y2="' + y + '" style="stroke:' + (i ? 'var(--duong)' : 'var(--vien-dam)') + '"/>';
+      s += '<text x="' + (m.l - 8) + '" y="' + (y + 4) + '" text-anchor="end" font-size="11" style="fill:var(--mo)">' + App.gon(v) + '</text>';
     }
     du.forEach(function (d, i) {
       var cx = m.l + buoc * i + buoc / 2, h = max ? ih * d.gt / max : 0, x = cx - bw / 2, y = m.t + ih - h;
@@ -204,7 +206,7 @@
         var r = Math.min(4, bw / 2, h);
         s += '<path d="M' + x + ' ' + (y + h) + 'V' + (y + r) + 'Q' + x + ' ' + y + ' ' + (x + r) + ' ' + y + 'H' + (x + bw - r) + 'Q' + (x + bw) + ' ' + y + ' ' + (x + bw) + ' ' + (y + r) + 'V' + (y + h) + 'Z" fill="' + (d.noiBat || !o.noiBat ? 'var(--s1)' : '#9ec5f4') + '" pointer-events="none"/>';
       }
-      s += '<text x="' + cx + '" y="' + (H - 8) + '" text-anchor="middle" font-size="11" fill="' + (d.noiBat ? '#1f2937' : '#6b7480') + '"' + (d.noiBat ? ' font-weight="600"' : '') + '>' + App.h(d.nhan) + '</text>';
+      s += '<text x="' + cx + '" y="' + (H - 8) + '" text-anchor="middle" font-size="11" style="fill:' + (d.noiBat ? 'var(--chu)' : 'var(--mo)') + '"' + (d.noiBat ? ' font-weight="600"' : '') + '>' + App.h(d.nhan) + '</text>';
     });
     s += '<rect class="dong-hl" x="0" y="' + m.t + '" width="0" height="' + ih + '" fill="rgba(42,120,214,.07)" pointer-events="none"/>';
     s += '</svg>';
@@ -234,8 +236,8 @@
     var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + App.h(o.nhan || 'Biểu đồ') + '">';
     for (var i = 0; i <= 4; i++) {
       var v = max * i / 4, y = m.t + ih - ih * i / 4;
-      s += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + y + '" y2="' + y + '" stroke="' + (i ? '#eceff3' : '#c5ccd6') + '"/>';
-      s += '<text x="' + (m.l - 8) + '" y="' + (y + 4) + '" text-anchor="end" font-size="11" fill="#6b7480">' + (o.soNguyen ? App.so(v) : App.gon(v)) + '</text>';
+      s += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + y + '" y2="' + y + '" style="stroke:' + (i ? 'var(--duong)' : 'var(--vien-dam)') + '"/>';
+      s += '<text x="' + (m.l - 8) + '" y="' + (y + 4) + '" text-anchor="end" font-size="11" style="fill:var(--mo)">' + (o.soNguyen ? App.so(v) : App.gon(v)) + '</text>';
     }
     cot.forEach(function (c, ci) {
       var x0 = m.l + buoc * ci, x = x0 + (buoc - bw) / 2, day = m.t + ih, cuoi = -1;
@@ -250,9 +252,9 @@
         } else s += '<rect x="' + x + '" y="' + (top + GAP) + '" width="' + bw + '" height="' + cao + '" fill="' + chuoi[j].mau + '" pointer-events="none"/>';
         day = top;
       });
-      if (tong[ci] > 0 && ih * tong[ci] / max > 0) s += '<text x="' + (x + bw / 2) + '" y="' + (day - 4) + '" text-anchor="middle" font-size="11" font-weight="600" fill="#1f2937" pointer-events="none">' + App.so(tong[ci]) + '</text>';
+      if (tong[ci] > 0 && ih * tong[ci] / max > 0) s += '<text x="' + (x + bw / 2) + '" y="' + (day - 4) + '" text-anchor="middle" font-size="11" font-weight="600" style="fill:var(--chu)" pointer-events="none">' + App.so(tong[ci]) + '</text>';
       s += '<rect class="vung" data-i="' + ci + '" x="' + x0 + '" y="' + m.t + '" width="' + buoc + '" height="' + (ih + m.b) + '" fill="transparent"' + (o.bam ? ' style="cursor:pointer"' : '') + '/>';
-      s += '<text x="' + (x0 + buoc / 2) + '" y="' + (H - 8) + '" text-anchor="middle" font-size="11" fill="' + (c.noiBat ? '#1f2937' : '#6b7480') + '"' + (c.noiBat ? ' font-weight="600"' : '') + ' pointer-events="none">' + App.h(c.nhan) + '</text>';
+      s += '<text x="' + (x0 + buoc / 2) + '" y="' + (H - 8) + '" text-anchor="middle" font-size="11" style="fill:' + (c.noiBat ? 'var(--chu)' : 'var(--mo)') + '"' + (c.noiBat ? ' font-weight="600"' : '') + ' pointer-events="none">' + App.h(c.nhan) + '</text>';
     });
     s += '<rect class="dong-hl" x="0" y="' + m.t + '" width="0" height="' + ih + '" fill="rgba(42,120,214,.07)" pointer-events="none"/></svg>';
     el.innerHTML = '<div class="bd">' + s + '</div><div class="chu-thich">' + chuoi.map(function (c) { return '<span><i style="background:' + c.mau + '"></i>' + App.h(c.ten) + '</span>'; }).join('') + '</div>';
@@ -277,7 +279,7 @@
     el.innerHTML = du.length ? du.map(function (d, i) {
       return '<div class="bdn" data-i="' + i + '" style="display:grid;grid-template-columns:minmax(90px,38%) 1fr auto;gap:10px;align-items:center;padding:5px 0">' +
         '<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="' + App.h(d.nhan) + '">' + App.h(d.nhan) + (d.phu ? ' <span class="mo nho">' + App.h(d.phu) + '</span>' : '') + '</div>' +
-        '<div style="height:14px;background:#f1f3f6;border-radius:0 4px 4px 0"><div style="height:100%;width:' + Math.max(0.5, d.gt / max * 100) + '%;background:' + (d.mau || 'var(--s1)') + ';border-radius:0 4px 4px 0"></div></div>' +
+        '<div style="height:14px;background:var(--duong);border-radius:0 4px 4px 0"><div style="height:100%;width:' + Math.max(0.5, d.gt / max * 100) + '%;background:' + (d.mau || 'var(--s1)') + ';border-radius:0 4px 4px 0"></div></div>' +
         '<div style="font-variant-numeric:tabular-nums;font-weight:600;min-width:70px;text-align:right">' + (o.dinhDang ? o.dinhDang(d.gt) : App.gon(d.gt)) + '</div></div>';
     }).join('') : '<div class="trong">Chưa có số liệu</div>';
     el.onmousemove = function (e) {
@@ -291,7 +293,7 @@
   /** Thanh cơ cấu 100%. phan: [{nhan, gt, mau}] */
   App.thanhCoCau = function (el, phan) {
     var tong = phan.reduce(function (s, p) { return s + Math.max(0, p.gt); }, 0) || 1;
-    el.innerHTML = '<div style="display:flex;height:22px;border-radius:5px;overflow:hidden;gap:2px;background:#fff">' +
+    el.innerHTML = '<div style="display:flex;height:22px;border-radius:5px;overflow:hidden;gap:2px;background:var(--mat)">' +
       phan.filter(function (p) { return p.gt > 0; }).map(function (p) {
         return '<div class="ccau" data-n="' + App.h(p.nhan) + '" data-g="' + p.gt + '" style="flex:' + p.gt + ' 1 0;background:' + p.mau + '"></div>';
       }).join('') + '</div>' +
@@ -516,6 +518,35 @@
     });
   };
 
+  /* ----- Giao diện Sáng / Tối / Theo Windows: lưu theo từng máy (localStorage), khi in luôn màu sáng ----- */
+  var GIAO_DIEN = { sang: 'Sáng', toi: 'Tối (dịu mắt)', tudong: 'Theo Windows' };
+  var mqToi = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+  App.GIAO_DIEN = GIAO_DIEN;
+  App.giaoDien = function () { var g = 'sang'; try { g = localStorage.getItem('ChamCong_giaoDien') || 'sang'; } catch (e) { /* bỏ qua */ } return GIAO_DIEN[g] ? g : 'sang'; };
+  App.giaoDienToi = function () { return document.documentElement.classList.contains('gd-toi'); };
+  function apGiaoDien() {
+    var g = App.giaoDien(), toi = g === 'toi' || (g === 'tudong' && !!(mqToi && mqToi.matches)), d = document.documentElement;
+    d.setAttribute('data-giaodien', g);
+    d.classList.toggle('gd-toi', toi);
+    var m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', toi ? '#0b1520' : '#15324d');
+    nutGiaoDien();
+  }
+  function nutGiaoDien() {
+    var b = document.getElementById('tb-gd'); if (!b) return;
+    var toi = App.giaoDienToi();
+    b.innerHTML = App.icon(toi ? 'sang' : 'toi');
+    b.title = 'Giao diện đang dùng: ' + GIAO_DIEN[App.giaoDien()] + (App.giaoDien() === 'tudong' ? (toi ? ' (tối)' : ' (sáng)') : '') + ' – bấm để chuyển sang ' + (toi ? 'Sáng' : 'Tối');
+    b.setAttribute('aria-label', toi ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối');
+  }
+  App.datGiaoDien = function (g) {
+    try { localStorage.setItem('ChamCong_giaoDien', g); } catch (e) { /* bỏ qua */ }
+    apGiaoDien();
+    if (App.trangHienTai === 'caidat') App.veLai();
+  };
+  if (mqToi) { var doiMQ = function () { if (App.giaoDien() === 'tudong') { apGiaoDien(); if (App.veLai && App.db) App.veLai(); } };
+    if (mqToi.addEventListener) mqToi.addEventListener('change', doiMQ); else if (mqToi.addListener) mqToi.addListener(doiMQ); }
+  apGiaoDien();
+
   /** Tham số trên địa chỉ trang: #hoso?id=nv1 */
   App.thamSo = function (ten) {
     var q = (location.hash.split('?')[1] || '').split('&');
@@ -634,8 +665,11 @@
       '</nav><div class="tt-mc" id="tt-maychu"></div><div class="chan" id="chan-sb"></div></aside>' +
       '<div class="chinh-khung"><header class="tb"><button class="menu" aria-label="Menu">' + App.icon('menu') + '</button><h1 id="tieu-de"></h1>' +
       '<button class="nut nho tb-hd" id="tb-hd" hidden aria-expanded="false" title="Hướng dẫn sử dụng trang này">' + App.icon('hoi') + '<span>Hướng dẫn</span></button>' +
+      '<button class="nut nho tb-gd" id="tb-gd"></button>' +
       '<div class="ky" id="chon-ky"></div></header><main class="noi" id="noi"></main></div>';
     App.$('.menu', root).onclick = function () { root.classList.toggle('mo-menu'); };
+    App.$('#tb-gd', root).onclick = function () { App.datGiaoDien(App.giaoDienToi() ? 'sang' : 'toi'); };
+    nutGiaoDien();
     App.$('nav', root).addEventListener('click', function () { root.classList.remove('mo-menu'); });
   }
 

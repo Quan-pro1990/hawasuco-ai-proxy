@@ -353,7 +353,12 @@
     switch (st.tabCD) {
       case 'cty':
         var lg = App.logoCongTy(db.congTy);
-        html = '<div class="the"><h3>Logo và tên hiển thị trên phần mềm</h3><div class="hang" style="gap:16px">' +
+        html = '<div class="the"><h3>Giao diện màu (máy này)</h3><div class="hang" style="gap:10px;flex-wrap:wrap">' +
+          Object.keys(App.GIAO_DIEN).map(function (k) {
+            return '<button class="chip-muc' + (App.giaoDien() === k ? ' chon' : '') + '" data-gd="' + k + '">' + App.icon(k === 'toi' ? 'toi' : k === 'sang' ? 'sang' : 'caidat') + h(App.GIAO_DIEN[k]) + '</button>';
+          }).join('') + '</div><p class="mo nho" style="margin:8px 0 0">Chọn màu sáng hoặc nền tối dịu mắt (làm việc buổi tối, phòng thiếu sáng). <b>Theo Windows</b>: tự đổi theo chế độ sáng / tối của máy. ' +
+          'Lưu riêng cho từng máy, từng trình duyệt; khi in luôn dùng màu sáng. Đổi nhanh bằng nút <span class="ico-nho">' + App.icon('toi') + '</span> / <span class="ico-nho">' + App.icon('sang') + '</span> trên thanh tiêu đề.</p></div>' +
+          '<div class="the"><h3>Logo và tên hiển thị trên phần mềm</h3><div class="hang" style="gap:16px">' +
           '<div class="thuong-hieu xem-truoc">' + App.khoiThuongHieu(db.congTy) + '</div>' +
           '<div style="display:grid;gap:8px;align-content:start"><label class="nut">' + App.icon('nhap') + 'Chọn logo khác…<input type="file" accept="image/*" id="cty-logo" class="an"></label>' +
           (db.congTy.logo ? '<button class="nut" id="cty-logo-goc">Dùng logo mặc định</button>' : '') +
@@ -364,7 +369,7 @@
           '<div style="display:grid;gap:8px;align-content:start;max-width:520px"><label class="nut">' + App.icon('nhap') + 'Chọn ảnh logo chìm…<input type="file" accept="image/*" id="cty-chim" class="an"></label>' +
           (db.congTy.logoChim != null ? '<button class="nut" id="cty-chim-goc">Dùng logo đơn vị + tên viết tắt</button>' : '') +
           (db.congTy.logoChim !== '' ? '<button class="nut nguy" id="cty-chim-bo">Không in logo chìm</button>' : '') +
-          o('Tên viết tắt (dưới logo chìm)', 'congTy.tenVietTat', 'chu', 'Vd HAWASUCO; để trống = chỉ có hình logo') +
+          '<div class="form" style="grid-template-columns:1fr">' + o('Tên viết tắt (dưới logo chìm)', 'congTy.tenVietTat', 'chu', 'Vd HAWASUCO; để trống = chỉ có hình logo') + '</div>' +
           '<div class="mo nho">Logo in mờ ở giữa mỗi phiếu lương (xem và in ở trang Phiếu lương). Mặc định: logo đơn vị phía trên kèm tên viết tắt; chọn ảnh khác nếu muốn dùng đúng tệp logo của công ty.</div></div></div></div>' +
           '<div class="the"><h3>Thông tin đơn vị</h3><div class="form">' +
           o('Tên đơn vị', 'congTy.ten', 'chu') + o('Mã số thuế', 'congTy.mst', 'chu') +
@@ -542,6 +547,7 @@
       if (/^caiDat\.(vung|ngayDauKy|congChuan|luongCoSo|luongToiThieuVung)/.test(p) || p === 'congTy.ten' || p === 'congTy.tenVietTat') App.veLai();
     };
     el.onclick = function (e) {
+      var gd = e.target.closest('[data-gd]'); if (gd) { App.datGiaoDien(gd.dataset.gd); return; }
       if (e.target.closest('#cd-lcs')) { e.preventDefault(); App.hienLCS = true; App.veLai(); return; }
       if (e.target.closest('[data-a="xoa"]') && e.target.closest('#bieu-thue')) { cd.bieuThue.splice(+e.target.closest('tr').dataset.i, 1); App.luu(); App.veLai(); return; }
       if (e.target.closest('#bt-them')) { cd.bieuThue.push({ den: null, ts: 35 }); App.luu(); App.veLai(); return; }

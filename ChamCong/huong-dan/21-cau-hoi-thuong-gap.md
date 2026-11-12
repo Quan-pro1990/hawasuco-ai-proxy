@@ -30,6 +30,11 @@ Kỳ đã **chốt lương** (dấu 🔒 cạnh tháng): Bảng lương → **M�
 - Tài khoản cấp phòng / đội nhập 2 khung giờ trở lên mà máy chủ báo *Giá trị ô chấm công không hợp lệ*: máy chủ là bản cũ –
   chạy lại **CaiDat-MayChu-IIS.bat** bản mới để cập nhật (dữ liệu giữ nguyên).
 
+## Màn hình chói mắt / muốn nền tối
+Bấm nút **mặt trăng** trên thanh tiêu đề (cạnh nút *Hướng dẫn*) để chuyển sang giao diện **tối dịu mắt**; bấm nút **mặt trời** để về sáng.
+Hoặc **Cài đặt & dữ liệu → Đơn vị & chữ ký → Giao diện màu**: *Sáng*, *Tối*, *Theo Windows* (tự theo chế độ sáng / tối của máy).
+Lựa chọn lưu riêng cho từng máy; phiếu lương, bảng lương khi in vẫn là màu sáng.
+
 ## Lương sai so với tính tay
 Bấm tên người trên bảng lương để xem chi tiết. Kiểm tra: loại lao động / công chuẩn, ký hiệu chấm công, mức lương theo kỳ, thời gian thử việc,
 quyết định nâng lương có ngày hiệu lực, người phụ thuộc theo tháng.

@@ -79,7 +79,7 @@
       (st.che === 'ot' ? '<span><b class="cg-ot ot-khung">3,5</b>Nhập theo khung giờ (rê chuột lên ô để xem khung giờ)</span><span><b class="cg-ot ot-dem">4</b>Có giờ làm thêm ban đêm (' + khDem + ')</span>' +
         '<span><b class="cg-ot ot-vuot">6</b>Vượt mức tối đa (làm bình thường + làm thêm ≤ 12 giờ/ngày; ≤ ' + App.so(+cd.otToiDaThang || 40) + ' giờ/tháng – Điều 107 BLLĐ 2019)</span>' : '') +
       '<span><b style="background:var(--ngay-nghi)">&nbsp;</b>Ngày nghỉ hằng tuần (theo loại lao động)</span><span><b style="background:var(--ngay-le)">&nbsp;</b>Ngày lễ, Tết: nghỉ (L) = 1 công; đi làm (+) = ×' + App.so(cd.heSoCongLe) + ' công ngày lễ, ×' + App.so(cd.heSoCongTet) + ' công ngày Tết (ngày có hệ số riêng: theo Danh mục → Ngày lễ, Tết); SP không nhân (cơm 1 ngày)</span>' +
-      '<span><b style="background:repeating-linear-gradient(45deg,#f5f6f8,#f5f6f8 4px,#eceef2 4px,#eceef2 8px)">&nbsp;</b>Chưa vào làm / đã nghỉ việc</span></div>' +
+      '<span><b style="background:repeating-linear-gradient(45deg,var(--soc1),var(--soc1) 4px,var(--soc2) 4px,var(--soc2) 8px)">&nbsp;</b>Chưa vào làm / đã nghỉ việc</span></div>' +
       App.kyIn();
 
     veBang();
@@ -127,7 +127,7 @@
     var s = '<thead>';
     if (coBang) {
       s += '<tr><th class="i dinh1" rowspan="3" style="top:0">STT</th><th class="i dinh2" rowspan="3" style="top:0">Mã NV</th><th class="i dinh3" rowspan="3" style="top:0;text-align:left;padding-left:6px">Họ và tên</th>';
-      bt.forEach(function (b, i) { s += '<th colspan="' + b.so + '" style="top:0;height:22px;background:' + (i % 2 ? '#fdf3d8' : '#fbe5dc') + '">' + b.ten + '</th>'; });
+      bt.forEach(function (b, i) { s += '<th colspan="' + b.so + '" style="top:0;height:22px;background:' + (i % 2 ? 'var(--thang2)' : 'var(--thang1)') + '">' + b.ten + '</th>'; });
       tong.forEach(function (t) { s += '<th class="t" rowspan="3" style="top:0' + (t[2] ? ';color:var(--chinh-dam)' : '') + '">' + t[1] + '</th>'; });
       s += '</tr><tr>';
     } else {

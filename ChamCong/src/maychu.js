@@ -207,7 +207,7 @@
   }
 
   function taiVaBatDau() {
-    App.$('#app').innerHTML = '<div style="padding:40px;text-align:center;color:#5f6875">Đang tải dữ liệu từ máy chủ…</div>';
+    App.$('#app').innerHTML = '<div style="padding:40px;text-align:center;color:var(--mo)">Đang tải dữ liệu từ máy chủ…</div>';
     taiDuLieu().then(function (dl) {
       if (dl) { App.db = TL.chuanHoa(dl); chupGoc(); App.batDauGiaoDien(); hoiDinhKy(); return; }
       if (laCC()) { App.$('#app').innerHTML = '<div class="the canh-bao" style="margin:40px">Máy chủ chưa có dữ liệu. Liên hệ quản trị phần mềm để nhập danh sách nhân viên trước. <a href="#" onclick="App.dangXuat();return false">Đăng xuất</a></div>'; return; }
@@ -453,7 +453,7 @@
         '<p class="mo nho"><b>Quản trị</b>: mọi chức năng, quản lý tài khoản, sao lưu. <b>Cấp công ty</b>: mọi phòng, đội. <b>Cấp phòng / đội</b>: chỉ nhân viên của đơn vị được giao (tiền lương tối đa được xem, không sửa danh mục, cài đặt). ' +
         'Mỗi phần <b>Chấm công, Nhân sự, Tiền lương, Thiết lập</b> chọn Không / Xem / Sửa; máy chủ kiểm tra lại quyền: phần không được xem thì không gửi về máy, phần chỉ được xem thì thay đổi không được lưu. ' +
         '<b>Chấm công theo phòng / đội</b>: chỉ thấy bảng chấm công và giờ vào / ra của nhân viên thuộc phòng / đội được giao, không xem lương; máy chủ chặn sửa nhân viên ngoài đơn vị và kỳ đã chốt lương.</p></div>' +
-        '<div class="the"><h3>Nhật ký máy chủ (300 dòng gần nhất)</h3><pre id="mc-nk" style="max-height:260px;overflow:auto;font-size:12px;background:#f6f8fb;padding:10px;border-radius:8px;margin:0">Đang tải…</pre></div>'
+        '<div class="the"><h3>Nhật ký máy chủ (300 dòng gần nhất)</h3><pre id="mc-nk" style="max-height:260px;overflow:auto;font-size:12px;background:var(--mat2);padding:10px;border-radius:8px;margin:0">Đang tải…</pre></div>'
         : '<div class="the mo">Chỉ tài khoản <b>quản trị</b> mới thêm, sửa tài khoản đăng nhập và xem bản sao lưu, nhật ký máy chủ. Cần thêm tài khoản: nhờ người quản trị phần mềm.</div>');
     App.$('#mc-tai', el).onclick = function () {
       var d = new Date(), ten = 'SaoLuu_ChamCong_' + d.getFullYear() + TL.pad(d.getMonth() + 1) + TL.pad(d.getDate()) + '.json';

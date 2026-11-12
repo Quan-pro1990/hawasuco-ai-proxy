@@ -321,6 +321,10 @@ Cách tính chính:
   Mặc định tiền làm thêm giờ **chi bằng bảng riêng** (Bảng thanh toán tiền làm thêm giờ, đề nghị chi riêng) – không gộp vào lãnh kỳ II;
   thuế TNCN vẫn tính trên thu nhập cả tháng. Bỏ tuỳ chọn ở Cài đặt → Lương & làm thêm nếu muốn gộp.
 
+### Giao diện Sáng / Tối
+Nút **mặt trăng / mặt trời** trên thanh tiêu đề đổi nhanh giữa giao diện sáng và **tối dịu mắt**. Cài đặt & dữ liệu → Đơn vị & chữ ký →
+*Giao diện màu*: Sáng, Tối, hoặc Theo Windows (tự theo chế độ của máy). Mỗi máy nhớ lựa chọn riêng; khi in luôn dùng màu sáng.
+
 ### Mức lương theo kỳ (bảng lương, bậc lương, lương cơ sở, tiền cơm, tạm ứng thay đổi từ một tháng)
 Thẻ **Lương đóng bảo hiểm theo bậc lương hiện tại** liệt kê từng nhân viên: bậc đang hưởng, mức lương theo bậc, phụ cấp đóng BH, lương đóng BH,
 người lao động đóng, doanh nghiệp đóng (lọc phòng / đội, xuất Excel). Ô **lương cơ sở** Nhà nước chỉ dùng cho bảng lương hệ số và trần 20 × lương cơ sở;
