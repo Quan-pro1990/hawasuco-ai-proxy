@@ -528,6 +528,32 @@ t('Hệ số công riêng từng ngày lễ, Tết: ×1 / ×2 / ×3 (mặc đị
   assert.strictEqual(d2.ngayLe[1].heSo, 1);
 });
 
+t('Lương đóng BH theo bậc lương hiện tại (+ phụ cấp đóng BH), đổi theo kỳ khi nâng bậc', function () {
+  var db = dbMau(), nv = db.nhanVien[0];
+  db.thangLuong = [{ ma: 'T', ten: 'Bảng lương công ty', kieu: 'tien', apDung: 'cb', namNang: 3, ngach: [{ ma: 'CV', ten: 'Chuyên viên', bac: [7500000, 8000000, 8500000] }] }];
+  db = TL.chuanHoa(db); nv = db.nhanVien[0];
+  assert.strictEqual(db.caiDat.bhTheoBac, true);                       // mặc định bật (kể cả dữ liệu cũ)
+  nv.phuCap = { AN: 50000, TN: 500000 };                               // trách nhiệm: tính đóng BH
+  nv.luongBH = 5000000;                                                // lương đóng BH nhập tay cũ – không dùng nữa
+  // nâng từ bậc 1 lên bậc 2, hiệu lực 25/10/2026 (kỳ 11/2026)
+  nv.xepLuong = { bang: 'T', ngach: 'CV', bac: 2, ngayHuong: '2026-10-25' }; nv.luongCB = 8000000;
+  nv.quyetDinh = [{ loai: 'nang_luong', hieuLuc: '2026-10-25', luongCu: 7500000, luongMoi: 8000000,
+    xepLuongCu: { bang: 'T', ngach: 'CV', bac: 1, ngayHuong: '2023-10-25' }, xepLuongMoi: { bang: 'T', ngach: 'CV', bac: 2, ngayHuong: '2026-10-25' } }];
+  [10, 11].forEach(function (m) { var T = TL.thang(db, 2026, m, true); T.cc[nv.id] = {}; TL.ngayKy(db, 2026, m).forEach(function (x) { var t = new Date(x.y, x.m - 1, x.d).getDay(); if (t > 0 && t < 6) T.cc[nv.id][x.d] = '+'; }); });
+  var r10 = TL.tinhBangLuong(db, 2026, 10).rows[0], r11 = TL.tinhBangLuong(db, 2026, 11).rows[0];
+  assert.strictEqual(r10.bhTheoBac, 7500000); assert.strictEqual(r10.luongBH, 7500000 + 500000);
+  assert.strictEqual(r11.bhTheoBac, 8000000); assert.strictEqual(r11.luongBH, 8000000 + 500000);
+  assert.strictEqual(r11.bhxh, Math.round(8500000 * 0.08));
+  // tắt: dùng lương đóng BH trong hồ sơ như trước
+  db.caiDat.bhTheoBac = false;
+  r11 = TL.tinhBangLuong(db, 2026, 11).rows[0];
+  assert.strictEqual(r11.bhTheoBac, 0); assert.strictEqual(r11.luongBH, 5000000);
+  // người chưa xếp bậc: không đổi (nhập tay, hoặc mức lương + phụ cấp đóng BH)
+  db.caiDat.bhTheoBac = true; nv.xepLuong = null; nv.quyetDinh = []; nv.luongBH = 0;
+  r11 = TL.tinhBangLuong(db, 2026, 11).rows[0];
+  assert.strictEqual(r11.bhTheoBac, 0); assert.strictEqual(r11.luongBH, 8000000 + 500000);
+});
+
 t('Giờ vào / ra', function () {
   var cd = TL.caiDatMacDinh();
   var k = TL.tinhVaoRa(cd, 'thuong', TL.phut('08:12'), TL.phut('18:10'));

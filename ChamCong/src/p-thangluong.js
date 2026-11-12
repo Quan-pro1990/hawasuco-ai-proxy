@@ -305,7 +305,8 @@
     var rows = ds.map(function (nv, i) {
       var xl = TL.xepLuongNV(db, nv), ht = nv.hinhThuc || 'thang';
       var apCB = xl && (xl.apDung === 'cb' || xl.apDung === 'ca_hai'), apBH = xl && (xl.apDung === 'bh' || xl.apDung === 'ca_hai');
-      var lechCB = apCB && (ht === 'thang' || ht === 'khoan') && +nv.luongCB !== xl.tien, lechBH = apBH && +nv.luongBH !== xl.tien;
+      var bhBac = !!(xl && xl.tien && db.caiDat.bhTheoBac !== false);   // lương đóng BH theo bậc lương hiện tại
+      var lechCB = apCB && (ht === 'thang' || ht === 'khoan') && +nv.luongCB !== xl.tien, lechBH = apBH && !bhBac && +nv.luongBH !== xl.tien;
       if (lechCB || lechBH) lech++;
       var hanTxt = !xl ? '' : xl.bacCuoi ? '<span class="mo">Bậc cuối</span>' : xl.ngayNang ? TL.hienNgay(xl.ngayNang) + (xl.ngayNang <= hn ? ' <span class="the-tt do">Đến hạn</span>' : '') : '<span class="mo">Nhập ngày hưởng</span>';
       return '<tr data-id="' + nv.id + '"><td class="giua">' + (i + 1) + '</td><td>' + h(nv.ma) + '</td><td class="ten"><span class="lk" data-hs="' + nv.id + '">' + h(nv.hoTen) + '</span></td>' +
@@ -314,7 +315,7 @@
         '<td class="so">' + (xl && xl.heSo != null ? App.soHS(xl.heSo) : '') + '</td><td class="so"><b>' + (xl && xl.tien ? App.tien(xl.tien) : '') + '</b></td>' +
         '<td><input type="date" data-xl="ngayHuong" value="' + h(xl ? xl.ngayHuong : '') + '"' + (xl ? '' : ' disabled') + '></td>' +
         '<td class="so">' + App.tien(nv.luongCB) + (ht !== 'thang' && ht !== 'khoan' ? ' <span class="mo nho">' + App.DV_LUONG[ht] + '</span>' : '') + (lechCB ? ' <span class="the-tt cam" title="Khác mức theo bảng">≠</span>' : '') + '</td>' +
-        '<td class="so">' + (+nv.luongBH ? App.tien(nv.luongBH) : '<span class="mo">theo lương</span>') + (lechBH ? ' <span class="the-tt cam" title="Khác mức theo bảng">≠</span>' : '') + '</td>' +
+        '<td class="so">' + (bhBac ? App.tien(xl.tien) + ' <span class="mo nho" title="Đóng BH theo bậc lương hiện tại + phụ cấp đóng BH">theo bậc</span>' : +nv.luongBH ? App.tien(nv.luongBH) : '<span class="mo">theo lương</span>') + (lechBH ? ' <span class="the-tt cam" title="Khác mức theo bảng">≠</span>' : '') + '</td>' +
         '<td class="giua">' + hanTxt + '</td>' +
         '<td class="khong-in">' + (xl ? '<button class="nut nho" data-a="nang" title="Lập quyết định nâng bậc hoặc chuyển chức danh, áp dụng từ kỳ lương của ngày hiệu lực">' + App.icon('bac') + (xl.bacCuoi ? 'Chuyển chức danh…' : 'Nâng / chuyển bậc…') + '</button>' : '') + '</td></tr>';
     }).join('');

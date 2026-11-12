@@ -356,7 +356,8 @@
       : r.thuViec && (cd.thuViec || {}).khongDongBH !== false ? (r.thuViec.toanKy ? 'Đang thử việc (hợp đồng thử việc)' : 'Thời gian thử việc và nghỉ không lương từ ' + cd.nguongNghiKhongDongBH + ' ngày trong kỳ')
       : 'Nghỉ không lương từ ' + cd.nguongNghiKhongDongBH + ' ngày', '0');
     else {
-      d_('Lương đóng bảo hiểm', 'Trần BHXH, BHYT: ' + t(20 * cd.luongCoSo) + ' · trần BHTN: ' + t(20 * cd.luongToiThieuVung), t(r.luongBH));
+      d_('Lương đóng bảo hiểm', (r.bhTheoBac ? 'Theo bậc lương hiện tại ' + t(r.bhTheoBac) + (r.pcDongBH ? ' + phụ cấp đóng BH ' + t(r.pcDongBH) : '') + '. ' : '') +
+        'Trần BHXH, BHYT: ' + t(20 * cd.luongCoSo) + ' · trần BHTN: ' + t(20 * cd.luongToiThieuVung), t(r.luongBH));
       d_('BHXH', App.so(cd.bh.nv.bhxh) + '%', t(r.bhxh));
       d_('BHYT', App.so(cd.bh.nv.bhyt) + '%', t(r.bhyt));
       d_('BHTN', App.so(cd.bh.nv.bhtn) + '%', t(r.bhtn));

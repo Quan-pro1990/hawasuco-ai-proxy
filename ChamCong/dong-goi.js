@@ -10,6 +10,7 @@ function chay(lenh) { cp.execFileSync(process.execPath, [path.join(goc, lenh)], 
 chay('build.js');
 chay('test/tinhluong.test.js');
 chay('test/giongdoc.test.js');
+chay('test/kienthuc.test.js');
 
 var d = new Date(), pad = function (n) { return String(n).padStart(2, '0'); };
 var ngay = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());

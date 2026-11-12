@@ -8,6 +8,10 @@
 2. Ví dụ: *ai sắp hết hạn hợp đồng*, *ai đang thử việc*, *hôm nay ai nghỉ*, *lương của* + họ tên, *cách nâng bậc lương*,
    *tỷ lệ bảo hiểm sửa ở đâu*, *mở bảng lương*, gõ mã NV hoặc số hợp đồng.
 3. Bấm các nút trong câu trả lời để mở đúng trang / hồ sơ.
+4. Hỏi rộng hơn: chế độ lao động – tiền lương (*thử việc tối đa bao lâu*, *cưới vợ được nghỉ mấy ngày*, *nghỉ thai sản bao lâu*, *trợ cấp thôi việc*…),
+   tính nhanh (*lương 10 triệu thực lĩnh bao nhiêu*, *thuế TNCN thu nhập 25 triệu 1 người phụ thuộc*, *làm thêm 4 giờ chủ nhật lương 8 triệu*,
+   *nữ sinh tháng 5/1975 bao giờ nghỉ hưu*, *âm lịch hôm nay*, *còn bao nhiêu ngày đến Tết*), hỏi về trợ lý (*bạn là ai*, *bạn làm được gì*).
+   Câu trả lời về luật có ghi nguồn (điều luật); số liệu (tỷ lệ BH, giảm trừ, biểu thuế…) lấy từ Cài đặt của công ty.
 
 ## Nói chuyện bằng giọng nói (Chrome, Edge)
 1. Bấm **micro** 🎤 rồi nói câu hỏi tiếng Việt – lần đầu chọn *Cho phép* dùng micro.

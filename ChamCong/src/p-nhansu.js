@@ -335,14 +335,14 @@
           var gtm = bacMoi ? TL.giaTriBac(db, bx.b, bx.g, bacMoi, kyQD) : null;
           if (moi && gtm && q.luongMoi == null && q.luongBHMoi == null) {
             if (bx.b.apDung !== 'bh') q.luongMoi = gtm.tien;
-            if (bx.b.apDung !== 'cb') q.luongBHMoi = gtm.tien;
+            if (bx.b.apDung !== 'cb' || db.caiDat.bhTheoBac !== false) q.luongBHMoi = gtm.tien;
           }
           var kyHL = q.hieuLuc ? TL.kyCuaNgay(db, +q.hieuLuc.slice(0, 4), +q.hieuLuc.slice(5, 7), +q.hieuLuc.slice(8, 10)) : null, ngK = kyHL ? TL.ngayKy(db, kyHL.y, kyHL.m) : null;
           x += f.o('Bậc lương mới', '<select name="bacMoi">' + ob + '</select>', h(bx.b.ten) + ' – ' + h(bx.g.ten) + (moi && bx.x && !doiCD ? ', đang bậc ' + bx.x.bac : '') + '. Dùng cho: ' + h(TL.AP_DUNG_BL[bx.b.apDung]).toLowerCase()) +
             (kyHL ? '<div class="ca nho" style="color:var(--chinh)">Áp dụng từ <b>kỳ lương tháng ' + kyHL.m + '/' + kyHL.y + '</b> (' + TL.hienNgay(ngK[0].iso) + ' – ' + TL.hienNgay(ngK[ngK.length - 1].iso) + ') trở đi; các kỳ trước giữ chức danh, bậc, lương cũ. Muốn áp dụng từ kỳ khác thì đổi ngày hiệu lực.</div>' : '');
         }
         x += f.o('Mức lương mới (đ)', f.tien('luongMoi', q.luongMoi || (nvx && nvx.luongCB)), moi && nvx ? 'Hiện tại: ' + App.tien(nvx.luongCB) : 'Lương cũ: ' + App.tien(q.luongCu)) +
-          f.o('Lương đóng BH mới (nếu đặt riêng)', f.tien('luongBHMoi', q.luongBHMoi, 'Không đổi'));
+          f.o('Lương đóng BH mới (nếu đặt riêng)', f.tien('luongBHMoi', q.luongBHMoi, 'Không đổi'), db.caiDat.bhTheoBac !== false && nvx && nvx.xepLuong ? 'Người đã xếp bậc: BH đóng theo bậc lương hiện tại (+ phụ cấp đóng BH), tự đổi khi nâng bậc' : '');
       } else if (loai === 'khen_thuong' || loai === 'ky_luat') {
         x += f.o(loai === 'khen_thuong' ? 'Hình thức khen thưởng' : 'Hình thức kỷ luật', loai === 'khen_thuong' ? f.txt('hinhThuc', q.hinhThuc, 'placeholder="vd Giấy khen, Lao động tiên tiến"') :
           f.sel('hinhThuc', q.hinhThuc || 'Khiển trách', ['Khiển trách', 'Kéo dài thời hạn nâng lương không quá 6 tháng', 'Cách chức', 'Sa thải', 'Bồi thường thiệt hại', 'Khác'])) +
@@ -389,7 +389,7 @@
           var hl = fm.hieuLuc && fm.hieuLuc.value, bx = xlQD(q, nvHT()), gt = bx && +e.target.value ? TL.giaTriBac(db, bx.b, bx.g, +e.target.value, hl ? TL.kyCuaISO(db, hl) : null) : null;
           if (!gt) return;
           if (bx.b.apDung !== 'bh') fm.luongMoi.value = App.tien(gt.tien);
-          if (bx.b.apDung !== 'cb') fm.luongBHMoi.value = App.tien(gt.tien);
+          if (bx.b.apDung !== 'cb' || db.caiDat.bhTheoBac !== false) fm.luongBHMoi.value = App.tien(gt.tien);
         });
         ve2();
       },

@@ -356,7 +356,12 @@
     el.innerHTML = '<div class="the"><div class="form ba">' +
       '<h4>Bảo hiểm & công đoàn</h4>' +
       F.chk('thamGiaBH', d.thamGiaBH, 'Tham gia BHXH, BHYT, BHTN') + F.chk('doanVien', d.doanVien, 'Đoàn viên công đoàn (trừ đoàn phí)') + '<span></span>' +
-      F.o('Lương đóng bảo hiểm', F.tien('luongBH', d.luongBH, 'Mức lương + phụ cấp đóng BH'), 'Để trống = mức lương + phụ cấp tính đóng BH') +
+      (function () {
+        var xl = App.db.caiDat.bhTheoBac !== false ? TL.xepLuongNV(App.db, d) : null;
+        if (xl && xl.tien) return F.o('Lương đóng bảo hiểm', '<input class="so tien" value="' + App.tien(xl.tien) + ' + phụ cấp đóng BH" disabled>',
+          'Đóng theo <b>bậc lương hiện tại</b>' + (xl.bac ? ' (bậc ' + h(String(xl.bac)) + ')' : '') + ': ' + App.tien(xl.tien) + ' đ + phụ cấp tính đóng BH; nâng bậc tự đổi. Tắt ở Cài đặt → Bảo hiểm & công đoàn.');
+        return F.o('Lương đóng bảo hiểm', F.tien('luongBH', d.luongBH, 'Mức lương + phụ cấp đóng BH'), 'Để trống = mức lương + phụ cấp tính đóng BH');
+      })() +
       F.o('Số sổ BHXH (mã số BHXH)', F.txt('soSoBHXH', d.soSoBHXH)) + F.o('Mã thẻ BHYT', F.txt('maTheBHYT', d.maTheBHYT)) +
       F.o('Nơi đăng ký KCB ban đầu', F.txt('noiKCB', d.noiKCB), '', 'ca') +
       '<h4>Thuế thu nhập cá nhân</h4>' +

@@ -10,6 +10,7 @@
    bảng lương – chức danh – bậc (hoặc mức lương), phụ cấp riêng, tạm ứng kỳ I riêng, số tài khoản ngân hàng, phép năm.
    Người mới thử việc: đánh dấu **Có thời gian thử việc** (số tháng, % lương thử việc – mặc định 85%).
 4. Tab **Bảo hiểm, thuế & người phụ thuộc**: tham gia BH, lương đóng BH, số sổ BHXH, MST, người phụ thuộc (từ tháng – đến tháng).
+   Người đã xếp bậc lương: lương đóng BH **tự theo bậc lương hiện tại** + phụ cấp tính đóng BH (ô này chỉ hiện để xem).
 5. Bấm **Thêm nhân viên** / **Lưu hồ sơ** (chấm ● trên nút là còn thay đổi chưa lưu).
 
 ## Nhập nhiều người từ Excel

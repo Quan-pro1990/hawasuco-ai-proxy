@@ -228,7 +228,8 @@
     return ds.length ? '<b>' + ds.length + ' nhân viên</b> đang làm việc chưa có hợp đồng:' + dsGon(ds, function (nv) { return lienKetNV(nv) + ' – ' + h(TL.tenPhongBan(App.db, nv.phongBan)) + ', vào làm ' + TL.hienNgay(nv.ngayVao); }) + nutHang(nutTrang('theodoihd', 'Mở Theo dõi hợp đồng'))
       : 'Mọi nhân viên đang làm việc đều đã có hợp đồng.';
   });
-  yDinh('thu_viec', function (q) { return /thu viec/.test(q) && !laHoiCach(q) && !/(luong|ty le|%)/.test(q); }, 'ns', function (q, c) {
+  var HOI_LUAT = /(bao lau|toi da|toi thieu|quy dinh|theo luat|luat|may lan|bao nhieu ngay|may ngay|may thang|duoc khong|co duoc|la gi|dieu kien|che do|bao nhieu tuoi|tuoi nao)( |$)/;
+  yDinh('thu_viec', function (q) { return /thu viec/.test(q) && !laHoiCach(q) && !/(luong|ty le|%)/.test(q) && !HOI_LUAT.test(q); }, 'ns', function (q, c) {
     var d = hn(), ds = dangLam().map(function (nv) { return { nv: nv, tv: TL.thuViecNV(App.db, nv) }; })
       .filter(function (x) { return x.tv && x.tv.denNgay >= d && (!c.dv || x.nv.phongBan === c.dv.ma); }).sort(function (a, b) { return a.tv.denNgay < b.tv.denNgay ? -1 : 1; });
     if (!ds.length) return 'Hiện không có ai đang thử việc' + (c.dv ? ' ở ' + h(c.dv.ten) : '') + '.' + '<div class="tl-goi">' + hoi('Cách tính lương thử việc') + '</div>';
@@ -271,7 +272,7 @@
     return ds.length ? '<b>' + ds.length + ' người</b> sinh nhật tháng ' + m + ':' + dsGon(ds, function (nv) { return lienKetNV(nv) + ' – ngày ' + nv.ngaySinh.slice(8, 10) + '/' + TL.pad(m) + ' (' + h(TL.tenPhongBan(App.db, nv.phongBan)) + ')'; }, 20)
       : 'Tháng ' + m + ' không có ai sinh nhật.';
   });
-  yDinh('nghi_huu', function (q) { return /(nghi huu|ve huu|tuoi huu)/.test(q) && !laHoiCach(q); }, 'ns', function () {
+  yDinh('nghi_huu', function (q) { return /(nghi huu|ve huu|tuoi huu)/.test(q) && !laHoiCach(q) && !HOI_LUAT.test(q) && !/luong huu/.test(q) && (/(ai|nguoi|nhan vien|danh sach|sap|nhung ai|bao nhieu nguoi|sap toi|trong)( |$)/.test(q) || !/tuoi/.test(q)); }, 'ns', function () {
     var d = hn(), ds = dangLam().map(function (nv) { return { nv: nv, nh: TL.ngayNghiHuu(nv.gioiTinh, nv.ngaySinh) }; })
       .filter(function (x) { return x.nh && soNgay(d, x.nh) <= 730; }).sort(function (a, b) { return a.nh < b.nh ? -1 : 1; });
     return ds.length ? '<b>' + ds.length + ' người</b> đến tuổi nghỉ hưu trong 24 tháng tới (lộ trình NĐ 135/2020):' + dsGon(ds, function (x) { return lienKetNV(x.nv) + ' – ' + TL.hienNgay(x.nh); }) + nutHang(nutTrang('bcnhansu', 'Mở Báo cáo nhân sự'))
@@ -305,7 +306,7 @@
     return 'Tạm ứng kỳ I (giữa tháng) theo chức vụ:' + '<ul>' + (cfg.theoChucVu || []).map(function (x) { return '<li>' + h(x.chucVu) + ': <b>' + App.tien(x.muc) + ' đ</b></li>'; }).join('') +
       '<li>Chức vụ khác: <b>' + App.tien(cfg.macDinh) + ' đ</b></li></ul><div class="mo nho">Kỳ II cuối tháng = phần lương còn lại. Ai có mức riêng thì nhập ở hồ sơ (Tạm ứng kỳ I riêng).</div>' + nutHang(nutTrang('mucluong', 'Mở Mức lương theo kỳ'));
   });
-  yDinh('ngay_le', function (q) { return /(ngay le|nghi le|le tet|nghi tet|ngay tet|le sap toi)/.test(q) && !laHoiCach(q); }, '', function () {
+  yDinh('ngay_le', function (q) { return /(ngay le|nghi le|le tet|nghi tet|ngay tet|le sap toi)/.test(q) && !laHoiCach(q) && !/(bao nhieu ngay|may ngay|quy dinh|theo luat|luat|lam them|di lam)( |$)/.test(q); }, '', function () {
     var d = hn(), ds = (App.db.ngayLe || []).filter(function (x) { return x.ngay >= d; }).sort(function (a, b) { return a.ngay < b.ngay ? -1 : 1; }).slice(0, 8);
     return ds.length ? 'Ngày nghỉ lễ, Tết sắp tới:' + '<ul>' + ds.map(function (x) { return '<li>' + TL.hienNgay(x.ngay) + ' (' + TL.TEN_THU_DAY[new Date(x.ngay).getDay()] + ') – ' + h(x.ten) + '</li>'; }).join('') + '</ul>' + nutHang(App.duocXem('danhmuc') ? nut('Mở Danh mục → Ngày lễ, Tết', 'dm:le') : '')
       : 'Chưa có ngày lễ sắp tới trong danh mục – vào Danh mục → Ngày lễ, Tết bấm “Tạo tự động” cho năm sau.' + nutHang(App.duocXem('danhmuc') ? nut('Mở Danh mục → Ngày lễ, Tết', 'dm:le') : '');
@@ -328,7 +329,7 @@
       '<li>Đoàn phí công đoàn: ' + App.so(b.doanPhi) + '% (đoàn viên)</li></ul><div class="mo nho">Trần BHXH, BHYT ' + App.tien(20 * lcs) + ' đ; trần BHTN ' + App.tien(20 * App.db.caiDat.luongToiThieuVung) + ' đ. Nghỉ không lương từ ' + App.db.caiDat.nguongNghiKhongDongBH + ' ngày trong tháng thì không đóng.</div>' +
       nutHang(App.duocXem('caidat') ? nut('Mở Cài đặt → Bảo hiểm', 'cd:bh') : '');
   });
-  yDinh('thue', function (q) { return /(giam tru|bieu thue|thue tncn|thue thu nhap)/.test(q) && !laHoiCach(q); }, '', function () {
+  yDinh('thue', function (q) { return /(giam tru|bieu thue|thue tncn|thue thu nhap)/.test(q) && !laHoiCach(q) && !/(quyet toan|uy quyen|mien thue|khong chiu thue|khong tinh thue|la gi|nguoi phu thuoc|npt|khau tru)( |$)/.test(q); }, '', function () {
     var cd = App.db.caiDat, truoc = 0;
     return 'Giảm trừ gia cảnh: bản thân <b>' + App.tien(cd.giamTruBanThan) + ' đ</b>/tháng, mỗi người phụ thuộc <b>' + App.tien(cd.giamTruNPT) + ' đ</b>/tháng.<br>Biểu thuế lũy tiến (thu nhập tính thuế / tháng):<ul>' +
       cd.bieuThue.map(function (b) { var s = '<li>' + (b.den ? (truoc ? 'Trên ' + App.tien(truoc) + ' đến ' : 'Đến ') + App.tien(b.den) : 'Trên ' + App.tien(truoc)) + ' đ: ' + App.so(b.ts) + '%</li>'; truoc = b.den; return s; }).join('') + '</ul>' +
@@ -351,6 +352,20 @@
   /* ---------- câu hỏi về 1 người ---------- */
   function veNguoi(nv, q) {
     var db = App.db, y = App.ky.y, m = App.ky.m, d = hn();
+    // bảo hiểm của 1 người: lương đóng BH (theo bậc lương hiện tại nếu đã xếp bậc) và số tiền đóng
+    if (/(bao hiem|bhxh|bhyt|bhtn|dong bh|luong dong)/.test(q)) {
+      if (App.quyen('lg') < 1) return khongQuyen('lg');
+      var rb = TL.tinhBangLuong(db, y, m).rows.filter(function (x) { return x.nvId === nv.id; })[0], cd = db.caiDat, xl = TL.xepLuongNV(db, nv);
+      if (!rb) return h(nv.hoTen) + ' không có trong bảng lương ' + tenKyHT() + '.';
+      if (!nv.thamGiaBH) return lienKetNV(nv) + ' hiện <b>không tham gia</b> BHXH, BHYT, BHTN (hồ sơ → tab Bảo hiểm, thuế & người phụ thuộc).';
+      var cachTinh = rb.bhTheoBac ? 'theo <b>bậc lương hiện tại</b>' + (xl ? ' (' + h(xl.ngach.ten) + ' bậc ' + xl.bac + ')' : '') + ': ' + App.tien(rb.bhTheoBac) + ' đ' + (rb.pcDongBH ? ' + phụ cấp đóng BH ' + App.tien(rb.pcDongBH) + ' đ' : '')
+        : +nv.luongBH ? 'theo lương đóng BH nhập trong hồ sơ' : rb.luongBH ? 'mức lương + phụ cấp đóng BH' : 'chưa có';
+      return 'Bảo hiểm của ' + lienKetNV(nv) + ' – ' + tenKyHT() + ':<ul><li>Lương đóng BH: <b>' + App.tien(rb.luongBH) + ' đ</b> (' + cachTinh + ')</li>' +
+        (rb.dongBH ? '<li>Người lao động đóng: BHXH ' + App.tien(rb.bhxh) + ' + BHYT ' + App.tien(rb.bhyt) + ' + BHTN ' + App.tien(rb.bhtn) + ' = <b>' + App.tien(rb.tongBH) + ' đ</b>' + (rb.doanPhi ? '; đoàn phí ' + App.tien(rb.doanPhi) + ' đ' : '') + '</li>'
+          : '<li><b>Kỳ này không đóng BH</b> (thử việc hoặc nghỉ không lương từ ' + (cd.nguongNghiKhongDongBH || 14) + ' ngày)</li>') + '</ul>' +
+        (xl && xl.ngayNang && !xl.bacCuoi ? '<div class="mo nho">Nâng bậc tiếp: ' + TL.hienNgay(xl.ngayNang) + ' – lương đóng BH tự đổi theo bậc mới.</div>' : '') +
+        nutHang((App.duocXem('hoso') ? nut('Mở hồ sơ', 'hs:' + nv.id + ':bhthue') : '') + nutTrang('bangluong', 'Mở Bảng lương'));
+    }
     if (/(luong|thuc linh|thu nhap|phieu luong|tam ung|ky ii|ky 2|linh)/.test(q)) {
       if (App.quyen('lg') < 1) return khongQuyen('lg');
       var bl = TL.tinhBangLuong(db, y, m), r = bl.rows.filter(function (x) { return x.nvId === nv.id; })[0];
@@ -409,7 +424,6 @@
     mat_khau: ['gat', 1200, '🔑', 'nhaymat'], quyen: ['gat', 1200, '🔐'] };
   /** Trò chuyện xã giao: hỏi tên, hỏi thăm, khen, chê, nhờ nhảy múa… */
   function troChuyen(q) {
-    if (/(ban la ai|ban ten gi|ten ban la gi|ban la gi|em la ai|em ten gi)/.test(q)) { cx(['vay', 1500, '🤖']); return 'Tôi là <b>Trợ lý ảo Hawasuco</b> – robot hướng dẫn và tra cứu thông tin nhân sự, chấm công, tiền lương trong phần mềm này. Rất vui được làm việc cùng bạn!'; }
     if (/(ban khoe khong|em khoe khong|khoe khong)/.test(q)) { cx(['then', 1600, '😊']); return 'Tôi khỏe lắm, pin đầy 100% 🔋. Cảm ơn bạn đã hỏi thăm! Bạn cần tôi tra cứu gì không?'; }
     if (/^(nhay|mua|nhay di|mua di|nhay mua|dance)( (di|nao|cho xem|xem nao))?$/.test(q)) { cx(['mua', 2400, '🎵']); return 'Xem tôi nhảy nè! 💃🕺'; }
     if (/^(xoay|quay|xoay vong|quay vong|lon vong)( (di|nao|cho xem|xem nao))?$/.test(q)) { cx(['xoay', 950, '🌀']); return 'Xoay vòng vòng… ôi chóng mặt quá! 😵‍💫'; }
@@ -423,6 +437,9 @@
     CX = null;
     var q = cn(goc);
     if (!q) return chao();
+    // về bản thân Trợ lý ảo Hawasuco, về công ty (kienthuc.js)
+    var bt = App.KienThuc && App.KienThuc.banThan(q);
+    if (bt) { cx(bt.cx); return bt.html; }
     if (/^(xin chao|chao|hello|hi|alo)( |$)/.test(q)) { cx(['vay', 1500, '👋']); return chao(); }
     if (/^(cam on|thank)/.test(q)) { cx(['yeu', 1800, '💙']); return 'Rất vui được giúp bạn!'; }
     var xg = troChuyen(q); if (xg) return xg;
@@ -438,6 +455,9 @@
     // số hợp đồng / quyết định
     var so = /(\d{1,4}\/\d{4}\/[a-z0-9\-\/]+|\d{1,4}\/qd[a-z\-]*)/.exec(q);
     if (so) { var tim = timSoVanBan(so[1]); if (tim) { cx(['gat', 1200, '📄']); return tim; } }
+    // tính nhanh: thuế, bảo hiểm, thực lĩnh, làm thêm giờ, trợ cấp, phép năm, nghỉ hưu, âm lịch, Tết…
+    var mt = App.KienThuc && App.KienThuc.tinh(q, goc);
+    if (mt) { cx(mt.cx); return mt.html; }
     var nguoi = timNguoi(q), dv = nguoi.length ? null : timDonVi(q), ctx = { nv: nguoi.length === 1 ? nguoi[0] : null, dv: dv };
     var hoiCach = laHoiCach(q);
     // câu hỏi dữ liệu
@@ -469,10 +489,21 @@
     // hỏi đúng tên một phần hướng dẫn chung (quy trình hằng tháng, tài khoản & phân quyền, câu hỏi thường gặp…)
     var phan = phanHuongDan(q);
     if (phan) { cx(['gat', 1200, '📖']); return phan; }
-    // hỏi cách làm / tìm trong hướng dẫn và nơi thiết lập
+    // kiến thức lao động – tiền lương (luật, chế độ) hay hướng dẫn dùng phần mềm?
+    var kt = App.KienThuc ? App.KienThuc.tim(q) : [];
+    var hoiPM = /(^| )(phan mem|nhap lieu|nhap tu|nhap vao|cach nhap|nhap du lieu|bam|man hinh|o dau|cai dat|thiet lap|sua|chon|xuat|in|trang|tab|nut|tao|lap|duyet|them moi|them nhan vien|them hop dong|them ngay|xoa|mo|dang nhap|tai khoan dang nhap|excel)( |$)/.test(q);
     var hd = timHuongDan(q, 3), noi = timNoi(q);
+    // chủ đề vừa là chế độ vừa là chức năng phần mềm (pm): hỏi "thế nào / tính lương thử việc" mà không hỏi quy định thì ưu tiên hướng dẫn
+    var hoiLuat = /(^| )(bao lau|toi da|toi thieu|quy dinh|theo luat|luat|may lan|bao nhieu|may ngay|may thang|duoc khong|co duoc|la gi|dieu kien|che do|muc huong|duoc huong|duoc nghi)( |$)/.test(q);
+    if (kt.length && !hoiPM && !(kt[0].k.pm && !hoiLuat && hd.length)) {
+      var rk = App.KienThuc.ve(kt[0].k, kt.slice(1, 3));
+      cx(rk.cx); return rk.html + lienQuan(q, 2);
+    }
+    // hỏi cách làm / tìm trong hướng dẫn và nơi thiết lập
+    var lqKT = kt.length ? '<div class="tl-lq">Kiến thức liên quan: ' + kt.slice(0, 2).map(function (x) { return '<a href="#" data-tl="hoi:' + h(x.k.td) + '">' + h(x.k.td) + '</a>'; }).join(' · ') + '</div>' : '';
     if (hd.length || noi) cx(['gat', 1200, '📖']);
-    if (hd.length || noi) return veHuongDan(hd, noi, !!noi && ((noi.diem >= 7 && !laHoiCach(q)) || noi.diem >= 10 || /(sua|o dau|cai dat|thiet lap|thay doi|chinh|them)( |$)/.test(q)));
+    if (hd.length || noi) return veHuongDan(hd, noi, !!noi && ((noi.diem >= 7 && !laHoiCach(q)) || noi.diem >= 10 || /(sua|o dau|cai dat|thiet lap|thay doi|chinh|them)( |$)/.test(q))) + lqKT;
+    if (kt.length) { var rk2 = App.KienThuc.ve(kt[0].k, kt.slice(1, 3)); cx(rk2.cx); return rk2.html; }
     // tìm rộng: tên nhân viên gần đúng
     var gan = timGanDung(q);
     if (gan.length) cx(['ngac', 1200, '🤔']);
@@ -559,6 +590,7 @@
   }
 
   var GOI_Y = ['Ai sắp hết hạn hợp đồng?', 'Ai đang thử việc?', 'Hôm nay ai nghỉ?', 'Ô chấm công còn trống', 'Đơn nghỉ chờ duyệt', 'Cách chấm công hằng ngày',
+    'Lương 10 triệu thực lĩnh bao nhiêu?', 'Nghỉ phép năm bao nhiêu ngày?', 'Bạn là ai?', 'Âm lịch hôm nay',
     'Cách tính lương thử việc', 'Lương cơ sở hiện nay', 'Tiền cơm bao nhiêu', 'Ngày lễ sắp tới', 'Tỷ lệ đóng bảo hiểm bao nhiêu', 'Sinh nhật tháng này', 'Quyền của tôi'];
   function goiYTheoQuyen() {
     return GOI_Y.filter(function (g) {
@@ -574,6 +606,8 @@
       '<ul><li><b>Hướng dẫn</b> cách làm: “cách chấm công”, “nâng bậc lương thế nào”, “sao lưu dữ liệu”…</li>' +
       '<li><b>Tìm</b> nhân viên, phòng / đội, số hợp đồng, quyết định: gõ tên, mã NV, số điện thoại, số HĐ…</li>' +
       '<li><b>Trả lời nhanh</b> từ dữ liệu: ai sắp hết hạn hợp đồng, ai đang thử việc, ai nghỉ hôm nay, lương của một người…</li>' +
+      '<li><b>Giải đáp lao động – tiền lương</b>: hợp đồng, phép năm, nghỉ lễ, thai sản, BHXH, thuế TNCN, trợ cấp, nghỉ hưu…</li>' +
+      '<li><b>Tính nhanh</b>: thuế TNCN, bảo hiểm, lương thực lĩnh, làm thêm giờ, trợ cấp thôi việc, âm lịch, ngày Tết…</li>' +
       '<li><b>Mở trang</b>: “mở bảng lương”, “vào chấm công”.</li></ul>' +
       '<div class="tl-goi">' + goiYTheoQuyen().slice(0, 8).map(hoi).join('') + '</div>';
   }
@@ -682,7 +716,7 @@
   /** Chữ để đọc: bỏ nút, đọc số tiền, ngày tháng, chữ viết tắt cho dễ nghe; dài quá thì đọc phần đầu */
   function chuDoc(html) {
     var d = document.createElement('div'); d.innerHTML = html;
-    Array.prototype.forEach.call(d.querySelectorAll('.tl-nuts, .tl-goi, .tl-lq, .tl-doclai, button'), function (x) { x.remove(); });
+    Array.prototype.forEach.call(d.querySelectorAll('.tl-nuts, .tl-goi, .tl-lq, .tl-doclai, .tl-nguon, button'), function (x) { x.remove(); });
     Array.prototype.forEach.call(d.querySelectorAll('li, p, div, tr'), function (x) { x.insertAdjacentText('afterbegin', ' '); x.insertAdjacentText('beforeend', '. '); });
     var t = d.textContent.replace(/\s+/g, ' ');
     t = t.replace(/(\d{1,3})((?:\.\d{3})+)(?!\d)/g, function (_, a, b) { return a + b.replace(/\./g, ''); })

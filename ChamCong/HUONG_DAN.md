@@ -34,6 +34,16 @@ Trợ lý chạy ngay trong phần mềm, **không gửi dữ liệu ra ngoài**
 - **Mở trang**: "mở bảng lương", "vào chấm công".
 Gõ không dấu cũng được. Mũi tên lên / xuống để gọi lại câu đã hỏi; Esc để đóng.
 
+**Trợ lý ảo Hawasuco hiểu biết rộng**:
+- Hỏi về trợ lý: “bạn là ai”, “Hawasuco là gì”, “bạn làm được gì”, “ai tạo ra bạn”, “dữ liệu có gửi ra ngoài không”…; về công ty: tên, địa chỉ, mã số thuế (lấy từ Cài đặt).
+- **Kiến thức lao động – tiền lương** (có dẫn điều luật, số liệu lấy từ Cài đặt): loại hợp đồng, thử việc, báo trước khi nghỉ việc, giờ làm việc,
+  làm thêm giờ, phép năm, nghỉ lễ Tết, nghỉ việc riêng (cưới, tang), thai sản, ốm đau, BHXH, lương tối thiểu vùng, thuế TNCN, người phụ thuộc,
+  trợ cấp thôi việc / mất việc / thất nghiệp, tuổi nghỉ hưu, kỷ luật, trả lương, thang bảng lương, công đoàn, lao động nữ, tai nạn lao động.
+- **Tính nhanh**: “lương 10 triệu thực lĩnh bao nhiêu”, “thuế TNCN thu nhập 25 triệu 1 người phụ thuộc”, “đóng bảo hiểm 7.500.000 trừ bao nhiêu”,
+  “làm thêm 4 giờ chủ nhật lương 8 triệu”, “trợ cấp thôi việc 6 năm lương 9 triệu”, “trợ cấp thất nghiệp lương 8 triệu đóng 60 tháng”,
+  “làm 12 năm phép năm bao nhiêu”, “nữ sinh tháng 5/1975 bao giờ nghỉ hưu”, “âm lịch hôm nay”, “15/8 âm lịch là ngày nào”,
+  “còn bao nhiêu ngày đến Tết”, “đọc 2.530.000 bằng chữ”; về một người: “bảo hiểm của Nguyễn Văn An” (theo bậc lương hiện tại).
+
 **Cảm xúc, cử chỉ của linh vật**: robot chớp mắt, nghiêng đầu và đưa mắt nhìn theo con trỏ chuột, vẫy chào khi rê chuột vào
 (để lâu thì cười khúc khích), thỉnh thoảng nhắc một câu, ngủ gật 💤 khi lâu không ai thao tác và thức dậy khi có người dùng.
 Khi trả lời, robot biểu lộ theo nội dung: gật đầu khi tra được thông tin, ngạc nhiên ⚠️ khi có hợp đồng quá hạn, mừng ✅ khi
@@ -96,7 +106,7 @@ Bấm 1 người trong danh sách để mở hồ sơ gồm các tab:
 - **Thông tin cá nhân**: ảnh 3×4, ngày sinh, nơi sinh, quê quán, dân tộc, tôn giáo, CCCD (ngày cấp, nơi cấp), địa chỉ thường trú,
   chỗ ở, liên hệ khẩn cấp, trình độ học vấn – chuyên môn – ngoại ngữ – tin học – lý luận chính trị, Đảng viên.
 - **Công việc & lương**: phòng / đội (nút *Điều chuyển* lập quyết định), chức vụ, bảng lương – chức danh – bậc, loại lao động, trạng thái, ngày vào / nghỉ, mức lương, phụ cấp, sản phẩm, ngân hàng, phép năm.
-- **Bảo hiểm, thuế & người phụ thuộc**: lương đóng BH, số sổ BHXH, mã thẻ BHYT, nơi KCB; MST; danh sách **người phụ thuộc**
+- **Bảo hiểm, thuế & người phụ thuộc**: lương đóng BH (người đã xếp bậc: tự theo bậc lương hiện tại), số sổ BHXH, mã thẻ BHYT, nơi KCB; MST; danh sách **người phụ thuộc**
   có *từ tháng – đến tháng* để giảm trừ gia cảnh đúng từng tháng.
 - **Hợp đồng lao động**, **Quá trình công tác**, **Nghỉ phép** (phép năm theo tháng, đơn nghỉ), **Lương các kỳ** (12 kỳ gần nhất).
 - **Hồ sơ scan**: lưu trữ bản scan hợp đồng, quyết định, CCCD, sơ yếu lý lịch, bằng cấp, giấy khám sức khoẻ, sổ BHXH…
@@ -267,7 +277,9 @@ Cách tính chính:
   vào ngày lễ**; nửa ngày `+/2` tính 0,5. Ngày **nghỉ lễ `L`** vẫn tính công nhưng **không tính cơm**; nghỉ phép, ốm… cũng không tính cơm.
   Tiền cơm thay đổi từ tháng nào thì sửa ở trang **Mức lương theo kỳ**. Phần tiền ăn giữa ca vượt **1.200.000 đ/tháng**
   (Nghị định 253/2026, từ 01/7/2026; trước đó 730.000) tính vào thu nhập chịu thuế TNCN – vd 26 ngày × 50.000 = 1.300.000 thì 100.000 chịu thuế.
-- BH trên lương đóng BH (mặc định = mức lương + phụ cấp có đánh dấu đóng BH), có trần 20 × lương cơ sở (BHXH, BHYT)
+- BH trên lương đóng BH: người đã xếp thang, bảng lương đóng **theo bậc lương hiện tại** = giá trị bậc của kỳ lương + phụ cấp có đánh dấu
+  đóng BH (nâng bậc từ kỳ nào thì BH đổi theo từ kỳ đó; tắt ở Cài đặt → Bảo hiểm & công đoàn để dùng lương đóng BH nhập trong hồ sơ);
+  người chưa xếp bậc: lương đóng BH nhập trong hồ sơ, để trống = mức lương + phụ cấp đóng BH. Trần 20 × lương cơ sở (BHXH, BHYT)
   và 20 × lương tối thiểu vùng (BHTN). Nghỉ không lương từ 14 ngày trở lên trong kỳ thì không đóng BH.
 - Thuế TNCN biểu lũy tiến 5 bậc, giảm trừ bản thân 15,5 triệu, người phụ thuộc 6,2 triệu; phần lương làm thêm vượt
   lương thường và phụ cấp không chịu thuế được loại trừ. Hợp đồng dưới 3 tháng: khấu trừ 10%.

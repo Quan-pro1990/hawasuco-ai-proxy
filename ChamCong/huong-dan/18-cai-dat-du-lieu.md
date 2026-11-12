@@ -10,7 +10,8 @@
   giờ vào – ra, ngưỡng đủ / nửa công, làm thêm, *không trả lương thời gian quá công chuẩn*.
 - **Lương & làm thêm**: hệ số làm thêm (150 / 200 / 300%), tiền làm thêm chi bảng riêng, ngừng việc, hệ số đi làm ngày lễ / Tết,
   **thử việc** (% lương mặc định, không đóng BH khi thử việc), làm tròn, phạt đi muộn.
-- **Bảo hiểm & công đoàn**: tỷ lệ đóng, lương cơ sở, vùng và lương tối thiểu vùng, ngưỡng nghỉ không lương không đóng BH.
+- **Bảo hiểm & công đoàn**: tỷ lệ đóng, lương cơ sở, vùng và lương tối thiểu vùng, ngưỡng nghỉ không lương không đóng BH,
+  **Lương đóng BH theo bậc lương hiện tại** (mặc định bật).
 - **Thuế TNCN**: giảm trừ bản thân, người phụ thuộc, biểu thuế lũy tiến, khấu trừ 10%.
 - **Sao lưu dữ liệu** (trên máy chủ: **Dữ liệu & tài khoản**): sao lưu ra file / khôi phục; trên máy chủ còn có bản sao lưu hằng ngày,
   **tài khoản đăng nhập** và nhật ký – xem [Tài khoản & phân quyền](#huongdan?p=tai-khoan-phan-quyen).

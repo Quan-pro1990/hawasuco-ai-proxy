@@ -436,6 +436,7 @@
           o('Vùng lương tối thiểu', 'caiDat.vung', [['I', 'Vùng I'], ['II', 'Vùng II'], ['III', 'Vùng III'], ['IV', 'Vùng IV']], 'Chọn vùng sẽ điền mức lương tối thiểu năm 2026') +
           o('Lương tối thiểu vùng (đ/tháng)', 'caiDat.luongToiThieuVung', 'tien', 'Trần đóng BHTN = 20 × lương tối thiểu vùng = ' + App.tien(20 * cd.luongToiThieuVung)) +
           o('Không đóng BH khi nghỉ không lương từ (ngày)', 'caiDat.nguongNghiKhongDongBH', 'so') +
+          '<div class="ca">' + o('Lương đóng BH theo bậc lương hiện tại của nhân viên (người đã xếp thang, bảng lương): giá trị bậc của kỳ lương + phụ cấp tính đóng BH; nâng bậc thì lương đóng BH tự đổi theo. Bỏ chọn: dùng lương đóng BH nhập trong hồ sơ.', 'caiDat.bhTheoBac', 'bool') + '</div>' +
           '</div><p class="mo nho">Mặc định: lương cơ sở 2.530.000 đ (từ 01/7/2026), lương tối thiểu vùng theo Nghị định 293/2025/NĐ-CP (vùng I 5.310.000 đ). Khi Nhà nước điều chỉnh, sửa lại ở đây rồi tính lại các kỳ chưa chốt.</p></div>';
         break;
       case 'thue':

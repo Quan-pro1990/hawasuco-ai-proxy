@@ -17,6 +17,7 @@
 - Lương thời gian = mức lương ÷ công chuẩn (22 hoặc 26) × số công lương thời gian. Thử việc: phần công thử việc × 85%.
 - Lương sản phẩm = số lượng × đơn giá (vd 2.490 hoá đơn × 1.200 đ).
 - Cơm trưa = mức chung × số ngày có đi làm; phần vượt mức miễn thuế tính thuế TNCN.
-- BHXH 8%, BHYT 1,5%, BHTN 1%, công đoàn 0,5% trên lương đóng BH; nghỉ không lương từ 14 ngày thì không đóng.
+- BHXH 8%, BHYT 1,5%, BHTN 1%, công đoàn 0,5% trên lương đóng BH (người đã xếp bậc: theo bậc lương hiện tại + phụ cấp đóng BH);
+  nghỉ không lương từ 14 ngày thì không đóng.
 - Thuế TNCN lũy tiến sau giảm trừ bản thân, người phụ thuộc, bảo hiểm.
 - **Lãnh kỳ II** = Tổng thu nhập − Tạm ứng kỳ I − các khoản khấu trừ. Tiền làm thêm giờ mặc định chi bảng riêng.

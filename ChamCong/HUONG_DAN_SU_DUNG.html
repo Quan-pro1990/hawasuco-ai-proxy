@@ -84,6 +84,7 @@
  bảng lương – chức danh – bậc (hoặc mức lương), phụ cấp riêng, tạm ứng kỳ I riêng, số tài khoản ngân hàng, phép năm.
  Người mới thử việc: đánh dấu <b>Có thời gian thử việc</b> (số tháng, % lương thử việc – mặc định 85%).
 </li><li>Tab <b>Bảo hiểm, thuế &amp; người phụ thuộc</b>: tham gia BH, lương đóng BH, số sổ BHXH, MST, người phụ thuộc (từ tháng – đến tháng).
+ Người đã xếp bậc lương: lương đóng BH <b>tự theo bậc lương hiện tại</b> + phụ cấp tính đóng BH (ô này chỉ hiện để xem).
 </li><li>Bấm <b>Thêm nhân viên</b> / <b>Lưu hồ sơ</b> (chấm ● trên nút là còn thay đổi chưa lưu).
 </li></ol>
 <h2>Nhập nhiều người từ Excel</h2>
@@ -154,6 +155,8 @@
 <h2>Xếp lương</h2>
 <ol><li>Tab <b>Xếp lương nhân viên</b>: trên từng dòng chọn <b>bảng lương – chức danh – bậc</b> và <b>ngày hưởng bậc</b>.
 </li><li>Mức lương (và / hoặc lương đóng BH) tự lấy theo giá trị bậc của kỳ đang xem.
+</li><li><b>Bảo hiểm đóng theo bậc lương hiện tại</b>: lương đóng BH = giá trị bậc + phụ cấp tính đóng BH (cột <i>Lương đóng BH</i> ghi “theo bậc”);
+ nâng bậc có hiệu lực từ kỳ nào thì BH đổi theo từ kỳ đó. Tắt ở Cài đặt → Bảo hiểm &amp; công đoàn nếu muốn nhập tay.
 </li></ol>
 <h2>Nâng bậc, chuyển chức danh</h2>
 <ol><li>Bấm <b>Nâng / chuyển bậc…</b> trên dòng nhân viên (hoặc <b>Nâng bậc…</b> ở tab <i>Đến hạn nâng bậc</i>).
@@ -227,7 +230,8 @@
 <ul><li>Lương thời gian = mức lương ÷ công chuẩn (22 hoặc 26) × số công lương thời gian. Thử việc: phần công thử việc × 85%.
 </li><li>Lương sản phẩm = số lượng × đơn giá (vd 2.490 hoá đơn × 1.200 đ).
 </li><li>Cơm trưa = mức chung × số ngày có đi làm; phần vượt mức miễn thuế tính thuế TNCN.
-</li><li>BHXH 8%, BHYT 1,5%, BHTN 1%, công đoàn 0,5% trên lương đóng BH; nghỉ không lương từ 14 ngày thì không đóng.
+</li><li>BHXH 8%, BHYT 1,5%, BHTN 1%, công đoàn 0,5% trên lương đóng BH (người đã xếp bậc: theo bậc lương hiện tại + phụ cấp đóng BH);
+ nghỉ không lương từ 14 ngày thì không đóng.
 </li><li>Thuế TNCN lũy tiến sau giảm trừ bản thân, người phụ thuộc, bảo hiểm.
 </li><li><b>Lãnh kỳ II</b> = Tổng thu nhập − Tạm ứng kỳ I − các khoản khấu trừ. Tiền làm thêm giờ mặc định chi bảng riêng.
 </li></ul></section><section id="phieu-luong"><a class="len" href="#muc-luc">↑ Mục lục</a><h1>Phiếu lương</h1>
@@ -284,7 +288,8 @@
  giờ vào – ra, ngưỡng đủ / nửa công, làm thêm, <i>không trả lương thời gian quá công chuẩn</i>.
 </li><li><b>Lương &amp; làm thêm</b>: hệ số làm thêm (150 / 200 / 300%), tiền làm thêm chi bảng riêng, ngừng việc, hệ số đi làm ngày lễ / Tết,
  <b>thử việc</b> (% lương mặc định, không đóng BH khi thử việc), làm tròn, phạt đi muộn.
-</li><li><b>Bảo hiểm &amp; công đoàn</b>: tỷ lệ đóng, lương cơ sở, vùng và lương tối thiểu vùng, ngưỡng nghỉ không lương không đóng BH.
+</li><li><b>Bảo hiểm &amp; công đoàn</b>: tỷ lệ đóng, lương cơ sở, vùng và lương tối thiểu vùng, ngưỡng nghỉ không lương không đóng BH,
+ <b>Lương đóng BH theo bậc lương hiện tại</b> (mặc định bật).
 </li><li><b>Thuế TNCN</b>: giảm trừ bản thân, người phụ thuộc, biểu thuế lũy tiến, khấu trừ 10%.
 </li><li><b>Sao lưu dữ liệu</b> (trên máy chủ: <b>Dữ liệu &amp; tài khoản</b>): sao lưu ra file / khôi phục; trên máy chủ còn có bản sao lưu hằng ngày,
  <b>tài khoản đăng nhập</b> và nhật ký – xem <a href="#tai-khoan-phan-quyen">Tài khoản &amp; phân quyền</a>.
@@ -323,6 +328,10 @@
 </li><li>Ví dụ: <i>ai sắp hết hạn hợp đồng</i>, <i>ai đang thử việc</i>, <i>hôm nay ai nghỉ</i>, <i>lương của</i> + họ tên, <i>cách nâng bậc lương</i>,
  <i>tỷ lệ bảo hiểm sửa ở đâu</i>, <i>mở bảng lương</i>, gõ mã NV hoặc số hợp đồng.
 </li><li>Bấm các nút trong câu trả lời để mở đúng trang / hồ sơ.
+</li><li>Hỏi rộng hơn: chế độ lao động – tiền lương (<i>thử việc tối đa bao lâu</i>, <i>cưới vợ được nghỉ mấy ngày</i>, <i>nghỉ thai sản bao lâu</i>, <i>trợ cấp thôi việc</i>…),
+ tính nhanh (<i>lương 10 triệu thực lĩnh bao nhiêu</i>, <i>thuế TNCN thu nhập 25 triệu 1 người phụ thuộc</i>, <i>làm thêm 4 giờ chủ nhật lương 8 triệu</i>,
+ <i>nữ sinh tháng 5/1975 bao giờ nghỉ hưu</i>, <i>âm lịch hôm nay</i>, <i>còn bao nhiêu ngày đến Tết</i>), hỏi về trợ lý (<i>bạn là ai</i>, <i>bạn làm được gì</i>).
+ Câu trả lời về luật có ghi nguồn (điều luật); số liệu (tỷ lệ BH, giảm trừ, biểu thuế…) lấy từ Cài đặt của công ty.
 </li></ol>
 <h2>Nói chuyện bằng giọng nói (Chrome, Edge)</h2>
 <ol><li>Bấm <b>micro</b> 🎤 rồi nói câu hỏi tiếng Việt – lần đầu chọn <i>Cho phép</i> dùng micro.

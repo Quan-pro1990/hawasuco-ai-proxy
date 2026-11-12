@@ -100,6 +100,8 @@
         doanPhi: 0.5
       },
       luongCoSo: 2530000,
+      // lương đóng BH của người đã xếp thang bảng lương = giá trị bậc lương hiện tại (của kỳ) + phụ cấp tính đóng BH
+      bhTheoBac: true,
       // tạm ứng kỳ I (giữa tháng) theo chức vụ; kỳ II cuối tháng = lương còn lại
       tamUng: { macDinh: 2000000, theoChucVu: [
         { chucVu: 'Chủ tịch kiêm Giám đốc', muc: 6000000 }, { chucVu: 'Giám đốc', muc: 6000000 },
@@ -544,6 +546,8 @@
       var ht = nv.hinhThuc || 'thang';
       if ((xl.apDung === 'cb' || xl.apDung === 'ca_hai') && (ht === 'thang' || ht === 'khoan')) kq.luongCB = xl.tien;
       if (xl.apDung === 'bh' || xl.apDung === 'ca_hai') kq.luongBH = xl.tien;
+      // đóng BH theo bậc lương hiện tại: bỏ qua lương đóng BH nhập tay / ghi trong quyết định
+      if ((db.caiDat || {}).bhTheoBac !== false) { kq.luongBH = 0; kq.bhTheoBac = xl.tien; }
       kq.theoBang = xl;
     }
     return kq;
@@ -1033,7 +1037,8 @@
     var canhBao = [];
     var luongBH = 0;
     if (nv.thamGiaBH) {
-      if (lk.luongBH > 0) luongBH = lk.luongBH;
+      if (lk.bhTheoBac > 0) luongBH = lk.bhTheoBac + pcDongBH;     // theo bậc lương hiện tại + phụ cấp đóng BH
+      else if (lk.luongBH > 0) luongBH = lk.luongBH;
       else if (hinhThuc === 'thang' || hinhThuc === 'khoan') luongBH = cb + pcDongBH;
       else canhBao.push('Chưa nhập lương đóng BH');
       if (luongBH > 0 && luongBH < (+cd.luongToiThieuVung || 0)) canhBao.push('Lương đóng BH thấp hơn lương tối thiểu vùng');
@@ -1096,7 +1101,7 @@
       tienOT: tienOT, otMienThue: otMienThue,
       phuCap: phuCap, phuCapNgay: phuCapNgay, tongPhuCap: tongPC, pcKhongThue: pcKhongThue,
       thuong: thuong, thuongQD: thuongQD, phatQD: phatQD, congKhac: congKhac, tongThuNhap: tongThuNhap, qdLuong: lk.qd ? lk.qd.so || '' : '',
-      luongBH: luongBH, dongBH: !!dongBH, bhxh: bhxh, bhyt: bhyt, bhtn: bhtn, tongBH: tongBH, doanPhi: doanPhi,
+      luongBH: luongBH, bhTheoBac: lk.bhTheoBac || 0, pcDongBH: pcDongBH, dongBH: !!dongBH, bhxh: bhxh, bhyt: bhyt, bhtn: bhtn, tongBH: tongBH, doanPhi: doanPhi,
       tnct: tnct, giamTruBT: gtBT, soNPT: soNPT, giamTruNPT: gtNPT, tntt: tntt, thue: thue,
       anCaVuot: anCaVuot, otRieng: otRieng, otTien: otTien, khoi: khoiCuaDV(db, dvk.phongBan), tamUng: tamUng, tamUngTuDong: !coTU, tamUngMacDinh: tamUngTD, khauTru: khauTru, phatMuon: phatMuon, tongKhauTru: tongKhauTru, ghiChu: dc.ghiChu || '',
       thucLinh: thucLinh, dn: dn, chiPhiDN: tongThuNhap + dn.tong,

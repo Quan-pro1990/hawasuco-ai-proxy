@@ -6,6 +6,8 @@
 ## Xếp lương
 1. Tab **Xếp lương nhân viên**: trên từng dòng chọn **bảng lương – chức danh – bậc** và **ngày hưởng bậc**.
 2. Mức lương (và / hoặc lương đóng BH) tự lấy theo giá trị bậc của kỳ đang xem.
+3. **Bảo hiểm đóng theo bậc lương hiện tại**: lương đóng BH = giá trị bậc + phụ cấp tính đóng BH (cột *Lương đóng BH* ghi “theo bậc”);
+   nâng bậc có hiệu lực từ kỳ nào thì BH đổi theo từ kỳ đó. Tắt ở Cài đặt → Bảo hiểm & công đoàn nếu muốn nhập tay.
 
 ## Nâng bậc, chuyển chức danh
 1. Bấm **Nâng / chuyển bậc…** trên dòng nhân viên (hoặc **Nâng bậc…** ở tab *Đến hạn nâng bậc*).
