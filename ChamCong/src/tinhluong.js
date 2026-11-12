@@ -637,6 +637,51 @@
     return kq;
   }
 
+  /** Lương đóng BH của nhân viên tại kỳ (chưa xét chấm công): theo bậc lương hiện tại + phụ cấp đóng BH; người chưa xếp bậc
+      theo lương đóng BH ghi riêng, hoặc mức lương (+ phụ cấp đóng BH). Kèm số tiền người lao động / doanh nghiệp đóng nếu đóng đủ tháng.
+      nguon: 'bac' | 'rieng' | 'luong' | 'thieu' (chưa có lương đóng BH) | 'khong' (không tham gia BH) */
+  function luongDongBH(db, nv, y, m, lk) {
+    lk = lk || luongTheoKy(db, nv, y, m);
+    var cd = db.caiDat || {}, ky = khoaKy(y, m), npc = nv.phuCap || {}, pc = 0, ht = nv.hinhThuc || 'thang';
+    (db.phuCap || []).forEach(function (p) {
+      if (!p.dongBH) return;
+      var rieng = npc[p.ma] != null && npc[p.ma] !== '';
+      pc += rieng ? (+npc[p.ma] || 0) : mucChungPC(db, p, ky);
+    });
+    var kq = { luongBH: 0, bhTheoBac: lk.bhTheoBac || 0, pcDongBH: pc, luongCB: lk.luongCB, xl: lk.theoBang || null, nguon: 'khong', tran: false,
+      nv: { bhxh: 0, bhyt: 0, bhtn: 0, tong: 0 }, dn: { bhxh: 0, bhyt: 0, bhtn: 0, kpcd: 0, tong: 0 } };
+    if (!nv.thamGiaBH) return kq;
+    if (lk.bhTheoBac > 0) { kq.luongBH = lk.bhTheoBac + pc; kq.nguon = 'bac'; }
+    else if (lk.luongBH > 0) { kq.luongBH = lk.luongBH; kq.nguon = 'rieng'; }
+    else if (ht === 'thang' || ht === 'khoan') { kq.luongBH = lk.luongCB + pc; kq.nguon = kq.luongBH > 0 ? 'luong' : 'thieu'; }
+    else kq.nguon = 'thieu';
+    if (!(kq.luongBH > 0)) return kq;
+    var capXH = 20 * luongCoSoKy(db, ky), capTN = 20 * (+cd.luongToiThieuVung || 0);
+    var nenXH = Math.min(kq.luongBH, capXH || kq.luongBH), nenTN = Math.min(kq.luongBH, capTN || kq.luongBH), b = cd.bh || { nv: {}, dn: {} };
+    var r = function (x) { return Math.round(x); };
+    kq.tran = !!capXH && kq.luongBH > capXH;
+    kq.nv = { bhxh: r(nenXH * (+b.nv.bhxh || 0) / 100), bhyt: r(nenXH * (+b.nv.bhyt || 0) / 100), bhtn: r(nenTN * (+b.nv.bhtn || 0) / 100) };
+    kq.nv.tong = kq.nv.bhxh + kq.nv.bhyt + kq.nv.bhtn;
+    kq.dn = { bhxh: r(nenXH * (+b.dn.bhxh || 0) / 100), bhyt: r(nenXH * (+b.dn.bhyt || 0) / 100), bhtn: r(nenTN * (+b.dn.bhtn || 0) / 100), kpcd: r(nenXH * (+b.dn.kpcd || 0) / 100) };
+    kq.dn.tong = kq.dn.bhxh + kq.dn.bhyt + kq.dn.bhtn + kq.dn.kpcd;
+    return kq;
+  }
+  /** Lương cơ sở có đang được dùng để tính không (để ẩn ô nhập khi không dùng):
+      có bảng lương hệ số lấy theo lương cơ sở (không có mức cơ sở riêng của bảng), hoặc có người lương đóng BH vượt trần 20 × lương cơ sở
+      (trần BHXH, BHYT và mức đoàn phí tối đa 10% lương cơ sở). Trả { dung, heSo: [tên bảng], tran: số người } */
+  function dungLuongCoSo(db, ky) {
+    ky = kyK(db, ky);
+    var y = +ky.slice(0, 4), m = +ky.slice(5, 7), kq = { dung: false, heSo: [], tran: 0 };
+    (db.thangLuong || []).forEach(function (b) {
+      if (b.kieu !== 'he_so') return;
+      var rieng = traCuuDot(db, ky, function (d) { var x = d.bang && d.bang[b.ma]; return x && +x.mucCoSo > 0 ? +x.mucCoSo : undefined; });
+      if (rieng === undefined && !(+b.mucCoSo > 0)) kq.heSo.push(b.ten || b.ma);
+    });
+    (db.nhanVien || []).forEach(function (nv) { if (nv.thamGiaBH && nvTrongKy(nv, y, m, db) && luongDongBH(db, nv, y, m).tran) kq.tran++; });
+    kq.dung = kq.heSo.length > 0 || kq.tran > 0;
+    return kq;
+  }
+
   /* ----- Thang, bảng lương: bảng → chức danh (nhóm) → bậc ----- */
   var KIEU_BL = { tien: 'Mức tiền (đồng / tháng)', he_so: 'Hệ số × mức lương cơ sở' };
   var AP_DUNG_BL = { cb: 'Mức lương (tính lương)', bh: 'Lương đóng bảo hiểm', ca_hai: 'Mức lương và lương đóng BH' };
@@ -1422,7 +1467,7 @@
     giaiDoanHDMacDinh: giaiDoanHDMacDinh, dsGiaiDoan: dsGiaiDoan, timGiaiDoan: timGiaiDoan, soThangThuViec: soThangThuViec, soThangGiua: soThangGiua,
     hdTheoNgay: hdTheoNgay, giaiDoanCacHD: giaiDoanCacHD, giaiDoanCuaHD: giaiDoanCuaHD, hdTiepTheo: hdTiepTheo,
     soBacNgach: soBacNgach, giaTriBac: giaTriBac, QUY_CHE_LUONG: QUY_CHE_LUONG, thangLuongQuyChe: thangLuongQuyChe, apDungThangLuongQuyChe: apDungThangLuongQuyChe, goiYXepQuyChe: goiYXepQuyChe, xepLuongNV: xepLuongNV, apXepLuong: apXepLuong, themThangISO: themThangISO,
-    dsDotLuong: dsDotLuong, kyHienHanh: kyHienHanh, kyCuaISO: kyCuaISO, dotTaiKy: dotTaiKy, luongCoSoKy: luongCoSoKy, mucChungPC: mucChungPC,
+    dsDotLuong: dsDotLuong, kyHienHanh: kyHienHanh, kyCuaISO: kyCuaISO, dotTaiKy: dotTaiKy, luongCoSoKy: luongCoSoKy, luongDongBH: luongDongBH, dungLuongCoSo: dungLuongCoSo, mucChungPC: mucChungPC,
     bacNgach: bacNgach, chupMucKy: chupMucKy, xepLuongTheoKy: xepLuongTheoKy, cauHinhTamUng: cauHinhTamUng, tamUngTheoChucVu: tamUngTheoChucVu,
     tamUngKy1: tamUngKy1, chuanCV: chuanCV, mienThueAnCaKy: mienThueAnCaKy, KHOI_VP: KHOI_VP, khoiCuaDV: khoiCuaDV, dsKhoi: dsKhoi, thongTinKhoi: thongTinKhoi,
     LOAI_QD: LOAI_QD, luongTheoKy: luongTheoKy, LOAI_DV: LOAI_DV, loaiDonVi: loaiDonVi, donViTheoKy: donViTheoKy, soNPTKy: soNPTKy, thuongPhatQD: thuongPhatQD,

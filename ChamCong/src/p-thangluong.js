@@ -126,7 +126,7 @@
   App.dmThangLuong = function (el) {
     var db = App.db, ds = db.thangLuong;
     ds.forEach(TL.chuanBangLuong);
-    el.innerHTML = '<div class="the"><h3>Thang, bảng lương<span class="phai">' + ds.length + ' bảng · lương cơ sở ' + App.tien(db.caiDat.luongCoSo) + ' đ</span></h3>' +
+    el.innerHTML = '<div class="the"><h3>Thang, bảng lương<span class="phai">' + ds.length + ' bảng' + (App.hienLuongCoSo && App.hienLuongCoSo() ? ' · lương cơ sở ' + App.tien(TL.luongCoSoKy(db)) + ' đ' : '') + '</span></h3>' +
       '<p class="mo" style="margin:0">Mỗi bảng gồm các <b>chức danh / nhóm công việc</b>, mỗi chức danh có nhiều <b>bậc</b>. Giá trị bậc là <b>mức tiền</b> (đồng / tháng) hoặc <b>hệ số</b> × mức lương cơ sở. ' +
       '“Dùng cho” quyết định bậc lương được ghi vào <b>mức lương</b> (tính lương thời gian), <b>lương đóng bảo hiểm</b>, hay cả hai. ' +
       'Xếp bậc cho từng người ở trang <a href="#nangbac">Xếp lương, nâng bậc</a> hoặc trong hồ sơ nhân viên. ' +

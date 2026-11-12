@@ -436,14 +436,16 @@
           '<h4>Doanh nghiệp</h4>' + o('BHXH (gồm ốm đau – thai sản, TNLĐ-BNN)', 'caiDat.bh.dn.bhxh', 'so') + o('BHYT', 'caiDat.bh.dn.bhyt', 'so') + o('BHTN', 'caiDat.bh.dn.bhtn', 'so') +
           o('Kinh phí công đoàn', 'caiDat.bh.dn.kpcd', 'so') +
           '</div></div><div class="the"><h3>Mức lương làm căn cứ</h3><div class="form ba">' +
-          o('Lương cơ sở (đ/tháng)', 'caiDat.luongCoSo', 'tien', App.db.dotLuong.length && TL.luongCoSoKy(App.db) !== +cd.luongCoSo
+          (App.hienLuongCoSo() ? o('Lương cơ sở Nhà nước (đ/tháng)', 'caiDat.luongCoSo', 'tien', App.db.dotLuong.length && TL.luongCoSoKy(App.db) !== +cd.luongCoSo
             ? 'Mức ban đầu. Đang áp dụng kỳ hiện hành: ' + App.tien(TL.luongCoSoKy(App.db)) + ' (trang Mức lương theo kỳ)'
-            : 'Trần đóng BHXH, BHYT = 20 × lương cơ sở = ' + App.tien(20 * cd.luongCoSo) + '. Thay đổi từ một tháng: trang Mức lương theo kỳ') +
+            : 'Không phải lương đóng BH của nhân viên. Chỉ dùng cho bảng lương hệ số và trần đóng BHXH, BHYT 20 × = ' + App.tien(20 * cd.luongCoSo) + '. Thay đổi từ một tháng: trang Mức lương theo kỳ') : '') +
           o('Vùng lương tối thiểu', 'caiDat.vung', [['I', 'Vùng I'], ['II', 'Vùng II'], ['III', 'Vùng III'], ['IV', 'Vùng IV']], 'Chọn vùng sẽ điền mức lương tối thiểu năm 2026') +
           o('Lương tối thiểu vùng (đ/tháng)', 'caiDat.luongToiThieuVung', 'tien', 'Trần đóng BHTN = 20 × lương tối thiểu vùng = ' + App.tien(20 * cd.luongToiThieuVung)) +
           o('Không đóng BH khi nghỉ không lương từ (ngày)', 'caiDat.nguongNghiKhongDongBH', 'so') +
           '<div class="ca">' + o('Lương đóng BH theo bậc lương hiện tại của nhân viên (người đã xếp thang, bảng lương): giá trị bậc của kỳ lương + phụ cấp tính đóng BH; nâng bậc thì lương đóng BH tự đổi theo. Bỏ chọn: dùng lương đóng BH nhập trong hồ sơ.', 'caiDat.bhTheoBac', 'bool') + '</div>' +
-          '</div><p class="mo nho">Mặc định: lương cơ sở 2.530.000 đ (từ 01/7/2026), lương tối thiểu vùng theo Nghị định 293/2025/NĐ-CP (vùng I 5.310.000 đ). Khi Nhà nước điều chỉnh, sửa lại ở đây rồi tính lại các kỳ chưa chốt.</p></div>';
+          '</div><p class="mo nho">' + (App.hienLuongCoSo() ? 'Mặc định: lương cơ sở 2.530.000 đ (từ 01/7/2026), lương' : 'Lương đóng BH của từng người theo bậc lương hiện tại: xem ở trang <a href="#mucluong">Mức lương theo kỳ</a>. ' +
+            'Ô <b>lương cơ sở</b> được ẩn vì công ty không dùng (lương, lương đóng BH theo bậc bằng mức tiền; không ai đóng BH tới trần 20 × lương cơ sở) – <a href="#" id="cd-lcs">hiện</a>. Lương') +
+          ' tối thiểu vùng theo Nghị định 293/2025/NĐ-CP (vùng I 5.310.000 đ). Khi Nhà nước điều chỉnh, sửa lại ở đây rồi tính lại các kỳ chưa chốt.</p></div>';
         break;
       case 'thue':
         html = '<div class="the"><h3>Giảm trừ gia cảnh</h3><div class="form">' +
@@ -514,6 +516,7 @@
       if (/^caiDat\.(vung|ngayDauKy|congChuan|luongCoSo|luongToiThieuVung)/.test(p) || p === 'congTy.ten') App.veLai();
     };
     el.onclick = function (e) {
+      if (e.target.closest('#cd-lcs')) { e.preventDefault(); App.hienLCS = true; App.veLai(); return; }
       if (e.target.closest('[data-a="xoa"]') && e.target.closest('#bieu-thue')) { cd.bieuThue.splice(+e.target.closest('tr').dataset.i, 1); App.luu(); App.veLai(); return; }
       if (e.target.closest('#bt-them')) { cd.bieuThue.push({ den: null, ts: 35 }); App.luu(); App.veLai(); return; }
       if (e.target.closest('#bt-goc')) { cd.bieuThue = TL.caiDatMacDinh().bieuThue; App.luu(); App.veLai(); return; }

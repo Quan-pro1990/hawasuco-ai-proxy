@@ -554,6 +554,36 @@ t('Lương đóng BH theo bậc lương hiện tại (+ phụ cấp đóng BH), 
   assert.strictEqual(r11.bhTheoBac, 0); assert.strictEqual(r11.luongBH, 8000000 + 500000);
 });
 
+t('Danh sách lương đóng BH từng người (không cần chấm công) khớp bảng lương; lương cơ sở dùng hay không', function () {
+  var db = dbMau(), nv;
+  db.thangLuong = [{ ma: 'T', ten: 'Bảng lương công ty', kieu: 'tien', apDung: 'cb', namNang: 3, ngach: [{ ma: 'CV', ten: 'Chuyên viên', bac: [7500000, 8000000, 8500000] }] }];
+  db = TL.chuanHoa(db); nv = db.nhanVien[0];
+  nv.phuCap = { AN: 50000, TN: 500000 };
+  nv.xepLuong = { bang: 'T', ngach: 'CV', bac: 2, ngayHuong: '2026-01-01' }; nv.luongCB = 8000000;
+  var T = TL.thang(db, 2026, 11, true); T.cc[nv.id] = {};
+  TL.ngayKy(db, 2026, 11).forEach(function (x) { var t = new Date(x.y, x.m - 1, x.d).getDay(); if (t > 0 && t < 6) T.cc[nv.id][x.d] = '+'; });
+  var r = TL.tinhBangLuong(db, 2026, 11).rows[0], b = TL.luongDongBH(db, nv, 2026, 11);
+  assert.strictEqual(b.nguon, 'bac'); assert.strictEqual(b.xl.bac, 2); assert.strictEqual(b.bhTheoBac, 8000000); assert.strictEqual(b.pcDongBH, 500000);
+  assert.strictEqual(b.luongBH, r.luongBH); assert.strictEqual(b.nv.tong, r.tongBH); assert.strictEqual(b.nv.bhxh, r.bhxh);
+  assert.strictEqual(b.dn.tong, r.dn.bhxh + r.dn.bhyt + r.dn.bhtn + r.dn.kpcd);
+  // không tham gia BH / chưa xếp bậc
+  nv.thamGiaBH = false; assert.strictEqual(TL.luongDongBH(db, nv, 2026, 11).nguon, 'khong'); nv.thamGiaBH = true;
+  nv.xepLuong = null; assert.strictEqual(TL.luongDongBH(db, nv, 2026, 11).nguon, 'luong');
+  // lương cơ sở: bảng mức tiền, lương dưới trần -> không dùng (ẩn ô nhập)
+  var u = TL.dungLuongCoSo(db, '2026-11');
+  assert.strictEqual(u.dung, false); assert.strictEqual(u.tran, 0);
+  // có người đóng BH vượt trần 20 × lương cơ sở -> dùng
+  nv.luongBH = 60000000; nv.luongCB = 60000000;
+  u = TL.dungLuongCoSo(db, '2026-11'); assert.strictEqual(u.dung, true); assert.strictEqual(u.tran, 1);
+  nv.luongBH = 0; nv.luongCB = 8000000;
+  // bảng lương hệ số theo lương cơ sở -> dùng; bảng hệ số có mức cơ sở riêng -> không
+  db.thangLuong.push({ ma: 'HS', ten: 'Bảng hệ số', kieu: 'he_so', apDung: 'bh', namNang: 3, ngach: [{ ma: 'A', ten: 'A', bac: [2.34, 2.67] }] });
+  TL.chuanHoa(db);
+  assert.deepStrictEqual(TL.dungLuongCoSo(db, '2026-11').heSo, ['Bảng hệ số']);
+  db.thangLuong[1].mucCoSo = 3000000;
+  assert.strictEqual(TL.dungLuongCoSo(db, '2026-11').dung, false);
+});
+
 t('Thang bảng lương theo Quy chế trả lương 2026 (QĐ 16/QĐ-CNHG): đúng phụ lục, nạp, gợi ý chuyển xếp', function () {
   var ds = TL.thangLuongQuyChe(), giaTri = {};
   ds.forEach(function (b) { b.ngach.forEach(function (g) { giaTri[g.ma] = g.bac.filter(function (x) { return x !== ''; }).map(function (x) { return x / 1000; }); }); });

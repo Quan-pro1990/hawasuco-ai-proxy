@@ -319,6 +319,10 @@ Cách tính chính:
   thuế TNCN vẫn tính trên thu nhập cả tháng. Bỏ tuỳ chọn ở Cài đặt → Lương & làm thêm nếu muốn gộp.
 
 ### Mức lương theo kỳ (bảng lương, bậc lương, lương cơ sở, tiền cơm, tạm ứng thay đổi từ một tháng)
+Thẻ **Lương đóng bảo hiểm theo bậc lương hiện tại** liệt kê từng nhân viên: bậc đang hưởng, mức lương theo bậc, phụ cấp đóng BH, lương đóng BH,
+người lao động đóng, doanh nghiệp đóng (lọc phòng / đội, xuất Excel). Ô **lương cơ sở** Nhà nước chỉ dùng cho bảng lương hệ số và trần 20 × lương cơ sở;
+công ty dùng bảng mức tiền và không ai đóng tới trần thì ô này được ẩn (bấm *Hiện* nếu cần sửa).
+
 Menu **Thiết lập → Mức lương theo kỳ**. Mỗi lần Nhà nước / công ty thay đổi, bấm **Mức mới áp dụng từ tháng…**:
 chọn kỳ lương bắt đầu áp dụng, số quyết định; phần mềm chép toàn bộ mức đang dùng, có thể **tăng đồng loạt % các bậc**, đổi lương cơ sở,
 tiền cơm ngay trong hộp. Sau đó sửa tiếp từng số: giá trị từng bậc của thang bảng lương, lương cơ sở, tiền cơm, mức miễn thuế tiền ăn giữa ca,
