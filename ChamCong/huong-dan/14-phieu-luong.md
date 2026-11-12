@@ -9,3 +9,7 @@
 3. **Xuất Excel** để lưu trữ.
 
 > Phiếu ghi đủ công, lương thời gian, sản phẩm, phụ cấp, làm thêm, bảo hiểm, thuế, tạm ứng kỳ I, lãnh kỳ II và số tài khoản nhận lương.
+
+## Logo chìm
+Mỗi phiếu có **logo chìm** in mờ ở giữa (logo công ty kèm chữ **HAWASUCO**). Đổi ở **Cài đặt & dữ liệu → Đơn vị & chữ ký →
+Logo chìm trên phiếu lương**: *Chọn ảnh logo chìm…* (dùng đúng tệp logo của công ty), sửa *Tên viết tắt* dưới logo, hoặc *Không in logo chìm*.

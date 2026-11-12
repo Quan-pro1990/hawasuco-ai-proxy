@@ -11,6 +11,8 @@
 5. **Xuất Excel** (mỗi bảng lương 1 sheet, kèm trang Bảo hiểm) hoặc **In**.
 6. **Chi lương kỳ I, kỳ II…**: danh sách tạm ứng kỳ I (ký nhận), đề nghị chi kỳ I / kỳ II / tiền làm thêm giờ gửi ngân hàng,
    bảng thanh toán tiền làm thêm giờ (có nhóm cột *Làm thêm ban đêm* khi có giờ đêm); báo ai còn thiếu số tài khoản.
+   Chọn mẫu và bảng lương rồi bấm **Xem trước** (xem đúng nội dung file Excel, mỗi bảng lương 1 thẻ; từ đó *In trang này*,
+   *In tất cả* hoặc *Xuất Excel*), bấm **In** để in ngay, hoặc **Xuất Excel**.
 7. **Chốt lương tháng** khi đã xong: số liệu được lưu cố định. Cần sửa: **Mở khoá**.
 
 ## Cách tính chính

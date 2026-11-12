@@ -4,7 +4,7 @@
 **Dùng để:** các tham số chung của đơn vị và sao lưu dữ liệu.
 
 ## Các thẻ
-- **Đơn vị & chữ ký**: logo, tên đơn vị, mã số thuế, địa chỉ, địa danh, mẫu biểu (TT 133 / TT 200), tiêu đề bảng lương,
+- **Đơn vị & chữ ký**: logo, logo chìm trên phiếu lương (mặc định logo + chữ HAWASUCO; chọn ảnh khác hoặc không in), tên đơn vị, mã số thuế, địa chỉ, địa danh, mẫu biểu (TT 133 / TT 200), tiêu đề bảng lương,
   người ký bảng lương và bảng chấm công; bật / tắt **nói câu hỏi bằng micro** cho trợ lý ảo.
 - **Kỳ công & giờ làm**: ngày bắt đầu kỳ công (mặc định 21), ngày nghỉ hằng tuần, thứ bảy nửa ngày, phép năm cơ bản (12 ngày) và số năm thâm niên được cộng 1 ngày phép (5 năm),
   giờ vào – ra, ngưỡng đủ / nửa công, làm thêm, *không trả lương thời gian quá công chuẩn*.

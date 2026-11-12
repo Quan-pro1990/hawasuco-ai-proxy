@@ -140,7 +140,7 @@
     var nam = new Date().getFullYear();
     var db = {
       phienBan: 1,
-      congTy: { ten: 'CÔNG TY TNHH MTV CẤP NƯỚC HẬU GIANG', diaChi: '', mst: '', dienThoai: '', diaDanh: '', thongTu: '133', tieuDeBangLuong: 'BẢNG THANH TOÁN TIỀN LƯƠNG',
+      congTy: { ten: 'CÔNG TY TNHH MTV CẤP NƯỚC HẬU GIANG', tenVietTat: 'HAWASUCO', diaChi: '', mst: '', dienThoai: '', diaDanh: '', thongTu: '133', tieuDeBangLuong: 'BẢNG THANH TOÁN TIỀN LƯƠNG',
         nguoiLap: '', keToan: '', giamDoc: '', nguoiChamCong: '', phuTrachBP: '', nguoiDuyet: '' },
       caiDat: caiDatMacDinh(),
       kyHieu: kyHieuMacDinh(),

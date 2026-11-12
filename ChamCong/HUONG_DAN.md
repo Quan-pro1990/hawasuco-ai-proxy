@@ -284,7 +284,8 @@ BHXH 8% · BHYT 1,5% · BHTN 1% · Công đoàn 0,5% · Thuế TNCN · Khấu tr
   *Danh sách tạm ứng lương kỳ I (ký nhận)*, *Đề nghị chi lương kỳ I / kỳ II / tiền làm thêm giờ – gửi ngân hàng*
   (mẫu: BỘ PHẬN, Kính gửi ngân hàng, Số tài khoản công ty, STT – số tài khoản – tên chủ tài khoản – số tiền ghi có – ghi chú,
   tổng số, bằng chữ, ký), *Bảng thanh toán tiền làm thêm giờ*. Ngân hàng chi lương và số tài khoản công ty của từng bảng lương
-  khai báo ở Danh mục → Phòng, đội (thẻ *Bảng lương và ngân hàng chi lương*).
+  khai báo ở Danh mục → Phòng, đội (thẻ *Bảng lương và ngân hàng chi lương*). Nút **Xem trước** hiện đúng nội dung file Excel
+  (mỗi bảng lương 1 thẻ) để kiểm tra rồi *In* / *In tất cả* / *Xuất Excel*; nút **In** in ngay không cần mở Excel.
 - **Chốt lương tháng**: khoá chấm công và bảng lương của kỳ, lưu cố định số liệu (không đổi khi sau này sửa mức lương,
   tỷ lệ BH, biểu thuế). Mở khoá được khi cần sửa.
 
@@ -334,7 +335,8 @@ tạm ứng kỳ I theo chức vụ. Ô nào khác mức trước được tô �
 - *Mức ban đầu* là mức dùng cho các kỳ trước mọi lần điều chỉnh. Có thể xem / sửa từng mức, xoá mức nhập nhầm, xuất Excel.
 
 ### 4. Phiếu lương, báo cáo
-- **Phiếu lương**: in 2 phiếu / trang A4 (hoặc *Lưu thành PDF* để gửi Zalo), xuất Excel.
+- **Phiếu lương**: in 2 phiếu / trang A4 (hoặc *Lưu thành PDF* để gửi Zalo), xuất Excel. Mỗi phiếu có logo chìm mờ (logo + chữ HAWASUCO;
+  đổi ảnh, tên viết tắt hoặc tắt ở Cài đặt → Đơn vị & chữ ký).
 - **Báo cáo**: tổng hợp theo phòng / đội, bảo hiểm & công đoàn, thuế TNCN cả năm (theo từng tháng, để quyết toán),
   quỹ lương 12 tháng, theo dõi phép năm, đi muộn – nghỉ – làm thêm. Báo cáo nào cũng xuất Excel / in được.
 

@@ -431,6 +431,91 @@
     } catch (e) { console.error(e); App.bao('Lỗi xuất Excel: ' + e.message, 'loi'); }
   };
 
+  /* ----- Xem trước / in đúng nội dung file Excel sắp xuất (sheet do App.sheetBang hoặc tự dựng: dong, gop, cot) ----- */
+  function giaiRef(ref) {
+    var m = /^([A-Z]+)(\d+)$/.exec(ref); if (!m) return null;
+    var c = 0; for (var i = 0; i < m[1].length; i++) c = c * 26 + (m[1].charCodeAt(i) - 64);
+    return { r: +m[2] - 1, c: c - 1 };
+  }
+  function giaTriO(o) {
+    var v = o && o.v, s = (o && o.s) || {};
+    if (v == null || v === '') return '';
+    if (typeof v === 'number') return s.so && s.so !== 'General' ? App.tien(v) : App.so(v);
+    return App.h(v).replace(/\n/g, '<br>');
+  }
+  /** 1 sheet -> bảng HTML (gộp ô, đậm, nghiêng, căn lề, nền, viền, độ rộng cột) */
+  App.sheetHtml = function (sh) {
+    var dong = sh.dong || [], n = (sh.cot || []).length;
+    dong.forEach(function (r) { if (r && r.length > n) n = r.length; });
+    var bo = {}, gop = {};
+    (sh.gop || []).forEach(function (g) {
+      var p = g.split(':'), a = giaiRef(p[0]), b = giaiRef(p[1] || p[0]); if (!a || !b) return;
+      gop[a.r + ',' + a.c] = { rs: b.r - a.r + 1, cs: b.c - a.c + 1 };
+      for (var r = a.r; r <= b.r; r++) for (var c = a.c; c <= b.c; c++) if (r !== a.r || c !== a.c) bo[r + ',' + c] = 1;
+    });
+    var rong = [], tongRong = 0;
+    for (var c = 0; c < n; c++) { rong[c] = Math.round(((sh.cot || [])[c] || 10) * 7 + 8); tongRong += rong[c]; }
+    var s = '<table class="xt-bang" style="width:' + tongRong + 'px"><colgroup>' + rong.map(function (w) { return '<col style="width:' + w + 'px">'; }).join('') + '</colgroup>';
+    var coGiaTri = function (o) { return o && o.v != null && o.v !== ''; };
+    dong.forEach(function (r, ri) {
+      r = r || [];
+      var trong = !r.some(function (o) { return o && ((o.v != null && o.v !== '') || (o.s && o.s.vien)); });
+      s += '<tr' + (trong ? ' class="xt-trong"' : '') + '>';
+      for (var c2 = 0; c2 < n; c2++) {
+        if (bo[ri + ',' + c2]) continue;
+        var o = r[c2], st = (o && o.s) || {}, g = gop[ri + ',' + c2], css = [];
+        // chữ không viền, ô bên phải trống: tràn sang như Excel
+        if (!g && coGiaTri(o) && typeof o.v === 'string' && !st.vien && st.ngang !== 'right') {
+          var k = c2 + 1;
+          while (k < n && !coGiaTri(r[k]) && !(r[k] && r[k].s && r[k].s.vien) && !bo[ri + ',' + k] && !gop[ri + ',' + k]) k++;
+          if (k - c2 > 1) { g = { rs: 1, cs: k - c2 }; for (var q = c2 + 1; q < k; q++) bo[ri + ',' + q] = 1; }
+        }
+        if (st.b) css.push('font-weight:700');
+        if (st.i) css.push('font-style:italic');
+        if (st.sz && st.sz !== 11) css.push('font-size:' + Math.round(st.sz / 11 * 100) + '%');
+        var ngang = st.ngang || (o && typeof o.v === 'number' ? 'right' : '');
+        if (ngang) css.push('text-align:' + ngang);
+        if (st.nen) css.push('background:' + st.nen);
+        if (st.mau) css.push('color:' + st.mau);
+        if (st.xuong) css.push('white-space:normal');
+        s += '<td' + (g ? (g.rs > 1 ? ' rowspan="' + g.rs + '"' : '') + (g.cs > 1 ? ' colspan="' + g.cs + '"' : '') : '') + (st.vien ? ' class="v"' : '') +
+          (css.length ? ' style="' + css.join(';') + '"' : '') + '>' + giaTriO(o) + '</td>';
+      }
+      s += '</tr>';
+    });
+    return s + '</table>';
+  };
+  /** In các sheet (mỗi sheet 1 trang mới); có sheet khổ ngang thì in khổ ngang */
+  App.inSheets = function (shs) {
+    var ngang = shs.some(function (x) { return x.ngang !== false; });
+    App.inNoiDung('<div class="xt-in">' + shs.map(function (x) { return '<div class="trang">' + App.sheetHtml(x) + '</div>'; }).join('') + '</div>', ngang ? false : true);
+  };
+  /** Xem trước nội dung file Excel (mỗi sheet 1 tab) – từ đây In hoặc Xuất Excel */
+  App.xemTruocExcel = function (tenFile, shs, o) {
+    o = o || {};
+    var chon = 0;
+    return App.hop({
+      tieuDe: 'Xem trước: ' + (o.tieuDe || tenFile), co: 'toan', giu: true,
+      than: (shs.length > 1 ? '<div class="tabs xt-tab">' + shs.map(function (x, i) { return '<button data-sh="' + i + '"' + (i ? '' : ' class="chon"') + '>' + App.h(x.ten) + '</button>'; }).join('') + '</div>' : '') +
+        '<div class="xt-khung"></div>',
+      moRa: function (el) {
+        var ve = function () { App.$('.xt-khung', el).innerHTML = App.sheetHtml(shs[chon]); };
+        ve();
+        var tab = App.$('.xt-tab', el);
+        if (tab) tab.onclick = function (e) {
+          var b = e.target.closest('[data-sh]'); if (!b) return;
+          chon = +b.dataset.sh;
+          App.$$('[data-sh]', tab).forEach(function (x) { x.classList.toggle('chon', x === b); });
+          ve();
+        };
+      },
+      nut: [{ ten: 'Đóng' },
+        { ten: shs.length > 1 ? 'In trang này' : 'In', bam: function () { App.inSheets([shs[chon]]); return false; } }]
+        .concat(shs.length > 1 ? [{ ten: 'In tất cả (' + shs.length + ' bảng)', bam: function () { App.inSheets(shs); return false; } }] : [])
+        .concat([{ ten: 'Xuất Excel', loai: 'chinh', bam: function () { if (o.xuat) o.xuat(); else App.xuatExcel(tenFile, shs); return false; } }])
+    });
+  };
+
   /** Tham số trên địa chỉ trang: #hoso?id=nv1 */
   App.thamSo = function (ten) {
     var q = (location.hash.split('?')[1] || '').split('&');
@@ -604,6 +689,16 @@
     ct = ct || App.db.congTy;
     if (ct.logo === '') return null;
     return ct.logo || window.LOGO_MAC_DINH || null;
+  };
+  /** Logo chìm (mờ) in trên phiếu lương: ảnh riêng đã chọn ở Cài đặt, hoặc logo đơn vị + tên viết tắt (HAWASUCO); '' = không dùng */
+  App.logoChim = function (ct) {
+    ct = ct || App.db.congTy;
+    if (ct.logoChim === '') return '';
+    if (ct.logoChim) return '<img src="' + ct.logoChim + '" alt="">';
+    var lg = App.logoCongTy(ct);
+    if (!lg) return '';
+    return '<img src="' + lg + '" alt="">' + (ct.tenVietTat ? '<svg class="chim-chu" viewBox="0 0 300 48" aria-hidden="true"><text x="150" y="40" text-anchor="middle" ' +
+      'font-family="Times New Roman, Times, serif" font-weight="700" font-size="46" fill="#1747a6" textLength="290" lengthAdjust="spacingAndGlyphs">' + App.h(ct.tenVietTat) + '</text></svg>' : '');
   };
   /** Tên công ty chia 2 dòng như phần mềm Thất thoát nước: "CÔNG TY TNHH MTV" / "CẤP NƯỚC HẬU GIANG" */
   App.tenHaiDong = function (ten) {

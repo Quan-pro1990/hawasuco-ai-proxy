@@ -489,18 +489,26 @@
         App.F.o('Mẫu', App.F.sel('mau', 'ky2_nh', App.F.cap(MAU_CHI))) +
         App.F.o('Bảng lương', '<select name="khoi"><option value="">Tất cả (mỗi khối 1 sheet)</option>' + khois.map(function (k) { return '<option' + (st.khoi === k ? ' selected' : '') + '>' + h(k) + '</option>'; }).join('') + '</select>') + '</div>',
       moRa: function (el, dong) { var a = App.$('#cl-dm', el); a.onclick = function () { dong(); App.moDanhMuc && App.moDanhMuc('pb'); }; },
-      nut: [{ ten: 'Đóng' }, {
-        ten: 'Xuất Excel', loai: 'chinh', bam: function (el) {
-          var v = App.F.doc(el), ks = v.khoi ? [v.khoi] : khois;
-          var shs = ks.map(function (k) { return sheetChi(v.mau, k, rows.filter(function (r) { return r.khoi === k; })); }).filter(Boolean);
-          if (!shs.length) { App.bao('Không có ai có số tiền để chi theo mẫu này.', 'loi'); return false; }
-          App.xuatExcel(App.tenFile(MAU_CHI[v.mau] + ' T' + TL.pad(m) + ' ' + y + (v.khoi ? ' ' + v.khoi : '')), shs);
+      nut: [{ ten: 'Đóng' },
+        { ten: 'Xem trước', bam: function (el) { var x = taoChi(el); if (x) App.xemTruocExcel(x.ten, x.shs, { tieuDe: x.tieuDe, xuat: x.xuat }); return false; } },
+        { ten: 'In', bam: function (el) { var x = taoChi(el); if (x) App.inSheets(x.shs); return false; } },
+        { ten: 'Xuất Excel', loai: 'chinh', bam: function (el) { var x = taoChi(el); if (x) x.xuat(); return false; } }]
+    });
+    /** Các sheet theo mẫu, bảng lương đang chọn trong hộp (dùng chung cho Xem trước, In, Xuất Excel) */
+    function taoChi(el) {
+      var v = App.F.doc(el), ks = v.khoi ? [v.khoi] : khois;
+      var shs = ks.map(function (k) { return sheetChi(v.mau, k, rows.filter(function (r) { return r.khoi === k; })); }).filter(Boolean);
+      if (!shs.length) { App.bao('Không có ai có số tiền để chi theo mẫu này.', 'loi'); return null; }
+      var ten = App.tenFile(MAU_CHI[v.mau] + ' T' + TL.pad(m) + ' ' + y + (v.khoi ? ' ' + v.khoi : ''));
+      return {
+        shs: shs, ten: ten, tieuDe: MAU_CHI[v.mau] + ' – tháng ' + m + '/' + y + (v.khoi ? ' – ' + v.khoi : ' (' + shs.length + ' bảng lương)'),
+        xuat: function () {
+          App.xuatExcel(ten, shs);
           var thieu = rows.filter(function (r) { return ks.indexOf(r.khoi) >= 0 && !r.soTK && /_nh$/.test(v.mau) && soTienChi(v.mau, r) > 0; });
           if (thieu.length) App.bao(thieu.length + ' người chưa có số tài khoản: ' + thieu.slice(0, 5).map(function (r) { return r.hoTen; }).join(', ') + (thieu.length > 5 ? '…' : ''), 'loi');
-          return false;
         }
-      }]
-    });
+      };
+    }
   }
   function soTienChi(mau, r) {
     return /^ky1/.test(mau) ? r.tamUng : /^ky2/.test(mau) ? r.thucLinh : (App.db.caiDat.otTraRieng ? r.otRieng : r.tienOT);
@@ -615,7 +623,9 @@
     var db = App.db, y = App.ky.y, m = App.ky.m;
     var nv = db.nhanVien.filter(function (x) { return x.id === r.nvId; })[0];
     var pn = nv ? TL.phepNam(db, nv, y) : null;
-    return '<div class="phieu"><div class="p-dau"><span><b>' + h(db.congTy.ten) + '</b></span><span>Kỳ lương: ' + TL.pad(m) + '/' + y + '</span></div>' +
+    var chim = App.logoChim();
+    return '<div class="phieu">' + (chim ? '<div class="p-chim" aria-hidden="true">' + chim + '</div>' : '') +
+      '<div class="p-dau"><span><b>' + h(db.congTy.ten) + '</b></span><span>Kỳ lương: ' + TL.pad(m) + '/' + y + '</span></div>' +
       '<h3>PHIẾU LƯƠNG</h3><div class="p-ky">Tháng ' + m + ' năm ' + y + '</div>' +
       '<div class="p-tt"><div>Họ tên: <b>' + h(r.hoTen) + '</b></div><div>Mã NV: <b>' + h(r.ma) + '</b></div>' +
       '<div>Phòng / đội: ' + h(r.tenPhongBan) + '</div><div>Chức danh: ' + h(r.chucVu) + '</div>' +

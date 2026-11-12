@@ -359,6 +359,13 @@
           (db.congTy.logo ? '<button class="nut" id="cty-logo-goc">Dùng logo mặc định</button>' : '') +
           (lg ? '<button class="nut nguy" id="cty-logo-bo">Không dùng logo</button>' : (db.congTy.logo === '' ? '<button class="nut" id="cty-logo-goc">Dùng logo mặc định</button>' : '')) +
           '<div class="mo nho">Logo hiện ở thanh bên trái và màn hình đăng nhập; tên lấy từ ô “Tên đơn vị” bên dưới (tự chia 2 dòng: “CÔNG TY TNHH MTV” / phần tên).</div></div></div></div>' +
+          '<div class="the"><h3>Logo chìm trên phiếu lương</h3><div class="hang" style="gap:16px;align-items:flex-start">' +
+          '<div class="chim-xem">' + (App.logoChim() || '<div class="mo nho" style="text-align:center;padding:30px 0">Không dùng</div>') + '</div>' +
+          '<div style="display:grid;gap:8px;align-content:start;max-width:520px"><label class="nut">' + App.icon('nhap') + 'Chọn ảnh logo chìm…<input type="file" accept="image/*" id="cty-chim" class="an"></label>' +
+          (db.congTy.logoChim != null ? '<button class="nut" id="cty-chim-goc">Dùng logo đơn vị + tên viết tắt</button>' : '') +
+          (db.congTy.logoChim !== '' ? '<button class="nut nguy" id="cty-chim-bo">Không in logo chìm</button>' : '') +
+          o('Tên viết tắt (dưới logo chìm)', 'congTy.tenVietTat', 'chu', 'Vd HAWASUCO; để trống = chỉ có hình logo') +
+          '<div class="mo nho">Logo in mờ ở giữa mỗi phiếu lương (xem và in ở trang Phiếu lương). Mặc định: logo đơn vị phía trên kèm tên viết tắt; chọn ảnh khác nếu muốn dùng đúng tệp logo của công ty.</div></div></div></div>' +
           '<div class="the"><h3>Thông tin đơn vị</h3><div class="form">' +
           o('Tên đơn vị', 'congTy.ten', 'chu') + o('Mã số thuế', 'congTy.mst', 'chu') +
           o('Địa chỉ', 'congTy.diaChi', 'chu') + o('Điện thoại', 'congTy.dienThoai', 'chu') +
@@ -490,6 +497,25 @@
       };
       r.readAsDataURL(f);
     };
+    var fChim = App.$('#cty-chim', el);
+    if (fChim) fChim.onchange = function () {
+      var f = this.files[0]; if (!f) return;
+      var r = new FileReader();
+      r.onload = function () {
+        var img = new Image();
+        img.onload = function () {
+          // nền trắng, tối đa 480 px, JPEG: logo chìm chỉ cần mờ, giữ dữ liệu nhẹ
+          var k = 480, tl = Math.min(1, k / Math.max(img.width, img.height)), c = document.createElement('canvas'), g = c.getContext('2d');
+          c.width = Math.round(img.width * tl); c.height = Math.round(img.height * tl);
+          g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+          db.congTy.logoChim = c.toDataURL('image/jpeg', 0.82); App.luu(); App.veLai(); App.bao('Đã đổi logo chìm phiếu lương', 'tot');
+        };
+        img.src = r.result;
+      };
+      r.readAsDataURL(f);
+    };
+    var bChimGoc = App.$('#cty-chim-goc', el); if (bChimGoc) bChimGoc.onclick = function () { delete db.congTy.logoChim; App.luu(); App.veLai(); };
+    var bChimBo = App.$('#cty-chim-bo', el); if (bChimBo) bChimBo.onclick = function () { db.congTy.logoChim = ''; App.luu(); App.veLai(); };
     var bLogoGoc = App.$('#cty-logo-goc', el); if (bLogoGoc) bLogoGoc.onclick = function () { delete db.congTy.logo; App.luu(); App.veLai(); };
     var bLogoBo = App.$('#cty-logo-bo', el); if (bLogoBo) bLogoBo.onclick = function () { db.congTy.logo = ''; App.luu(); App.veLai(); };
     App.$$('input.tien', el).forEach(App.ganOTien);
@@ -513,7 +539,7 @@
       App.luu(); App.bao('Đã lưu');
       if (p === 'caiDat.luongCoSo' && App.apDungBangLuong) App.apDungBangLuong();
       if (p === 'caiDat.ngayDauKy') { try { sessionStorage.removeItem('ChamCong_ky'); } catch (er) { /* bỏ qua */ } App.ky = App.kyMacDinh(); }
-      if (/^caiDat\.(vung|ngayDauKy|congChuan|luongCoSo|luongToiThieuVung)/.test(p) || p === 'congTy.ten') App.veLai();
+      if (/^caiDat\.(vung|ngayDauKy|congChuan|luongCoSo|luongToiThieuVung)/.test(p) || p === 'congTy.ten' || p === 'congTy.tenVietTat') App.veLai();
     };
     el.onclick = function (e) {
       if (e.target.closest('#cd-lcs')) { e.preventDefault(); App.hienLCS = true; App.veLai(); return; }

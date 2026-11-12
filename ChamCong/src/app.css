@@ -396,6 +396,17 @@ table.cc tfoot td.dinh3 { z-index: 3; text-align: left; padding: 0 6px; }
 .mo-hop { background: #fff; border-radius: 14px; width: 640px; max-width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,.25); display: flex; flex-direction: column; max-height: calc(100vh - 80px); }
 .mo-hop.rong { width: 920px; }
 .mo-hop.hep { width: 440px; }
+.mo-hop.toan { width: min(1500px, calc(100vw - 40px)); height: calc(100vh - 60px); }
+.mo-hop.toan .mo-than { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+/* xem trước file Excel */
+.xt-tab { margin-bottom: 10px; flex: none; overflow-x: auto; }
+.xt-khung { flex: 1; overflow: auto; border: 1px solid var(--vien); border-radius: 8px; background: #fff; padding: 14px; min-height: 0; }
+table.xt-bang { border-collapse: collapse; font-family: 'Times New Roman', Times, serif; font-size: 13px; color: #000; table-layout: fixed; }
+table.xt-bang td { padding: 3px 5px; vertical-align: middle; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+table.xt-bang td.v { border: 1px solid #555; }
+table.xt-bang tr.xt-trong td { height: 10px; padding: 0; }
+.xt-in table.xt-bang { font-size: 11.5px; }
+.xt-in table.xt-bang td { white-space: normal; overflow: visible; }
 .mo-dau { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--vien); }
 .mo-dau h3 { flex: 1; font-size: 16px; }
 .mo-dau .dong { border: 0; background: transparent; font-size: 22px; line-height: 1; cursor: pointer; color: var(--mo); }
@@ -416,7 +427,14 @@ table.cc tfoot td.dinh3 { z-index: 3; text-align: left; padding: 0 6px; }
 
 /* ============ Phiếu lương ============ */
 .ds-phieu { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 16px; }
-.phieu { background: #fff; border: 1px solid var(--vien); border-radius: 10px; padding: 16px 18px; font-size: 13px; break-inside: avoid; }
+.phieu { background: #fff; border: 1px solid var(--vien); border-radius: 10px; padding: 16px 18px; font-size: 13px; break-inside: avoid; position: relative; overflow: hidden; }
+/* logo chìm: mờ, nằm giữa phiếu, không cản bấm chuột, in được */
+.phieu .p-chim { position: absolute; left: 50%; top: 55%; transform: translate(-50%, -50%); width: 46%; max-width: 300px; opacity: .08; pointer-events: none; z-index: 1;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.phieu .p-chim img { display: block; width: 100%; height: auto; }
+.phieu .p-chim .chim-chu { display: block; width: 100%; height: auto; margin-top: 2%; }
+.chim-xem { width: 150px; padding: 10px; border: 1px dashed var(--vien-dam); border-radius: 10px; background: #fff; }
+.chim-xem img, .chim-xem .chim-chu { display: block; width: 100%; height: auto; opacity: .35; }
 .phieu .p-dau { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--mo); }
 .phieu h3 { text-align: center; font-size: 16px; margin: 8px 0 2px; letter-spacing: .02em; }
 .phieu .p-ky { text-align: center; color: var(--mo); margin-bottom: 10px; }
