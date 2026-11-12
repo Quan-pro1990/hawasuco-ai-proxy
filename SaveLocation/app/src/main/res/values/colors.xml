@@ -31,4 +31,5 @@
     <color name="sheet_bg">#FFFFFF</color>
     <color name="premium_gold">#F9A825</color>
     <color name="launcher_bg">#0288D1</color>
+    <color name="map_status_bg">#E6FFFFFF</color>
 </resources>

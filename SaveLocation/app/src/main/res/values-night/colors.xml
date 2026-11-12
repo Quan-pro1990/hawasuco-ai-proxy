@@ -20,4 +20,5 @@
     <color name="chip_bg">#26323A</color>
     <color name="chip_selected_bg">#5AA7D4</color>
     <color name="sheet_bg">#1A1A1A</color>
+    <color name="map_status_bg">#E61E1E1E</color>
 </resources>

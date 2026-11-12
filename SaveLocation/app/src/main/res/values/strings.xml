@@ -384,4 +384,47 @@
     <string name="location_permission_needed">Location permission needed. Open the app to allow it.</string>
     <string name="getting_location">Getting current location…</string>
     <string name="location_unavailable">Could not get current location</string>
+
+    <!-- Bản đồ mạng lưới đường ống (đồng bộ từ SCADA) -->
+    <string name="network_map">Pipe Network Map</string>
+    <string name="pipe_layers">Pipe layers</string>
+    <string name="pipe_size_mode">Colour by pipe size</string>
+    <string name="pipe_size_legend">Pipe size</string>
+    <string name="pipe_kind_pipe">Pipelines</string>
+    <string name="pipe_kind_build">Pipes under construction</string>
+    <string name="pipe_kind_plan">Planned pipes</string>
+    <string name="pipe_feature_count">%d features</string>
+    <string name="pipe_missing_diameter">%d without diameter</string>
+    <string name="pipe_on_maps">Show pipes on the other maps</string>
+    <string name="pipe_sync_now">Update now</string>
+    <string name="pipe_syncing">Updating from SCADA…</string>
+    <string name="pipe_status">Updated %1$s · %2$d pipe segments</string>
+    <string name="pipe_status_never">Pipe network not downloaded yet</string>
+    <string name="pipe_changed">Pipe network updated (%d layers changed)</string>
+    <string name="pipe_no_change">Pipe network is up to date</string>
+    <string name="pipe_need_code">Enter the company access code to load the pipe network</string>
+    <string name="pipe_wrong_code">Wrong access code</string>
+    <string name="pipe_network_error">Cannot reach the SCADA server — showing saved data</string>
+    <string name="pipe_server_error">SCADA server error %s</string>
+    <string name="pipe_sync_failed">Update failed: %s</string>
+    <string name="pipe_access_title">SCADA pipe network</string>
+    <string name="pipe_access_message">Pipes are read directly from the SCADA network map and refresh automatically whenever it changes. Enter the company access code (the same code as on the website).</string>
+    <string name="pipe_access_code">Access code</string>
+    <string name="pipe_server_address">Server address</string>
+    <string name="pipe_checking">Checking…</string>
+    <string name="pipe_change_code">Access code…</string>
+    <string name="pipe_source">Source: %s</string>
+    <string name="pipe_empty_title">No pipe data yet</string>
+    <string name="pipe_empty_desc">Pipes are loaded from the SCADA network map with the company access code.</string>
+    <string name="pipe_enter_code">Enter access code</string>
+    <string name="pipe_info_loading">Loading details…</string>
+    <string name="pipe_info_offline">Saved details (no connection to SCADA)</string>
+    <string name="pipe_info_none">The drawing has no extra information for this pipe.</string>
+    <string name="pipe_directions">Directions here</string>
+    <string name="pipe_save_here">Save location here</string>
+    <string name="pipe_zoom_all">Whole network</string>
+    <string name="pipe_planned_badge">Planned</string>
+    <string name="pipe_settings_label">Pipe network (SCADA)</string>
+    <string name="pipe_connected">Connected</string>
+    <string name="pipe_layer_zoom">Zoom to layer</string>
 </resources>

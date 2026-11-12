@@ -62,6 +62,19 @@ object Prefs {
     // ---- Vùng cảnh báo
     var geofenceRadius: Int get() = int("geofence_radius", 200); set(v) = setInt("geofence_radius", v)
 
+    // ---- Bản đồ mạng lưới đường ống (đồng bộ từ SCADA)
+    var scadaUrl: String get() = str("scada_url", DEFAULT_SCADA_URL); set(v) = setStr("scada_url", v.trim().trimEnd('/'))
+    var scadaCode: String get() = str("scada_code", ""); set(v) = setStr("scada_code", v.trim())
+    /** Tô màu ống theo cỡ (đường kính) thay cho màu của lớp — như nút "Màu theo cỡ ống" trên web SCADA. */
+    var pipeSizeMode: Boolean get() = bool("pipe_size_mode", false); set(v) = setBool("pipe_size_mode", v)
+    /** Hiện đường ống trên bản đồ chính và các bản đồ khác. */
+    var pipesOnMaps: Boolean get() = bool("pipes_on_maps", true); set(v) = setBool("pipes_on_maps", v)
+    var pipeLastSync: Long get() = long("pipe_last_sync", 0L); set(v) = setLong("pipe_last_sync", v)
+    var pipeLastCheck: Long get() = long("pipe_last_check", 0L); set(v) = setLong("pipe_last_check", v)
+    var pipeLastError: String get() = str("pipe_last_error", ""); set(v) = setStr("pipe_last_error", v)
+
+    const val DEFAULT_SCADA_URL = "https://scada.capnuochaugiang.vn"
+
     // ---- Nội dung khi chia sẻ
     fun shareField(key: String): Boolean = bool("share_$key", true)
     fun setShareField(key: String, v: Boolean) = setBool("share_$key", v)

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item android:id="@+id/action_pipe_sync" android:icon="@drawable/ic_sync" android:title="@string/pipe_sync_now" app:showAsAction="always" />
+    <item android:id="@+id/action_map_type" android:icon="@drawable/ic_map" android:title="@string/map_type" app:showAsAction="always" />
+    <item android:id="@+id/action_pipe_zoom_all" android:title="@string/pipe_zoom_all" app:showAsAction="never" />
+    <item android:id="@+id/action_pipe_code" android:title="@string/pipe_change_code" app:showAsAction="never" />
+</menu>

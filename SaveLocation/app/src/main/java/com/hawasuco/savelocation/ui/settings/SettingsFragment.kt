@@ -26,6 +26,9 @@ import com.hawasuco.savelocation.data.Prefs.Share
 import com.hawasuco.savelocation.databinding.DialogSwitchListBinding
 import com.hawasuco.savelocation.databinding.FragmentSettingsBinding
 import com.hawasuco.savelocation.geofence.GeofenceManager
+import com.hawasuco.savelocation.network.PipeStore
+import com.hawasuco.savelocation.network.PipeSync
+import com.hawasuco.savelocation.ui.network.ScadaAccessDialog
 import com.hawasuco.savelocation.util.Formats
 import com.hawasuco.savelocation.util.ImageStore
 import com.hawasuco.savelocation.util.NavApps
@@ -101,6 +104,8 @@ class SettingsFragment : Fragment() {
         }
         b.llNavigationApp.setOnClickListener { showNavigationApps() }
         b.llLiveServer.setOnClickListener { editLiveServer() }
+        b.llPipeNetwork.setOnClickListener { ScadaAccessDialog().show(childFragmentManager, ScadaAccessDialog.TAG) }
+        viewLifecycleOwner.lifecycleScope.launch { PipeStore.version.collect { refresh() } }
         b.llDeleteAll.setOnClickListener {
             ctx.confirm(R.string.delete_all_label, getString(R.string.ask_delete_all), R.string.delete) {
                 val app = ctx.applicationContext
@@ -148,6 +153,9 @@ class SettingsFragment : Fragment() {
         b.tvLatlngFormat.text = Prefs.coordFormat
         b.tvNavigationApp.text = NavApps.label(ctx, Prefs.navigationApp)
         b.tvLiveServer.text = Prefs.liveServerUrl.ifBlank { getString(R.string.not_set) }
+        b.tvPipeNetwork.text = if (PipeSync.hasCode()) {
+            getString(R.string.pipe_connected) + " · " + (runCatching { java.net.URI(Prefs.scadaUrl).host }.getOrNull() ?: Prefs.scadaUrl)
+        } else getString(R.string.not_set)
     }
 
     private fun showSharePreferences() {

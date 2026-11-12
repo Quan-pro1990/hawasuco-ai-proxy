@@ -36,6 +36,9 @@ import com.hawasuco.savelocation.ui.dialogs.FeatureAnnouncementDialog
 import com.hawasuco.savelocation.ui.dialogs.SaveLocationDialog
 import com.hawasuco.savelocation.ui.live.LiveStatusSheet
 import com.hawasuco.savelocation.ui.live.ShareLocationSheet
+import com.hawasuco.savelocation.network.PipeOverlay
+import com.hawasuco.savelocation.ui.network.PipeInfoSheet
+import com.hawasuco.savelocation.ui.network.PipeMapHost
 import com.hawasuco.savelocation.util.Coords
 import com.hawasuco.savelocation.util.Formats
 import com.hawasuco.savelocation.util.GeocoderHelper
@@ -61,7 +64,7 @@ import kotlin.math.abs
  * Màn hình chính: bản đồ + tấm thông tin màu xanh phía dưới (độ chính xác, tọa độ, địa chỉ)
  * với hai nút "Lưu vị trí" và "Chia sẻ vị trí". Nhấn giữ trên bản đồ để đặt ghim chọn vị trí khác.
  */
-class HomeFragment : Fragment() {
+class HomeFragment : Fragment(), PipeMapHost {
     private var _b: FragmentHomeBinding? = null
     private val b get() = _b!!
 
@@ -78,6 +81,7 @@ class HomeFragment : Fragment() {
 
     private var currentMarker: Marker? = null
     private var pinMarker: Marker? = null
+    private var pipes: PipeOverlay? = null
 
     private val permissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { res ->
         if (res.values.any { it }) startLocation() else updatePermissionUi()
@@ -118,6 +122,12 @@ class HomeFragment : Fragment() {
                 return true
             }
         }))
+        // Lớp đường ống SCADA (dưới các ghim): chạm vào ống để xem thông tin.
+        pipes = PipeOverlay.attach(viewLifecycleOwner, b.map, 1) { hit ->
+            if (childFragmentManager.findFragmentByTag(PipeInfoSheet.TAG) == null) {
+                PipeInfoSheet.newInstance(hit).show(childFragmentManager, PipeInfoSheet.TAG)
+            }
+        }
 
         requireActivity().addMenuProvider(object : MenuProvider {
             override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) = menuInflater.inflate(R.menu.menu_home, menu)
@@ -202,7 +212,19 @@ class HomeFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         b.map.onDetach()
+        pipes = null
         _b = null
+    }
+
+    override fun zoomToBounds(bounds: DoubleArray, animate: Boolean) {
+        _b ?: return
+        MapUtil.fit(b.map, listOf(GeoPoint(bounds[0], bounds[1]), GeoPoint(bounds[2], bounds[3])), requireContext().resources.displayMetrics.density.times(24).toInt(), animate)
+    }
+
+    override fun onPipeInfoClosed() {
+        _b ?: return
+        pipes?.selected = null
+        b.map.invalidate()
     }
 
     // ------------------------------------------------------------------ Vị trí

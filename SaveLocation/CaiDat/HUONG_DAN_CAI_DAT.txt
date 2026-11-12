@@ -84,7 +84,21 @@ Tham số:
    CaiDat-MayChu.bat -GoBo                       gỡ tác vụ + tường lửa (giữ thư mục dữ liệu)
 
 
-C. CẬP NHẬT PHIÊN BẢN MỚI
+C. BẢN ĐỒ MẠNG LƯỚI ĐƯỜNG ỐNG (SCADA)
+-------------------------------------
+Đường ống được đọc trực tiếp từ bản đồ mạng lưới trên web SCADA của công ty và tự cập nhật khi web thay đổi.
+Mỗi điện thoại chỉ cần nhập mã 1 lần:
+1. Mở Lưu Vị Trí -> menu trái (≡) -> "Bản đồ mạng lưới" -> bấm "Nhập mã truy cập".
+2. Nhập MÃ TRUY CẬP CÔNG TY (mã dùng để mở bản đồ mạng lưới trên web SCADA). Ô "Địa chỉ máy chủ" để nguyên
+   https://scada.capnuochaugiang.vn -> OK. Đợi vài giây để tải các lớp đường ống.
+3. Từ đó app tự kiểm tra bản mới (khi mở app, khi mở bản đồ mạng lưới) và bấm nút ⟳ để cập nhật ngay.
+   Không có mạng vẫn xem được mạng lưới đã tải lần trước.
+Lỗi thường gặp:
+   "Mã truy cập không đúng"              -> nhập lại mã (không phân biệt chữ hoa / thường).
+   "Không kết nối được máy chủ SCADA"    -> kiểm tra Internet / 4G; app vẫn hiện dữ liệu đã lưu.
+
+
+D. CẬP NHẬT PHIÊN BẢN MỚI
 -------------------------
    - App: chạy lại CaiDat-DienThoai.bat (hoặc mở file APK mới trên điện thoại) — cài đè, giữ nguyên dữ liệu.
    - Máy chủ: chạy lại CaiDat-MayChu.bat — giữ nguyên cổng, thư mục và dữ liệu.

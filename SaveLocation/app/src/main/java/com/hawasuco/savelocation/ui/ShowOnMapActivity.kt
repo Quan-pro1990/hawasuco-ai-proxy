@@ -9,6 +9,7 @@ import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.hawasuco.savelocation.R
+import com.hawasuco.savelocation.network.PipeOverlay
 import com.hawasuco.savelocation.data.Db
 import com.hawasuco.savelocation.data.Prefs
 import com.hawasuco.savelocation.data.SavedLocation
@@ -38,6 +39,7 @@ class ShowOnMapActivity : AppCompatActivity() {
     private var current: Location? = null
     private var route: Polyline? = null
     private var currentMarker: Marker? = null
+    private var pipes: PipeOverlay? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,6 +47,7 @@ class ShowOnMapActivity : AppCompatActivity() {
         setContentView(b.root)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         MapUtil.setup(b.map, 16.0)
+        pipes = PipeOverlay.attach(this, b.map, 0)
 
         b.fabNavigate.setOnClickListener { loc?.let { NavApps.navigate(this, it.latitude, it.longitude, it.title) } }
         b.fabMyLocation.setOnClickListener { fitBoth() }
@@ -115,7 +118,7 @@ class ShowOnMapActivity : AppCompatActivity() {
             outlinePaint.strokeWidth = dp(6).toFloat()
             setInfoWindow(null as InfoWindow?)
         }
-        b.map.overlays.add(0, route)
+        b.map.overlays.add(b.map.overlays.indexOf(pipes) + 1, route)
         b.tvDistance.text = getString(R.string.route_distance_time,
             Formats.distance(this, r.distanceMeters), Formats.travelTime(r.durationSeconds))
         MapUtil.fit(b.map, r.points, dp(48))

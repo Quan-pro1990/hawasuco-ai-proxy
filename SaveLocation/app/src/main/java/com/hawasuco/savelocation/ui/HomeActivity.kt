@@ -20,6 +20,7 @@ import com.hawasuco.savelocation.data.Db
 import com.hawasuco.savelocation.data.Prefs
 import com.hawasuco.savelocation.databinding.ActivityHomeBinding
 import com.hawasuco.savelocation.databinding.NavMenuItemBinding
+import com.hawasuco.savelocation.network.PipeSync
 import com.hawasuco.savelocation.ui.backup.BackupFragment
 import com.hawasuco.savelocation.ui.dialogs.ContactUsDialog
 import com.hawasuco.savelocation.ui.dialogs.SaveLocationDialog
@@ -28,6 +29,7 @@ import com.hawasuco.savelocation.ui.geofence.ManageGeofenceFragment
 import com.hawasuco.savelocation.ui.groups.GroupListFragment
 import com.hawasuco.savelocation.ui.home.HomeFragment
 import com.hawasuco.savelocation.ui.list.LocationsListFragment
+import com.hawasuco.savelocation.ui.network.NetworkFragment
 import com.hawasuco.savelocation.ui.settings.SettingsFragment
 import com.hawasuco.savelocation.util.LinkParser
 import com.hawasuco.savelocation.util.toast
@@ -40,7 +42,8 @@ import kotlinx.coroutines.withContext
  */
 class HomeActivity : AppCompatActivity() {
 
-    enum class Screen { HOME, SAVED, FAVOURITES, GEOFENCE, BACKUP, EXPORT, SETTINGS }
+    // NETWORK thêm ở cuối để giữ thứ tự (ordinal) đã lưu.
+    enum class Screen { HOME, SAVED, FAVOURITES, GEOFENCE, BACKUP, EXPORT, SETTINGS, NETWORK }
 
     private data class NavItem(val id: Int, val icon: Int, val title: Int)
 
@@ -51,6 +54,7 @@ class HomeActivity : AppCompatActivity() {
 
     private val navItems = listOf(
         NavItem(NAV_HOME, R.drawable.ic_my_location, R.string.current_location),
+        NavItem(NAV_NETWORK, R.drawable.ic_pipe, R.string.network_map),
         NavItem(NAV_SAVED, R.drawable.ic_list, R.string.saved_locations),
         NavItem(NAV_ADD, R.drawable.ic_add_circle, R.string.add_new_location),
         NavItem(NAV_GEOFENCE, R.drawable.ic_geofence, R.string.manage_geofence),
@@ -100,6 +104,7 @@ class HomeActivity : AppCompatActivity() {
         }
         DataBus.observe(this) { refreshHeader() }
         refreshHeader()
+        PipeSync.syncIfStale(this, PIPE_SYNC_ON_START_MS)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -132,6 +137,9 @@ class HomeActivity : AppCompatActivity() {
             }
             OPEN_GEOFENCE -> {
                 showScreen(Screen.GEOFENCE); intent.removeExtra(EXTRA_OPEN); return
+            }
+            OPEN_NETWORK -> {
+                showScreen(Screen.NETWORK); intent.removeExtra(EXTRA_OPEN); return
             }
         }
         val text = when (intent.action) {
@@ -166,6 +174,7 @@ class HomeActivity : AppCompatActivity() {
             Screen.BACKUP -> BackupFragment()
             Screen.EXPORT -> ExportFragment()
             Screen.SETTINGS -> SettingsFragment()
+            Screen.NETWORK -> NetworkFragment()
         }
         currentScreen = screen
         supportFragmentManager.beginTransaction().replace(R.id.content_frame, f).commitAllowingStateLoss()
@@ -209,6 +218,7 @@ class HomeActivity : AppCompatActivity() {
                 NAV_BACKUP -> showScreen(Screen.BACKUP)
                 NAV_EXPORT -> showScreen(Screen.EXPORT)
                 NAV_SETTINGS -> showScreen(Screen.SETTINGS)
+                NAV_NETWORK -> showScreen(Screen.NETWORK)
             }
         }, 220)
     }
@@ -221,6 +231,7 @@ class HomeActivity : AppCompatActivity() {
         NAV_BACKUP -> currentScreen == Screen.BACKUP
         NAV_EXPORT -> currentScreen == Screen.EXPORT
         NAV_SETTINGS -> currentScreen == Screen.SETTINGS
+        NAV_NETWORK -> currentScreen == Screen.NETWORK
         else -> false
     }
 
@@ -256,6 +267,7 @@ class HomeActivity : AppCompatActivity() {
         private const val NAV_BACKUP = 10006
         private const val NAV_EXPORT = 10008
         private const val NAV_SETTINGS = 10010
+        private const val NAV_NETWORK = 10011
 
         const val EXTRA_LAT = "lat"
         const val EXTRA_LNG = "lng"
@@ -263,6 +275,10 @@ class HomeActivity : AppCompatActivity() {
         const val EXTRA_OPEN = "open"
         const val OPEN_LIVE_STATUS = "live_status"
         const val OPEN_GEOFENCE = "geofence"
+        const val OPEN_NETWORK = "network"
+
+        /** Kiểm tra cập nhật mạng lưới đường ống khi mở ứng dụng (nếu lần trước đã quá 6 giờ). */
+        private const val PIPE_SYNC_ON_START_MS = 6 * 60 * 60 * 1000L
 
         fun showLocationIntent(context: Context, lat: Double, lng: Double, name: String?) =
             Intent(context, HomeActivity::class.java).apply {

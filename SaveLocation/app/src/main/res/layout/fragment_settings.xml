@@ -81,6 +81,11 @@
                 <TextView android:id="@+id/tv_live_server" style="@style/SettingsValue" />
             </LinearLayout>
             <View style="@style/Divider" />
+            <LinearLayout android:id="@+id/ll_pipe_network" style="@style/SettingsRow">
+                <TextView style="@style/SettingsLabel" android:text="@string/pipe_settings_label" />
+                <TextView android:id="@+id/tv_pipe_network" style="@style/SettingsValue" />
+            </LinearLayout>
+            <View style="@style/Divider" />
             <LinearLayout android:id="@+id/ll_delete_all" style="@style/SettingsRow">
                 <TextView style="@style/SettingsLabel" android:text="@string/delete_all_label" android:textColor="@color/danger" />
             </LinearLayout>

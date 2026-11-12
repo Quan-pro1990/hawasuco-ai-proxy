@@ -9,6 +9,8 @@ Phân tích chi tiết app gốc và đối chiếu từng màn hình: xem [PHAN
   - `CaiDat-MayChu.bat`: cài máy chủ chia sẻ vị trí trực tiếp trên Windows (tự cài Node.js, tự chạy khi bật máy, mở tường lửa);
   - `HUONG_DAN_CAI_DAT.txt`: hướng dẫn chi tiết, lỗi thường gặp.
   Không có máy tính: gửi `LuuViTri.apk` (trong thư mục `CaiDat`) sang điện thoại rồi mở để cài.
+- **Bản đồ mạng lưới đường ống**: đọc trực tiếp các lớp đường ống từ bản đồ mạng lưới SCADA của công ty
+  (PublishWeb/NetworkMap), tự cập nhật khi web thay đổi, xem được khi mất mạng — xem [mục dưới](#bản-đồ-mạng-lưới-đường-ống-scada).
 - Không quảng cáo, không cần tài khoản, không cần khoá API; mọi tính năng mở sẵn.
 - Giao diện tiếng Việt (theo ngôn ngữ máy) và tiếng Anh; đổi trong Cài đặt → Ngôn ngữ.
 - Bản đồ cần Internet. Định vị, vùng cảnh báo dùng Google Play services (máy Android thông thường đều có).
@@ -29,6 +31,37 @@ Phân tích chi tiết app gốc và đối chiếu từng màn hình: xem [PHAN
 - **Chia sẻ vị trí**: gửi vị trí hiện tại (kèm link Google Maps / Waze / OpenStreetMap) hoặc chia sẻ trực tiếp.
 - Nút trên thanh công cụ: danh sách vị trí đã lưu, kiểu bản đồ (Đường / Vệ tinh / Kết hợp / Địa hình).
 - Có thể chia sẻ một link bản đồ từ ứng dụng khác (Google Maps → Chia sẻ → Lưu Vị Trí) để mở đúng vị trí đó.
+
+## Bản đồ mạng lưới đường ống (SCADA)
+
+Menu trái → **Bản đồ mạng lưới**. Hiển thị **chỉ các lớp đường ống** của bản đồ mạng lưới trên web SCADA
+(`https://scada.capnuochaugiang.vn/PublishWeb/NetworkMap`), cùng cách vẽ như trên web:
+
+| Bản đồ mạng lưới | Màu theo cỡ ống | Lớp đường ống | Thông tin ống |
+|---|---|---|---|
+| ![](screenshots/50_network_map.png) | ![](screenshots/51_network_pipe_size.png) | ![](screenshots/52_pipe_layers.png) | ![](screenshots/54_pipe_info.png) |
+
+<sub>Ảnh chụp bằng kiểm thử với mạng lưới giả lập (không phải dữ liệu thật của công ty).</sub>
+
+- **Lần đầu**: bấm *Nhập mã truy cập* → nhập **mã truy cập công ty** (chính là mã dùng để mở bản đồ mạng lưới trên web)
+  → OK. Ứng dụng kiểm tra mã với máy chủ rồi tải toàn bộ các lớp ống. Mã chỉ lưu trên điện thoại, không ghi trong mã nguồn.
+  Đổi mã / địa chỉ máy chủ: nút *Mã truy cập…* trong bảng Lớp, menu ⋮, hoặc Cài đặt → *Mạng lưới đường ống (SCADA)*.
+- **Luôn theo dữ liệu trên web**: ứng dụng không giữ bản sao cố định mà đọc danh sách lớp (LAYER_META) và GeoJSON từng lớp
+  từ chính trang bản đồ SCADA. Mỗi lần kiểm tra, lớp nào trên web có thay đổi (vd vừa nhập lại từ QGIS) thì tải lại,
+  lớp mới thì thêm, lớp bị xoá thì xoá theo; lớp nào không đổi thì giữ nguyên (so mã băm nội dung).
+  Tự kiểm tra khi mở ứng dụng (nếu lần trước đã quá 6 giờ) và khi mở màn hình mạng lưới (quá 10 phút);
+  bấm ⟳ (thanh công cụ hoặc thanh trạng thái dưới bản đồ) để cập nhật ngay. Hết phiên đăng nhập thì tự nhập lại mã.
+- **Mất mạng** vẫn xem được mạng lưới đã tải lần gần nhất; thanh trạng thái báo "đang dùng dữ liệu đã lưu".
+- **Lớp đường ống**: 3 nhóm như web — *Tuyến ống* (nét liền), *Ống đang triển khai* (nét gạch chấm),
+  *Ống dự kiến* (nét đứt); bật / tắt cả nhóm hoặc từng lớp, số đối tượng và số đoạn chưa có đường kính,
+  nút ⌖ để phóng tới lớp. Màu, độ dày lấy đúng theo cấu hình lớp trên web.
+- **Màu theo cỡ ống**: tô màu theo đường kính với cùng bảng màu của web (Đến D50, D51–D90, D91–D125, D126–D200,
+  D201–D315, Trên D315, chưa có cỡ ống) kèm chú giải.
+- **Chạm vào ống**: thẻ thông tin lấy từ máy chủ giống popup trên web (vật liệu, đường kính, chiều dài, năm xây dựng,
+  đội quản lý…; mất mạng thì dùng thông tin đã lưu) + nút *Chỉ đường tới đây* và *Lưu vị trí tại đây*.
+- Đường ống cũng hiện trên **Màn hình chính**, *Xem trên bản đồ* và *Đổi vị trí* (chạm vào ống ở Màn hình chính để xem
+  thông tin). Tắt bằng công tắc *Hiện đường ống trên các bản đồ khác* trong bảng Lớp.
+- Dữ liệu trên QGIS → đưa lên SCADA như hiện nay (nhập lớp trên web SCADA); điện thoại tự nhận bản mới, không cần chép tệp.
 
 ## Vị trí đã lưu
 
@@ -81,7 +114,7 @@ Tính năng này cần một máy chủ nhỏ (app gốc dùng máy chủ của 
 Đơn vị khoảng cách (km / dặm) · Kiểu chia sẻ (mở bảng chia sẻ trực tiếp hoặc gửi ngay) · Định dạng ngày giờ ·
 Chỉ đường · Tự cập nhật GPS · Chế độ lái xe · Chế độ nhóm · Giao diện sáng / tối · Ngôn ngữ ·
 Nội dung khi chia sẻ · Định dạng tọa độ DD / DMS / DDM / UTM · App dẫn đường mặc định · Máy chủ vị trí trực tiếp ·
-Xoá toàn bộ dữ liệu.
+Mạng lưới đường ống (SCADA: mã truy cập, địa chỉ máy chủ) · Xoá toàn bộ dữ liệu.
 
 ## Đóng gói lại / biên dịch lại từ mã nguồn
 
@@ -97,7 +130,12 @@ cd SaveLocation
 ./gradlew assembleRelease          # Windows: gradlew.bat assembleRelease
 # APK: app/build/outputs/apk/release/app-release.apk
 ./gradlew testDebugUnitTest        # kiểm thử + ảnh chụp giao diện ở app/build/screenshots
+# Thử đồng bộ với máy chủ SCADA thật (mã truyền qua biến môi trường, không lưu vào mã nguồn):
+SCADA_CODE=<mã truy cập> ./gradlew testDebugUnitTest --tests '*PipeNetworkTest.liveScada*'
 ```
+
+Kiểm thử mạng lưới đường ống dùng máy chủ SCADA giả lập (`app/src/test/.../FakeScada.kt`): trang nhập mã có khoá
+chống giả mạo, cookie phiên, hết phiên trả 403, LAYER_META, GeoJSON, FeatureInfo — với mạng lưới tự tạo.
 
 - APK được ký bằng `app/debug.keystore` (mật khẩu `android`) đi kèm dự án để mọi máy build ra đều cài đè được.
   Nếu phát hành rộng rãi (Google Play), hãy tạo khoá ký riêng và **không** đưa lên GitHub.
@@ -111,8 +149,12 @@ app/src/main/java/com/hawasuco/savelocation/
   data/                      Db (SQLite), Prefs (cài đặt), Models, DataBus
   util/                      Coords (DD/DMS/DDM/UTM), Formats, LocationHelper, GeocoderHelper, MapUtil (OSM),
                              ShareUtil, NavApps, ImageStore, Exporter (CSV/GPX/KML/PDF/ảnh), Backup, Routing, LinkParser
+  network/                   mạng lưới đường ống SCADA: ScadaClient (nhập mã, cookie phiên), PipeParser (LAYER_META,
+                             GeoJSON, quy tắc giống web), PipeSync/PipeStore (đồng bộ, so thay đổi), PipeDb (lưu offline),
+                             PipeOverlay (vẽ, chạm chọn ống), PipeStyle (màu theo cỡ ống)
   ui/HomeActivity.kt         khung chính + menu trái
   ui/home, list, groups, geofence, export, backup, settings, live, dialogs, view
+  ui/network                 Bản đồ mạng lưới, bảng Lớp đường ống, thẻ thông tin ống, hộp nhập mã truy cập
   ui/*Activity.kt            Xem trên bản đồ, Đổi vị trí, Tìm kiếm, Camera, Cấp quyền, Nhập CSV, Liên hệ…
   geofence/                  đăng ký vùng cảnh báo, nhận sự kiện, khởi động máy
   live/                      dịch vụ chạy nền + API máy chủ chia sẻ trực tiếp

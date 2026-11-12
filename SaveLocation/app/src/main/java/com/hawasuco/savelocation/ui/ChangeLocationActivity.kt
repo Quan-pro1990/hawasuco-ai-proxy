@@ -8,6 +8,7 @@ import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.hawasuco.savelocation.R
+import com.hawasuco.savelocation.network.PipeOverlay
 import com.hawasuco.savelocation.data.Prefs
 import com.hawasuco.savelocation.databinding.ActivityChangeLocationBinding
 import com.hawasuco.savelocation.util.Coords
@@ -35,6 +36,7 @@ class ChangeLocationActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         setTitle(R.string.change_location)
         MapUtil.setup(b.map, 17.0)
+        PipeOverlay.attach(this, b.map, 0)
 
         val hasStart = intent.hasExtra(EXTRA_LAT)
         if (hasStart) {

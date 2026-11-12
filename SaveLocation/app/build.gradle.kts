@@ -11,8 +11,8 @@ android {
         applicationId = "com.hawasuco.savelocation"
         minSdk = 24
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
     }
 
     // Chỉ giữ tiếng Anh + tiếng Việt (bỏ bản dịch thừa của các thư viện)
