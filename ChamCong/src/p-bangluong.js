@@ -318,7 +318,8 @@
     d_('Nghỉ có hưởng lương', 'Phép ' + App.so(c.phep) + ', lễ ' + App.so(c.le) + ', khác ' + App.so(c.huongKhac), App.so(c.huong - c.ngung));
     if (c.ngung) d_('Nghỉ, ngừng việc hưởng ' + (cd.tiLeNgungViec == null ? 100 : cd.tiLeNgungViec) + '% lương', '', App.so(c.ngung));
     if (c.bhxh || c.khong || c.kp) d_('Nghỉ không hưởng lương', 'Ốm/TS ' + App.so(c.bhxh) + ', không lương ' + App.so(c.khong) + ', không phép ' + App.so(c.kp), '');
-    if (c.congThemLeTG) d_('Đi làm ngày lễ, Tết', (c.ngayLamLe ? App.so(c.ngayLamLe) + ' ngày lễ × ' + App.so(cd.heSoCongLe) : '') + (c.ngayLamLe && c.ngayLamTet ? ', ' : '') + (c.ngayLamTet ? App.so(c.ngayLamTet) + ' ngày Tết × ' + App.so(cd.heSoCongTet) : '') + ' công', '+' + App.so(c.congThemLeTG) + ' công');
+    if (c.congThemLeTG) d_('Đi làm ngày lễ, Tết', c.lamLeHS ? Object.keys(c.lamLeHS).sort().map(function (hs) { return App.so(c.lamLeHS[hs]) + ' ngày × ' + App.so(+hs) + ' công'; }).join(', ') + ' (theo Danh mục → Ngày lễ, Tết)'
+      : (c.ngayLamLe ? App.so(c.ngayLamLe) + ' ngày lễ × ' + App.so(cd.heSoCongLe) : '') + (c.ngayLamLe && c.ngayLamTet ? ', ' : '') + (c.ngayLamTet ? App.so(c.ngayLamTet) + ' ngày Tết × ' + App.so(cd.heSoCongTet) : '') + ' công', '+' + App.so(c.congThemLeTG) + ' công');
     d_('<b>Số công lương thời gian</b>', '', '<b>' + App.so(c.congTG) + '</b>');
     d_('Ngày tính cơm', 'Ngày có đi làm (gồm SP, đi làm ngày lễ); nghỉ lễ, nghỉ phép không tính', App.so(c.ngayCom));
     m_('2. Thu nhập');

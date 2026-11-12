@@ -42,7 +42,7 @@
     });
     C = {
       y: y, m: m, ngay: ngay, n: ngay.length, le: le, rows: rows, kh: TL.bangKyHieu(db), khoa: khoa, hn: App.homNay(),
-      cc: TL.congChuan(db, y, m), coSP: db.kyHieu.some(function (k) { return k.sp; }), loaiLe: TL.bangLoaiLe(db),
+      cc: TL.congChuan(db, y, m), coSP: db.kyHieu.some(function (k) { return k.sp; }), loaiLe: TL.bangLoaiLe(db), heSoLe: TL.bangHeSoLe(db),
       loaiChung: ngay.map(function (x) { return TL.loaiNgay(db, x.y, x.m, x.d, le); })
     };
     var cd = db.caiDat;
@@ -73,7 +73,7 @@
         'Tháng ' + m + ' năm ' + y + ' (từ ' + TL.hienNgay(ngay[0].iso) + ' đến ' + TL.hienNgay(ngay[ngay.length - 1].iso) + ')' + (st.pb ? ' – Bộ phận: ' + TL.tenPhongBan(db, st.pb) : '')) +
       '<div class="cuon cao" id="cc-cuon" style="position:relative"><table class="cc" id="cc-bang"></table></div>' +
       '<div class="chu-giai">' + (st.che === 'kh' ? db.kyHieu.map(function (k) { return '<span><b style="background:var(--k-' + k.nhom + ')">' + h(k.ma) + '</b>' + h(k.ten) + '</span>'; }).join('') : '') +
-      '<span><b style="background:var(--ngay-nghi)">&nbsp;</b>Ngày nghỉ hằng tuần (theo loại lao động)</span><span><b style="background:var(--ngay-le)">&nbsp;</b>Ngày lễ, Tết: nghỉ (L) = 1 công; đi làm (+) = ×' + App.so(cd.heSoCongLe) + ' công ngày lễ, ×' + App.so(cd.heSoCongTet) + ' công ngày Tết; SP không nhân (cơm 1 ngày)</span>' +
+      '<span><b style="background:var(--ngay-nghi)">&nbsp;</b>Ngày nghỉ hằng tuần (theo loại lao động)</span><span><b style="background:var(--ngay-le)">&nbsp;</b>Ngày lễ, Tết: nghỉ (L) = 1 công; đi làm (+) = ×' + App.so(cd.heSoCongLe) + ' công ngày lễ, ×' + App.so(cd.heSoCongTet) + ' công ngày Tết (ngày có hệ số riêng: theo Danh mục → Ngày lễ, Tết); SP không nhân (cơm 1 ngày)</span>' +
       '<span><b style="background:repeating-linear-gradient(45deg,#f5f6f8,#f5f6f8 4px,#eceef2 4px,#eceef2 8px)">&nbsp;</b>Chưa vào làm / đã nghỉ việc</span></div>' +
       App.kyIn();
 
@@ -136,7 +136,7 @@
     C.ngay.forEach(function (x, i) { s += '<th class="d ' + lop(C.loaiChung[i]) + '" style="top:' + top2 + 'px">' + TL.TEN_THU[TL.thuTrongTuan(x.y, x.m, x.d)] + '</th>'; });
     s += '</tr></thead><tbody>';
     var chan = C.ngay.map(function () { return 0; });
-    var ctx = { kh: C.kh, le: C.le, ngay: C.ngay };
+    var ctx = { kh: C.kh, le: C.le, loaiLe: C.loaiLe, heSoLe: C.heSoLe, ngay: C.ngay };
     C.rows.forEach(function (nv, r) {
       var th = TL.tongHopCong(db, C.y, C.m, nv, ctx);
       s += '<tr><td class="i stt dinh1">' + (r + 1) + '</td><td class="i dinh2">' + h(nv.ma) + '</td><td class="i dinh3" title="' + h(nv.hoTen + (nv.chucVu ? ' – ' + nv.chucVu : '')) + '">' + h(nv.hoTen) + '</td>';
@@ -149,7 +149,7 @@
             var k = C.kh[String(v).toUpperCase()];
             cls += k ? ' n-' + k.nhom : ' n-sai';
             txt = h(v);
-            if (k && k.lam > 0 && !k.sp && C.le[x.iso]) { var hsl = TL.heSoCongNgay(db, x.iso, C.loaiLe); if (hsl !== 1) { cls += ' nhan'; tip = 'Đi làm ' + (C.loaiLe[x.iso] === 'tet' ? 'ngày Tết' : 'ngày lễ') + ': ×' + App.so(hsl) + ' công, cơm 1 ngày'; txt += '<sup>×' + App.so(hsl) + '</sup>'; } }
+            if (k && k.lam > 0 && !k.sp && C.le[x.iso]) { var hsl = TL.heSoCongNgay(db, x.iso, C.loaiLe, C.heSoLe); if (hsl !== 1) { cls += ' nhan'; tip = 'Đi làm ' + (C.loaiLe[x.iso] === 'tet' ? 'ngày Tết' : 'ngày lễ') + ': ×' + App.so(hsl) + ' công, cơm 1 ngày'; txt += '<sup>×' + App.so(hsl) + '</sup>'; } }
             if (k && k.lam > 0) chan[i]++;
           } else { txt = App.so(v); cls += che === 'ot' ? ' so-ot' : ' so-muon'; chan[i] += +v || 0; }
         }
@@ -429,7 +429,7 @@
   var K = function () { return App.KIEU; };
   function sheet01a(pb, rows) {
     var db = App.db, ct = db.congTy, y = C.y, m = C.m, ngay = C.ngay, n = ngay.length, k = K();
-    var ctx = { kh: C.kh, le: C.le, ngay: ngay };
+    var ctx = { kh: C.kh, le: C.le, loaiLe: C.loaiLe, heSoLe: C.heSoLe, ngay: ngay };
     var data = rows.map(function (nv) { return { nv: nv, th: TL.tongHopCong(db, y, m, nv, ctx) }; });
     var tongCot = [
       ['sp', '32', 'Số công hưởng lương sản phẩm'],
@@ -545,7 +545,7 @@
   function sheetPhu(che) {
     var db = App.db, y = C.y, m = C.m, ngay = C.ngay, kho = CHE[che].kho;
     var dvc = App.dvChamCong(), rows = TL.dsNhanVienKy(db, y, m).filter(function (nv) { var d = TL.donViTheoKy(db, nv, y, m).phongBan; return (!st.pb || d === st.pb) && (!dvc || dvc.indexOf(d) >= 0); });
-    var ctx = { kh: C.kh, le: C.le, ngay: ngay };
+    var ctx = { kh: C.kh, le: C.le, loaiLe: C.loaiLe, heSoLe: C.heSoLe, ngay: ngay };
     var data = rows.map(function (nv) { return { nv: nv, th: TL.tongHopCong(db, y, m, nv, ctx) }; });
     var cot = [
       { t: 'STT', w: 5, stt: true, kieu: 'giua' },

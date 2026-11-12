@@ -13,7 +13,7 @@
 ## Ký hiệu thường dùng
 | Ký hiệu | Ý nghĩa |
 |---|---|
-| `+` | Đi làm cả ngày (lương thời gian, có cơm). Đi làm ngày lễ ×2 công, Tết ×3 công |
+| `+` | Đi làm cả ngày (lương thời gian, có cơm). Đi làm ngày lễ mặc định ×2 công, Tết ×3 công (từng ngày chọn ×1 / ×2 / ×3 ở Danh mục → Ngày lễ, Tết) |
 | `+/2` | Nửa ngày |
 | `SP` | Làm lương sản phẩm (không tính lương thời gian, vẫn có cơm) |
 | `CT`, `H` | Công tác; hội nghị, học tập |

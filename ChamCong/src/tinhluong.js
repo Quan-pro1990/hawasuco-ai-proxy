@@ -183,7 +183,11 @@
       chuanBangLuong(b);
     });
     if (!Array.isArray(db.ngayLe)) db.ngayLe = md.ngayLe;
-    db.ngayLe.forEach(function (x) { if (!x.loai) x.loai = loaiNgayLe(x); });
+    db.ngayLe.forEach(function (x) {
+      if (!x.loai) x.loai = loaiNgayLe(x);
+      // hệ số công riêng của ngày (đi làm ×1 / ×2 / ×3 công); không có thì theo loại (Cài đặt)
+      if (x.heSo != null && !(+x.heSo > 0)) delete x.heSo; else if (x.heSo != null) x.heSo = +x.heSo;
+    });
     if (!db.thang || typeof db.thang !== 'object') db.thang = {};
     if (!Array.isArray(db.donNghi)) db.donNghi = [];
     if (!Array.isArray(db.sanPham)) {
@@ -300,12 +304,20 @@
     (db.ngayLe || []).forEach(function (x) { s[x.ngay] = loaiNgayLe(x); });
     return s;
   }
-  /** Hệ số công khi đi làm vào ngày lễ / Tết */
-  function heSoCongNgay(db, isoNgay, loaiLe) {
-    var l = (loaiLe || bangLoaiLe(db))[isoNgay];
-    if (!l) return 1;
-    var cd = db.caiDat;
-    return l === 'tet' ? (+cd.heSoCongTet || 1) : (+cd.heSoCongLe || 1);
+  /** Hệ số công mặc định theo loại ngày (Cài đặt → Lương & làm thêm): lễ ×2, Tết ×3 */
+  function heSoLeMacDinh(db, loai) { var cd = db.caiDat || {}; return loai === 'tet' ? (+cd.heSoCongTet || 1) : (+cd.heSoCongLe || 1); }
+  /** Hệ số công của 1 ngày lễ: hệ số riêng của ngày (Danh mục → Ngày lễ, Tết) nếu có, không thì theo loại */
+  function heSoLeNgay(db, x) { return +x.heSo > 0 ? +x.heSo : heSoLeMacDinh(db, loaiNgayLe(x)); }
+  function bangHeSoLe(db) {
+    var s = {};
+    (db.ngayLe || []).forEach(function (x) { s[x.ngay] = heSoLeNgay(db, x); });
+    return s;
+  }
+  /** Hệ số công khi đi làm vào ngày lễ / Tết (heSoLe: bảng tính sẵn bằng bangHeSoLe, để nhanh) */
+  function heSoCongNgay(db, isoNgay, loaiLe, heSoLe) {
+    if (heSoLe) return heSoLe[isoNgay] || 1;
+    var x = (db.ngayLe || []).filter(function (n) { return n.ngay === isoNgay; })[0];
+    return x ? heSoLeNgay(db, x) : 1;
   }
 
   /* ================= Kỳ công ================= */
@@ -442,13 +454,13 @@
     var kh = ctx.kh || bangKyHieu(db);
     var le = ctx.le || bangNgayLe(db);
     var ds = ctx.ngay || ngayKy(db, y, m);
-    var loaiLe = ctx.loaiLe || bangLoaiLe(db);
+    var loaiLe = ctx.loaiLe || bangLoaiLe(db), heSoLe = ctx.heSoLe || bangHeSoLe(db);
     var r = {
       congChuan: congChuan(db, y, m, nv),
       lam: 0, lamTG: 0, sp: 0, huong: 0, phep: 0, le: 0, huongKhac: 0, ngung: 0, bhxh: 0, khong: 0, kp: 0,
       congTG: 0, congHL: 0, ngayLamThucTe: 0, ngayCom: 0, congThemLe: 0, congThemLeTG: 0, congThemLeSP: 0, ngayLamLe: 0, ngayLamTet: 0,
       otThuong: 0, otNghi: 0, otLe: 0, otTong: 0,
-      muonLan: 0, muonPhut: 0, demKyHieu: {}
+      muonLan: 0, muonPhut: 0, demKyHieu: {}, lamLeHS: {}
     };
     ds.forEach(function (x) {
       var v = oNgay(db, 'cc', nv.id, x.y, x.m, x.d);
@@ -458,9 +470,10 @@
         r.lam += lam; r.huong += huong;
         // đi làm hưởng lương thời gian vào ngày lễ ×2 công, ngày Tết ×3 công (cơm vẫn 1 ngày).
         // Ngày SP chỉ hưởng lương sản phẩm (số lượng × đơn giá): không tính lương thời gian, không nhân hệ số.
-        var hsl = lam > 0 && !k.sp && le[x.iso] ? heSoCongNgay(db, x.iso, loaiLe) : 1;
+        var hsl = lam > 0 && !k.sp && le[x.iso] ? heSoCongNgay(db, x.iso, loaiLe, heSoLe) : 1;
         if (hsl !== 1) {
           r.congThemLe += lam * (hsl - 1);
+          r.lamLeHS[hsl] = Math.round(((r.lamLeHS[hsl] || 0) + lam) * 100) / 100;   // số ngày đi làm theo từng hệ số (để ghi chi tiết)
           if (k.sp) r.congThemLeSP += lam * (hsl - 1); else r.congThemLeTG += lam * (hsl - 1);
           if (loaiLe[x.iso] === 'tet') r.ngayLamTet += lam; else r.ngayLamLe += lam;
         }
@@ -1116,7 +1129,7 @@
     if (T.khoa && T.chot && T.chot.rows) {
       return { rows: T.chot.rows, phuCap: T.chot.phuCap, congChuan: T.chot.congChuan, khoa: true, ngayChot: T.chot.ngay, tong: cong(T.chot.rows, T.chot.phuCap) };
     }
-    var ctx = { T: T, kh: bangKyHieu(db), le: bangNgayLe(db), ngay: ngayKy(db, y, m), phuCap: db.phuCap, sanPham: db.sanPham };
+    var ctx = { T: T, kh: bangKyHieu(db), le: bangNgayLe(db), loaiLe: bangLoaiLe(db), heSoLe: bangHeSoLe(db), ngay: ngayKy(db, y, m), phuCap: db.phuCap, sanPham: db.sanPham };
     var rows = dsNhanVienKy(db, y, m).map(function (nv) { return tinhLuongNV(db, y, m, nv, ctx); });
     return { rows: rows, phuCap: db.phuCap, congChuan: congChuan(db, y, m), khoa: !!T.khoa, tong: cong(rows, db.phuCap) };
   }
@@ -1232,7 +1245,7 @@
     duLieuMoi: duLieuMoi, chuanHoa: chuanHoa,
     pad: pad, khoaKy: khoaKy, iso: iso, soNgay: soNgay, thuTrongTuan: thuTrongTuan, docNgay: docNgay, hienNgay: hienNgay,
     phut: phut, hhmm: hhmm, congNgay: congNgay,
-    taoNgayLe: taoNgayLe, bangNgayLe: bangNgayLe, bangLoaiLe: bangLoaiLe, loaiNgayLe: loaiNgayLe, heSoCongNgay: heSoCongNgay, loaiNgay: loaiNgay, congChuan: congChuan, nghiTuanNV: nghiTuanNV,
+    taoNgayLe: taoNgayLe, bangNgayLe: bangNgayLe, bangLoaiLe: bangLoaiLe, loaiNgayLe: loaiNgayLe, heSoCongNgay: heSoCongNgay, heSoLeNgay: heSoLeNgay, heSoLeMacDinh: heSoLeMacDinh, bangHeSoLe: bangHeSoLe, loaiNgay: loaiNgay, congChuan: congChuan, nghiTuanNV: nghiTuanNV,
     ngayDauKy: ngayDauKy, ngayKy: ngayKy, batDauKy: batDauKy, ketThucKy: ketThucKy, kyCuaNgay: kyCuaNgay, oNgay: oNgay,
     thang: thang, nvTrongKy: nvTrongKy, nvLamNgay: nvLamNgay, dsNhanVienKy: dsNhanVienKy, tenPhongBan: tenPhongBan,
     bangKyHieu: bangKyHieu, tongHopCong: tongHopCong,

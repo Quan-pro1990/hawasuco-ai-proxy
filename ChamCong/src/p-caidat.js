@@ -261,42 +261,69 @@
     };
   }
 
+  /** Ô chọn "đi làm được tính ×1 / ×2 / ×3 công" của 1 ngày lễ (mặc định theo loại) */
+  function chonHeSoLe(db, x) {
+    var md = TL.heSoLeMacDinh(db, TL.loaiNgayLe(x)), hs = TL.heSoLeNgay(db, x), ds = [1, 2, 3];
+    [md, hs].forEach(function (v) { if (ds.indexOf(v) < 0) ds.push(v); });
+    ds.sort(function (a, b) { return a - b; });
+    return '<select data-hs title="Đi làm (lương thời gian) ngày này được tính mấy công">' + ds.map(function (v) {
+      return '<option value="' + v + '"' + (v === hs ? ' selected' : '') + '>×' + App.so(v) + ' công' + (v === 1 ? ' (như ngày thường)' : '') + (v === md ? ' – mặc định' : '') + '</option>';
+    }).join('') + '</select>' + (x.heSo ? ' <span class="the-tt cam" title="Hệ số riêng của ngày này, khác mặc định của loại">riêng</span>' : '');
+  }
   function dmLe(el) {
     var db = App.db, y = st.namLe;
     var ds = db.ngayLe.map(function (x, i) { return { x: x, i: i }; }).filter(function (o) { return o.x.ngay.slice(0, 4) === String(y); }).sort(function (a, b) { return a.x.ngay < b.x.ngay ? -1 : 1; });
     el.innerHTML = '<div class="the"><h3>Ngày lễ, Tết năm <select id="le-nam">' + [y - 2, y - 1, y, y + 1, y + 2].map(function (n) { return '<option' + (n === y ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select>' +
-      '<span class="phai">Nghỉ lễ (L) = 1 công · đi làm (+) ngày lễ = ' + App.so(db.caiDat.heSoCongLe) + ' công, ngày Tết = ' + App.so(db.caiDat.heSoCongTet) + ' công · làm SP không nhân · cơm tính 1 ngày</span></h3>' +
-      '<div class="cuon"><table class="bang"><thead><tr><th>Ngày</th><th>Thứ</th><th style="min-width:320px">Tên ngày lễ</th><th>Loại</th><th></th></tr></thead><tbody>' +
+      '<span class="phai">Nghỉ lễ (L) = 1 công · đi làm (+) mặc định: ngày lễ ×' + App.so(db.caiDat.heSoCongLe) + ', ngày Tết ×' + App.so(db.caiDat.heSoCongTet) + ' công · làm SP không nhân · cơm tính 1 ngày</span></h3>' +
+      '<div class="cuon"><table class="bang"><thead><tr><th>Ngày</th><th>Thứ</th><th style="min-width:300px">Tên ngày lễ</th><th>Loại</th><th>Đi làm được tính</th><th></th></tr></thead><tbody>' +
       (ds.length ? ds.map(function (o) {
         var n = TL.docNgay(o.x.ngay);
         var lo = TL.loaiNgayLe(o.x);
         return '<tr data-i="' + o.i + '"><td class="giua">' + TL.hienNgay(o.x.ngay) + '</td><td class="giua">' + TL.TEN_THU_DAY[TL.thuTrongTuan(n.y, n.m, n.d)] + '</td><td>' + h(o.x.ten) + '</td>' +
-          '<td><select data-loai><option value="le"' + (lo === 'le' ? ' selected' : '') + '>Lễ – đi làm ×' + App.so(db.caiDat.heSoCongLe) + ' công</option><option value="tet"' + (lo === 'tet' ? ' selected' : '') + '>Tết – đi làm ×' + App.so(db.caiDat.heSoCongTet) + ' công</option></select></td>' +
+          '<td><select data-loai><option value="le"' + (lo === 'le' ? ' selected' : '') + '>Lễ</option><option value="tet"' + (lo === 'tet' ? ' selected' : '') + '>Tết</option></select></td>' +
+          '<td>' + chonHeSoLe(db, o.x) + '</td>' +
           '<td><button class="nut nho nguy" data-a="xoa">' + App.icon('xoa') + '</button></td></tr>';
-      }).join('') : '<tr><td colspan="5" class="trong">Chưa có ngày lễ của năm ' + y + '. Bấm “Tạo tự động”.</td></tr>') +
+      }).join('') : '<tr><td colspan="6" class="trong">Chưa có ngày lễ của năm ' + y + '. Bấm “Tạo tự động”.</td></tr>') +
       '</tbody></table></div><div class="hang" style="margin-top:12px"><input type="date" id="le-ngay"><input id="le-ten" placeholder="Tên ngày lễ / ngày nghỉ (vd Nghỉ hoán đổi Tết)" style="width:300px">' +
-      '<select id="le-loai"><option value="le">Lễ (×' + App.so(db.caiDat.heSoCongLe) + ')</option><option value="tet">Tết (×' + App.so(db.caiDat.heSoCongTet) + ')</option></select><button class="nut" id="le-them">' + App.icon('them') + 'Thêm ngày</button>' +
+      '<select id="le-loai"><option value="le">Lễ (×' + App.so(db.caiDat.heSoCongLe) + ')</option><option value="tet">Tết (×' + App.so(db.caiDat.heSoCongTet) + ')</option></select>' +
+      '<select id="le-hs" title="Đi làm ngày này được tính"><option value="">Hệ số theo loại</option><option value="1">×1 công (như ngày thường)</option><option value="2">×2 công</option><option value="3">×3 công</option></select>' +
+      '<button class="nut" id="le-them">' + App.icon('them') + 'Thêm ngày</button>' +
       '<span class="gian"></span><button class="nut chinh" id="le-tao">Tạo tự động năm ' + y + '</button></div>' +
       '<p class="mo nho">Tạo tự động gồm: Tết Dương lịch, Tết Âm lịch (ngày cuối năm + mùng 1–4, tính theo lịch âm), Giỗ Tổ 10/3 âm lịch, 30/4, 1/5, Quốc khánh 2/9 + 1 ngày liền kề' + (y >= 2026 ? ', Ngày Văn hóa Việt Nam 24/11' : '') +
-      ' và ngày nghỉ bù khi trùng ngày nghỉ hằng tuần. Các ngày Tết Nguyên đán được đặt loại <b>Tết</b>, còn lại là <b>Lễ</b> (sửa được ở cột Loại). Lịch nghỉ hoán đổi do Chính phủ thông báo từng năm – hãy kiểm tra và thêm / xoá cho đúng.</p></div>';
+      ' và ngày nghỉ bù khi trùng ngày nghỉ hằng tuần. Các ngày Tết Nguyên đán được đặt loại <b>Tết</b>, còn lại là <b>Lễ</b> (sửa được ở cột Loại). Lịch nghỉ hoán đổi do Chính phủ thông báo từng năm – hãy kiểm tra và thêm / xoá cho đúng.</p>' +
+      '<p class="mo nho"><b>Đi làm được tính</b>: số công của 1 ngày đi làm hưởng lương thời gian (+) vào ngày đó – chọn riêng ×1 (như ngày thường), ×2 hoặc ×3 công cho từng ngày. ' +
+      'Mặc định theo loại: lễ ×' + App.so(db.caiDat.heSoCongLe) + ', Tết ×' + App.so(db.caiDat.heSoCongTet) + ' (đổi ở <a href="#" id="le-cd">Cài đặt → Lương &amp; làm thêm</a>). Áp dụng cho các kỳ chưa chốt lương.</p></div>';
     App.$('#le-nam', el).onchange = function () { st.namLe = +this.value; dmLe(el); };
     el.onchange = function (e) {
-      var s = e.target.closest('[data-loai]'); if (!s) return;
-      db.ngayLe[+s.closest('tr').dataset.i].loai = s.value; App.luu(); App.bao('Đã lưu');
+      var s = e.target.closest('[data-loai], [data-hs]'); if (!s) return;
+      var x = db.ngayLe[+s.closest('tr').dataset.i];
+      if (s.hasAttribute('data-loai')) x.loai = s.value;
+      else x.heSo = +s.value;
+      // bằng mặc định của loại thì bỏ hệ số riêng (đổi mặc định trong Cài đặt sẽ áp dụng theo)
+      if (x.heSo != null && +x.heSo === TL.heSoLeMacDinh(db, TL.loaiNgayLe(x))) delete x.heSo;
+      App.luu(); App.bao('Đã lưu: ' + TL.hienNgay(x.ngay) + ' đi làm được tính ×' + App.so(TL.heSoLeNgay(db, x)) + ' công', 'tot'); dmLe(el);
     };
     el.onclick = function (e) {
       var b = e.target.closest('[data-a="xoa"]');
       if (b) { db.ngayLe.splice(+b.closest('tr').dataset.i, 1); App.luu(); dmLe(el); return; }
+      if (e.target.closest('#le-cd')) { e.preventDefault(); App.moCaiDat('luong'); return; }
       if (e.target.closest('#le-them')) {
         var ng = App.$('#le-ngay').value, ten = App.$('#le-ten').value.trim() || 'Ngày nghỉ';
         if (!ng) { App.bao('Chọn ngày.', 'loi'); return; }
         if (db.ngayLe.some(function (x) { return x.ngay === ng; })) { App.bao('Ngày này đã có trong danh sách.', 'loi'); return; }
-        db.ngayLe.push({ ngay: ng, ten: ten, loai: App.$('#le-loai').value }); st.namLe = +ng.slice(0, 4); App.luu(); dmLe(el); return;
+        var moi = { ngay: ng, ten: ten, loai: App.$('#le-loai').value }, hs = +App.$('#le-hs').value;
+        if (hs > 0 && hs !== TL.heSoLeMacDinh(db, moi.loai)) moi.heSo = hs;
+        db.ngayLe.push(moi); st.namLe = +ng.slice(0, 4); App.luu(); dmLe(el); return;
       }
       if (e.target.closest('#le-tao')) {
-        App.xacNhan('Tạo lại danh sách ngày lễ năm ' + y + '? Các ngày lễ năm ' + y + ' hiện có sẽ được thay thế.', { nut: 'Tạo' }).then(function (ok) {
+        App.xacNhan('Tạo lại danh sách ngày lễ năm ' + y + '? Các ngày lễ năm ' + y + ' hiện có sẽ được thay thế (ngày trùng giữ hệ số công riêng đã chọn).', { nut: 'Tạo' }).then(function (ok) {
           if (!ok) return;
-          db.ngayLe = db.ngayLe.filter(function (x) { return x.ngay.slice(0, 4) !== String(y); }).concat(TL.taoNgayLe(y, db.caiDat));
+          var hsCu = {};
+          db.ngayLe.forEach(function (x) { if (x.ngay.slice(0, 4) === String(y) && x.heSo) hsCu[x.ngay] = x.heSo; });
+          db.ngayLe = db.ngayLe.filter(function (x) { return x.ngay.slice(0, 4) !== String(y); }).concat(TL.taoNgayLe(y, db.caiDat).map(function (x) {
+            if (hsCu[x.ngay] && hsCu[x.ngay] !== TL.heSoLeMacDinh(db, x.loai)) x.heSo = hsCu[x.ngay];
+            return x;
+          }));
           App.luu(); dmLe(el); App.bao('Đã tạo ngày lễ năm ' + y, 'tot');
         });
       }
@@ -382,8 +409,8 @@
           o('Tiền làm thêm giờ chi bằng bảng riêng (không gộp vào lãnh kỳ II)', 'caiDat.otTraRieng', 'bool') +
           o('Làm thêm ngày thường (%)', 'caiDat.heSoOT.thuong', 'so') + o('Làm thêm ngày nghỉ tuần (%)', 'caiDat.heSoOT.nghi', 'so') + o('Làm thêm ngày lễ, Tết (%)', 'caiDat.heSoOT.le', 'so') +
           o('Lương ngày nghỉ / ngừng việc (ký hiệu N) (%)', 'caiDat.tiLeNgungViec', 'so') +
-          o('Đi làm (lương thời gian) ngày lễ được tính (công)', 'caiDat.heSoCongLe', 'so', 'Mặc định 2 công; nghỉ lễ (L) vẫn 1 công; làm SP không nhân') +
-          o('Đi làm (lương thời gian) ngày Tết được tính (công)', 'caiDat.heSoCongTet', 'so', 'Mặc định 3 công; tiền cơm vẫn tính 1 ngày') +
+          o('Đi làm (lương thời gian) ngày lễ được tính (công)', 'caiDat.heSoCongLe', 'so', 'Mặc định 2 công; nghỉ lễ (L) vẫn 1 công; làm SP không nhân. Từng ngày chọn riêng ×1 / ×2 / ×3 ở Danh mục → Ngày lễ, Tết') +
+          o('Đi làm (lương thời gian) ngày Tết được tính (công)', 'caiDat.heSoCongTet', 'so', 'Mặc định 3 công; tiền cơm vẫn tính 1 ngày. Ngày có hệ số riêng không theo mức này') +
           '</div><p class="mo nho">Theo Bộ luật Lao động 2019: làm thêm ngày thường ít nhất 150%, ngày nghỉ hằng tuần 200%, ngày lễ 300% (chưa kể lương ngày lễ). Phần chênh lệch so với lương giờ bình thường không chịu thuế TNCN.</p></div>' +
           '<div class="the"><h3>Thử việc</h3><div class="form ba">' +
           '<label class="o">Số tháng thử việc mặc định<input value="' + TL.soThangThuViec(App.db) + ' tháng" disabled><span class="gc">Theo giai đoạn HĐ thử việc – sửa ở <a href="#danhmuc" onclick="App.moDanhMuc(\'hd\');return false">Danh mục → Giai đoạn hợp đồng</a></span></label>' +

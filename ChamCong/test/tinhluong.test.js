@@ -497,6 +497,37 @@ t('Giai đoạn ký HĐ: thử việc 1 tháng -> chính thức 1 năm -> 3 năm
   assert.strictEqual(TL.hdTiepTheo(db, nv, nv.hopDong[0]).gd.ma, 'CT1');
 });
 
+t('Hệ số công riêng từng ngày lễ, Tết: ×1 / ×2 / ×3 (mặc định theo loại)', function () {
+  var db = dbMau(), nv = db.nhanVien[0];
+  db.ngayLe = TL.taoNgayLe(2026, db.caiDat);
+  var le = function (d) { return db.ngayLe.filter(function (x) { return x.ngay === d; })[0]; };
+  // mặc định: 2/9 lễ ×2, mùng 2 Tết ×3
+  assert.strictEqual(TL.heSoLeNgay(db, le('2026-09-02')), 2);
+  assert.strictEqual(TL.heSoLeNgay(db, le('2026-02-18')), 3);
+  // 2/9 chọn ×3, 1/9 (ngày liền kề) chọn ×1 – như ngày thường
+  le('2026-09-02').heSo = 3; le('2026-09-01').heSo = 1;
+  TL.thang(db, 2026, 9, true).cc[nv.id] = { 1: '+', 2: '+', 3: '+' };
+  var c = TL.tinhBangLuong(db, 2026, 9).rows[0].cong;
+  assert.strictEqual(c.congTG, 1 + 3 + 1);
+  assert.strictEqual(c.congThemLe, 2);
+  assert.deepStrictEqual(c.lamLeHS, { 3: 1 });       // chỉ ghi ngày có nhân
+  assert.strictEqual(c.ngayCom, 3);
+  // đổi mặc định trong Cài đặt: ngày không có hệ số riêng theo mặc định mới, ngày có hệ số riêng giữ nguyên
+  db.caiDat.heSoCongLe = 2.5;
+  assert.strictEqual(TL.heSoLeNgay(db, le('2026-04-30')), 2.5);
+  assert.strictEqual(TL.heSoLeNgay(db, le('2026-09-02')), 3);
+  // mùng 2 Tết chọn ×2
+  db.caiDat.heSoCongLe = 2; le('2026-02-18').heSo = 2;
+  TL.thang(db, 2026, 2, true).cc[nv.id] = { 18: '+', 19: '+' };
+  c = TL.tinhBangLuong(db, 2026, 2).rows[0].cong;
+  assert.strictEqual(c.congTG, 2 + 3);
+  assert.deepStrictEqual(c.lamLeHS, { 2: 1, 3: 1 });
+  // dữ liệu cũ / sai: hệ số không hợp lệ bị bỏ, chuỗi số thành số
+  var d2 = TL.chuanHoa({ ngayLe: [{ ngay: '2026-09-02', ten: 'Quốc khánh 2/9', heSo: 'abc' }, { ngay: '2026-04-30', ten: '30/4', heSo: '1' }], nhanVien: [], caiDat: {} });
+  assert.strictEqual(d2.ngayLe[0].heSo, undefined);
+  assert.strictEqual(d2.ngayLe[1].heSo, 1);
+});
+
 t('Giờ vào / ra', function () {
   var cd = TL.caiDatMacDinh();
   var k = TL.tinhVaoRa(cd, 'thuong', TL.phut('08:12'), TL.phut('18:10'));

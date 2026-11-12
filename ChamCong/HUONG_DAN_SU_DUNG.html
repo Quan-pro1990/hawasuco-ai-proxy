@@ -194,7 +194,7 @@
 </li><li>Đổi chế độ <b>Làm thêm (giờ)</b> hoặc <b>Đi muộn / về sớm (phút)</b> để nhập trên cùng lưới.
 </li></ol>
 <h2>Ký hiệu thường dùng</h2>
-<div class="hd-cuon"><table class="bang hd-bang"><tr><th>Ký hiệu</th><th>Ý nghĩa</th></tr><tr><td><code>+</code></td><td>Đi làm cả ngày (lương thời gian, có cơm). Đi làm ngày lễ ×2 công, Tết ×3 công</td></tr><tr><td><code>+/2</code></td><td>Nửa ngày</td></tr><tr><td><code>SP</code></td><td>Làm lương sản phẩm (không tính lương thời gian, vẫn có cơm)</td></tr><tr><td><code>CT</code>, <code>H</code></td><td>Công tác; hội nghị, học tập</td></tr><tr><td><code>P</code>, <code>P/2</code></td><td>Nghỉ phép (trừ phép năm)</td></tr><tr><td><code>L</code>, <code>NB</code>, <code>R</code></td><td>Nghỉ lễ Tết; nghỉ bù; việc riêng có lương</td></tr><tr><td><code>Ô</code>, <code>Cô</code>, <code>TS</code></td><td>Ốm; con ốm; thai sản (BHXH trả)</td></tr><tr><td><code>KL</code>, <code>KP</code></td><td>Nghỉ không lương; không phép</td></tr></table></div>
+<div class="hd-cuon"><table class="bang hd-bang"><tr><th>Ký hiệu</th><th>Ý nghĩa</th></tr><tr><td><code>+</code></td><td>Đi làm cả ngày (lương thời gian, có cơm). Đi làm ngày lễ mặc định ×2 công, Tết ×3 công (từng ngày chọn ×1 / ×2 / ×3 ở Danh mục → Ngày lễ, Tết)</td></tr><tr><td><code>+/2</code></td><td>Nửa ngày</td></tr><tr><td><code>SP</code></td><td>Làm lương sản phẩm (không tính lương thời gian, vẫn có cơm)</td></tr><tr><td><code>CT</code>, <code>H</code></td><td>Công tác; hội nghị, học tập</td></tr><tr><td><code>P</code>, <code>P/2</code></td><td>Nghỉ phép (trừ phép năm)</td></tr><tr><td><code>L</code>, <code>NB</code>, <code>R</code></td><td>Nghỉ lễ Tết; nghỉ bù; việc riêng có lương</td></tr><tr><td><code>Ô</code>, <code>Cô</code>, <code>TS</code></td><td>Ốm; con ốm; thai sản (BHXH trả)</td></tr><tr><td><code>KL</code>, <code>KP</code></td><td>Nghỉ không lương; không phép</td></tr></table></div>
 <h2>Cuối kỳ</h2>
 <ul><li><b>Xuất Excel (mẫu 01a)</b>: mỗi bộ phận 1 trang tính, có phần <i>Quy ra công</i> và chữ ký.
 </li><li>Kỳ đã chốt lương thì bị khoá; người có quyền tiền lương bấm <b>Mở khoá để sửa</b>.
@@ -268,7 +268,12 @@
 </li><li><b>Sản phẩm (lương SP)</b>: tên, đơn vị tính, đơn giá (vd hoá đơn ghi thu 1.200 đ/HĐ).
 </li><li><b>Phụ cấp</b>: cơm trưa (mức chung 50.000 đ/ngày), phụ cấp khác; cách tính theo ngày / theo công / cố định; chịu thuế, đóng BH.
 </li><li><b>Ký hiệu chấm công</b>: ký hiệu, ý nghĩa, số công đi làm / hưởng lương, nhóm (đi làm, phép, BHXH, không lương…).
-</li><li><b>Ngày lễ, Tết</b>: bấm <b>Tạo tự động</b> cho từng năm (có lịch âm); loại <i>Lễ</i> / <i>Tết</i> quyết định hệ số ×2 / ×3.
+</li><li><b>Ngày lễ, Tết</b>: bấm <b>Tạo tự động</b> cho từng năm (có lịch âm), thêm / xoá ngày nghỉ hoán đổi theo thông báo của Chính phủ.
+<ul><li>Cột <b>Loại</b>: <i>Lễ</i> (mặc định đi làm ×2 công) hoặc <i>Tết</i> (mặc định ×3 công).
+</li><li>Cột <b>Đi làm được tính</b>: chọn riêng cho từng ngày <b>×1 công</b> (như ngày thường), <b>×2</b> hoặc <b>×3 công</b>; ngày có hệ số riêng
+ hiện nhãn <i>riêng</i>. Chọn đúng mức mặc định thì ngày đó lại theo mặc định (đổi mặc định ở Cài đặt → Lương &amp; làm thêm).
+</li><li>Chỉ áp dụng cho ngày đi làm hưởng lương thời gian (<code>+</code>); ngày làm SP không nhân, cơm vẫn tính 1 ngày; kỳ đã chốt lương không đổi.
+</li></ul>
 </li></ul>
 <div class="hd-ghichu">Giá trị thay đổi từ một tháng (bậc lương, tiền cơm…) nên nhập ở <a href="#muc-luong-theo-ky">Mức lương theo kỳ</a> để không làm đổi các kỳ trước.</div></section><section id="cai-dat-du-lieu"><a class="len" href="#muc-luc">↑ Mục lục</a><h1>Cài đặt &amp; dữ liệu</h1>
 <p><b>Dùng để:</b> các tham số chung của đơn vị và sao lưu dữ liệu.</p>

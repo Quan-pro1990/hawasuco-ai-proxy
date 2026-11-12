@@ -208,7 +208,7 @@ Ký hiệu mặc định (sửa được ở Danh mục):
 
 | Ký hiệu | Ý nghĩa | Tính lương |
 |---|---|---|
-| `+` | Lương thời gian (đi làm cả ngày) | 1 công lương thời gian, 1 ngày cơm (ngày lễ 2 công, Tết 3 công, cơm vẫn 1 ngày) |
+| `+` | Lương thời gian (đi làm cả ngày) | 1 công lương thời gian, 1 ngày cơm (ngày lễ 2 công, Tết 3 công – hoặc hệ số riêng của ngày; cơm vẫn 1 ngày) |
 | `+/2` | Đi làm nửa ngày | 0,5 công |
 | `SP` | Lương sản phẩm | **chỉ hưởng lương sản phẩm** (số lượng × đơn giá): không hưởng lương thời gian, không nhân hệ số ngày lễ; vẫn tính ngày cơm |
 | `CT`, `H` | Công tác; hội nghị, học tập | như đi làm |
@@ -250,10 +250,12 @@ Cách tính chính:
   *Không trả lương thời gian quá công chuẩn* trong Cài đặt → Kỳ công.
 - Lương sản phẩm = Σ số lượng × đơn giá từng sản phẩm (vd 2.490 HĐ × 1.200 đ = 2.988.000).
   Ngày chấm `SP` không tính vào lương thời gian nhưng vẫn tính ngày cơm.
-- **Ngày lễ, Tết** (theo Danh mục → Ngày lễ, cột *Loại*): nghỉ lễ `L` = 1 công; **đi làm (`+`) vào ngày lễ = 2 công,
-  vào ngày Tết = 3 công** (Tết Nguyên đán tự đặt loại *Tết*). Trên bảng chấm công các ô này có dấu ×2 / ×3.
+- **Ngày lễ, Tết** (theo Danh mục → Ngày lễ, Tết): nghỉ lễ `L` = 1 công; **đi làm (`+`) mặc định ngày lễ = 2 công,
+  ngày Tết = 3 công** (Tết Nguyên đán tự đặt loại *Tết*). Từng ngày chọn riêng ở cột **Đi làm được tính**: ×1 công (như ngày thường),
+  ×2 hoặc ×3 công – vd ngày nghỉ bù tính ×1, mùng 1 Tết ×3. Ngày không chọn riêng theo mặc định của loại
+  (Cài đặt → Lương & làm thêm). Trên bảng chấm công các ô này có dấu ×2 / ×3; chi tiết lương ghi số ngày theo từng hệ số.
   Làm `SP` vào ngày lễ, Tết **không nhân**: chỉ hưởng lương sản phẩm.
-  Hệ số sửa ở Cài đặt → Lương & làm thêm. Tiền cơm không nhân: mỗi ngày đi làm vẫn 1 suất.
+  Hệ số mặc định sửa ở Cài đặt → Lương & làm thêm. Tiền cơm không nhân: mỗi ngày đi làm vẫn 1 suất.
 - Cơm trưa = 50.000 đ × số ngày có đi làm: ngày `+`, `SP`, công tác, học tập, **kể cả đi làm hoặc làm sản phẩm
   vào ngày lễ**; nửa ngày `+/2` tính 0,5. Ngày **nghỉ lễ `L`** vẫn tính công nhưng **không tính cơm**; nghỉ phép, ốm… cũng không tính cơm.
   Tiền cơm thay đổi từ tháng nào thì sửa ở trang **Mức lương theo kỳ**. Phần tiền ăn giữa ca vượt **1.200.000 đ/tháng**
