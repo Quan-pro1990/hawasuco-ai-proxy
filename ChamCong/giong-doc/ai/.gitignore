@@ -1,0 +1,3 @@
+# tệp lớn tải về khi cài (xem NGUON.json)
+*.onnx
+*.wasm

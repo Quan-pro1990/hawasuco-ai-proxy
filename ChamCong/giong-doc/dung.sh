@@ -19,8 +19,8 @@ for f in compiledict dictionary encoding error espeak_api ieee80 intonation mnem
 emcc -O3 -I"$TAM" -Isrc/include -Isrc/include/espeak-ng -Isrc/ucd-tools/src/include -Isrc/libespeak-ng \
   -DPATH_ESPEAK_DATA='"/espeak-ng-data"' -DHAVE_CONFIG_H -Wno-everything $SRC "$DICH/giongdoc_glue.c" -o "$DICH/espeakng-vi.js" \
   -s MODULARIZE=1 -s EXPORT_NAME=GiongDocVN -s ENVIRONMENT=web,node -s ALLOW_MEMORY_GROWTH=1 -s FILESYSTEM=1 -s EXIT_RUNTIME=0 \
-  -s EXPORTED_FUNCTIONS='["_gd_khoi","_gd_giong","_gd_dat","_gd_doc","_gd_mau","_malloc","_free"]' \
-  -s EXPORTED_RUNTIME_METHODS='["HEAP16","HEAPU8"]' \
+  -s EXPORTED_FUNCTIONS='["_gd_khoi","_gd_giong","_gd_dat","_gd_doc","_gd_mau","_gd_ipa","_malloc","_free"]' \
+  -s EXPORTED_RUNTIME_METHODS='["HEAP16","HEAPU8","UTF8ToString"]' \
   --embed-file "$TAM/espeak-ng-data@/espeak-ng-data"
 rm -rf "$TAM"
 ls -l "$DICH/espeakng-vi.js" "$DICH/espeakng-vi.wasm"

@@ -330,12 +330,14 @@
 </li><li>Nút <b>cài đặt giọng nói</b>: chọn giọng đọc, tốc độ, <b>nói chuyện liên tục</b>, <b>Nghe thử</b>; tắt / bật chuyển động của robot.
 </li><li>Lệnh nói: <i>dừng</i>, <i>đọc lại</i>, <i>kết thúc</i>.
 </li></ol>
-<h2>Giọng đọc tiếng Việt tích hợp sẵn</h2>
-<ul><li>Phần mềm có sẵn bộ đọc tiếng Việt: <b>không cần cài giọng cho Windows, không cần Internet, văn bản không gửi ra ngoài</b>.
-</li><li>Chọn ở <b>cài đặt giọng nói</b> → <i>Giọng đọc</i>, nhóm <i>Tích hợp sẵn</i>: <b>miền Nam</b> (mặc định), <b>miền Nam, giọng nữ</b>, <b>miền Bắc</b>,
- <b>miền Bắc, giọng nữ</b>, <b>miền Trung</b> → bấm <b>Nghe thử</b>.
-</li><li>Máy đã cài giọng tiếng Việt của Windows (vd <i>Microsoft An</i>) thì phần mềm dùng giọng đó trước vì tự nhiên hơn; muốn dùng giọng tích hợp thì chọn lại.
-</li><li>Trợ lý báo <i>Máy chủ đang chặn giọng đọc tích hợp</i>: máy chủ còn bản cũ – nhờ người quản trị chạy lại <code>CaiDat-MayChu-IIS.bat</code> của bộ cài mới.
+<h2>Giọng đọc AI tiếng Việt</h2>
+<ul><li>Mặc định trợ lý đọc bằng <b>giọng AI tiếng Việt</b> – giọng nữ tự nhiên, rõ ràng, có ngữ điệu; chạy ngay trên máy, <b>văn bản không gửi ra ngoài</b>,
+ không cần cài giọng cho Windows.
+</li><li><b>Lần đầu</b> trình duyệt tải giọng AI từ máy chủ (khoảng 63 MB, trợ lý báo <i>Đang tải giọng đọc AI… %</i>), sau đó lưu lại – lần sau đọc ngay.
+</li><li>Cài đặt giọng nói → <i>Giọng đọc</i>: <b>Giọng AI tiếng Việt</b> (khuyên dùng), các <b>giọng máy eSpeak</b> (miền Nam / Bắc / Trung, nhẹ nhưng nghe còn “máy”),
+ hoặc giọng tiếng Việt cài trên Windows. Kéo <b>Tốc độ đọc</b> chậm lại nếu cần nghe kỹ → <b>Nghe thử</b>.
+</li><li>Trợ lý báo <i>Máy chủ chưa có giọng đọc AI</i>: nhờ người quản trị chạy lại <code>CaiDat-MayChu-IIS.bat</code> của bộ cài mới (bộ cài tự tải giọng AI).
+</li><li>Chạy 1 file trên máy: cài đặt giọng nói → <b>Nạp tệp giọng AI…</b> → chọn <code>vi_VN-vais1000-medium.onnx</code> và <code>ort-wasm-simd.wasm</code>.
 </li></ul>
 <div class="hd-ghichu">Nói câu hỏi (micro): Chrome / Edge gửi âm thanh câu hỏi tới dịch vụ nhận dạng giọng nói (cần Internet). Đọc câu trả lời bằng giọng tích hợp thì không gửi gì ra ngoài.</div></section><section id="cau-hoi-thuong-gap"><a class="len" href="#muc-luc">↑ Mục lục</a><h1>Câu hỏi thường gặp</h1>
 <h2>Không thêm được tài khoản người dùng / tài khoản chấm công</h2>
@@ -358,6 +360,6 @@
 <p>Chạy 1 file: dữ liệu nằm trong trình duyệt – thường xuyên <b>Sao lưu ra file</b>, sang máy mới <b>Khôi phục từ file</b>. Trên máy chủ dữ liệu nằm ở ổ D và tự sao lưu mỗi ngày.</p>
 <h2>Micro / giọng đọc của trợ lý không chạy</h2>
 <ul><li>Micro: dùng Chrome / Edge, cho phép micro trên thanh địa chỉ; kiểm tra Cài đặt → Đơn vị &amp; chữ ký → Trợ lý ảo.
-</li><li>Giọng đọc: phần mềm có sẵn giọng tiếng Việt tích hợp (cài đặt giọng nói → <i>Tích hợp – miền Nam</i>…) – bấm <b>Nghe thử</b>, kiểm tra loa / âm lượng máy.
- Báo <i>Máy chủ đang chặn giọng đọc tích hợp</i>: chạy lại <code>CaiDat-MayChu-IIS.bat</code> của bộ cài mới trên máy chủ.
+</li><li>Giọng đọc: cài đặt giọng nói → chọn <b>Giọng AI tiếng Việt</b> → <b>Nghe thử</b>; kiểm tra loa / âm lượng máy. Lần đầu phải chờ tải giọng AI (~63 MB).
+ Báo <i>Máy chủ chưa có giọng đọc AI</i> hoặc <i>Máy chủ đang chặn giọng đọc</i>: chạy lại <code>CaiDat-MayChu-IIS.bat</code> của bộ cài mới trên máy chủ.
 </li></ul></section></div></body></html>

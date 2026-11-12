@@ -669,3 +669,4 @@ td.bac-tat { background: repeating-linear-gradient(135deg, #f3f5f8, #f3f5f8 6px,
 .tl-hdp table.hd-bang th, .tl-hdp table.hd-bang td { padding: 2px 5px; position: static; white-space: normal; }
 .tl-hdp code { background: #eef2f6; border-radius: 3px; padding: 0 3px; }
 .tl-hdp .hd-ghichu { padding: 5px 8px; margin: 6px 0; }
+.tl-ai { font-size: 12.5px; background: #f2f7fc; border: 1px solid #d6e6f5; border-radius: 8px; padding: 6px 8px; }

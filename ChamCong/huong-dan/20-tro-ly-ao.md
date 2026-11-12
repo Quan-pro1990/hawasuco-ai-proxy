@@ -15,11 +15,13 @@
 3. Nút **cài đặt giọng nói**: chọn giọng đọc, tốc độ, **nói chuyện liên tục**, **Nghe thử**; tắt / bật chuyển động của robot.
 4. Lệnh nói: *dừng*, *đọc lại*, *kết thúc*.
 
-## Giọng đọc tiếng Việt tích hợp sẵn
-- Phần mềm có sẵn bộ đọc tiếng Việt: **không cần cài giọng cho Windows, không cần Internet, văn bản không gửi ra ngoài**.
-- Chọn ở **cài đặt giọng nói** → *Giọng đọc*, nhóm *Tích hợp sẵn*: **miền Nam** (mặc định), **miền Nam, giọng nữ**, **miền Bắc**,
-  **miền Bắc, giọng nữ**, **miền Trung** → bấm **Nghe thử**.
-- Máy đã cài giọng tiếng Việt của Windows (vd *Microsoft An*) thì phần mềm dùng giọng đó trước vì tự nhiên hơn; muốn dùng giọng tích hợp thì chọn lại.
-- Trợ lý báo *Máy chủ đang chặn giọng đọc tích hợp*: máy chủ còn bản cũ – nhờ người quản trị chạy lại `CaiDat-MayChu-IIS.bat` của bộ cài mới.
+## Giọng đọc AI tiếng Việt
+- Mặc định trợ lý đọc bằng **giọng AI tiếng Việt** – giọng nữ tự nhiên, rõ ràng, có ngữ điệu; chạy ngay trên máy, **văn bản không gửi ra ngoài**,
+  không cần cài giọng cho Windows.
+- **Lần đầu** trình duyệt tải giọng AI từ máy chủ (khoảng 63 MB, trợ lý báo *Đang tải giọng đọc AI… %*), sau đó lưu lại – lần sau đọc ngay.
+- Cài đặt giọng nói → *Giọng đọc*: **Giọng AI tiếng Việt** (khuyên dùng), các **giọng máy eSpeak** (miền Nam / Bắc / Trung, nhẹ nhưng nghe còn “máy”),
+  hoặc giọng tiếng Việt cài trên Windows. Kéo **Tốc độ đọc** chậm lại nếu cần nghe kỹ → **Nghe thử**.
+- Trợ lý báo *Máy chủ chưa có giọng đọc AI*: nhờ người quản trị chạy lại `CaiDat-MayChu-IIS.bat` của bộ cài mới (bộ cài tự tải giọng AI).
+- Chạy 1 file trên máy: cài đặt giọng nói → **Nạp tệp giọng AI…** → chọn `vi_VN-vais1000-medium.onnx` và `ort-wasm-simd.wasm`.
 
 > Nói câu hỏi (micro): Chrome / Edge gửi âm thanh câu hỏi tới dịch vụ nhận dạng giọng nói (cần Internet). Đọc câu trả lời bằng giọng tích hợp thì không gửi gì ra ngoài.

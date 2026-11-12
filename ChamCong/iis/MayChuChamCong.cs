@@ -253,11 +253,13 @@ namespace ChamCong
                 var tl = new TraLoi { Status = 200, Than = File.ReadAllBytes(tep), Loai = "text/html; charset=utf-8" };
                 tl.Header["Cache-Control"] = "no-cache";
                 // 'wasm-unsafe-eval': cho phép giọng đọc tiếng Việt tích hợp (WebAssembly), vẫn chặn eval của JavaScript
-                tl.Header["Content-Security-Policy"] = "default-src 'self' 'unsafe-inline' data: blob:; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'";
+                // worker-src blob: luồng nền chạy giọng đọc AI
+                tl.Header["Content-Security-Policy"] = "default-src 'self' 'unsafe-inline' data: blob:; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; worker-src 'self' blob:; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'";
                 tl.Header["X-Frame-Options"] = "DENY";
                 return tl;
             }
             if (d == "/favicon.ico") return new TraLoi { Status = 404, Than = new byte[0], Loai = "image/x-icon" };
+            if (d.StartsWith("/giong-doc/ai/", StringComparison.OrdinalIgnoreCase)) return TepGiongDoc(ctx, d.Substring("/giong-doc/ai/".Length));
             if (d.StartsWith("/.well-known/acme-challenge/", StringComparison.Ordinal))
             {
                 // xác minh tên miền khi xin chứng chỉ Let's Encrypt (win-acme ghi file vào thư mục site)
@@ -268,6 +270,23 @@ namespace ChamCong
                 return TraLoi.Loi(404, "Không có.");
             }
             return TraLoi.Loi(404, "Không có trang này.");
+        }
+
+        // giọng đọc AI tiếng Việt: mô hình .onnx + bộ chạy .wasm trong thư mục giong-doc\ai cạnh chương trình (bộ cài tải về).
+        // Trình duyệt tải 1 lần rồi lưu lại; ETag để lần sau chỉ trả 304.
+        static TraLoi TepGiongDoc(NguCanh ctx, string ten)
+        {
+            if (!Regex.IsMatch(ten, @"^[A-Za-z0-9_.-]+\.(onnx|wasm)$")) return TraLoi.Loi(404, "Không có.");
+            string tep = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "giong-doc", "ai", ten);
+            if (!File.Exists(tep)) return TraLoi.Loi(404, "Máy chủ chưa có giọng đọc AI: chạy lại CaiDat-MayChu-IIS.bat của bộ cài mới.");
+            var fi = new FileInfo(tep);
+            string etag = "\"" + fi.Length.ToString("x") + "-" + fi.LastWriteTimeUtc.Ticks.ToString("x") + "\"";
+            TraLoi tl;
+            if (ctx.Header("If-None-Match") == etag) tl = new TraLoi { Status = 304, Than = new byte[0] };
+            else tl = new TraLoi { Status = 200, Than = File.ReadAllBytes(tep), Loai = ten.EndsWith(".wasm") ? "application/wasm" : "application/octet-stream" };
+            tl.Header["ETag"] = etag;
+            tl.Header["Cache-Control"] = "public, max-age=2592000";
+            return tl;
         }
 
         // ------------------------------------------------------------------ gửi trả lời
@@ -309,6 +328,7 @@ namespace ChamCong
                 case 202: return "Accepted";
                 case 301: return "Moved Permanently";
                 case 302: return "Found";
+                case 304: return "Not Modified";
                 case 400: return "Bad Request";
                 case 401: return "Unauthorized";
                 case 403: return "Forbidden";

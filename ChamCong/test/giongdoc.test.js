@@ -26,5 +26,17 @@ GiongDocVN({ wasmBinary: wasm, print: function () {}, printErr: function () {} }
   // câu dài hơn thì đọc lâu hơn; chuỗi rỗng không lỗi
   assert.ok(doc('vi', 'Một hai ba bốn năm sáu bảy tám chín mười.').giay > doc('vi', 'Một.').giay);
   assert.ok(doc('vi', '').giay < 0.5);
+  // phiên âm IPA cho giọng AI (Piper vi_VN-vais1000-medium): mọi âm vị phải có trong bảng âm vị của mô hình
+  var cfg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'giong-doc', 'ai', 'vi_VN-vais1000-medium.onnx.json'), 'utf8'));
+  var p = chuoiC('vi'); M._gd_giong(p); M._free(p);
+  ['Xin chào, tôi là trợ lý ảo.', 'Lương cơ sở hiện nay là 2530000 đồng một tháng.', 'Nguyễn Thị Huyền, phường Vị Thanh, tỉnh Hậu Giang; hưởng 85% lương.',
+    'Quỳnh, Khánh, Phượng, Nghĩa, Giang, Trịnh, Đặng, Võ, Huỳnh, Ưng, Ở, Ửng, Ỷ.'].forEach(function (cau) {
+    var q = chuoiC(cau), am = M.UTF8ToString(M._gd_ipa(q)); M._free(q);
+    am = am.replace(/\([a-z]{2,3}(-[a-z0-9]+)*\)/gi, '');
+    var thieu = Array.from(am).filter(function (c) { return !/\s/.test(c) && !cfg.phoneme_id_map[c]; });
+    assert.ok(am.length > cau.length / 2, 'có âm vị: ' + cau);
+    assert.deepStrictEqual(thieu, [], 'âm vị không có trong mô hình: ' + thieu.join(' ') + ' (' + cau + ')');
+  });
+  console.log('  ✓ phiên âm IPA khớp bảng âm vị của giọng AI');
   console.log('\nGiọng đọc tích hợp: đạt.');
 }).catch(function (e) { console.error(e); process.exit(1); });

@@ -4,11 +4,11 @@
 (function () {
   'use strict';
   var DS = [
-    { ma: 'nam', ten: 'Tích hợp – miền Nam', espeak: 'vi-vn-x-south' },
-    { ma: 'nam-nu', ten: 'Tích hợp – miền Nam, giọng nữ', espeak: 'vi-vn-x-south+f3' },
-    { ma: 'bac', ten: 'Tích hợp – miền Bắc', espeak: 'vi' },
-    { ma: 'bac-nu', ten: 'Tích hợp – miền Bắc, giọng nữ', espeak: 'vi+f3' },
-    { ma: 'trung', ten: 'Tích hợp – miền Trung', espeak: 'vi-vn-x-central' }
+    { ma: 'nam', ten: 'Giọng máy eSpeak – miền Nam', espeak: 'vi-vn-x-south' },
+    { ma: 'nam-nu', ten: 'Giọng máy eSpeak – miền Nam, nữ', espeak: 'vi-vn-x-south+f3' },
+    { ma: 'bac', ten: 'Giọng máy eSpeak – miền Bắc', espeak: 'vi' },
+    { ma: 'bac-nu', ten: 'Giọng máy eSpeak – miền Bắc, nữ', espeak: 'vi+f3' },
+    { ma: 'trung', ten: 'Giọng máy eSpeak – miền Trung', espeak: 'vi-vn-x-central' }
   ];
   var M = null, dangTai = null, loiTai = null, ctx = null, nguon = null, phien = 0, giongDat = '', tanSo = 22050, henXong = null;
 
@@ -88,8 +88,17 @@
     });
   }
 
+  /** Phiên âm IPA tiếng Việt (cho giọng AI Piper); gọi sau khi tai() xong */
+  function ipa(chu) {
+    if (!M) throw new Error('Bộ phiên âm chưa nạp.');
+    if (giongDat !== 'vi') { var g = chuoiC('vi'); M._gd_giong(g); M._free(g); giongDat = 'vi'; }
+    var p = chuoiC(chu), kq = M.UTF8ToString(M._gd_ipa(p));
+    M._free(p);
+    return kq;
+  }
+
   App.GiongDoc = {
-    ds: DS, coThe: coThe, tai: tai, noi: noi, dung: dung,
+    ds: DS, coThe: coThe, tai: tai, noi: noi, dung: dung, ipa: ipa,
     dangDoc: function () { return !!nguon; },
     loi: function () { return loiTai; },
     /** dùng cho kiểm thử: số mẫu âm thanh của 1 câu */

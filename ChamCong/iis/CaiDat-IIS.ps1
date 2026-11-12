@@ -70,9 +70,13 @@ function AppCmd([string[]]$thamSo) {
 }
 function CoTrongIis([string]$loai, [string]$ten) { (Chay $appcmd @('list', $loai, "/name:$ten")).Ma -eq 0 }
 function MaNhanDang($cert) {
-    $sha = [Security.Cryptography.SHA256]::Create()
-    $h = [BitConverter]::ToString($sha.ComputeHash($cert.GetRawCertData())) -replace '-', ''
-    ($h.Substring(0, 4), $h.Substring(4, 4), $h.Substring(8, 4), $h.Substring(12, 4)) -join '-'
+    if (-not $cert) { return '(không đọc được)' }
+    try {
+        $sha = [Security.Cryptography.SHA256]::Create()
+        $h = [BitConverter]::ToString($sha.ComputeHash($cert.GetRawCertData())) -replace '-', ''
+        ($h.Substring(0, 4), $h.Substring(4, 4), $h.Substring(8, 4), $h.Substring(12, 4)) -join '-'
+    }
+    catch { '(không đọc được)' }
 }
 function CapQuyen([string]$thuMuc, [string[]]$them) {
     $ts = @($thuMuc, '/inheritance:r', '/grant:r', '*S-1-5-32-544:(OI)(CI)F', '*S-1-5-18:(OI)(CI)F') + $them
@@ -118,7 +122,12 @@ function GoiThu([int]$cong, [bool]$https, [string]$tenMay, [string]$duong) {
         $luong = $tcp.GetStream()
         if ($https) {
             $script:ccThu = $null
-            $ssl = New-Object Net.Security.SslStream($luong, $false, { param($s, $c, $ch, $e) $script:ccThu = $c; $true })
+            # chép chứng chỉ ngay trong lúc bắt tay: đối tượng .NET đưa vào bị giải phóng sau đó ("m_safeCertContext is an invalid handle")
+            $ssl = New-Object Net.Security.SslStream($luong, $false, {
+                    param($s, $c, $ch, $e)
+                    try { $script:ccThu = New-Object -TypeName Security.Cryptography.X509Certificates.X509Certificate2 -ArgumentList (, [byte[]]$c.GetRawCertData()) } catch { $script:ccThu = $null }
+                    $true
+                })
             $ssl.ReadTimeout = 90000
             $ssl.AuthenticateAsClient($tenMay, $null, [Security.Authentication.SslProtocols]::Tls12, $false)
             $kq.ChungChi = $script:ccThu
@@ -151,7 +160,7 @@ function KiemTraTatCa {
     }
     Write-Host "Gọi thử https://$(if ($TenMien) { $TenMien } else { '127.0.0.1' }):$CongHttps/api/ping (qua 127.0.0.1)"
     $t = GoiThu $CongHttps $true $TenMien ''
-    if ($t.Ok) { Tot "  OK – chứng chỉ: $($t.ChungChi.Subject), mã nhận dạng $(MaNhanDang $t.ChungChi)" }
+    if ($t.Ok) { Tot "  OK – chứng chỉ: $(if ($t.ChungChi) { $t.ChungChi.Subject } else { '(không đọc được)' }), mã nhận dạng $(MaNhanDang $t.ChungChi)" }
     else { $ok = $false; CanhBao "  Chưa được: $($t.Loi) $($t.Than.Substring(0, [Math]::Min(300, $t.Than.Length)))" }
     if ($TenMien -and -not $KhongHttp) {
         Write-Host "Gọi thử http://${TenMien}:$CongHttp/ (phải tự chuyển sang https)"
@@ -489,6 +498,49 @@ if (-not $SiteCha) { Chay $appcmd @('start', 'site', "/site.name:$TenSite") | Ou
 Start-Sleep -Seconds 2
 $ok = KiemTraTatCa
 
+# ------------------------------------------------------------------ giọng đọc AI tiếng Việt (chạy sau khi site đã chạy: không kéo dài thời gian gián đoạn)
+
+Buoc 'Giọng đọc AI tiếng Việt cho trợ lý ảo'
+$giongAI = 'chưa có'
+try {
+    $nguonAI = Join-Path (Split-Path -Parent $goc) 'giong-doc\ai'
+    $tepDs = Join-Path $nguonAI 'NGUON.json'
+    if (-not (Test-Path $tepDs)) { throw "thiếu $tepDs trong bộ cài" }
+    $dsAI = (Get-Content $tepDs -Raw -Encoding UTF8 | ConvertFrom-Json).tep
+    $thuMucAI = Join-Path $ThuMuc 'giong-doc\ai'
+    New-Item -ItemType Directory -Force $thuMucAI | Out-Null
+    function MaSha([string]$tep) { (Get-FileHash -Algorithm SHA256 -LiteralPath $tep).Hash.ToLowerInvariant() }
+    [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+    $du = $true
+    foreach ($t in $dsAI) {
+        $dich = Join-Path $thuMucAI $t.ten
+        if ((Test-Path $dich) -and (MaSha $dich) -eq $t.sha256) { Write-Host "  $($t.ten): đã có."; continue }
+        $sanCo = Join-Path $nguonAI $t.ten
+        if ((Test-Path $sanCo) -and (MaSha $sanCo) -eq $t.sha256) { Copy-Item $sanCo $dich -Force; Write-Host "  $($t.ten): đã chép từ bộ cài."; continue }
+        $xong = $false
+        foreach ($u in $t.url) {
+            $tam = "$dich.tai"
+            try {
+                Write-Host "  Đang tải $($t.ten) ($([math]::Round($t.kichThuoc / 1MB)) MB) từ $u …"
+                $ProgressPreference = 'SilentlyContinue'
+                Invoke-WebRequest -Uri $u -OutFile $tam -UseBasicParsing -ErrorAction Stop
+                if ((MaSha $tam) -eq $t.sha256) { Move-Item $tam $dich -Force; $xong = $true; break }
+                CanhBao "  Mã SHA-256 không khớp – bỏ tệp tải từ $u"
+            }
+            catch { CanhBao "  Không tải được từ $u`: $($_.Exception.Message)" }
+            Remove-Item $tam -Force -ErrorAction SilentlyContinue
+        }
+        if ($xong) { Tot "  $($t.ten): đã tải, đúng mã SHA-256." } else { $du = $false }
+    }
+    $giongAI = if ($du) { 'có (giọng AI tự nhiên)' } else { 'chưa đủ tệp' }
+    if ($du) { Tot '  Giọng đọc AI: sẵn sàng.' }
+    else {
+        CanhBao ("  Chưa tải được giọng đọc AI (máy chủ không ra được internet?). Trợ lý ảo tạm dùng giọng máy. " +
+            "Chép 2 tệp vi_VN-vais1000-medium.onnx và ort-wasm-simd.wasm (xem giong-doc\ai\NGUON.json) vào $nguonAI rồi chạy lại bộ cài.")
+    }
+}
+catch { CanhBao "  Bỏ qua giọng đọc AI: $($_.Exception.Message)" }
+
 $diaChi = if ($SiteCha) { "<địa chỉ site $SiteCha>$DuongDan/" } elseif ($TenMien) { "https://$TenMien$(if ($CongHttps -ne 443) { ":$CongHttps" })/" } else { "https://<IP máy chủ>:$CongHttps/" }
 Write-Host ''
 Write-Host '==============================================================' -ForegroundColor Green
@@ -496,6 +548,7 @@ Write-Host ' ĐÃ CÀI XONG: Nhân sự – Chấm công – Tiền lương' -Fo
 Write-Host " Địa chỉ:   $diaChi"
 Write-Host " Dữ liệu:   $DuLieu"
 Write-Host " Sao lưu:   $SaoLuu   (tự động mỗi ngày, giữ 120 bản)"
+Write-Host " Giọng đọc AI: $giongAI"
 Write-Host ''
 Write-Host ' Bước tiếp:'
 if ($TenMien -and -not $SiteCha) {

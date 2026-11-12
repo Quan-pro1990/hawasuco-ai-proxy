@@ -28,3 +28,19 @@ EMSCRIPTEN_KEEPALIVE int gd_doc(const char *chu) {
   return n;
 }
 EMSCRIPTEN_KEEPALIVE short *gd_mau(void) { return buf; }
+/* phiên âm IPA (dùng cho giọng AI Piper): trả chuỗi âm vị của cả đoạn, các vế cách nhau 1 dấu cách */
+EMSCRIPTEN_KEEPALIVE const char *gd_ipa(const char *chu) {
+  static char *kq = NULL; static int dai = 0;
+  int n = 0; const void *p = chu;
+  if (!kq) { dai = 4096; kq = (char *)malloc(dai); if (!kq) return ""; }
+  kq[0] = 0;
+  while (p != NULL) {
+    const char *am = espeak_TextToPhonemes(&p, espeakCHARS_UTF8, espeakPHONEMES_IPA);
+    if (!am) break;
+    int l = (int)strlen(am);
+    if (n + l + 2 > dai) { int d = (n + l + 2) * 2; char *k = (char *)realloc(kq, d); if (!k) break; kq = k; dai = d; }
+    if (n > 0 && l > 0) kq[n++] = ' ';
+    memcpy(kq + n, am, l); n += l; kq[n] = 0;
+  }
+  return kq;
+}

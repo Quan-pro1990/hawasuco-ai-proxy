@@ -32,5 +32,5 @@ nằm ở ổ D và tự sao lưu mỗi ngày.
 
 ## Micro / giọng đọc của trợ lý không chạy
 - Micro: dùng Chrome / Edge, cho phép micro trên thanh địa chỉ; kiểm tra Cài đặt → Đơn vị & chữ ký → Trợ lý ảo.
-- Giọng đọc: phần mềm có sẵn giọng tiếng Việt tích hợp (cài đặt giọng nói → *Tích hợp – miền Nam*…) – bấm **Nghe thử**, kiểm tra loa / âm lượng máy.
-  Báo *Máy chủ đang chặn giọng đọc tích hợp*: chạy lại `CaiDat-MayChu-IIS.bat` của bộ cài mới trên máy chủ.
+- Giọng đọc: cài đặt giọng nói → chọn **Giọng AI tiếng Việt** → **Nghe thử**; kiểm tra loa / âm lượng máy. Lần đầu phải chờ tải giọng AI (~63 MB).
+  Báo *Máy chủ chưa có giọng đọc AI* hoặc *Máy chủ đang chặn giọng đọc*: chạy lại `CaiDat-MayChu-IIS.bat` của bộ cài mới trên máy chủ.

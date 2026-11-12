@@ -96,6 +96,10 @@ Nên chép thêm thư mục SaoLuu ra ổ khác / NAS hằng tuần, vd tạo t�
 Chép thư mục ChamCong mới đè lên thư mục cũ, nhấp đúp CaiDat-MayChu-IIS.bat. Dữ liệu, tài khoản,
 chứng chỉ, tên miền giữ nguyên. Người dùng tải lại trang (F5).
 
+Giọng đọc AI tiếng Việt cho trợ lý ảo: bộ cài tự tải 2 tệp (~74 MB) vào <thư mục chương trình>\giong-doc\ai
+(từ huggingface.co và cdn.jsdelivr.net / unpkg.com, kiểm tra mã SHA-256 – xem giong-doc\ai\NGUON.json; đã có thì bỏ qua).
+Máy chủ không ra được Internet: tải 2 tệp đó trên máy khác, chép vào thư mục giong-doc\ai của bộ cài rồi chạy lại bộ cài.
+
 7. KHI CÓ SỰ CỐ
 ---------------
 - CaiDat-MayChu-IIS.bat -KiemTra    gọi thử https và http.

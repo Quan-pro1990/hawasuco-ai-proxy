@@ -20,6 +20,15 @@ html = html.replace(/<script src="([^"]+)"><\/script>/g, function (_, f) {
     // giọng đọc tiếng Việt tích hợp (eSpeak NG WebAssembly, thư mục giong-doc/): mã nạp + bộ đọc nén gzip
     : f === 'giongdoc-vi.js' ? fs.readFileSync(path.join(__dirname, 'giong-doc', 'espeakng-vi.js'), 'utf8') +
       '\nwindow.GIONG_DOC_WASM = "' + zlib.gzipSync(fs.readFileSync(path.join(__dirname, 'giong-doc', 'espeakng-vi.wasm')), { level: 9 }).toString('base64') + '";'
+    // giọng đọc AI (Piper): mã ONNX Runtime Web chạy trong luồng nền + cấu hình mô hình (tệp mô hình, wasm tải từ máy chủ)
+    : f === 'giongai-ort.js' ? (function () {
+      var cfg = JSON.parse(fs.readFileSync(path.join(__dirname, 'giong-doc', 'ai', 'vi_VN-vais1000-medium.onnx.json'), 'utf8'));
+      var nguon = JSON.parse(fs.readFileSync(path.join(__dirname, 'giong-doc', 'ai', 'NGUON.json'), 'utf8')).tep;
+      var sha = function (t) { return nguon.filter(function (x) { return x.ten === t; })[0].sha256.slice(0, 16); };
+      return 'window.ORT_CORE_JS = ' + JSON.stringify(fs.readFileSync(path.join(__dirname, 'giong-doc', 'ort', 'ort.wasm-core.min.js'), 'utf8')) + ';\n' +
+        'window.GIONG_AI_CAU_HINH = ' + JSON.stringify({ audio: cfg.audio, inference: cfg.inference, espeak: cfg.espeak, phoneme_id_map: cfg.phoneme_id_map,
+          sha: sha('vi_VN-vais1000-medium.onnx'), shaOrt: sha('ort-wasm-simd.wasm') }) + ';';
+    })()
     : f === 'huongdan-phan.js' ? 'window.HUONG_DAN_PHAN = ' + JSON.stringify(phanHD) + ';'
     : f === 'anh-troly.js' ? 'window.ANH_TROLY = ' + JSON.stringify({ than: anh('robot-than.png'), dau: anh('robot-dau.png') }) + ';'
     : fs.readFileSync(path.join(src, f), 'utf8');

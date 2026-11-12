@@ -47,6 +47,9 @@ var tep = [
   ['ChamCong/HUONG_DAN_SU_DUNG.html', 'HUONG_DAN_SU_DUNG.html'],
   // giọng đọc tích hợp (eSpeak NG, GPL v3): giấy phép và nguồn gốc đi kèm bản phân phối
   ['ChamCong/giong-doc/DOC_TOI.md', 'giong-doc/DOC_TOI.md'],
+  // giọng đọc AI: danh sách tệp + mã SHA-256 (bộ cài máy chủ tự tải mô hình về), giấy phép ONNX Runtime
+  ['ChamCong/giong-doc/ai/NGUON.json', 'giong-doc/ai/NGUON.json'],
+  ['ChamCong/giong-doc/ort/LICENSE-onnxruntime.txt', 'giong-doc/ort/LICENSE-onnxruntime.txt'],
   ['ChamCong/giong-doc/COPYING-espeak-ng.txt', 'giong-doc/COPYING-espeak-ng.txt'],
   ['ChamCong/iis/CaiDat-IIS.bat', 'iis/CaiDat-IIS.bat'],
   ['ChamCong/iis/CaiDat-IIS.ps1', 'iis/CaiDat-IIS.ps1'],

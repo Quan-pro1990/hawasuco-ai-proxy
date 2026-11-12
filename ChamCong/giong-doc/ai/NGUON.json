@@ -1,0 +1,19 @@
+{
+  "ghiChu": "Tệp giọng đọc AI tiếng Việt. Không lưu trong git (lớn): bộ cài máy chủ tự tải về thư mục giong-doc/ai và kiểm tra mã SHA-256; hoặc chép sẵn 2 tệp này vào giong-doc/ai trước khi chạy bộ cài.",
+  "tep": [
+    {
+      "ten": "vi_VN-vais1000-medium.onnx",
+      "kichThuoc": 63201294,
+      "sha256": "ec7c89e2c85f4d1edc24b6120c18aaf1bda614f06b511567eb9c7c0de15e2dab",
+      "url": ["https://huggingface.co/rhasspy/piper-voices/resolve/main/vi/vi_VN/vais1000/medium/vi_VN-vais1000-medium.onnx"],
+      "giayPhep": "Mô hình Piper (MIT), huấn luyện trên dữ liệu VAIS-1000 (CC BY 4.0) – https://huggingface.co/rhasspy/piper-voices"
+    },
+    {
+      "ten": "ort-wasm-simd.wasm",
+      "kichThuoc": 10551547,
+      "sha256": "6783fcd6647ce1b426a527c31412a9c40894552faa609e9c931b3239a3438071",
+      "url": ["https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.3/dist/ort-wasm-simd.wasm", "https://unpkg.com/onnxruntime-web@1.17.3/dist/ort-wasm-simd.wasm"],
+      "giayPhep": "ONNX Runtime Web 1.17.3 (MIT) – Microsoft"
+    }
+  ]
+}
