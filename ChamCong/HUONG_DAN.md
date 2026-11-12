@@ -379,7 +379,9 @@ bảng nhân viên với công, nghỉ phép, nghỉ không lương, ô còn tr�
 - **Tạo tài khoản cho từng phòng / đội…**: chọn quyền (mặc định trưởng phòng / đội trưởng), mỗi đơn vị 1 tài khoản, mật khẩu
   ngẫu nhiên hiện 1 lần, in danh sách để phát. Tài khoản cũ (Nhập liệu, Chấm công theo phòng / đội) giữ nguyên quyền như trước.
 - Dữ liệu tự lưu lên máy chủ; ô chấm công của các đội được ghép từng ô nên không ghi đè lẫn nhau. Máy chủ tự sao lưu mỗi ngày
-  vào ổ D (giữ 120 bản).
+  vào ổ D (nén, giữ 120 bản; ổ còn dưới 1 GB trống thì tự xoá bớt bản cũ nhất). Thẻ *Nơi lưu dữ liệu và bản sao lưu* (quản trị) cho biết
+  thư mục, chỗ trống từng ổ và cảnh báo khi nằm ở ổ C. Dữ liệu đang ở ổ C: trên máy chủ nhấp đúp **ChuyenDuLieu-SangO-D.bat**
+  (chuyển sang `D:\ChamCongData`, kiểm tra từng tệp rồi mới xoá bản trên ổ C; lỗi giữa chừng thì giữ nguyên ổ C).
 
 ## Câu hỏi thường gặp
 

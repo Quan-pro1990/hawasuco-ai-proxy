@@ -7,6 +7,12 @@ Chỉ **tài khoản quản trị** trên **máy chủ** mới thêm được: C
 Tài khoản cấp phòng / đội phải đánh dấu ít nhất 1 phòng / đội; tên đăng nhập không có dấu cách; mật khẩu từ 6 ký tự.
 Chi tiết: [Tài khoản & phân quyền](#huongdan?p=tai-khoan-phan-quyen).
 
+## Ổ C máy chủ sắp đầy / dữ liệu, bản sao lưu đang nằm ở ổ C
+Trên máy chủ, mở thư mục bộ cài **ChamCong**, nhấp đúp **ChuyenDuLieu-SangO-D.bat** → bấm *Yes*. Dữ liệu, tài khoản, hồ sơ scan và bản
+sao lưu được chuyển sang `D:\ChamCongData` (chép, kiểm tra từng tệp rồi mới xoá bản trên ổ C); phần mềm tạm dừng khoảng 1 phút.
+Lỗi giữa chừng thì dữ liệu ở ổ C giữ nguyên. Xem nơi lưu và chỗ trống: **Cài đặt & dữ liệu → Dữ liệu & tài khoản** (tài khoản quản trị).
+Bản sao lưu hằng ngày được nén; ổ còn dưới 1 GB trống thì máy chủ tự xoá bớt bản cũ nhất.
+
 ## Sao lưu, khôi phục dữ liệu
 - Chạy 1 file trên máy: **Cài đặt & dữ liệu → Sao lưu dữ liệu → Sao lưu ra file** mỗi tuần (chép file `.json` ra USB, Google Drive…);
   sang máy khác: **Khôi phục từ file…**.

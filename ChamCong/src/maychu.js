@@ -448,7 +448,7 @@
       '<div class="hang"><button class="nut" id="mc-tai">' + App.icon('tai') + 'Tải bản sao lưu về máy</button>' +
       '<label class="nut">' + App.icon('nhap') + 'Khôi phục từ file…<input type="file" id="dl-mo" accept=".json" class="an"></label>' +
       '<button class="nut" id="mc-doimk">Đổi mật khẩu của tôi</button><button class="nut" id="mc-dx">Đăng xuất</button></div></div>' +
-      (qt ? '<div class="the"><h3>Bản sao lưu hằng ngày trên máy chủ<span class="phai" id="mc-thumuc"></span></h3><div class="cuon" style="max-height:300px"><table class="bang" id="mc-sl"><tbody><tr><td class="trong">Đang tải…</td></tr></tbody></table></div></div>' +
+      (qt ? '<div class="the"><h3>Nơi lưu dữ liệu và bản sao lưu hằng ngày trên máy chủ</h3><div id="mc-luutru" class="mo nho">Đang tải…</div><div class="cuon" style="max-height:300px"><table class="bang" id="mc-sl"><tbody><tr><td class="trong">Đang tải…</td></tr></tbody></table></div></div>' +
         '<div class="the"><h3>Tài khoản đăng nhập<span class="phai"><button class="nut nho" id="mc-tk-nhanh">Tạo tài khoản cho từng phòng / đội…</button> <button class="nut nho chinh" id="mc-tk-them">' + App.icon('them') + 'Thêm tài khoản</button></span></h3><div class="cuon"><table class="bang" id="mc-tk"><tbody><tr><td class="trong">Đang tải…</td></tr></tbody></table></div>' +
         '<p class="mo nho"><b>Quản trị</b>: mọi chức năng, quản lý tài khoản, sao lưu. <b>Cấp công ty</b>: mọi phòng, đội. <b>Cấp phòng / đội</b>: chỉ nhân viên của đơn vị được giao (tiền lương tối đa được xem, không sửa danh mục, cài đặt). ' +
         'Mỗi phần <b>Chấm công, Nhân sự, Tiền lương, Thiết lập</b> chọn Không / Xem / Sửa; máy chủ kiểm tra lại quyền: phần không được xem thì không gửi về máy, phần chỉ được xem thì thay đổi không được lưu. ' +
@@ -471,11 +471,11 @@
   function veSaoLuu(el) {
     api('saoluu').then(function (r) {
       if (!r.ok) return;
-      App.$('#mc-thumuc', el).textContent = 'Thư mục trên máy chủ: ' + r.data.thuMuc;
+      App.$('#mc-luutru', el).innerHTML = noiLuu(r.data);
       var ds = r.data.ds || [];
       App.$('#mc-sl', el).innerHTML = '<thead><tr><th>Bản sao lưu</th><th>Lúc</th><th class="so">Dung lượng</th><th></th></tr></thead><tbody>' +
         (ds.length ? ds.map(function (x) {
-          return '<tr><td>' + h(x.ten) + '</td><td class="giua">' + new Date(x.luc).toLocaleString('vi-VN') + '</td><td class="so">' + App.so(Math.round(x.kichThuoc / 1024)) + ' KB</td>' +
+          return '<tr><td>' + h(x.ten.replace(/\.gz$/, '')) + (/\.gz$/.test(x.ten) ? ' <span class="mo nho">(nén)</span>' : '') + '</td><td class="giua">' + new Date(x.luc).toLocaleString('vi-VN') + '</td><td class="so">' + kichThuoc(x.kichThuoc) + '</td>' +
             '<td><a class="nut nho" href="api/saoluu/tai?ten=' + encodeURIComponent(x.ten) + '">' + App.icon('tai') + 'Tải về</a> <button class="nut nho nguy" data-kp="' + h(x.ten) + '">Khôi phục</button></td></tr>';
         }).join('') : '<tr><td colspan="4" class="trong">Chưa có bản sao lưu (máy chủ tạo bản đầu tiên vào lần lưu đầu mỗi ngày).</td></tr>') + '</tbody>';
       App.$('#mc-sl', el).onclick = function (e) {
@@ -489,6 +489,25 @@
         });
       };
     });
+  }
+
+  function kichThuoc(b) {
+    b = +b || 0;
+    return b < 1024 ? b + ' byte' : b < 1048576 ? App.so(Math.round(b / 1024)) + ' KB' : b < 1073741824 ? App.so(Math.round(b / 1048576 * 10) / 10) + ' MB' : App.so(Math.round(b / 1073741824 * 10) / 10) + ' GB';
+  }
+  /** Thư mục dữ liệu, sao lưu trên máy chủ, chỗ trống từng ổ; cảnh báo khi nằm ở ổ hệ thống (C) hoặc ổ sắp đầy */
+  function noiLuu(x) {
+    var gb = function (b) { return App.so(Math.round(b / 1073741824 * 10) / 10) + ' GB'; };
+    var mb = kichThuoc;
+    var o = x.o || [], c = o.filter(function (d) { return d.heThong; })[0], day = o.filter(function (d) { return d.tong && d.trong < 2 * 1073741824; })[0];
+    return '<div style="line-height:1.8;margin:-4px 0 10px">Dữ liệu: <b>' + h(x.thuMucDuLieu || '') + '</b> · Sao lưu: <b>' + h(x.thuMuc || '') + '</b>' +
+      (x.soBan != null ? ' (' + x.soBan + ' bản, ' + mb(x.dungLuongSaoLuu || 0) + ')' : '') +
+      o.map(function (d) { return ' · Ổ <b>' + h(d.o) + '</b>' + (d.tong ? ' còn trống ' + gb(d.trong) + ' / ' + gb(d.tong) : ''); }).join('') + '</div>' +
+      (c ? '<div class="canh-bao" style="margin-bottom:10px">Dữ liệu / bản sao lưu đang nằm trên <b>ổ hệ thống ' + h(c.o) + '</b>' + (c.tong ? ' (còn trống ' + gb(c.trong) + ')' : '') + ' – dễ làm đầy ổ C. ' +
+        'Chuyển sang ổ D: trên máy chủ, mở thư mục bộ cài <b>ChamCong</b>, nhấp đúp <b>ChuyenDuLieu-SangO-D.bat</b> (bấm Yes khi Windows hỏi quyền quản trị). ' +
+        'Bộ cài chép dữ liệu, bản sao lưu sang <b>D:\\ChamCongData</b>, kiểm tra từng tệp rồi mới xoá bản trên ổ C; phần mềm tạm dừng khoảng 1 phút, tài khoản và dữ liệu giữ nguyên.</div>'
+        : day ? '<div class="canh-bao" style="margin-bottom:10px">Ổ <b>' + h(day.o) + '</b> chỉ còn ' + gb(day.trong) + ' trống. Khi còn dưới 1 GB, máy chủ tự xoá bớt bản sao lưu cũ nhất (giữ ít nhất 30 bản); nên dọn ổ hoặc chuyển sang ổ khác.</div>' : '') +
+      '<div style="margin-bottom:8px">Mỗi ngày 1 bản (lần lưu đầu tiên trong ngày), nén lại, giữ 120 bản gần nhất. Hồ sơ scan có thêm 1 bản trong thư mục sao lưu.</div>';
   }
 
   function veTaiKhoan(el) {

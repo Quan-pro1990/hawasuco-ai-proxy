@@ -33,8 +33,11 @@ e) Mở https://qlns.capnuochaugiang.vn/ → đăng nhập quản trị → ch�
 
 Các tuỳ chọn (thêm sau tên file .bat, chạy trong cửa sổ cmd):
    CaiDat-MayChu-IIS.bat -TenMien qlns.capnuochaugiang.vn     đổi tên miền
-   CaiDat-MayChu-IIS.bat -DuLieu E:\ChamCongData               đặt dữ liệu ở ổ khác
-   CaiDat-MayChu-IIS.bat -SaoLuu E:\SaoLuuChamCong             đặt bản sao lưu hằng ngày ở ổ khác
+   CaiDat-MayChu-IIS.bat -DuLieu E:\ChamCongData               đặt dữ liệu ở ổ khác (dữ liệu đang có được CHUYỂN sang)
+   CaiDat-MayChu-IIS.bat -SaoLuu E:\SaoLuuChamCong             đặt bản sao lưu hằng ngày ở ổ khác (bản cũ chuyển theo)
+   CaiDat-MayChu-IIS.bat -ChuyenSangD                          chuyển dữ liệu, sao lưu đang ở ổ C sang D:\ChamCongData
+                                                               (= nhấp đúp ChuyenDuLieu-SangO-D.bat)
+   CaiDat-MayChu-IIS.bat -KhongHoi                             không hỏi chuyển dữ liệu từ ổ C sang ổ D
    CaiDat-MayChu-IIS.bat -ChungChi <thumbprint>                dùng chứng chỉ có sẵn trong máy
    CaiDat-MayChu-IIS.bat -TenMien khong -CongHttps 8443        không dùng tên miền, truy cập https://<IP>:8443/
    CaiDat-MayChu-IIS.bat -SiteCha "Default Web Site" -DuongDan /chamcong   cài thành ứng dụng con của site có sẵn
@@ -79,13 +82,27 @@ lẫn nhau; máy kế toán đang sửa mà tổ vừa chấm công thì phần 
 5. DỮ LIỆU VÀ SAO LƯU (KHÔNG LÀM ĐẦY Ổ C)
 -----------------------------------------
 - Dữ liệu:             D:\ChamCongData\dulieu.json, tài khoản: taikhoan.json
-- Sao lưu tự động:      D:\ChamCongData\SaoLuu\dulieu_yyyy-MM-dd.json – mỗi ngày 1 bản (lần lưu đầu tiên
-                        trong ngày), giữ 120 ngày gần nhất.
+- Sao lưu tự động:      D:\ChamCongData\SaoLuu\dulieu_yyyy-MM-dd.json.gz – mỗi ngày 1 bản nén (lần lưu đầu tiên
+                        trong ngày), giữ 120 ngày gần nhất. Ổ chứa sao lưu còn dưới 1 GB trống: máy chủ tự xoá bớt
+                        bản cũ nhất (giữ ít nhất 30 bản) và ghi cảnh báo vào nhật ký.
 - Nhật ký phần mềm:     D:\ChamCongData\NhatKy\yyyy-MM.txt (đăng nhập, lưu, chấm công, tài khoản…)
 - Hồ sơ scan nhân viên: D:\ChamCongData\TepHoSo\<mã NV>\ (hợp đồng, quyết định, CCCD… tải lên trong hồ sơ);
                         mỗi tệp chép thêm 1 bản vào D:\ChamCongData\SaoLuu\TepHoSo (xoá trong phần mềm thì bản này vẫn giữ).
 - Nhật ký truy cập IIS: D:\ChamCongData\IISLogs
-- Trên C chỉ có chương trình (C:\inetpub\ChamCong, vài trăm KB).
+- Trên C chỉ có chương trình (C:\inetpub\ChamCong; kèm giọng đọc AI ~75 MB).
+Trang quản trị (Cài đặt & dữ liệu → Dữ liệu & tài khoản) hiện thư mục dữ liệu, sao lưu, chỗ trống từng ổ, và cảnh báo
+nếu dữ liệu / sao lưu nằm ở ổ C.
+
+CHUYỂN DỮ LIỆU ĐANG Ở Ổ C SANG Ổ D (cài bản cũ khi máy chưa có ổ D, hoặc chọn nhầm ổ C):
+   Nhấp đúp ChuyenDuLieu-SangO-D.bat (cạnh CaiDat-MayChu-IIS.bat) → bấm Yes. Bộ cài:
+   1) tạm dừng phần mềm (khoảng 1 phút),
+   2) chép dữ liệu (tài khoản, hồ sơ scan, nhật ký) sang D:\ChamCongData và bản sao lưu sang D:\ChamCongData\SaoLuu,
+   3) kiểm tra từng tệp đã chép (đủ tệp, đúng dung lượng), đổi phần mềm sang thư mục mới,
+   4) xoá bản trên ổ C để giải phóng chỗ, bật lại phần mềm.
+   Lỗi ở bất kỳ bước nào (ổ D không đủ chỗ, chép lỗi…): dữ liệu trên ổ C giữ nguyên, phần mềm chạy lại với thư mục cũ.
+   Nếu D:\ChamCongData đã có dữ liệu khác, bộ cài dừng để không ghi đè – đổi tên thư mục đó rồi chạy lại.
+   Muốn đặt ổ khác: ChuyenDuLieu-SangO-D.bat -DuLieu E:\ChamCongData
+   Khi cập nhật bằng CaiDat-MayChu-IIS.bat, nếu thấy dữ liệu nằm ở ổ C mà máy có ổ D, bộ cài cũng hỏi có chuyển không.
 Tải bản sao lưu về máy / khôi phục: Cài đặt & dữ liệu → Dữ liệu.
 Nên chép thêm thư mục SaoLuu ra ổ khác / NAS hằng tuần, vd tạo tác vụ trong Task Scheduler chạy:
    robocopy D:\ChamCongData\SaoLuu \\NAS\SaoLuu\ChamCong /MIR /R:2 /W:5

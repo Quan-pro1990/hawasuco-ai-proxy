@@ -2,7 +2,8 @@
 # Chạy bằng CaiDat-IIS.bat (tự xin quyền quản trị). Bộ cài tự làm:
 #   - cài IIS và ASP.NET Core Hosting Bundle nếu máy chưa có (tắt bằng -KhongCaiThem)
 #   - biên dịch máy chủ ChamCongMayChu.exe bằng csc.exe có sẵn trong .NET Framework 4 (không cần Visual Studio)
-#   - đặt dữ liệu, bản sao lưu hằng ngày và nhật ký IIS sang ổ D (nếu có) để không đầy ổ C
+#   - đặt dữ liệu, bản sao lưu hằng ngày và nhật ký IIS sang ổ D (nếu có) để không đầy ổ C;
+#     bản cài cũ để dữ liệu ở ổ C thì hỏi chuyển sang ổ D (chép, kiểm tra từng tệp rồi mới xoá bản trên ổ C)
 #   - tạo site IIS theo tên miền (mặc định qlns.capnuochaugiang.vn): https cổng 443, http cổng 80 tự chuyển sang https
 #   - dùng chứng chỉ có sẵn của tên miền, không có thì tạo chứng chỉ tự ký
 #   - tạo tài khoản quản trị, mở tường lửa, gọi thử
@@ -11,6 +12,9 @@
 #   CaiDat-IIS.bat -TenMien qlns.capnuochaugiang.vn   tên miền (mặc định như bên trái)
 #   CaiDat-IIS.bat -DuLieu E:\ChamCongData            thư mục dữ liệu (mặc định D:\ChamCongData, không có ổ D thì C:\ChamCongData)
 #   CaiDat-IIS.bat -SaoLuu E:\SaoLuuChamCong          thư mục bản sao lưu hằng ngày (mặc định <dữ liệu>\SaoLuu)
+#                                                     đổi thư mục dữ liệu / sao lưu: dữ liệu đang có được CHUYỂN sang thư mục mới
+#   CaiDat-IIS.bat -ChuyenSangD                       chuyển dữ liệu, sao lưu đang ở ổ C sang ổ D (D:\ChamCongData) không hỏi
+#   CaiDat-IIS.bat -KhongHoi                          không hỏi chuyển dữ liệu từ ổ C sang ổ D
 #   CaiDat-IIS.bat -ChungChi <thumbprint>             dùng chứng chỉ có sẵn trong LocalMachine\My
 #   CaiDat-IIS.bat -TenMien khong -CongHttps 8443     không dùng tên miền: truy cập bằng IP, https cổng 8443
 #   CaiDat-IIS.bat -KhongHttp                         không mở cổng 80
@@ -32,6 +36,8 @@ param(
     [string]$SiteCha = '',
     [string]$DuongDan = '',
     [switch]$KhongCaiThem,
+    [switch]$ChuyenSangD,
+    [switch]$KhongHoi,
     [switch]$DatMatKhau,
     [switch]$KiemTra,
     [switch]$GoBo
@@ -78,6 +84,8 @@ function MaNhanDang($cert) {
     }
     catch { '(không đọc được)' }
 }
+function CungThuMuc([string]$a, [string]$b) { $a -and $b -and [string]::Equals($a.TrimEnd('\'), $b.TrimEnd('\'), [StringComparison]::OrdinalIgnoreCase) }
+function TrongThuMuc([string]$con, [string]$cha) { $con -and $cha -and $con.StartsWith($cha.TrimEnd('\') + '\', [StringComparison]::OrdinalIgnoreCase) }
 function CapQuyen([string]$thuMuc, [string[]]$them) {
     $ts = @($thuMuc, '/inheritance:r', '/grant:r', '*S-1-5-32-544:(OI)(CI)F', '*S-1-5-18:(OI)(CI)F') + $them
     $r = Chay icacls.exe $ts
@@ -101,6 +109,28 @@ $TenMien = ($TenMien.Trim().ToLower() -replace '^https?://', '').TrimEnd('/')
 if (@('khong', 'none', '-', 'ip') -contains $TenMien) { $TenMien = '' }
 if (-not $TenMien -and -not $PSBoundParameters.ContainsKey('CongHttps') -and -not $caiTruoc['CongHttps']) { $CongHttps = 8443 }
 
+# Thư mục dữ liệu, sao lưu bản cài trước đang dùng (để tự chuyển khi đổi thư mục, vd từ ổ C sang ổ D)
+$cuDuLieu = $caiTruoc['DuLieu']; $cuSaoLuu = $caiTruoc['SaoLuu']
+if (-not $cuDuLieu -and (Test-Path (Join-Path $ThuMuc 'web.config'))) {
+    # bản cài cũ chưa có caidat.txt: đọc thư mục trong web.config đang chạy
+    try {
+        $xc = New-Object Xml.XmlDocument
+        $xc.Load((Join-Path $ThuMuc 'web.config'))
+        $n1 = $xc.SelectSingleNode("//environmentVariable[@name='CHAMCONG_DULIEU']")
+        $n2 = $xc.SelectSingleNode("//environmentVariable[@name='CHAMCONG_SAOLUU']")
+        if ($n1 -and (Test-Path (Join-Path $n1.GetAttribute('value') 'dulieu.json'))) {
+            $cuDuLieu = $n1.GetAttribute('value')
+            if ($n2) { $cuSaoLuu = $n2.GetAttribute('value') }
+        }
+    }
+    catch { }
+}
+if ($cuDuLieu) { $cuDuLieu = $cuDuLieu.TrimEnd('\') }
+if ($cuDuLieu -and -not $cuSaoLuu) { $cuSaoLuu = Join-Path $cuDuLieu 'SaoLuu' }
+if ($cuSaoLuu) { $cuSaoLuu = $cuSaoLuu.TrimEnd('\') }
+if (-not $PSBoundParameters.ContainsKey('DuLieu') -and -not $DuLieu -and $cuDuLieu) { $DuLieu = $cuDuLieu }
+if (-not $PSBoundParameters.ContainsKey('SaoLuu') -and -not $SaoLuu -and $cuSaoLuu) { $SaoLuu = $cuSaoLuu }
+
 # Thư mục dữ liệu: ưu tiên ổ D (ổ cứng cố định) để không đầy ổ C
 if (-not $DuLieu) {
     $oD = Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='D:'" -ErrorAction SilentlyContinue
@@ -108,8 +138,107 @@ if (-not $DuLieu) {
     else { $DuLieu = "$env:SystemDrive\ChamCongData"; $canhBaoOC = $true }
 }
 $DuLieu = $DuLieu.TrimEnd('\')
+# sao lưu không chọn riêng mà trước đây nằm trong thư mục dữ liệu: đi theo thư mục dữ liệu mới
+if (-not $PSBoundParameters.ContainsKey('SaoLuu') -and $cuDuLieu -and -not (CungThuMuc $cuDuLieu $DuLieu) -and (CungThuMuc $SaoLuu (Join-Path $cuDuLieu 'SaoLuu'))) { $SaoLuu = '' }
 if (-not $SaoLuu) { $SaoLuu = Join-Path $DuLieu 'SaoLuu' }
 $SaoLuu = $SaoLuu.TrimEnd('\')
+
+# Dữ liệu / sao lưu đang ở ổ hệ thống (C) mà máy có ổ D: đề nghị chuyển sang ổ D (-ChuyenSangD: chuyển luôn, không hỏi)
+$oHeThong = $env:SystemDrive
+function TrenOHeThong([string]$p) { $p -and $p.StartsWith($oHeThong, [StringComparison]::OrdinalIgnoreCase) }
+if (-not $GoBo -and -not $KiemTra) {
+    $oDCo = Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='D:'" -ErrorAction SilentlyContinue | Where-Object { $_.DriveType -eq 3 }
+    if ($ChuyenSangD -and -not $oDCo) { Dung 'Máy chủ không có ổ D (ổ cứng cố định). Chọn ổ khác: CaiDat-MayChu-IIS.bat -DuLieu E:\ChamCongData' }
+    $dlC = (TrenOHeThong $DuLieu) -and -not $PSBoundParameters.ContainsKey('DuLieu')
+    $slC = (TrenOHeThong $SaoLuu) -and -not $PSBoundParameters.ContainsKey('SaoLuu')
+    if ($oDCo -and ($dlC -or $slC)) {
+        $dongY = [bool]$ChuyenSangD
+        if (-not $dongY -and -not $KhongHoi) {
+            Write-Host ''
+            CanhBao "Dữ liệu / bản sao lưu của phần mềm đang nằm trên ổ hệ thống ${oHeThong}:"
+            if ($dlC) { CanhBao "   dữ liệu: $DuLieu" }
+            if ($slC) { CanhBao "   sao lưu: $SaoLuu" }
+            $tl = Read-Host 'Chuyển sang ổ D để không đầy ổ C? [C]ó / [k]hông (Enter = Có)'
+            $dongY = $tl -notmatch '^\s*[kKnN]'
+        }
+        if ($dongY) {
+            if ($dlC) { $DuLieu = 'D:\ChamCongData' }
+            if ($slC) { $SaoLuu = if (TrenOHeThong $DuLieu) { 'D:\ChamCongSaoLuu' } else { Join-Path $DuLieu 'SaoLuu' } }
+        }
+    }
+}
+
+# Chuyển dữ liệu / sao lưu từ thư mục cũ sang thư mục mới: chép bằng robocopy, kiểm tra từng tệp (có đủ, đúng dung lượng),
+# xong cả hai mới xoá bản cũ. Lỗi ở bất kỳ bước nào: giữ nguyên thư mục cũ, bật lại phần mềm (vẫn chạy với thư mục cũ) rồi dừng.
+function DungVaBatLai([string]$s) {
+    if (CoTrongIis 'apppool' $TenSite) { Chay $appcmd @('start', 'apppool', "/apppool.name:$TenSite") | Out-Null }
+    Dung $s
+}
+function ChepThuMuc([string]$tu, [string]$den, [string[]]$boQua, [string]$ten) {
+    $boQua = @($boQua | Where-Object { $_ })
+    $ds = @(Get-ChildItem -LiteralPath $tu -Recurse -File -Force -ErrorAction SilentlyContinue |
+        Where-Object { $f = $_.FullName; -not ($boQua | Where-Object { TrongThuMuc $f $_ }) })
+    if (-not $ds.Count) { return @() }
+    $tong = [long](($ds | Measure-Object -Property Length -Sum).Sum)
+    Write-Host ("{0}: {1} -> {2} ({3} tệp, {4:N1} MB)" -f $ten, $tu, $den, $ds.Count, ($tong / 1MB))
+    $dia = Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='$($den.Substring(0, 2))'" -ErrorAction SilentlyContinue
+    if ($dia -and $dia.FreeSpace -lt ($tong + 500MB)) {
+        DungVaBatLai ("Ổ {0} chỉ còn {1:N1} GB trống, không đủ chép {2:N1} GB. Dữ liệu vẫn giữ nguyên ở {3}." -f $den.Substring(0, 2), ($dia.FreeSpace / 1GB), ($tong / 1GB), $tu)
+    }
+    New-Item -ItemType Directory -Force $den | Out-Null
+    $ts = @($tu, $den, '/E', '/COPY:DAT', '/DCOPY:T', '/R:2', '/W:2', '/XJ', '/NP', '/NFL', '/NDL', '/NJH', '/NJS')
+    if ($boQua.Count) { $ts += '/XD'; $ts += $boQua }
+    $r = Chay robocopy.exe $ts
+    if ($r.Ma -ge 8) { DungVaBatLai "Chép $ten không được (robocopy mã $($r.Ma)):`n$($r.Ra)`nDữ liệu vẫn giữ nguyên ở $tu – phần mềm vẫn chạy với thư mục cũ." }
+    $sai = @($ds | Where-Object {
+            $dich = Join-Path $den $_.FullName.Substring($tu.Length).TrimStart('\')
+            -not (Test-Path -LiteralPath $dich) -or (Get-Item -LiteralPath $dich -Force).Length -ne $_.Length
+        })
+    if ($sai.Count) { DungVaBatLai "Kiểm tra sau khi chép: $($sai.Count) tệp chưa khớp (vd $($sai[0].FullName)). Dữ liệu vẫn giữ nguyên ở $tu – phần mềm vẫn chạy với thư mục cũ." }
+    Tot "  Đã chép và kiểm tra đủ $($ds.Count) tệp."
+    return $ds
+}
+function XoaThuMucRong([string]$g) {
+    if (-not $g -or -not (Test-Path -LiteralPath $g)) { return }
+    Get-ChildItem -LiteralPath $g -Recurse -Directory -Force -ErrorAction SilentlyContinue | Sort-Object { $_.FullName.Length } -Descending |
+        ForEach-Object { if (-not (Get-ChildItem -LiteralPath $_.FullName -Force -ErrorAction SilentlyContinue)) { Remove-Item -LiteralPath $_.FullName -Force -ErrorAction SilentlyContinue } }
+    if (-not (Get-ChildItem -LiteralPath $g -Force -ErrorAction SilentlyContinue)) { Remove-Item -LiteralPath $g -Force -ErrorAction SilentlyContinue }
+}
+function ChuyenDuLieuCu {
+    $doiDL = $cuDuLieu -and -not (CungThuMuc $cuDuLieu $DuLieu) -and (Test-Path -LiteralPath $cuDuLieu)
+    $doiSL = $cuSaoLuu -and -not (CungThuMuc $cuSaoLuu $SaoLuu) -and (Test-Path -LiteralPath $cuSaoLuu)
+    if (-not $doiDL -and -not $doiSL) { return }
+    Buoc 'Chuyển dữ liệu và bản sao lưu sang thư mục mới'
+    foreach ($cap in @(@($doiDL, $cuDuLieu, $DuLieu), @($doiSL, $cuSaoLuu, $SaoLuu))) {
+        if ($cap[0] -and ((TrongThuMuc $cap[2] $cap[1]) -or (TrongThuMuc $cap[1] $cap[2]))) { DungVaBatLai "Thư mục mới $($cap[2]) nằm trong / chứa thư mục cũ $($cap[1]) – chọn thư mục khác." }
+    }
+    if ($doiDL -and (Test-Path (Join-Path $DuLieu 'dulieu.json')) -and (Test-Path (Join-Path $cuDuLieu 'dulieu.json'))) {
+        $t1 = (Get-Item (Join-Path $cuDuLieu 'dulieu.json')).LastWriteTime; $t2 = (Get-Item (Join-Path $DuLieu 'dulieu.json')).LastWriteTime
+        DungVaBatLai (("$DuLieu đã có dữ liệu (cập nhật {0:dd/MM/yyyy HH:mm}), phần mềm đang dùng $cuDuLieu (cập nhật {1:dd/MM/yyyy HH:mm}). " +
+            "Để không ghi đè nhầm: đổi tên hoặc xoá thư mục $DuLieu rồi chạy lại bộ cài.") -f $t2, $t1)
+    }
+    $dsDL = @(); $dsSL = @()
+    if ($doiDL) {
+        $boQua = @((Join-Path $cuDuLieu 'IISLogs'))
+        if (TrongThuMuc $cuSaoLuu $cuDuLieu) { $boQua += $cuSaoLuu }   # sao lưu nằm trong thư mục dữ liệu: chuyển riêng ở dưới
+        $dsDL = @(ChepThuMuc $cuDuLieu $DuLieu $boQua 'Dữ liệu')
+    }
+    if ($doiSL) { $dsSL = @(ChepThuMuc $cuSaoLuu $SaoLuu @() 'Bản sao lưu') }
+    # ghi ngay thư mục mới vào caidat.txt: lần chạy sau (kể cả khi bước sau lỗi) không quay về thư mục cũ
+    $dong = @()
+    if (Test-Path $tepCaiDat) { $dong = @(Get-Content $tepCaiDat -Encoding UTF8 | Where-Object { $_ -notmatch '^\s*(DuLieu|SaoLuu)\s*=' }) }
+    New-Item -ItemType Directory -Force $ThuMuc | Out-Null
+    ($dong + @("DuLieu=$DuLieu", "SaoLuu=$SaoLuu")) | Set-Content $tepCaiDat -Encoding UTF8
+    # đã chép, kiểm tra đủ: xoá bản cũ để giải phóng ổ
+    $tong = [long]0; $loiXoa = 0
+    foreach ($f in ($dsDL + $dsSL)) {
+        try { Remove-Item -LiteralPath $f.FullName -Force -ErrorAction Stop; $tong += $f.Length } catch { $loiXoa++ }
+    }
+    if ($doiDL) { Remove-Item -LiteralPath (Join-Path $cuDuLieu 'IISLogs') -Recurse -Force -ErrorAction SilentlyContinue; XoaThuMucRong $cuDuLieu }
+    if ($doiSL) { XoaThuMucRong $cuSaoLuu }
+    Tot ("Đã chuyển xong: dữ liệu ở $DuLieu, sao lưu ở $SaoLuu; giải phóng {0:N1} MB." -f ($tong / 1MB))
+    if ($loiXoa) { CanhBao "Còn $loiXoa tệp cũ chưa xoá được (đang bị mở?) ở $cuDuLieu / $cuSaoLuu – có thể xoá tay sau." }
+}
 
 # ------------------------------------------------------------------ gọi thử
 
@@ -357,13 +486,16 @@ else {
 
 # ------------------------------------------------------------------ chép chương trình
 
-Buoc "Chép chương trình vào $ThuMuc"
 if (CoTrongIis 'apppool' $TenSite) {
     Chay $appcmd @('stop', 'apppool', "/apppool.name:$TenSite") | Out-Null
     Start-Sleep -Seconds 4   # chờ máy chủ cũ lưu xong và thoát
     Get-Process -Name ([IO.Path]::GetFileNameWithoutExtension($tenExe)) -ErrorAction SilentlyContinue |
         Where-Object { $_.Path -and $_.Path.StartsWith($ThuMuc, [StringComparison]::OrdinalIgnoreCase) } | Stop-Process -Force -ErrorAction SilentlyContinue
 }
+# đổi thư mục dữ liệu / sao lưu (vd ổ C -> ổ D): chuyển dữ liệu đang có trước khi web.config trỏ sang thư mục mới
+ChuyenDuLieuCu
+
+Buoc "Chép chương trình vào $ThuMuc"
 New-Item -ItemType Directory -Force $ThuMuc | Out-Null
 try {
     Copy-Item "$tam\$tenExe" (Join-Path $ThuMuc $tenExe) -Force -ErrorAction Stop
@@ -402,12 +534,13 @@ CapQuyen $DuLieu @($quyenPool)
 New-Item -ItemType Directory -Force $SaoLuu | Out-Null
 if (-not $SaoLuu.StartsWith($DuLieu + '\', [StringComparison]::OrdinalIgnoreCase)) { CapQuyen $SaoLuu @($quyenPool) }
 Write-Host "Dữ liệu: $DuLieu"
-Write-Host "Sao lưu tự động mỗi ngày (giữ 120 bản): $SaoLuu"
+Write-Host "Sao lưu tự động mỗi ngày (nén, giữ 120 bản; ổ còn dưới 1 GB thì tự xoá bớt bản cũ nhất): $SaoLuu"
 Write-Host 'Chỉ quản trị máy chủ và app pool đọc được (tài khoản, mật khẩu đã băm).'
 foreach ($o in @($DuLieu, $SaoLuu) | ForEach-Object { $_.Substring(0, 2) } | Select-Object -Unique) {
     $dia = Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='$o'" -ErrorAction SilentlyContinue
     if ($dia -and $dia.Size) { Write-Host ("  Ổ {0} còn trống {1:N1} GB / {2:N1} GB" -f $o, ($dia.FreeSpace / 1GB), ($dia.Size / 1GB)) }
 }
+if ((TrenOHeThong $DuLieu) -or (TrenOHeThong $SaoLuu)) { CanhBao "Dữ liệu / sao lưu đang ở ổ hệ thống $oHeThong – nên chuyển sang ổ khác (ChuyenDuLieu-SangO-D.bat hoặc -DuLieu E:\ChamCongData)." }
 
 # ------------------------------------------------------------------ tài khoản quản trị
 
@@ -547,7 +680,7 @@ Write-Host '==============================================================' -For
 Write-Host ' ĐÃ CÀI XONG: Nhân sự – Chấm công – Tiền lương' -ForegroundColor Green
 Write-Host " Địa chỉ:   $diaChi"
 Write-Host " Dữ liệu:   $DuLieu"
-Write-Host " Sao lưu:   $SaoLuu   (tự động mỗi ngày, giữ 120 bản)"
+Write-Host " Sao lưu:   $SaoLuu   (tự động mỗi ngày, nén, giữ 120 bản)"
 Write-Host " Giọng đọc AI: $giongAI"
 Write-Host ''
 Write-Host ' Bước tiếp:'

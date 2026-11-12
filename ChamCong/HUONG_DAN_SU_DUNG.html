@@ -324,7 +324,8 @@
 </li><li><b>Bảo hiểm &amp; công đoàn</b>: tỷ lệ đóng, vùng và lương tối thiểu vùng, lương cơ sở (ẩn khi công ty không dùng), ngưỡng nghỉ không lương không đóng BH,
  <b>Lương đóng BH theo bậc lương hiện tại</b> (mặc định bật).
 </li><li><b>Thuế TNCN</b>: giảm trừ bản thân, người phụ thuộc, biểu thuế lũy tiến, khấu trừ 10%.
-</li><li><b>Sao lưu dữ liệu</b> (trên máy chủ: <b>Dữ liệu &amp; tài khoản</b>): sao lưu ra file / khôi phục; trên máy chủ còn có bản sao lưu hằng ngày,
+</li><li><b>Sao lưu dữ liệu</b> (trên máy chủ: <b>Dữ liệu &amp; tài khoản</b>): sao lưu ra file / khôi phục; trên máy chủ còn có bản sao lưu hằng ngày
+ (thẻ <i>Nơi lưu dữ liệu và bản sao lưu</i> cho biết dữ liệu nằm ở ổ nào, còn trống bao nhiêu; nằm ở ổ C thì cảnh báo và chỉ cách chuyển sang ổ D),
  <b>tài khoản đăng nhập</b> và nhật ký – xem <a href="#tai-khoan-phan-quyen">Tài khoản &amp; phân quyền</a>.
 </li></ul>
 <div class="hd-ghichu">Thay đổi tỷ lệ, mức pháp lý chỉ ảnh hưởng các kỳ chưa chốt. Lương cơ sở đổi từ một tháng: dùng <a href="#muc-luong-theo-ky">Mức lương theo kỳ</a>.</div></section><section id="tai-khoan-phan-quyen"><a class="len" href="#muc-luc">↑ Mục lục</a><h1>Tài khoản &amp; phân quyền</h1>
@@ -384,6 +385,8 @@
 <div class="hd-ghichu">Nói câu hỏi (micro): Chrome / Edge gửi âm thanh câu hỏi tới dịch vụ nhận dạng giọng nói (cần Internet). Đọc câu trả lời bằng giọng tích hợp thì không gửi gì ra ngoài.</div></section><section id="cau-hoi-thuong-gap"><a class="len" href="#muc-luc">↑ Mục lục</a><h1>Câu hỏi thường gặp</h1>
 <h2>Không thêm được tài khoản người dùng / tài khoản chấm công</h2>
 <p>Chỉ <b>tài khoản quản trị</b> trên <b>máy chủ</b> mới thêm được: Cài đặt &amp; dữ liệu → <b>Dữ liệu &amp; tài khoản</b> → <i>Tài khoản đăng nhập</i> → <b>Thêm tài khoản</b> hoặc <b>Tạo tài khoản cho từng phòng / đội…</b>. Chạy 1 file trên máy thì không có tài khoản. Tài khoản cấp phòng / đội phải đánh dấu ít nhất 1 phòng / đội; tên đăng nhập không có dấu cách; mật khẩu từ 6 ký tự. Chi tiết: <a href="#tai-khoan-phan-quyen">Tài khoản &amp; phân quyền</a>.</p>
+<h2>Ổ C máy chủ sắp đầy / dữ liệu, bản sao lưu đang nằm ở ổ C</h2>
+<p>Trên máy chủ, mở thư mục bộ cài <b>ChamCong</b>, nhấp đúp <b>ChuyenDuLieu-SangO-D.bat</b> → bấm <i>Yes</i>. Dữ liệu, tài khoản, hồ sơ scan và bản sao lưu được chuyển sang <code>D:\ChamCongData</code> (chép, kiểm tra từng tệp rồi mới xoá bản trên ổ C); phần mềm tạm dừng khoảng 1 phút. Lỗi giữa chừng thì dữ liệu ở ổ C giữ nguyên. Xem nơi lưu và chỗ trống: <b>Cài đặt &amp; dữ liệu → Dữ liệu &amp; tài khoản</b> (tài khoản quản trị). Bản sao lưu hằng ngày được nén; ổ còn dưới 1 GB trống thì máy chủ tự xoá bớt bản cũ nhất.</p>
 <h2>Sao lưu, khôi phục dữ liệu</h2>
 <ul><li>Chạy 1 file trên máy: <b>Cài đặt &amp; dữ liệu → Sao lưu dữ liệu → Sao lưu ra file</b> mỗi tuần (chép file <code>.json</code> ra USB, Google Drive…);
  sang máy khác: <b>Khôi phục từ file…</b>.

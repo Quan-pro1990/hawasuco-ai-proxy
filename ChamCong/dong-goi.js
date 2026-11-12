@@ -36,6 +36,10 @@ var docTruoc = [
   '',
   'CẬP NHẬT PHIÊN BẢN MỚI: giải nén bộ cài mới đè lên thư mục cũ, nhấp đúp CaiDat-MayChu-IIS.bat.',
   'Dữ liệu, tài khoản, tên miền, chứng chỉ giữ nguyên.',
+  '',
+  'DỮ LIỆU ĐANG Ở Ổ C (sợ đầy ổ C): nhấp đúp ChuyenDuLieu-SangO-D.bat → bấm Yes.',
+  '  Dữ liệu và bản sao lưu được chuyển sang D:\\ChamCongData (chép, kiểm tra từng tệp rồi mới xoá bản trên ổ C).',
+  '  Khi cập nhật, bộ cài cũng tự hỏi chuyển nếu thấy dữ liệu nằm ở ổ C mà máy có ổ D.',
   ''
 ].join('\r\n');
 
@@ -43,6 +47,7 @@ var docTruoc = [
 var tep = [
   ['ChamCong/DOC_TRUOC.txt', Buffer.concat([Buffer.from([0xEF, 0xBB, 0xBF]), Buffer.from(docTruoc, 'utf8')])],
   ['ChamCong/CaiDat-MayChu-IIS.bat', 'CaiDat-MayChu-IIS.bat'],
+  ['ChamCong/ChuyenDuLieu-SangO-D.bat', 'ChuyenDuLieu-SangO-D.bat'],
   ['ChamCong/ChamCong_TinhLuong.html', 'ChamCong_TinhLuong.html'],
   ['ChamCong/HUONG_DAN.md', 'HUONG_DAN.md'],
   ['ChamCong/HUONG_DAN_SU_DUNG.html', 'HUONG_DAN_SU_DUNG.html'],

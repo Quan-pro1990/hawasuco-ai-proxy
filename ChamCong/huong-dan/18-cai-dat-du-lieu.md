@@ -14,7 +14,8 @@
 - **Bảo hiểm & công đoàn**: tỷ lệ đóng, vùng và lương tối thiểu vùng, lương cơ sở (ẩn khi công ty không dùng), ngưỡng nghỉ không lương không đóng BH,
   **Lương đóng BH theo bậc lương hiện tại** (mặc định bật).
 - **Thuế TNCN**: giảm trừ bản thân, người phụ thuộc, biểu thuế lũy tiến, khấu trừ 10%.
-- **Sao lưu dữ liệu** (trên máy chủ: **Dữ liệu & tài khoản**): sao lưu ra file / khôi phục; trên máy chủ còn có bản sao lưu hằng ngày,
+- **Sao lưu dữ liệu** (trên máy chủ: **Dữ liệu & tài khoản**): sao lưu ra file / khôi phục; trên máy chủ còn có bản sao lưu hằng ngày
+  (thẻ *Nơi lưu dữ liệu và bản sao lưu* cho biết dữ liệu nằm ở ổ nào, còn trống bao nhiêu; nằm ở ổ C thì cảnh báo và chỉ cách chuyển sang ổ D),
   **tài khoản đăng nhập** và nhật ký – xem [Tài khoản & phân quyền](#huongdan?p=tai-khoan-phan-quyen).
 
 > Thay đổi tỷ lệ, mức pháp lý chỉ ảnh hưởng các kỳ chưa chốt. Lương cơ sở đổi từ một tháng: dùng [Mức lương theo kỳ](#mucluong).

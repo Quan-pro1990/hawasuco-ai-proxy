@@ -3,6 +3,7 @@ rem Cai 1 click phan mem Nhan su - Cham cong - Tien luong len may chu IIS (tu xi
 rem Mac dinh: ten mien qlns.capnuochaugiang.vn, du lieu va sao luu o D:\ChamCongData.
 rem Tham so them (tuy chon): -TenMien ten.vn  -DuLieu E:\ChamCongData  -SaoLuu E:\SaoLuu  -ChungChi <thumbprint>
 rem   -TenMien khong -CongHttps 8443  -KhongHttp  -SiteCha "Default Web Site" -DuongDan /chamcong  -DatMatKhau  -KiemTra  -GoBo
+rem   -ChuyenSangD (chuyen du lieu, sao luu dang o o C sang o D)  -KhongHoi (khong hoi chuyen sang o D)
 net session >nul 2>&1
 if errorlevel 1 (
   if "%~1"=="" (

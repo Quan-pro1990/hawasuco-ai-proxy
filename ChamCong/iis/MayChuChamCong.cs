@@ -546,13 +546,17 @@ namespace ChamCong
             }
 
             if (d == "/saoluu" && pt == "GET")
-                return TraLoi.Json(new Dictionary<string, object> { { "thuMuc", kho.ThuMucSaoLuu }, { "ds", kho.DanhSachSaoLuu() } });
+            {
+                var kq = kho.ThongTinLuuTru();
+                kq["ds"] = kho.DanhSachSaoLuu();
+                return TraLoi.Json(kq);
+            }
             if (d == "/saoluu/tai" && pt == "GET")
             {
                 string ten = ctx.Q("ten") ?? "";
                 byte[] b = kho.DocSaoLuu(ten);
                 if (b == null) throw new LoiApi(404, "Không có bản sao lưu này.");
-                return TraLoi.Tep(b, "application/json; charset=utf-8", ten);
+                return TraLoi.Tep(b, "application/json; charset=utf-8", ten.EndsWith(".gz", StringComparison.OrdinalIgnoreCase) ? ten.Substring(0, ten.Length - 3) : ten);
             }
             if (d == "/saoluu/khoiphuc" && pt == "POST")
             {
@@ -1084,7 +1088,7 @@ namespace ChamCong
 
     sealed class Kho
     {
-        readonly string tepDuLieu, tepTrangThai, tepTaiKhoan, thuMucSaoLuu, thuMucNhatKy, thuMucTep, thuMucTepSL;
+        readonly string thuMucDuLieu, tepDuLieu, tepTrangThai, tepTaiKhoan, thuMucSaoLuu, thuMucNhatKy, thuMucTep, thuMucTepSL;
         readonly object khoa = new object();
         readonly byte[] bimat;
         List<TaiKhoan> taiKhoan;
@@ -1094,6 +1098,7 @@ namespace ChamCong
         public Kho(string thuMuc)
         {
             Directory.CreateDirectory(thuMuc);
+            thuMucDuLieu = Path.GetFullPath(thuMuc);
             tepDuLieu = Path.Combine(thuMuc, "dulieu.json");
             tepTrangThai = Path.Combine(thuMuc, "trangthai.json");
             tepTaiKhoan = Path.Combine(thuMuc, "taikhoan.json");
@@ -1223,15 +1228,68 @@ namespace ChamCong
             }
         }
 
-        /// <summary>Lần ghi đầu tiên mỗi ngày: chép dữ liệu hiện có vào SaoLuu\dulieu_yyyy-MM-dd.json (giữ 120 bản).</summary>
+        /// <summary>Lần ghi đầu tiên mỗi ngày: nén dữ liệu hiện có vào SaoLuu\dulieu_yyyy-MM-dd.json.gz (giữ 120 bản;
+        /// bản cũ chưa nén .json vẫn đọc, khôi phục được).</summary>
         void SaoLuuTrongNgay()
         {
             if (!File.Exists(tepDuLieu)) return;
-            string tep = Path.Combine(thuMucSaoLuu, "dulieu_" + DateTime.Now.ToString("yyyy-MM-dd") + ".json");
-            if (File.Exists(tep)) return;
-            File.Copy(tepDuLieu, tep);
-            var cu = new DirectoryInfo(thuMucSaoLuu).GetFiles("dulieu_*.json").OrderByDescending(f => f.Name).Skip(120).ToList();
-            foreach (var f in cu) { try { f.Delete(); } catch (Exception) { } }
+            string ngay = DateTime.Now.ToString("yyyy-MM-dd");
+            string tep = Path.Combine(thuMucSaoLuu, "dulieu_" + ngay + ".json.gz");
+            if (File.Exists(tep) || File.Exists(Path.Combine(thuMucSaoLuu, "dulieu_" + ngay + ".json"))) return;
+            DonChoTrong();
+            string tam = tep + ".tmp";
+            using (var vao = File.OpenRead(tepDuLieu))
+            using (var ra = File.Create(tam))
+            using (var gz = new GZipStream(ra, CompressionMode.Compress)) vao.CopyTo(gz);
+            File.Move(tam, tep);
+            foreach (var f in DsTepSaoLuu().Skip(120).ToList()) { try { f.Delete(); } catch (Exception) { } }
+        }
+
+        static readonly Regex TenSaoLuu = new Regex("^dulieu_[0-9]{4}-[0-9]{2}-[0-9]{2}\\.json(\\.gz)?$");
+        /// <summary>Các bản sao lưu hằng ngày (nén .json.gz và bản cũ .json), mới nhất trước</summary>
+        List<FileInfo> DsTepSaoLuu()
+        {
+            if (!Directory.Exists(thuMucSaoLuu)) return new List<FileInfo>();
+            return new DirectoryInfo(thuMucSaoLuu).GetFiles("dulieu_*").Where(f => TenSaoLuu.IsMatch(f.Name)).OrderByDescending(f => f.Name).ToList();
+        }
+
+        const long ToiThieuTrong = 1024L * 1024 * 1024;   // 1 GB
+        /// <summary>Ổ chứa bản sao lưu còn dưới 1 GB trống: xoá bớt bản cũ nhất (giữ ít nhất 30 bản) và ghi nhật ký cảnh báo.</summary>
+        void DonChoTrong()
+        {
+            try
+            {
+                var o = new DriveInfo(Path.GetPathRoot(Path.GetFullPath(thuMucSaoLuu)));
+                if (!o.IsReady || o.AvailableFreeSpace >= ToiThieuTrong) return;
+                var ds = DsTepSaoLuu();
+                int xoa = 0;
+                for (int i = ds.Count - 1; i >= 30 && o.AvailableFreeSpace < ToiThieuTrong; i--) { try { ds[i].Delete(); xoa++; } catch (Exception) { } }
+                Ghi("(máy chủ)", "", "Ổ " + o.Name + " chỉ còn " + (o.AvailableFreeSpace / 1048576) + " MB trống" + (xoa > 0 ? ": đã xoá " + xoa + " bản sao lưu cũ nhất" : "") +
+                    ". Nên chuyển dữ liệu, sao lưu sang ổ khác (chạy ChuyenDuLieu-SangO-D.bat trong thư mục bộ cài).");
+            }
+            catch (Exception) { }
+        }
+
+        /// <summary>Nơi lưu dữ liệu, sao lưu và chỗ trống của từng ổ (trang quản trị hiện, cảnh báo khi nằm ở ổ hệ thống)</summary>
+        public Dictionary<string, object> ThongTinLuuTru()
+        {
+            var ds = DsTepSaoLuu();
+            long dungLuong = 0;
+            try { foreach (var f in new DirectoryInfo(thuMucSaoLuu).GetFiles("*", SearchOption.AllDirectories)) dungLuong += f.Length; } catch (Exception) { }
+            string heThong = (Environment.GetEnvironmentVariable("SystemDrive") ?? "C:").TrimEnd('\\');
+            var o = new List<object>();
+            var daCo = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (string p in new[] { thuMucDuLieu, thuMucSaoLuu })
+            {
+                string goc = Path.GetPathRoot(Path.GetFullPath(p));
+                if (string.IsNullOrEmpty(goc) || !daCo.Add(goc)) continue;
+                var x = new Dictionary<string, object> { { "o", goc }, { "heThong", string.Equals(goc.TrimEnd('\\'), heThong, StringComparison.OrdinalIgnoreCase) } };
+                try { var di = new DriveInfo(goc); if (di.IsReady) { x["trong"] = di.AvailableFreeSpace; x["tong"] = di.TotalSize; } } catch (Exception) { }
+                o.Add(x);
+            }
+            return new Dictionary<string, object> {
+                { "thuMucDuLieu", thuMucDuLieu }, { "thuMuc", thuMucSaoLuu }, { "soBan", ds.Count }, { "dungLuongSaoLuu", dungLuong }, { "o", o }
+            };
         }
 
         public string ThuMucSaoLuu { get { return thuMucSaoLuu; } }
@@ -1274,15 +1332,20 @@ namespace ChamCong
 
         public List<object> DanhSachSaoLuu()
         {
-            return new DirectoryInfo(thuMucSaoLuu).GetFiles("dulieu_*.json").OrderByDescending(f => f.Name)
+            return DsTepSaoLuu()
                 .Select(f => (object)new Dictionary<string, object> { { "ten", f.Name }, { "kichThuoc", f.Length }, { "luc", f.LastWriteTime.ToString("yyyy-MM-ddTHH:mm:ss") } }).ToList();
         }
 
+        /// <summary>Nội dung JSON của 1 bản sao lưu (bản nén .json.gz được giải nén)</summary>
         public byte[] DocSaoLuu(string ten)
         {
-            if (string.IsNullOrEmpty(ten) || !System.Text.RegularExpressions.Regex.IsMatch(ten, "^dulieu_[0-9-]{10}\\.json$")) return null;
+            if (string.IsNullOrEmpty(ten) || !TenSaoLuu.IsMatch(ten)) return null;
             string tep = Path.Combine(thuMucSaoLuu, ten);
-            return File.Exists(tep) ? File.ReadAllBytes(tep) : null;
+            if (!File.Exists(tep)) return null;
+            if (!ten.EndsWith(".gz", StringComparison.OrdinalIgnoreCase)) return File.ReadAllBytes(tep);
+            using (var vao = File.OpenRead(tep))
+            using (var gz = new GZipStream(vao, CompressionMode.Decompress))
+            using (var ra = new MemoryStream()) { gz.CopyTo(ra); return ra.ToArray(); }
         }
 
         // ----- tài khoản
