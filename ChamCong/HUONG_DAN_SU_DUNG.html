@@ -196,18 +196,31 @@
 <ol><li>Chọn tab báo cáo, chọn kỳ / tháng nếu có.
 </li><li>Bấm tên nhân viên để mở hồ sơ; <b>Xuất Excel</b> hoặc <b>In</b>.
 </li></ol></section><section id="bang-cham-cong"><a class="len" href="#muc-luc">↑ Mục lục</a><h1>Bảng chấm công</h1>
-<p><b>Dùng để:</b> chấm công hằng ngày bằng ký hiệu, làm thêm giờ, đi muộn / về sớm; xuất bảng chấm công mẫu 01a.</p>
+<p><b>Dùng để:</b> chấm công hằng ngày bằng ký hiệu, chấm làm thêm ngoài giờ theo khung giờ, đi muộn / về sớm; xuất bảng chấm công mẫu 01a.</p>
 <h2>Chấm công</h2>
 <ol><li>Chọn <b>kỳ</b> (góc phải), chọn <b>phòng / đội</b> (tài khoản đội chỉ thấy đơn vị mình).
 </li><li>Đầu kỳ có thể bấm <b>Chấm đủ công…</b> để điền <code>+</code> cho mọi ngày làm việc, sau đó chỉ sửa ngày khác.
 </li><li>Chọn ô (kéo chuột chọn nhiều ô, nhiều người) → bấm ký hiệu trên thanh màu, hoặc gõ thẳng <code>+</code> (hoặc <code>x</code>), <code>sp</code>, <code>p</code>, <code>o</code> (= Ô), <code>kl</code>… rồi Enter.
 </li><li>Phím tắt: mũi tên di chuyển · Shift + mũi tên chọn vùng · Delete xoá · <b>Ctrl + Z</b> hoàn tác · Ctrl + C / Ctrl + V chép – dán (dán được vùng từ Excel).
-</li><li>Đổi chế độ <b>Làm thêm (giờ)</b> hoặc <b>Đi muộn / về sớm (phút)</b> để nhập trên cùng lưới.
+</li><li>Đổi chế độ <b>Làm thêm ngoài giờ</b> hoặc <b>Đi muộn / về sớm (phút)</b> để nhập trên cùng lưới.
 </li></ol>
+<h2>Chấm công làm thêm ngoài giờ theo giờ</h2>
+<ol><li>Bấm chế độ <b>Làm thêm ngoài giờ</b>.
+</li><li>Chọn ô của người, ngày đó rồi gõ <b>khung giờ</b> làm ngoài giờ, Enter:
+</li></ol>
+<div class="hd-cuon"><table class="bang hd-bang"><tr><th>Gõ</th><th>Phần mềm hiểu</th></tr><tr><td><code>17:30-21:00</code>, <code>17h30-21h</code>, <code>1730-2100</code>, <code>17:30 đến 21</code></td><td>17:30 – 21:00 = 3,5 giờ</td></tr><tr><td><code>17-19, 22-2</code></td><td>2 khung: 17:00 – 19:00 và 22:00 – 02:00 sáng hôm sau = 6 giờ (4 giờ ban đêm)</td></tr><tr><td><code>22-2</code></td><td>qua nửa đêm: 22:00 – 02:00 = 4 giờ ban đêm</td></tr><tr><td><code>2</code> hoặc <code>1,5</code></td><td>chỉ số giờ (tính là làm thêm ban ngày)</td></tr></table></div>
+<ol><li>Ô hiện <b>số giờ</b>; rê chuột lên ô để xem khung giờ. Ô gạch chân cam = nhập theo khung giờ; ô nền tím = có giờ <b>ban đêm</b> (22:00 – 06:00);
+ số đỏ gạch sóng = <b>vượt mức</b> (làm bình thường + làm thêm quá 12 giờ/ngày, tức quá 4 giờ làm thêm ngày thường; cột <i>Tổng giờ</i> đỏ khi quá 40 giờ/tháng).
+</li><li>Cột tổng: giờ ban ngày <i>Ngày thường / Ngày nghỉ / Ngày lễ</i>, giờ <i>Ban đêm</i>, <i>Tổng giờ</i>.
+</li></ol>
+<p><b>Tiền làm thêm</b> (lương giờ = mức lương ÷ công chuẩn ÷ 8 giờ):</p>
+<div class="hd-cuon"><table class="bang hd-bang"><tr><th>Loại ngày</th><th>Ban ngày</th><th>Ban đêm (22:00 – 06:00)</th></tr><tr><td>Ngày thường</td><td>150%</td><td>200% (210% nếu trong ngày đã làm thêm ban ngày rồi làm tiếp ban đêm)</td></tr><tr><td>Nghỉ hằng tuần</td><td>200%</td><td>270%</td></tr><tr><td>Lễ, Tết</td><td>300%</td><td>390%</td></tr></table></div>
+<div class="hd-ghichu">Ban đêm = hệ số ngày + 30% + 20% lương giờ ban ngày của ngày đó (Điều 98 BLLĐ 2019, Điều 57 NĐ 145/2020). Khung giờ ban đêm, các mức % và ngưỡng cảnh báo<br>sửa ở <b>Cài đặt → Lương &amp; làm thêm</b>. Phần trả cao hơn lương giờ bình thường không tính thuế TNCN.</div>
 <h2>Ký hiệu thường dùng</h2>
 <div class="hd-cuon"><table class="bang hd-bang"><tr><th>Ký hiệu</th><th>Ý nghĩa</th></tr><tr><td><code>+</code></td><td>Đi làm cả ngày (lương thời gian, có cơm). Đi làm ngày lễ mặc định ×2 công, Tết ×3 công (từng ngày chọn ×1 / ×2 / ×3 ở Danh mục → Ngày lễ, Tết)</td></tr><tr><td><code>+/2</code></td><td>Nửa ngày</td></tr><tr><td><code>SP</code></td><td>Làm lương sản phẩm (không tính lương thời gian, vẫn có cơm)</td></tr><tr><td><code>CT</code>, <code>H</code></td><td>Công tác; hội nghị, học tập</td></tr><tr><td><code>P</code>, <code>P/2</code></td><td>Nghỉ phép (trừ phép năm)</td></tr><tr><td><code>L</code>, <code>NB</code>, <code>R</code></td><td>Nghỉ lễ Tết; nghỉ bù; việc riêng có lương</td></tr><tr><td><code>Ô</code>, <code>Cô</code>, <code>TS</code></td><td>Ốm; con ốm; thai sản (BHXH trả)</td></tr><tr><td><code>KL</code>, <code>KP</code></td><td>Nghỉ không lương; không phép</td></tr></table></div>
 <h2>Cuối kỳ</h2>
-<ul><li><b>Xuất Excel (mẫu 01a)</b>: mỗi bộ phận 1 trang tính, có phần <i>Quy ra công</i> và chữ ký.
+<ul><li><b>Xuất Excel (mẫu 01a)</b>: mỗi bộ phận 1 trang tính, có phần <i>Quy ra công</i> và chữ ký; kèm trang <i>Làm thêm giờ</i> (số giờ từng ngày)
+ và <b>Chi tiết làm thêm</b> (bảng kê từng lần: ngày, loại ngày, khung giờ, giờ ban ngày / ban đêm, hệ số, cột người làm thêm ký) để duyệt.
 </li><li>Kỳ đã chốt lương thì bị khoá; người có quyền tiền lương bấm <b>Mở khoá để sửa</b>.
 </li></ul>
 <div class="hd-ghichu">Trên máy chủ, nhiều đội chấm cùng lúc được ghép từng ô nên không ghi đè lẫn nhau.</div></section><section id="gio-vao-ra"><a class="len" href="#muc-luc">↑ Mục lục</a><h1>Giờ vào / ra (máy chấm công)</h1>
@@ -217,6 +230,8 @@
 </li><li>Trang <b>Giờ vào / ra</b> → chọn tệp. Kiểm tra cột <b>Mã chấm công</b>, <b>Ngày</b>, <b>Giờ</b> (chọn lại nếu nhận sai) → <b>Đọc dữ liệu</b>.
 </li><li>Phần mềm lấy lần chấm đầu làm giờ vào, lần cuối làm giờ ra. Ai quên chấm: sửa giờ trực tiếp hoặc <b>Thêm giờ thủ công</b>.
 </li><li>Bấm <b>Áp dụng vào bảng chấm công…</b> để điền ký hiệu, giờ làm thêm, phút đi muộn / về sớm.
+ Giờ làm thêm được ghi theo <b>khung giờ</b> (vd ra về 23:10 → <code>17:00-23:00</code>; ngày nghỉ bỏ giờ nghỉ trưa: <code>07:30-12:00,13:00-17:00</code>)
+ nên phần làm sau 22:00 tự tính là làm thêm ban đêm.
 </li></ol>
 <h2>Lưu ý</h2>
 <ul><li><i>Mã chấm công</i> trong hồ sơ nhân viên phải trùng số ID trên máy.
@@ -231,7 +246,7 @@
 </li><li>Bấm <b>tên nhân viên</b> để xem <b>chi tiết cách tính</b> từng con số; dòng có ⚠ là có lưu ý (vd lương đóng BH thấp hơn tối thiểu vùng).
 </li><li><b>Xuất Excel</b> (mỗi bảng lương 1 sheet, kèm trang Bảo hiểm) hoặc <b>In</b>.
 </li><li><b>Chi lương kỳ I, kỳ II…</b>: danh sách tạm ứng kỳ I (ký nhận), đề nghị chi kỳ I / kỳ II / tiền làm thêm giờ gửi ngân hàng,
- bảng thanh toán tiền làm thêm giờ; báo ai còn thiếu số tài khoản.
+ bảng thanh toán tiền làm thêm giờ (có nhóm cột <i>Làm thêm ban đêm</i> khi có giờ đêm); báo ai còn thiếu số tài khoản.
 </li><li><b>Chốt lương tháng</b> khi đã xong: số liệu được lưu cố định. Cần sửa: <b>Mở khoá</b>.
 </li></ol>
 <h2>Cách tính chính</h2>
@@ -299,7 +314,8 @@
  người ký bảng lương và bảng chấm công; bật / tắt <b>nói câu hỏi bằng micro</b> cho trợ lý ảo.
 </li><li><b>Kỳ công &amp; giờ làm</b>: ngày bắt đầu kỳ công (mặc định 21), ngày nghỉ hằng tuần, thứ bảy nửa ngày, phép năm mặc định,
  giờ vào – ra, ngưỡng đủ / nửa công, làm thêm, <i>không trả lương thời gian quá công chuẩn</i>.
-</li><li><b>Lương &amp; làm thêm</b>: hệ số làm thêm (150 / 200 / 300%), tiền làm thêm chi bảng riêng, ngừng việc, hệ số đi làm ngày lễ / Tết,
+</li><li><b>Lương &amp; làm thêm</b>: hệ số làm thêm (150 / 200 / 300%), giờ ban đêm (22:00 – 06:00) và mức cộng thêm khi làm thêm ban đêm (30% + 20%),
+ cảnh báo làm thêm vượt 40 giờ/tháng, tiền làm thêm chi bảng riêng, ngừng việc, hệ số đi làm ngày lễ / Tết,
  <b>thử việc</b> (% lương mặc định, không đóng BH khi thử việc), làm tròn, phạt đi muộn.
 </li><li><b>Bảo hiểm &amp; công đoàn</b>: tỷ lệ đóng, lương cơ sở, vùng và lương tối thiểu vùng, ngưỡng nghỉ không lương không đóng BH,
  <b>Lương đóng BH theo bậc lương hiện tại</b> (mặc định bật).
@@ -374,6 +390,11 @@
 <p>Nhờ tài khoản quản trị: Dữ liệu &amp; tài khoản → dòng tài khoản → <b>Đặt lại mật khẩu / vai trò</b>.</p>
 <h2>Bảng chấm công / bảng lương không sửa được</h2>
 <p>Kỳ đã <b>chốt lương</b> (dấu 🔒 cạnh tháng): Bảng lương → <b>Mở khoá</b> (cần quyền sửa tiền lương). Hoặc tài khoản chỉ có quyền <i>Xem</i>.</p>
+<h2>Nhập khung giờ làm thêm bị báo “không hợp lệ”</h2>
+<ul><li>Viết dạng <code>17:30-21:00</code> (giờ:phút, gạch nối); nhiều khung cách nhau dấu phẩy và <b>không chồng nhau</b> (<code>17-19, 22-2</code>); giờ từ 0 đến 24.
+</li><li>Tài khoản cấp phòng / đội nhập 2 khung giờ trở lên mà máy chủ báo <i>Giá trị ô chấm công không hợp lệ</i>: máy chủ là bản cũ –
+ chạy lại <b>CaiDat-MayChu-IIS.bat</b> bản mới để cập nhật (dữ liệu giữ nguyên).
+</li></ul>
 <h2>Lương sai so với tính tay</h2>
 <p>Bấm tên người trên bảng lương để xem chi tiết. Kiểm tra: loại lao động / công chuẩn, ký hiệu chấm công, mức lương theo kỳ, thời gian thử việc, quyết định nâng lương có ngày hiệu lực, người phụ thuộc theo tháng.</p>
 <h2>Có người vừa lưu dữ liệu, phần mềm hỏi tải bản mới</h2>

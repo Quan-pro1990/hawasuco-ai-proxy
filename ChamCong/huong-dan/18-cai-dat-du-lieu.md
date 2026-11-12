@@ -8,7 +8,8 @@
   người ký bảng lương và bảng chấm công; bật / tắt **nói câu hỏi bằng micro** cho trợ lý ảo.
 - **Kỳ công & giờ làm**: ngày bắt đầu kỳ công (mặc định 21), ngày nghỉ hằng tuần, thứ bảy nửa ngày, phép năm mặc định,
   giờ vào – ra, ngưỡng đủ / nửa công, làm thêm, *không trả lương thời gian quá công chuẩn*.
-- **Lương & làm thêm**: hệ số làm thêm (150 / 200 / 300%), tiền làm thêm chi bảng riêng, ngừng việc, hệ số đi làm ngày lễ / Tết,
+- **Lương & làm thêm**: hệ số làm thêm (150 / 200 / 300%), giờ ban đêm (22:00 – 06:00) và mức cộng thêm khi làm thêm ban đêm (30% + 20%),
+  cảnh báo làm thêm vượt 40 giờ/tháng, tiền làm thêm chi bảng riêng, ngừng việc, hệ số đi làm ngày lễ / Tết,
   **thử việc** (% lương mặc định, không đóng BH khi thử việc), làm tròn, phạt đi muộn.
 - **Bảo hiểm & công đoàn**: tỷ lệ đóng, lương cơ sở, vùng và lương tối thiểu vùng, ngưỡng nghỉ không lương không đóng BH,
   **Lương đóng BH theo bậc lương hiện tại** (mặc định bật).

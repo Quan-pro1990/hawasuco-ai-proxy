@@ -111,7 +111,7 @@
         '<td><input type="time" class="o-gio" data-f="v" value="' + h(r.x.v || '') + '"' + (khoa ? ' disabled' : '') + '></td>' +
         '<td><input type="time" class="o-gio" data-f="r" value="' + h(r.x.r || '') + '"' + (khoa ? ' disabled' : '') + '></td>' +
         '<td class="so">' + App.soRong(r.kq.gioLam) + '</td><td class="so' + (r.kq.muon ? ' am' : '') + '">' + (r.kq.muon || '') + '</td><td class="so' + (r.kq.veSom ? ' am' : '') + '">' + (r.kq.veSom || '') + '</td>' +
-        '<td class="so">' + App.soRong(r.kq.ot) + '</td><td class="giua"><b>' + h(r.kq.kyHieu) + '</b></td>' +
+        '<td class="so"' + (r.kq.otKhung ? ' title="Khung giờ làm thêm: ' + h(r.kq.otKhung.replace(/,/g, ', ')) + '"' : '') + '>' + App.soRong(r.kq.ot) + '</td><td class="giua"><b>' + h(r.kq.kyHieu) + '</b></td>' +
         '<td class="giua">' + (r.cc ? '<span class="the-tt" style="background:var(--k-' + (k ? k.nhom : 'khong') + ')">' + h(r.cc) + '</span>' : '') + '</td><td class="mo">' + h(r.kq.ghiChu) + '</td></tr>';
     });
     s += '</tbody>';
@@ -231,7 +231,7 @@
         '<label class="chk"><input type="checkbox" name="kh" checked> Cập nhật ký hiệu công (' + h(App.db.caiDat.khDiLam || '+') + ', ' + h(App.db.caiDat.khNuaNgay || '+/2') + ')</label>' +
         '<label class="chk" style="margin-left:24px"><input type="checkbox" name="de"> Ghi đè ô đã chấm (P, CT, …)</label>' +
         '<label class="chk"><input type="checkbox" name="muon" checked> Cập nhật số phút đi muộn / về sớm</label>' +
-        '<label class="chk"><input type="checkbox" name="ot" checked> Cập nhật giờ làm thêm</label>' +
+        '<label class="chk"><input type="checkbox" name="ot" checked> Cập nhật giờ làm thêm (ghi theo khung giờ, vd 17:00-20:30, để tự tách giờ ban đêm)</label>' +
         '<p class="mo nho" style="margin:0">Chỉ áp dụng cho những ngày có dữ liệu vào / ra' + (st.nv ? ' của nhân viên đang chọn' : '') + '.</p></form>',
       nut: [{ ten: 'Huỷ' }, {
         ten: 'Áp dụng', loai: 'chinh', bam: function (el) {
@@ -248,7 +248,7 @@
               var laL = String(cc[d] || '').toUpperCase() === String(cd.khLe || 'L').toUpperCase();
               if (f.kh.checked && kq.kyHieu && (!cc[d] || f.de.checked || laL)) cc[d] = kq.kyHieu; // có chấm vân tay ngày lễ => đi làm (nhân công)
               if (f.muon.checked) { var p = kq.muon + kq.veSom; if (p) mu[d] = p; else delete mu[d]; }
-              if (f.ot.checked) { if (kq.ot) ot[d] = kq.ot; else delete ot[d]; }
+              if (f.ot.checked) { if (kq.ot) ot[d] = kq.otKhung || kq.ot; else delete ot[d]; }
               n++;
             });
           });

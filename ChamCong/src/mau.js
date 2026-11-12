@@ -228,7 +228,8 @@
             var muon = R() < 0.06 ? 6 + Math.floor(R() * 35) : 0;
             var gioOT = kyThuat(nv) && kh === '+' && R() < 0.14 ? 1 + Math.floor(R() * 5) * 0.5 : 0;
             if (muon) mu[d] = muon;
-            if (gioOT) ot[d] = gioOT;
+            // làm thêm ghi theo khung giờ; vài lần trực sửa sự cố ban đêm (22:00–01:00) ở người không chấm vân tay
+            if (gioOT) ot[d] = gioOT === 3 && !coVaoRa ? '22:00-01:00' : gioOT >= 2 ? '17:00-' + TL.hhmm(17 * 60 + gioOT * 60) : gioOT;
             if (coVaoRa) {
               var v = 7 * 60 + 25 - Math.floor(R() * 20) + (muon ? muon + 35 : 0);
               var ra = kh === '+' ? 17 * 60 + Math.floor(R() * 14) + gioOT * 60 : 11 * 60 + 30 + Math.floor(R() * 10);

@@ -408,10 +408,16 @@
           '<div class="the"><h3>Làm thêm giờ, ngừng việc</h3><div class="form ba">' +
           o('Tiền làm thêm giờ chi bằng bảng riêng (không gộp vào lãnh kỳ II)', 'caiDat.otTraRieng', 'bool') +
           o('Làm thêm ngày thường (%)', 'caiDat.heSoOT.thuong', 'so') + o('Làm thêm ngày nghỉ tuần (%)', 'caiDat.heSoOT.nghi', 'so') + o('Làm thêm ngày lễ, Tết (%)', 'caiDat.heSoOT.le', 'so') +
+          o('Giờ ban đêm từ', 'caiDat.otDem.tu', 'gio', 'Mặc định 22:00 (Điều 106 BLLĐ 2019)') + o('Giờ ban đêm đến', 'caiDat.otDem.den', 'gio', 'Mặc định 06:00 sáng hôm sau') +
+          o('Cảnh báo làm thêm vượt (giờ / tháng)', 'caiDat.otToiDaThang', 'so', 'Tối đa 40 giờ/tháng – Điều 107 BLLĐ 2019; ô vượt hiện màu đỏ trên bảng chấm công') +
+          o('Làm thêm ban đêm: cộng thêm (% lương giờ)', 'caiDat.otDem.phuCap', 'so', 'Mặc định 30% – tiền làm việc ban đêm') +
+          o('… và cộng thêm (% lương giờ ban ngày của ngày đó)', 'caiDat.otDem.themNgay', 'so', 'Mặc định 20% (Điều 98 BLLĐ 2019, Điều 57 NĐ 145/2020)') +
           o('Lương ngày nghỉ / ngừng việc (ký hiệu N) (%)', 'caiDat.tiLeNgungViec', 'so') +
           o('Đi làm (lương thời gian) ngày lễ được tính (công)', 'caiDat.heSoCongLe', 'so', 'Mặc định 2 công; nghỉ lễ (L) vẫn 1 công; làm SP không nhân. Từng ngày chọn riêng ×1 / ×2 / ×3 ở Danh mục → Ngày lễ, Tết') +
           o('Đi làm (lương thời gian) ngày Tết được tính (công)', 'caiDat.heSoCongTet', 'so', 'Mặc định 3 công; tiền cơm vẫn tính 1 ngày. Ngày có hệ số riêng không theo mức này') +
-          '</div><p class="mo nho">Theo Bộ luật Lao động 2019: làm thêm ngày thường ít nhất 150%, ngày nghỉ hằng tuần 200%, ngày lễ 300% (chưa kể lương ngày lễ). Phần chênh lệch so với lương giờ bình thường không chịu thuế TNCN.</p></div>' +
+          '</div><p class="mo nho">Theo Bộ luật Lao động 2019: làm thêm ngày thường ít nhất 150%, ngày nghỉ hằng tuần 200%, ngày lễ 300% (chưa kể lương ngày lễ). ' +
+          'Làm thêm ban đêm (hệ số đang dùng): ngày thường <b>' + App.so(TL.heSoOTDem(cd).thuong) + '%</b> (<b>' + App.so(TL.heSoOTDem(cd).thuong2) + '%</b> nếu trong ngày đã làm thêm ban ngày), nghỉ hằng tuần <b>' + App.so(TL.heSoOTDem(cd).nghi) + '%</b>, lễ, Tết <b>' + App.so(TL.heSoOTDem(cd).le) + '%</b>. ' +
+          'Giờ ban đêm chỉ tách được khi chấm làm thêm theo khung giờ (Bảng chấm công → Làm thêm ngoài giờ, gõ vd 17:30-21:00). Phần chênh lệch so với lương giờ bình thường không chịu thuế TNCN.</p></div>' +
           '<div class="the"><h3>Thử việc</h3><div class="form ba">' +
           '<label class="o">Số tháng thử việc mặc định<input value="' + TL.soThangThuViec(App.db) + ' tháng" disabled><span class="gc">Theo giai đoạn HĐ thử việc – sửa ở <a href="#danhmuc" onclick="App.moDanhMuc(\'hd\');return false">Danh mục → Giai đoạn hợp đồng</a></span></label>' +
           o('Lương thử việc (% lương chính thức)', 'caiDat.thuViec.tiLe', 'so', 'Mặc định 85% – mức tối thiểu theo Điều 26 BLLĐ 2019') +

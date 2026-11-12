@@ -237,7 +237,11 @@ Trang **Tổng quan** nhắc: đơn nghỉ chờ duyệt, hợp đồng sắp / 
 - Chọn kỳ ở góc trên bên phải. Bấm **Chấm đủ công…** để điền `+` cho mọi ngày làm việc (theo lịch của từng người), rồi chỉ sửa ngày khác.
 - Chọn ô (kéo chuột để chọn nhiều ô, nhiều người) → bấm ký hiệu trên thanh màu. Hoặc gõ thẳng: `+` (hoặc `x`), `sp`, `p`, `o` (= Ô), `kl`… rồi Enter.
 - Phím: mũi tên di chuyển, Shift + mũi tên chọn vùng, Delete xoá, Ctrl+Z hoàn tác, Ctrl+C / Ctrl+V chép – dán (dán được cả vùng ký hiệu từ Excel).
-- Chế độ **Làm thêm (giờ)** và **Đi muộn / về sớm (phút)** dùng chung lưới.
+- Chế độ **Làm thêm ngoài giờ** và **Đi muộn / về sớm (phút)** dùng chung lưới.
+- **Chấm làm thêm ngoài giờ theo giờ**: ở chế độ *Làm thêm ngoài giờ* gõ khung giờ vào ô: `17:30-21:00` (hoặc `17h30-21h`, `1730-2100`),
+  nhiều khung cách nhau dấu phẩy `17-19, 22-2`, qua nửa đêm `22-2`; gõ số (`2`, `1,5`) nếu chỉ biết số giờ (tính ban ngày). Phần mềm tự tính số giờ,
+  tách giờ **ban đêm 22:00 – 06:00**, cảnh báo ô vượt 12 giờ/ngày (làm bình thường + làm thêm) và người vượt 40 giờ/tháng. Xuất Excel có thêm
+  trang *Chi tiết làm thêm* (từng lần: ngày, khung giờ, giờ ban ngày / ban đêm, hệ số, chữ ký). Áp dụng giờ vào / ra cũng ghi theo khung giờ.
 - **Xuất Excel (mẫu 01a)**: mỗi bộ phận 1 trang tính theo mẫu 01a-LĐTL, có phần *Quy ra công*:
   32 công lương sản phẩm · 33 công lương thời gian (*Lương*, gồm cả ngày nghỉ lễ) và ngày tính cơm (*Cơm*, chỉ ngày có đi làm) · 34 nghỉ hưởng 100% lương ·
   35 nghỉ không hưởng lương · 36 hưởng BHXH, kèm ký hiệu chấm công và chữ ký *Người chấm công – Phụ trách bộ phận – Người duyệt*.
@@ -309,6 +313,8 @@ Cách tính chính:
   (sửa ở trang Mức lương theo kỳ; người có mức riêng thì nhập *Tạm ứng kỳ I riêng* trong hồ sơ; không có công hưởng lương thì không tạm ứng).
   **Lãnh kỳ II** (cuối tháng) = Tổng thu nhập − Tạm ứng kỳ I − Cộng các khoản khấu trừ (BH, công đoàn, thuế, khấu trừ khác).
 - **Làm thêm giờ**: lương giờ = mức lương ÷ công chuẩn ÷ 8 giờ; ngày thường 150%, ngày nghỉ 200%, lễ Tết 300%.
+  **Làm thêm ban đêm** (22:00 – 06:00) = hệ số ngày + 30% + 20% lương giờ ban ngày của ngày đó (Điều 98 BLLĐ 2019, Điều 57 NĐ 145/2020):
+  ngày thường 200% (210% nếu trong ngày đã làm thêm ban ngày rồi làm tiếp ban đêm), nghỉ hằng tuần 270%, lễ Tết 390%.
   Mặc định tiền làm thêm giờ **chi bằng bảng riêng** (Bảng thanh toán tiền làm thêm giờ, đề nghị chi riêng) – không gộp vào lãnh kỳ II;
   thuế TNCN vẫn tính trên thu nhập cả tháng. Bỏ tuỳ chọn ở Cài đặt → Lương & làm thêm nếu muốn gộp.
 
@@ -407,7 +413,7 @@ thời gian thử việc, quyết định nâng lương (ngày hiệu lực), ng
 | Lương tối thiểu vùng 2026 | I 5.310.000 · II 4.730.000 · III 4.140.000 · IV 3.700.000 |
 | Giảm trừ gia cảnh | bản thân 15.500.000 · người phụ thuộc 6.200.000 |
 | Biểu thuế (thu nhập tính thuế / tháng) | ≤10 tr 5% · 10–30 tr 10% · 30–60 tr 20% · 60–100 tr 30% · >100 tr 35% |
-| Làm thêm giờ | ngày thường 150% · nghỉ tuần 200% · lễ 300% |
+| Làm thêm giờ | ngày thường 150% · nghỉ tuần 200% · lễ 300%; ban đêm (22h–6h) 200% (210%) · 270% · 390%; tối đa 40 giờ/tháng, 200 giờ/năm |
 | Thử việc | lương ít nhất 85% lương công việc; tối đa 180 ngày (quản lý DN), 60 ngày (cao đẳng trở lên), 30 ngày (trung cấp, CNKT), 6 ngày làm việc (khác) |
 
 Hãy đối chiếu lại với văn bản hiện hành của cơ quan thuế, BHXH trước khi dùng số liệu để nộp.

@@ -10,7 +10,7 @@
 4. Bấm **tên nhân viên** để xem **chi tiết cách tính** từng con số; dòng có ⚠ là có lưu ý (vd lương đóng BH thấp hơn tối thiểu vùng).
 5. **Xuất Excel** (mỗi bảng lương 1 sheet, kèm trang Bảo hiểm) hoặc **In**.
 6. **Chi lương kỳ I, kỳ II…**: danh sách tạm ứng kỳ I (ký nhận), đề nghị chi kỳ I / kỳ II / tiền làm thêm giờ gửi ngân hàng,
-   bảng thanh toán tiền làm thêm giờ; báo ai còn thiếu số tài khoản.
+   bảng thanh toán tiền làm thêm giờ (có nhóm cột *Làm thêm ban đêm* khi có giờ đêm); báo ai còn thiếu số tài khoản.
 7. **Chốt lương tháng** khi đã xong: số liệu được lưu cố định. Cần sửa: **Mở khoá**.
 
 ## Cách tính chính

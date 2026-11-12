@@ -902,7 +902,7 @@ namespace ChamCong
                             if (js.Serialize(a) == js.Serialize(pd.Value)) continue;
                             int dd;
                             if (!int.TryParse(pd.Key, out dd) || dd < 1 || dd > DateTime.DaysInMonth(y, m)) throw new LoiApi(400, "Ngày không hợp lệ: " + pd.Key + "/" + m + "/" + y);
-                            if (pd.Value is string && ((string)pd.Value).Length > 20) throw new LoiApi(400, "Giá trị ô chấm công không hợp lệ.");
+                            if (pd.Value is string && ((string)pd.Value).Length > 60) throw new LoiApi(400, "Giá trị ô chấm công không hợp lệ.");   // ký hiệu, hoặc khung giờ làm thêm "17:00-21:00,22:00-02:00"
                             int ky = y, km = m;
                             if (dauKy > 1 && dd >= dauKy) { km++; if (km > 12) { km = 1; ky++; } }
                             string kk = ky + "-" + km.ToString("00");

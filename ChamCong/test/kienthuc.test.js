@@ -38,6 +38,10 @@ t('Thuế TNCN, bảo hiểm, thực lĩnh (theo Cài đặt)', function () {
 t('Làm thêm giờ, trợ cấp thôi việc / mất việc / thất nghiệp, phép năm', function () {
   assert.ok(/Tiền làm thêm 363\.636/.test(tinh('làm thêm 4 giờ chủ nhật lương 8 triệu văn phòng')));
   assert.ok(/Tiền làm thêm 346\.154/.test(tinh('làm thêm ngày lễ 2 giờ lương 12 triệu 26 công')));
+  // ban đêm, theo khung giờ: lương giờ 8tr/22/8 = 45.454,5; 5 giờ × 150% + 1 giờ đêm × 210% = 436.364; 4 giờ đêm chủ nhật × 270% = 490.909
+  assert.ok(/Tiền làm thêm 436\.364/.test(tinh('làm thêm từ 17h đến 23h lương 8 triệu văn phòng')));
+  assert.ok(/ban đêm 1 giờ/.test(tinh('làm thêm từ 17h đến 23h lương 8 triệu văn phòng')));
+  assert.ok(/Tiền làm thêm 490\.909/.test(tinh('làm thêm 4 giờ ban đêm chủ nhật lương 8 triệu văn phòng')));
   assert.ok(/27\.000\.000/.test(tinh('trợ cấp thôi việc 6 năm lương 9 triệu')));
   assert.ok(/6,5 năm/.test(tinh('trợ cấp thôi việc 6 năm 5 tháng lương 9 triệu')));    // tháng lẻ đến 6 tháng = 1/2 năm
   assert.ok(/14\.000\.000/.test(tinh('trợ cấp mất việc 1 năm lương 7 triệu')));          // ít nhất 2 tháng

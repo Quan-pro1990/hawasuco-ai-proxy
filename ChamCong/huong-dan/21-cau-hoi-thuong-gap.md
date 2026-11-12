@@ -19,6 +19,11 @@ Nhờ tài khoản quản trị: Dữ liệu & tài khoản → dòng tài kho�
 ## Bảng chấm công / bảng lương không sửa được
 Kỳ đã **chốt lương** (dấu 🔒 cạnh tháng): Bảng lương → **Mở khoá** (cần quyền sửa tiền lương). Hoặc tài khoản chỉ có quyền *Xem*.
 
+## Nhập khung giờ làm thêm bị báo “không hợp lệ”
+- Viết dạng `17:30-21:00` (giờ:phút, gạch nối); nhiều khung cách nhau dấu phẩy và **không chồng nhau** (`17-19, 22-2`); giờ từ 0 đến 24.
+- Tài khoản cấp phòng / đội nhập 2 khung giờ trở lên mà máy chủ báo *Giá trị ô chấm công không hợp lệ*: máy chủ là bản cũ –
+  chạy lại **CaiDat-MayChu-IIS.bat** bản mới để cập nhật (dữ liệu giữ nguyên).
+
 ## Lương sai so với tính tay
 Bấm tên người trên bảng lương để xem chi tiết. Kiểm tra: loại lao động / công chuẩn, ký hiệu chấm công, mức lương theo kỳ, thời gian thử việc,
 quyết định nâng lương có ngày hiệu lực, người phụ thuộc theo tháng.

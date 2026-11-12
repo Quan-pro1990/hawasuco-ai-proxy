@@ -340,6 +340,11 @@
       if (c.otThuong) parts.push(App.so(c.otThuong) + 'h × ' + hs.thuong + '%');
       if (c.otNghi) parts.push(App.so(c.otNghi) + 'h × ' + hs.nghi + '%');
       if (c.otLe) parts.push(App.so(c.otLe) + 'h × ' + hs.le + '%');
+      var hsd = TL.heSoOTDem(cd);
+      if (c.otDemThuong) parts.push(App.so(c.otDemThuong) + 'h đêm × ' + App.so(hsd.thuong) + '%');
+      if (c.otDemThuong2) parts.push(App.so(c.otDemThuong2) + 'h đêm (đã làm thêm ban ngày) × ' + App.so(hsd.thuong2) + '%');
+      if (c.otDemNghi) parts.push(App.so(c.otDemNghi) + 'h đêm ngày nghỉ × ' + App.so(hsd.nghi) + '%');
+      if (c.otDemLe) parts.push(App.so(c.otDemLe) + 'h đêm ngày lễ, Tết × ' + App.so(hsd.le) + '%');
       d_('Tiền làm thêm giờ', 'Lương giờ ' + t(r.luongGio) + ' × (' + parts.join(' + ') + ')', t(r.tienOT));
     }
     (bl.phuCap || []).forEach(function (pc) {
@@ -535,14 +540,19 @@
       { t: 'Số giờ', nhom: 'Làm thêm ngày nghỉ (' + (hs.nghi || 200) + '%)', w: 7, kieu: 'cong', f: function (r) { return r.cong.otNghi; } },
       { t: 'Thành tiền', nhom: 'Làm thêm ngày nghỉ (' + (hs.nghi || 200) + '%)', w: 11, kieu: 'so', f: function (r) { return r.otTien.nghi; } },
       { t: 'Số giờ', nhom: 'Làm thêm ngày lễ, Tết (' + (hs.le || 300) + '%)', w: 7, kieu: 'cong', f: function (r) { return r.cong.otLe; } },
-      { t: 'Thành tiền', nhom: 'Làm thêm ngày lễ, Tết (' + (hs.le || 300) + '%)', w: 11, kieu: 'so', f: function (r) { return r.otTien.le; } },
-      { t: 'Tổng cộng tiền', w: 13, kieu: 'so', k: 'tienOT' }, { t: 'Ký nhận', w: 10, khongTong: true, f: function () { return ''; } }];
+      { t: 'Thành tiền', nhom: 'Làm thêm ngày lễ, Tết (' + (hs.le || 300) + '%)', w: 11, kieu: 'so', f: function (r) { return r.otTien.le; } }];
+    // làm thêm ban đêm (khung giờ có phần 22:00–06:00): hệ số theo loại ngày, xem chi tiết từng lần ở bảng kê "Chi tiết làm thêm" (Bảng chấm công → Xuất Excel)
+    var coDem = ds.some(function (r) { return r.cong.otDem; }), hsd = TL.heSoOTDem(db.caiDat);
+    if (coDem) cotOT.push(
+      { t: 'Số giờ', nhom: 'Làm thêm ban đêm (' + App.so(hsd.thuong) + '–' + App.so(hsd.le) + '%)', w: 7, kieu: 'cong', f: function (r) { return r.cong.otDem; } },
+      { t: 'Thành tiền', nhom: 'Làm thêm ban đêm (' + App.so(hsd.thuong) + '–' + App.so(hsd.le) + '%)', w: 11, kieu: 'so', f: function (r) { return r.otTien.dem; } });
+    cotOT.push({ t: 'Tổng cộng tiền', w: 13, kieu: 'so', k: 'tienOT' }, { t: 'Ký nhận', w: 10, khongTong: true, f: function () { return ''; } });
     var tongOT = { _nhan: 'TỔNG CỘNG', tienOT: sumF(function (r) { return r.tienOT; }) };
     return App.sheetBang({
       ten: ten, tieuDe: 'BẢNG THANH TOÁN TIỀN LÀM THÊM GIỜ ' + khoi.toUpperCase(), phuDe: 'Tháng ' + m + ' năm ' + y, quocHieu: true,
       cot: cotOT, dong: ds, cotNhanTong: 1, coCot: 2,
-      tong: Object.assign(tongOT, { cong: { otThuong: sumF(function (r) { return r.cong.otThuong; }), otNghi: sumF(function (r) { return r.cong.otNghi; }), otLe: sumF(function (r) { return r.cong.otLe; }) },
-        otTien: { thuong: sumF(function (r) { return r.otTien.thuong; }), nghi: sumF(function (r) { return r.otTien.nghi; }), le: sumF(function (r) { return r.otTien.le; }) } }),
+      tong: Object.assign(tongOT, { cong: { otThuong: sumF(function (r) { return r.cong.otThuong; }), otNghi: sumF(function (r) { return r.cong.otNghi; }), otLe: sumF(function (r) { return r.cong.otLe; }), otDem: sumF(function (r) { return r.cong.otDem; }) },
+        otTien: { thuong: sumF(function (r) { return r.otTien.thuong; }), nghi: sumF(function (r) { return r.otTien.nghi; }), le: sumF(function (r) { return r.otTien.le; }), dem: sumF(function (r) { return r.otTien.dem; }) } }),
       dongCuoi: 'Tổng số tiền làm thêm giờ (bằng chữ): ' + TL.docSo(tongOT.tienOT)
     });
   }
@@ -575,7 +585,7 @@
     L.push(['c', 'Lương thời gian (' + App.so(c.congTG) + ' công' + (c.congThemLeTG ? ', gồm ' + App.so(c.congThemLeTG) + ' công tăng thêm đi làm lễ, Tết' : '') +
       (r.thuViec ? (r.thuViec.toanKy ? '; thử việc hưởng ' + App.so(r.thuViec.tiLe) + '% lương' : '; ' + App.so(r.thuViec.congTV) + ' công thử việc hưởng ' + App.so(r.thuViec.tiLe) + '%') : '') + ')', r.luongTG]);
     if (r.luongNgung) L.push(['c', 'Nghỉ, ngừng việc hưởng lương (' + App.so(c.ngung) + ' công)', r.luongNgung]);
-    if (r.tienOT) L.push(['c', 'Làm thêm giờ (' + App.so(c.otTong) + ' giờ)', r.tienOT]);
+    if (r.tienOT) L.push(['c', 'Làm thêm giờ (' + App.so(c.otTong) + ' giờ' + (c.otDem ? ', trong đó ' + App.so(c.otDem) + ' giờ ban đêm' : '') + ')', r.tienOT]);
     (bl.phuCap || []).forEach(function (pc) {
       if (!r.phuCap[pc.ma]) return;
       L.push(['c', 'Phụ cấp ' + pc.ten.toLowerCase() + (pc.cachTinh === 'theo_ngay' ? ' (' + App.so((r.phuCapNgay || {})[pc.ma]) + ' ngày)' : ''), r.phuCap[pc.ma]]);

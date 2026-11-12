@@ -86,6 +86,9 @@
       otToiThieuPhut: 30,       // làm quá giờ ra từ x phút mới tính làm thêm
       otLamTronPhut: 30,        // làm tròn xuống giờ làm thêm theo bội số phút
       heSoOT: { thuong: 150, nghi: 200, le: 300 },
+      // làm thêm ban đêm: hệ số ngày + 30% lương giờ + 20% lương giờ ban ngày của ngày đó (Điều 98 BLLĐ 2019, Điều 57 NĐ 145/2020)
+      otDem: { tu: '22:00', den: '06:00', phuCap: 30, themNgay: 20 },
+      otToiDaThang: 40,         // cảnh báo làm thêm vượt số giờ / tháng (Điều 107 BLLĐ 2019)
       otTraRieng: true,         // tiền làm thêm giờ chi bằng bảng riêng (không gộp vào lãnh kỳ II)
       tiLeNgungViec: 100,       // % lương cho ngày nghỉ / ngừng việc (ký hiệu nhóm "ngung")
       heSoCongLe: 2,            // đi làm hưởng lương thời gian vào ngày lễ được tính 2 công (SP không nhân)
@@ -251,6 +254,78 @@
     return (+p[0] || 0) * 60 + (+p[1] || 0);
   }
   function hhmm(ph) { if (ph == null) return ''; ph = Math.round(ph); return pad(Math.floor(ph / 60)) + ':' + pad(ph % 60); }
+
+  /* ================= Làm thêm giờ theo khung giờ ================= */
+
+  /** 1 mốc giờ: '17:30', '17h30', '17h', '17.30', '1730', '930', '22' -> phút trong ngày (0–1440); null nếu sai */
+  function docMoc(s) {
+    s = String(s).trim().toLowerCase().replace(/\s+/g, '').replace(/(p|ph|phut|phút)$/, '');
+    var m = /^(\d{1,2})(?:[:h.](\d{1,2})?)?$/.exec(s) || /^(\d{1,2})(\d{2})$/.exec(s);
+    if (!m) return null;
+    var g = +m[1], p = m[2] ? +m[2] : 0;
+    if (g > 24 || p > 59 || (g === 24 && p)) return null;
+    return g * 60 + p;
+  }
+  /** Khung giờ làm thêm: '17:30-21:00', '17h-21h, 22h-2h', '18 đến 22' (qua nửa đêm khi giờ kết thúc ≤ giờ bắt đầu).
+      Trả null nếu không phải khung giờ (vd số giờ), false nếu viết sai, hoặc { ds: [[đầu, cuối] phút], phut, chuoi } */
+  function docKhoangOT(v) {
+    if (v == null || typeof v === 'number') return null;
+    var s = String(v).trim().toLowerCase().replace(/(đến|den|tới|toi)/g, '-').replace(/[–—~]/g, '-').replace(/\s*-\s*/g, '-');
+    if (s.indexOf('-') < 0) return null;
+    var ds = [], sai = false;
+    s.split(/[,;+\/\s]+|và|va/).filter(Boolean).forEach(function (x) {
+      var p = x.split('-');
+      if (p.length !== 2) { sai = true; return; }
+      var a = docMoc(p[0]), b = docMoc(p[1]);
+      if (a == null || b == null || a === b || a >= 1440) { sai = true; return; }
+      if (b < a) b += 1440;
+      ds.push([a, b]);
+    });
+    if (sai || !ds.length) return false;
+    ds.sort(function (x, y) { return x[0] - y[0]; });
+    for (var i = 1; i < ds.length; i++) if (ds[i][0] < ds[i - 1][1]) return false;   // các khung chồng nhau
+    var tong = ds.reduce(function (t, x) { return t + x[1] - x[0]; }, 0);
+    if (tong > 1440) return false;
+    return { ds: ds, phut: tong, chuoi: ds.map(function (x) { return hhmm(x[0]) + '-' + hhmm(x[1] > 1440 ? x[1] - 1440 : x[1]); }).join(',') };
+  }
+  /** Khung "ban đêm" và mức cộng thêm khi làm thêm ban đêm (Cài đặt → Lương & làm thêm) */
+  function cauHinhDem(cd) {
+    var o = (cd && cd.otDem) || {}, so = function (v, md) { return v == null || v === '' || isNaN(+v) ? md : +v; };
+    return { tu: phut(o.tu || '22:00'), den: phut(o.den || '06:00'), phuCap: so(o.phuCap, 30), themNgay: so(o.themNgay, 20) };
+  }
+  /** Số phút của đoạn [a, b] rơi vào khung ban đêm (vd 22:00–06:00) */
+  function phutDem(a, b, tu, den) {
+    var dai = (den > tu ? den : den + 1440) - tu, tong = 0;
+    for (var i = -1; i <= 2; i++) { var s = tu + 1440 * i; tong += Math.max(0, Math.min(b, s + dai) - Math.max(a, s)); }
+    return tong;
+  }
+  /** Giờ làm thêm của 1 ô: số giờ (tính ban ngày) hoặc khung giờ -> { gio, ngay (ban ngày), dem (ban đêm), khung } */
+  function gioOT(v, cd) {
+    if (v == null || v === '') return { gio: 0, ngay: 0, dem: 0, khung: '' };
+    var k = docKhoangOT(v);
+    if (!k) { var n = typeof v === 'number' ? v : +String(v).replace(',', '.'); n = n > 0 ? n : 0; return { gio: n, ngay: n, dem: 0, khung: '' }; }
+    var d = cauHinhDem(cd), dem = 0;
+    k.ds.forEach(function (x) { dem += phutDem(x[0], x[1], d.tu, d.den); });
+    var gio = Math.round(k.phut / 60 * 100) / 100, gd = Math.round(dem / 60 * 100) / 100;
+    return { gio: gio, ngay: Math.round((gio - gd) * 100) / 100, dem: gd, khung: k.chuoi };
+  }
+  /** Hệ số (%) làm thêm ban đêm = hệ số làm thêm của ngày + 30% + 20% × lương giờ ban ngày của ngày đó
+      (ngày thường: 100%, hoặc 150% nếu trong ngày đã làm thêm ban ngày; nghỉ tuần 200%; lễ, Tết 300%).
+      Mặc định: ngày thường 200% (210%), nghỉ hằng tuần 270%, lễ, Tết 390%. */
+  function heSoOTDem(cd) {
+    var hs = (cd && cd.heSoOT) || {}, d = cauHinhDem(cd), t = +hs.thuong || 150, n = +hs.nghi || 200, l = +hs.le || 300;
+    var f = function (b, ngay) { return Math.round((b + d.phuCap + d.themNgay * ngay / 100) * 100) / 100; };
+    return { thuong: f(t, 100), thuong2: f(t, t), nghi: f(n, n), le: f(l, l) };
+  }
+  /** Lấy phutLay phút đầu tiên của các đoạn [[a, b]] -> chuỗi khung giờ '17:00-19:30,…' */
+  function khungTuDoan(doan, phutLay) {
+    var out = [];
+    doan.forEach(function (s) {
+      var d = Math.min(s[1] - s[0], phutLay);
+      if (d > 0) { out.push(hhmm(s[0] % 1440) + '-' + hhmm((s[0] + d) % 1440)); phutLay -= d; }
+    });
+    return out.join(',');
+  }
   function congNgay(y, m, d, them) { var t = new Date(y, m - 1, d + them); return iso(t.getFullYear(), t.getMonth() + 1, t.getDate()); }
 
   /* ================= Ngày lễ ================= */
@@ -403,7 +478,7 @@
     if (t) { ['cc', 'ot', 'muon', 'vr', 'dc'].forEach(function (f) { if (!t[f]) t[f] = {}; }); }
     return t || { cc: {}, ot: {}, muon: {}, vr: {}, dc: {}, khoa: false, chot: null, rong: true };
   }
-  /** Giá trị 1 ô của nhân viên tại 1 ngày thật. kho: cc | ot | muon | vr */
+  /** Giá trị 1 ô của nhân viên tại 1 ngày thật. kho: cc | ot (số giờ hoặc khung giờ, xem gioOT) | muon | vr */
   function oNgay(db, kho, nvId, y, m, d) {
     var t = db.thang[khoaKy(y, m)];
     var o = t && t[kho] && t[kho][nvId];
@@ -462,8 +537,10 @@
       lam: 0, lamTG: 0, sp: 0, huong: 0, phep: 0, le: 0, huongKhac: 0, ngung: 0, bhxh: 0, khong: 0, kp: 0,
       congTG: 0, congHL: 0, ngayLamThucTe: 0, ngayCom: 0, congThemLe: 0, congThemLeTG: 0, congThemLeSP: 0, ngayLamLe: 0, ngayLamTet: 0,
       otThuong: 0, otNghi: 0, otLe: 0, otTong: 0,
+      otDemThuong: 0, otDemThuong2: 0, otDemNghi: 0, otDemLe: 0, otDem: 0, otKhung: 0,
       muonLan: 0, muonPhut: 0, demKyHieu: {}, lamLeHS: {}
     };
+    var cdc = db.caiDat || {};
     ds.forEach(function (x) {
       var v = oNgay(db, 'cc', nv.id, x.y, x.m, x.d);
       var k = v != null && v !== '' ? kh[String(v).toUpperCase()] : null;
@@ -489,20 +566,27 @@
         if (k.nhom === 'kp') r.kp += con;
         r.demKyHieu[k.ma] = (r.demKyHieu[k.ma] || 0) + 1;
       }
-      var h = +oNgay(db, 'ot', nv.id, x.y, x.m, x.d) || 0;
-      if (h) {
+      // làm thêm: otThuong / otNghi / otLe là giờ ban ngày; giờ ban đêm (khung giờ có phần 22:00–06:00) tính riêng.
+      // Ngày thường đã làm thêm ban ngày rồi làm tiếp ban đêm: otDemThuong2 (hệ số cao hơn, xem heSoOTDem)
+      var o = gioOT(oNgay(db, 'ot', nv.id, x.y, x.m, x.d), cdc);
+      if (o.gio) {
         var loai = loaiNgay(db, x.y, x.m, x.d, le, nv);
-        if (loai === 'le') r.otLe += h; else if (loai === 'nghi') r.otNghi += h; else r.otThuong += h;
+        if (loai === 'le') { r.otLe += o.ngay; r.otDemLe += o.dem; }
+        else if (loai === 'nghi') { r.otNghi += o.ngay; r.otDemNghi += o.dem; }
+        else { r.otThuong += o.ngay; if (o.ngay > 0) r.otDemThuong2 += o.dem; else r.otDemThuong += o.dem; }
+        if (o.khung) r.otKhung++;
       }
       var p = +oNgay(db, 'muon', nv.id, x.y, x.m, x.d) || 0;
       if (p > 0) { r.muonLan++; r.muonPhut += p; }
     });
-    r.otTong = r.otThuong + r.otNghi + r.otLe;
+    r.otDem = r.otDemThuong + r.otDemThuong2 + r.otDemNghi + r.otDemLe;
+    r.otTong = r.otThuong + r.otNghi + r.otLe + r.otDem;
     r.ngayLamThucTe = r.lam;               // số ngày thật, không nhân hệ số lễ
     r.ngayCom = r.lam;                     // ngày tính cơm = ngày có đi làm (+, SP, CT, H… kể cả đi làm ngày lễ); nghỉ lễ L, phép P không tính
     r.congHL = r.lamTG + r.huong;          // công hưởng lương thời gian (kể cả ngừng việc)
     r.congTG = r.congHL - r.ngung;         // cột "Lương thời gian – số công" (gồm cả phép, lễ)
-    ['lam', 'lamTG', 'sp', 'huong', 'phep', 'le', 'huongKhac', 'ngung', 'bhxh', 'khong', 'kp', 'congTG', 'congHL', 'ngayLamThucTe', 'ngayCom', 'congThemLe', 'congThemLeTG', 'congThemLeSP', 'ngayLamLe', 'ngayLamTet', 'otThuong', 'otNghi', 'otLe', 'otTong']
+    ['lam', 'lamTG', 'sp', 'huong', 'phep', 'le', 'huongKhac', 'ngung', 'bhxh', 'khong', 'kp', 'congTG', 'congHL', 'ngayLamThucTe', 'ngayCom', 'congThemLe', 'congThemLeTG', 'congThemLeSP', 'ngayLamLe', 'ngayLamTet', 'otThuong', 'otNghi', 'otLe', 'otTong',
+      'otDemThuong', 'otDemThuong2', 'otDemNghi', 'otDemLe', 'otDem']
       .forEach(function (f) { r[f] = Math.round(r[f] * 100) / 100; });
     return r;
   }
@@ -1059,13 +1143,14 @@
     var donGiaSP = +nv.donGiaSP > 0 ? +nv.donGiaSP : (spChinh ? +spChinh.donGia || 0 : 0);
 
     // Làm thêm giờ: phần 100% chịu thuế, phần chênh lệch được miễn thuế
-    var hs = cd.heSoOT || {};
+    var hs = cd.heSoOT || {}, hsd = heSoOTDem(cd);
     var otTien = {
       thuong: r0(luongGio * c.otThuong * (+hs.thuong || 150) / 100),
       nghi: r0(luongGio * c.otNghi * (+hs.nghi || 200) / 100),
-      le: r0(luongGio * c.otLe * (+hs.le || 300) / 100)
+      le: r0(luongGio * c.otLe * (+hs.le || 300) / 100),
+      dem: r0(luongGio * ((c.otDemThuong || 0) * hsd.thuong + (c.otDemThuong2 || 0) * hsd.thuong2 + (c.otDemNghi || 0) * hsd.nghi + (c.otDemLe || 0) * hsd.le) / 100)
     };
-    var tienOT = otTien.thuong + otTien.nghi + otTien.le;
+    var tienOT = otTien.thuong + otTien.nghi + otTien.le + otTien.dem;
     var otChiuThue = luongGio * c.otTong;
     var otMienThue = r0(Math.max(0, tienOT - otChiuThue));
 
@@ -1183,7 +1268,7 @@
 
   function cong(rows, phuCapList) {
     var t = { phuCap: {}, phuCapNgay: {}, dn: { bhxh: 0, bhyt: 0, bhtn: 0, kpcd: 0, tong: 0 }, soNV: rows.length,
-      cong: { congHL: 0, congTG: 0, lam: 0, sp: 0, ngung: 0, ngayLamThucTe: 0, ngayCom: 0, congThemLe: 0, otTong: 0, phep: 0, muonLan: 0, muonPhut: 0, khong: 0, kp: 0, bhxh: 0 } };
+      cong: { congHL: 0, congTG: 0, lam: 0, sp: 0, ngung: 0, ngayLamThucTe: 0, ngayCom: 0, congThemLe: 0, otTong: 0, otDem: 0, phep: 0, muonLan: 0, muonPhut: 0, khong: 0, kp: 0, bhxh: 0 } };
     TRUONG_TONG.forEach(function (f) { t[f] = 0; });
     (phuCapList || []).forEach(function (pc) { t.phuCap[pc.ma] = 0; });
     rows.forEach(function (r) {
@@ -1226,7 +1311,7 @@
     var t1 = phut(cd.nghiTruaTu), t2 = phut(cd.nghiTruaDen);
     var cp = +cd.phutChoPhep || 0;
     function chong(a1, a2, b1, b2) { return Math.max(0, Math.min(a2, b2) - Math.max(a1, b1)); }
-    var kq = { gioLam: 0, muon: 0, veSom: 0, ot: 0, kyHieu: '', ghiChu: '' };
+    var kq = { gioLam: 0, muon: 0, veSom: 0, ot: 0, otKhung: '', kyHieu: '', ghiChu: '' };
     if (vao == null && ra == null) return kq;
     var motLan = vao == null || ra == null || vao === ra;
     if (motLan) {
@@ -1243,6 +1328,9 @@
       var tong = Math.max(0, ra - vao - nghiTrua);
       kq.gioLam = Math.round(tong / 60 * 100) / 100;
       kq.ot = Math.floor(tong / block) * block / 60;
+      // khung giờ làm thêm (bỏ giờ nghỉ trưa) để tách được phần ban đêm
+      var doan = nghiTrua ? [[vao, Math.max(vao, t1)], [Math.min(ra, t2), ra]] : [[vao, ra]];
+      kq.otKhung = kq.ot ? khungTuDoan(doan.filter(function (x) { return x[1] > x[0]; }), kq.ot * 60) : '';
       kq.kyHieu = '';
       return kq;
     }
@@ -1252,7 +1340,10 @@
     if (vao - gv > cp) kq.muon = vao - gv;
     if (gr - ra > cp) kq.veSom = gr - ra;
     var them = ra - gr;
-    if (them >= (+cd.otToiThieuPhut || 0) && them > 0) kq.ot = Math.floor(them / block) * block / 60;
+    if (them >= (+cd.otToiThieuPhut || 0) && them > 0) {
+      kq.ot = Math.floor(them / block) * block / 60;
+      if (kq.ot) kq.otKhung = khungTuDoan([[gr, ra]], kq.ot * 60);
+    }
     var kc = cd.khDiLam || '+', kn = cd.khNuaNgay || '+/2';
     if (kq.gioLam >= (+cd.nguongCaNgay || 6) || (loai === 'nua' && kq.gioLam >= (+cd.nguongNuaNgay || 3))) kq.kyHieu = loai === 'nua' ? kn : kc;
     else if (kq.gioLam >= (+cd.nguongNuaNgay || 3)) kq.kyHieu = kn;
@@ -1325,7 +1416,7 @@
     bangKyHieu: bangKyHieu, tongHopCong: tongHopCong,
     thueLuyTien: thueLuyTien, tinhLuongNV: tinhLuongNV, tinhBangLuong: tinhBangLuong, congTong: cong,
     chotThang: chotThang, moKhoaThang: moKhoaThang,
-    tinhVaoRa: tinhVaoRa, phepNam: phepNam, docSo: docSo,
+    tinhVaoRa: tinhVaoRa, docKhoangOT: docKhoangOT, gioOT: gioOT, heSoOTDem: heSoOTDem, cauHinhDem: cauHinhDem, phepNam: phepNam, docSo: docSo,
     KIEU_BL: KIEU_BL, AP_DUNG_BL: AP_DUNG_BL, chuanBangLuong: chuanBangLuong, timBangLuong: timBangLuong, timNgach: timNgach, mucCoSoBL: mucCoSoBL,
     thuViecNV: thuViecNV, denNgayThuViec: denNgayThuViec, denNgayHD: denNgayThuViec, dangThuViec: dangThuViec,
     giaiDoanHDMacDinh: giaiDoanHDMacDinh, dsGiaiDoan: dsGiaiDoan, timGiaiDoan: timGiaiDoan, soThangThuViec: soThangThuViec, soThangGiua: soThangGiua,

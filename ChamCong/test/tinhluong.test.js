@@ -593,4 +593,56 @@ t('Giờ vào / ra', function () {
   assert.strictEqual(k.kyHieu, ''); assert.strictEqual(k.ot, 4);
 });
 
+t('Làm thêm ngoài giờ theo khung giờ: đọc khung, tách ban đêm 22h–6h, hệ số 150/200/210/270/390%', function () {
+  // đọc khung giờ
+  assert.strictEqual(TL.docKhoangOT('17h30 - 21h').chuoi, '17:30-21:00');
+  assert.strictEqual(TL.docKhoangOT('17-19, 22-2').chuoi, '17:00-19:00,22:00-02:00');
+  assert.strictEqual(TL.docKhoangOT('1730-2100').chuoi, '17:30-21:00');
+  assert.strictEqual(TL.docKhoangOT('18 đến 22').chuoi, '18:00-22:00');
+  assert.strictEqual(TL.docKhoangOT(2), null);
+  assert.strictEqual(TL.docKhoangOT('1,5'), null);
+  assert.strictEqual(TL.docKhoangOT('17-21,20-22'), false);     // chồng nhau
+  assert.strictEqual(TL.docKhoangOT('25-26'), false);
+  assert.deepStrictEqual(TL.gioOT('17:00-23:00', {}), { gio: 6, ngay: 5, dem: 1, khung: '17:00-23:00' });
+  assert.deepStrictEqual(TL.gioOT('22-2', {}), { gio: 4, ngay: 0, dem: 4, khung: '22:00-02:00' });
+  assert.deepStrictEqual(TL.gioOT('05:00-07:30', {}), { gio: 2.5, ngay: 1.5, dem: 1, khung: '05:00-07:30' });
+  assert.deepStrictEqual(TL.gioOT(1.5, {}), { gio: 1.5, ngay: 1.5, dem: 0, khung: '' });
+  assert.strictEqual(TL.gioOT('2,5', {}).gio, 2.5);
+  assert.deepStrictEqual(TL.heSoOTDem(TL.caiDatMacDinh()), { thuong: 200, thuong2: 210, nghi: 270, le: 390 });
+  assert.strictEqual(TL.gioOT('21-23', { otDem: { tu: '21:00', den: '05:00' } }).dem, 2);   // khung đêm theo cài đặt
+
+  // bảng lương: VP làm thứ 2 – thứ 6, lương 8 triệu, công chuẩn 22
+  var db = dbMau(), nv = db.nhanVien[0];
+  db.ngayLe = [{ ngay: '2026-10-06', ten: 'Lễ thử' }];
+  TL.ngayKy(db, 2026, 10).forEach(function (x) {
+    var thu = TL.thuTrongTuan(x.y, x.m, x.d), T = TL.thang(db, x.y, x.m, true), cc = T.cc[nv.id] = T.cc[nv.id] || {};
+    if (thu !== 0 && thu !== 6) cc[x.d] = x.iso === '2026-10-06' ? 'L' : '+';
+  });
+  var ot = TL.thang(db, 2026, 10, true).ot[nv.id] = {};
+  ot[1] = '17:00-23:00';   // thứ 5: 5 giờ ngày 150% + 1 giờ đêm 210% (đã làm thêm ban ngày)
+  ot[2] = '22-2';          // thứ 6: 4 giờ đêm 200%
+  ot[3] = '08:00-12:00';   // thứ 7 (nghỉ tuần): 4 giờ 200%
+  ot[4] = '20-23';         // chủ nhật: 2 giờ 200% + 1 giờ đêm 270%
+  ot[6] = '22:00-24:00';   // ngày lễ: 2 giờ đêm 390%
+  ot[7] = 2;               // nhập số giờ: ban ngày 150%
+  var c = TL.tongHopCong(db, 2026, 10, nv);
+  assert.strictEqual(c.otThuong, 7); assert.strictEqual(c.otNghi, 6); assert.strictEqual(c.otLe, 0);
+  assert.strictEqual(c.otDemThuong, 4); assert.strictEqual(c.otDemThuong2, 1); assert.strictEqual(c.otDemNghi, 1); assert.strictEqual(c.otDemLe, 2);
+  assert.strictEqual(c.otDem, 8); assert.strictEqual(c.otTong, 21); assert.strictEqual(c.otKhung, 5);
+  var r = TL.tinhBangLuong(db, 2026, 10).rows[0], lg = 8000000 / 22 / 8;
+  assert.strictEqual(r.otTien.thuong, Math.round(lg * 7 * 1.5));
+  assert.strictEqual(r.otTien.nghi, Math.round(lg * 6 * 2));
+  assert.strictEqual(r.otTien.dem, Math.round(lg * (4 * 200 + 1 * 210 + 1 * 270 + 2 * 390) / 100));
+  assert.strictEqual(r.tienOT, r.otTien.thuong + r.otTien.nghi + r.otTien.le + r.otTien.dem);
+  assert(Math.abs(r.otMienThue - (r.tienOT - lg * 21)) <= 1, 'phần làm thêm cao hơn lương giờ thường được miễn thuế');
+
+  // giờ vào / ra -> khung giờ làm thêm (để tách được giờ ban đêm)
+  var cd = TL.caiDatMacDinh();
+  var k = TL.tinhVaoRa(cd, 'thuong', TL.phut('07:30'), TL.phut('23:10'));
+  assert.strictEqual(k.ot, 6); assert.strictEqual(k.otKhung, '17:00-23:00');
+  k = TL.tinhVaoRa(cd, 'nghi', TL.phut('07:30'), TL.phut('17:20'));
+  assert.strictEqual(k.ot, 8.5); assert.strictEqual(k.otKhung, '07:30-12:00,13:00-17:00');
+  assert.strictEqual(TL.gioOT(k.otKhung, cd).gio, 8.5);
+});
+
 console.log('\n' + ok + ' nhóm kiểm thử đạt.');

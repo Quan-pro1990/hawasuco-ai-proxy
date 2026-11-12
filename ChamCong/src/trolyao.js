@@ -122,7 +122,7 @@
   var NOI = [
     { ten: 'Cài đặt → Đơn vị & chữ ký', tu: 'ten don vi cong ty nguoi ky chu ky tieu de bang luong dia danh thong tu logo', cd: 'cty' },
     { ten: 'Cài đặt → Kỳ công & giờ làm', tu: 'ky cong ngay dau ky ngay nghi hang tuan thu bay gio vao gio ra nghi trua di muon ve som phep nam mac dinh', cd: 'cong' },
-    { ten: 'Cài đặt → Lương & làm thêm', tu: 'lam them gio ot he so ngung viec thu viec ty le luong thu viec lam tron phat di muon tra rieng luong san pham', cd: 'luong' },
+    { ten: 'Cài đặt → Lương & làm thêm', tu: 'lam them gio ot he so ngung viec thu viec ty le luong thu viec lam tron phat di muon tra rieng luong san pham ban dem gio dem lam dem toi da 40 gio', cd: 'luong' },
     { ten: 'Cài đặt → Bảo hiểm & công đoàn', tu: 'ty le dong bao hiem bhxh bhyt bhtn kpcd doan phi cong doan luong toi thieu vung tran dong nghi khong luong', cd: 'bh' },
     { ten: 'Cài đặt → Thuế TNCN', tu: 'thue tncn giam tru gia canh ban than nguoi phu thuoc bieu thue luy tien khau tru 10%', cd: 'thue' },
     { ten: 'Cài đặt → Sao lưu, tài khoản', tu: 'sao luu khoi phuc du lieu tai khoan phan quyen mat khau nhat ky xoa du lieu mau', cd: 'dl' },
