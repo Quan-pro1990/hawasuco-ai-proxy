@@ -548,7 +548,8 @@
           var nua = k && (k.huong + k.lam) < 1 || /\/2$/.test(fm.kyHieu.value);
           var pn = TL.phepNam(App.db, nv, +fm.tuNgay.value.slice(0, 4) || App.ky.y);
           App.$('#dn-thongtin', el).innerHTML = '<b>' + App.so(so * (nua ? 0.5 : 1)) + '</b> ngày làm việc (đã bỏ ngày nghỉ tuần, ngày lễ).' +
-            (k && k.phep ? ' Phép năm còn lại: <b>' + App.so(pn.conLai) + '</b> ngày' + (pn.conLai < so * (nua ? 0.5 : 1) ? ' – <span style="color:var(--do)">không đủ phép</span>' : '') + '.' : '');
+            (k && k.phep ? ' Phép năm còn lại: <b>' + App.so(pn.conLai) + '</b> ngày' + (pn.conLai < so * (nua ? 0.5 : 1) ? ' – <span style="color:var(--do)">không đủ phép</span>' : '') +
+              (pn.dangThuViec ? ' – <span style="color:var(--do)">đang thử việc, chưa có phép năm</span>' : pn.tichLuy < pn.duoc ? ' (mới làm ' + pn.thang + ' tháng trong năm; đến nay tích lũy ' + App.so(pn.tichLuy + pn.ton - pn.daNghi) + ' ngày còn được nghỉ)' : '') + '.' : '');
         };
         ['nvId', 'kyHieu', 'tuNgay', 'denNgay'].forEach(function (n) { fm[n].addEventListener('change', tinh); });
         tinh();

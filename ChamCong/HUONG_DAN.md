@@ -109,6 +109,9 @@ Bấm 1 người trong danh sách để mở hồ sơ gồm các tab:
 - **Bảo hiểm, thuế & người phụ thuộc**: lương đóng BH (người đã xếp bậc: tự theo bậc lương hiện tại), số sổ BHXH, mã thẻ BHYT, nơi KCB; MST; danh sách **người phụ thuộc**
   có *từ tháng – đến tháng* để giảm trừ gia cảnh đúng từng tháng.
 - **Hợp đồng lao động**, **Quá trình công tác**, **Nghỉ phép** (phép năm theo tháng, đơn nghỉ), **Lương các kỳ** (12 kỳ gần nhất).
+- **Phép năm tự tính**: làm đủ 12 tháng được 12 ngày (hoặc *Phép năm cơ bản* riêng trong hồ sơ); cứ đủ 5 năm làm việc cộng thêm 1 ngày;
+  mới vào hợp đồng chính thức thì 1 tháng làm việc được 1 ngày (tháng làm từ nửa số ngày trở lên); đang thử việc chưa có phép; nghỉ việc trong năm
+  tính theo số tháng đã làm. Hồ sơ → *Nghỉ phép* diễn giải cách tính và số ngày tích lũy đến nay; mức 12 ngày, 5 năm sửa ở Cài đặt → Kỳ công & giờ làm.
 - **Hồ sơ scan**: lưu trữ bản scan hợp đồng, quyết định, CCCD, sơ yếu lý lịch, bằng cấp, giấy khám sức khoẻ, sổ BHXH…
   để khi cần thì xem, tải xuống. Kéo thả hoặc **Chọn tệp…** (PDF, ảnh, Word, Excel; tối đa 25 MB/tệp; nhiều tệp một lần), chọn loại
   và hợp đồng gắn kèm; sửa loại, ghi chú (vd *bản gốc lưu tủ 2*); **Xem**, **Tải về**, **Tải tất cả (.zip)** (chia thư mục theo loại).
@@ -313,8 +316,7 @@ Cách tính chính:
   (sửa ở trang Mức lương theo kỳ; người có mức riêng thì nhập *Tạm ứng kỳ I riêng* trong hồ sơ; không có công hưởng lương thì không tạm ứng).
   **Lãnh kỳ II** (cuối tháng) = Tổng thu nhập − Tạm ứng kỳ I − Cộng các khoản khấu trừ (BH, công đoàn, thuế, khấu trừ khác).
 - **Làm thêm giờ**: lương giờ = mức lương ÷ công chuẩn ÷ 8 giờ; ngày thường 150%, ngày nghỉ 200%, lễ Tết 300%.
-  **Làm thêm ban đêm** (22:00 – 06:00) = hệ số ngày + 30% + 20% lương giờ ban ngày của ngày đó (Điều 98 BLLĐ 2019, Điều 57 NĐ 145/2020):
-  ngày thường 200% (210% nếu trong ngày đã làm thêm ban ngày rồi làm tiếp ban đêm), nghỉ hằng tuần 270%, lễ Tết 390%.
+  **Làm thêm ban đêm** (22:00 – 06:00): 200% (đêm ngày lễ, Tết vẫn 300%) – sửa ở Cài đặt → Lương & làm thêm.
   Mặc định tiền làm thêm giờ **chi bằng bảng riêng** (Bảng thanh toán tiền làm thêm giờ, đề nghị chi riêng) – không gộp vào lãnh kỳ II;
   thuế TNCN vẫn tính trên thu nhập cả tháng. Bỏ tuỳ chọn ở Cài đặt → Lương & làm thêm nếu muốn gộp.
 
@@ -419,7 +421,7 @@ thời gian thử việc, quyết định nâng lương (ngày hiệu lực), ng
 | Lương tối thiểu vùng 2026 | I 5.310.000 · II 4.730.000 · III 4.140.000 · IV 3.700.000 |
 | Giảm trừ gia cảnh | bản thân 15.500.000 · người phụ thuộc 6.200.000 |
 | Biểu thuế (thu nhập tính thuế / tháng) | ≤10 tr 5% · 10–30 tr 10% · 30–60 tr 20% · 60–100 tr 30% · >100 tr 35% |
-| Làm thêm giờ | ngày thường 150% · nghỉ tuần 200% · lễ 300%; ban đêm (22h–6h) 200% (210%) · 270% · 390%; tối đa 40 giờ/tháng, 200 giờ/năm |
+| Làm thêm giờ | ngày thường 150% · ngày nghỉ 200% · ban đêm (22h–6h) 200% · lễ, Tết 300%; tối đa 40 giờ/tháng, 200 giờ/năm |
 | Thử việc | lương ít nhất 85% lương công việc; tối đa 180 ngày (quản lý DN), 60 ngày (cao đẳng trở lên), 30 ngày (trung cấp, CNKT), 6 ngày làm việc (khác) |
 
 Hãy đối chiếu lại với văn bản hiện hành của cơ quan thuế, BHXH trước khi dùng số liệu để nộp.

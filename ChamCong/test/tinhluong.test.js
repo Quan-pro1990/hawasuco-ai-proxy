@@ -623,7 +623,35 @@ t('Giờ vào / ra', function () {
   assert.strictEqual(k.kyHieu, ''); assert.strictEqual(k.ot, 4);
 });
 
-t('Làm thêm ngoài giờ theo khung giờ: đọc khung, tách ban đêm 22h–6h, hệ số 150/200/210/270/390%', function () {
+t('Phép năm: đủ 12 tháng 12 ngày, +1 ngày mỗi 5 năm, mới vào HĐ chính thức 1 tháng = 1 ngày', function () {
+  var db = TL.duLieuMoi(), hn = '2026-09-20';
+  var p = function (nv, y) { return TL.phepNam(db, nv, y || 2026, hn); };
+  // vào 01/03/2015, chính thức 01/04/2015: hết năm 2026 đủ 11 năm -> +2 ngày
+  var a = p({ id: 'a', ngayVao: '2015-03-01', hopDong: [{ loai: 'Thử việc', tuNgay: '2015-03-01' }, { loai: 'Xác định thời hạn', tuNgay: '2015-04-01' }] });
+  assert.deepStrictEqual([a.coBan, a.thamNien, a.thang, a.duoc, a.tichLuy], [12, 2, 12, 14, 14]);
+  // mới: thử việc 10/5, chính thức 10/6/2026 -> tháng 6 (21/30 ngày) đến tháng 12 = 7 tháng = 7 ngày; đến 20/9 tích lũy 4 ngày
+  var b = p({ id: 'b', ngayVao: '2026-05-10', hopDong: [{ loai: 'Thử việc', tuNgay: '2026-05-10' }, { loai: 'Xác định thời hạn', tuNgay: '2026-06-10' }] });
+  assert.deepStrictEqual([b.thang, b.duoc, b.tichLuy, b.chinhThuc], [7, 7, 4, '2026-06-10']);
+  // chính thức từ 20/6: tháng 6 chỉ 11/30 ngày -> không tính
+  assert.strictEqual(p({ id: 'b2', ngayVao: '2026-05-20', hopDong: [{ loai: 'Xác định thời hạn', tuNgay: '2026-06-20' }] }).duoc, 6);
+  // đang thử việc: chưa có phép
+  var c = p({ id: 'c', ngayVao: '2026-09-01', trangThai: 'thu_viec', hopDong: [{ loai: 'Thử việc', tuNgay: '2026-09-01' }] });
+  assert.strictEqual(c.duoc, 0); assert.strictEqual(c.dangThuViec, true);
+  // nghỉ việc 30/6/2026, làm từ 2010 (16 năm -> +3): (12 + 3) × 6/12 = 7,5 -> 8
+  assert.strictEqual(p({ id: 'd', ngayVao: '2010-01-01', ngayNghi: '2026-06-30' }).duoc, 8);
+  // không có ngày vào, hợp đồng: coi như cả năm
+  assert.strictEqual(p({ id: 'e' }).duoc, 12);
+  // phép cơ bản riêng 14 (nặng nhọc), vào 01/11/2021: hết 2026 đủ 5 năm -> 15; năm 2025 chưa đủ -> 14
+  assert.strictEqual(p({ id: 'f', ngayVao: '2021-11-01', phepNam: 14 }).duoc, 15);
+  assert.strictEqual(p({ id: 'f', ngayVao: '2021-11-01', phepNam: 14 }, 2025).duoc, 14);
+  // tồn năm trước, đã nghỉ (P = 1, P/2 = 0,5)
+  var nv = { id: 'g', ngayVao: '2020-01-01', phepTon: 2 }, T = TL.thang(db, 2026, 3, true); T.cc.g = { 2: 'P', 3: 'P/2' };
+  var g = p(nv); assert.deepStrictEqual([g.duoc, g.ton, g.daNghi, g.conLai], [13, 2, 1.5, 13.5]);
+  assert.ok(/Làm đủ 12 tháng: 12 ngày \+ 1 ngày thâm niên/.test(TL.moTaPhepNam(g)));
+  assert.ok(/7 tháng.*× 7\/12 = 7 ngày; đến nay tích lũy 4 ngày/.test(TL.moTaPhepNam(b)));
+});
+
+t('Làm thêm ngoài giờ theo khung giờ: đọc khung, tách ban đêm 22h–6h, hệ số ngày thường 150%, nghỉ 200%, đêm 200%, lễ 300%', function () {
   // đọc khung giờ
   assert.strictEqual(TL.docKhoangOT('17h30 - 21h').chuoi, '17:30-21:00');
   assert.strictEqual(TL.docKhoangOT('17-19, 22-2').chuoi, '17:00-19:00,22:00-02:00');
@@ -638,7 +666,8 @@ t('Làm thêm ngoài giờ theo khung giờ: đọc khung, tách ban đêm 22h�
   assert.deepStrictEqual(TL.gioOT('05:00-07:30', {}), { gio: 2.5, ngay: 1.5, dem: 1, khung: '05:00-07:30' });
   assert.deepStrictEqual(TL.gioOT(1.5, {}), { gio: 1.5, ngay: 1.5, dem: 0, khung: '' });
   assert.strictEqual(TL.gioOT('2,5', {}).gio, 2.5);
-  assert.deepStrictEqual(TL.heSoOTDem(TL.caiDatMacDinh()), { thuong: 200, thuong2: 210, nghi: 270, le: 390 });
+  assert.deepStrictEqual(TL.heSoOTDem(TL.caiDatMacDinh()), { thuong: 200, nghi: 200, le: 300 });
+  assert.deepStrictEqual(TL.heSoOTDem({ heSoOT: { thuong: 150, nghi: 200, le: 300 }, otDem: { heSo: 180 } }), { thuong: 180, nghi: 200, le: 300 });
   assert.strictEqual(TL.gioOT('21-23', { otDem: { tu: '21:00', den: '05:00' } }).dem, 2);   // khung đêm theo cài đặt
 
   // bảng lương: VP làm thứ 2 – thứ 6, lương 8 triệu, công chuẩn 22
@@ -649,20 +678,20 @@ t('Làm thêm ngoài giờ theo khung giờ: đọc khung, tách ban đêm 22h�
     if (thu !== 0 && thu !== 6) cc[x.d] = x.iso === '2026-10-06' ? 'L' : '+';
   });
   var ot = TL.thang(db, 2026, 10, true).ot[nv.id] = {};
-  ot[1] = '17:00-23:00';   // thứ 5: 5 giờ ngày 150% + 1 giờ đêm 210% (đã làm thêm ban ngày)
+  ot[1] = '17:00-23:00';   // thứ 5: 5 giờ ngày 150% + 1 giờ đêm 200%
   ot[2] = '22-2';          // thứ 6: 4 giờ đêm 200%
   ot[3] = '08:00-12:00';   // thứ 7 (nghỉ tuần): 4 giờ 200%
-  ot[4] = '20-23';         // chủ nhật: 2 giờ 200% + 1 giờ đêm 270%
-  ot[6] = '22:00-24:00';   // ngày lễ: 2 giờ đêm 390%
+  ot[4] = '20-23';         // chủ nhật: 2 giờ 200% + 1 giờ đêm 200%
+  ot[6] = '22:00-24:00';   // ngày lễ: 2 giờ đêm 300%
   ot[7] = 2;               // nhập số giờ: ban ngày 150%
   var c = TL.tongHopCong(db, 2026, 10, nv);
   assert.strictEqual(c.otThuong, 7); assert.strictEqual(c.otNghi, 6); assert.strictEqual(c.otLe, 0);
-  assert.strictEqual(c.otDemThuong, 4); assert.strictEqual(c.otDemThuong2, 1); assert.strictEqual(c.otDemNghi, 1); assert.strictEqual(c.otDemLe, 2);
+  assert.strictEqual(c.otDemThuong, 5); assert.strictEqual(c.otDemNghi, 1); assert.strictEqual(c.otDemLe, 2);
   assert.strictEqual(c.otDem, 8); assert.strictEqual(c.otTong, 21); assert.strictEqual(c.otKhung, 5);
   var r = TL.tinhBangLuong(db, 2026, 10).rows[0], lg = 8000000 / 22 / 8;
   assert.strictEqual(r.otTien.thuong, Math.round(lg * 7 * 1.5));
   assert.strictEqual(r.otTien.nghi, Math.round(lg * 6 * 2));
-  assert.strictEqual(r.otTien.dem, Math.round(lg * (4 * 200 + 1 * 210 + 1 * 270 + 2 * 390) / 100));
+  assert.strictEqual(r.otTien.dem, Math.round(lg * (5 * 200 + 1 * 200 + 2 * 300) / 100));
   assert.strictEqual(r.tienOT, r.otTien.thuong + r.otTien.nghi + r.otTien.le + r.otTien.dem);
   assert(Math.abs(r.otMienThue - (r.tienOT - lg * 21)) <= 1, 'phần làm thêm cao hơn lương giờ thường được miễn thuế');
 

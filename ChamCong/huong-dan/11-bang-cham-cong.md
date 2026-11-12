@@ -27,14 +27,14 @@
 
 **Tiền làm thêm** (lương giờ = mức lương ÷ công chuẩn ÷ 8 giờ):
 
-| Loại ngày | Ban ngày | Ban đêm (22:00 – 06:00) |
-|---|---|---|
-| Ngày thường | 150% | 200% (210% nếu trong ngày đã làm thêm ban ngày rồi làm tiếp ban đêm) |
-| Nghỉ hằng tuần | 200% | 270% |
-| Lễ, Tết | 300% | 390% |
+| Làm thêm | Hệ số |
+|---|---|
+| Ngày thường | 150% |
+| Ngày nghỉ hằng tuần | 200% |
+| Ban đêm (22:00 – 06:00) | 200% |
+| Ngày lễ, Tết (cả ban đêm) | 300% |
 
-> Ban đêm = hệ số ngày + 30% + 20% lương giờ ban ngày của ngày đó (Điều 98 BLLĐ 2019, Điều 57 NĐ 145/2020). Khung giờ ban đêm, các mức % và ngưỡng cảnh báo
-> sửa ở **Cài đặt → Lương & làm thêm**. Phần trả cao hơn lương giờ bình thường không tính thuế TNCN.
+> Các mức %, khung giờ ban đêm và ngưỡng cảnh báo sửa ở **Cài đặt → Lương & làm thêm**. Phần trả cao hơn lương giờ bình thường không tính thuế TNCN.
 
 ## Ký hiệu thường dùng
 | Ký hiệu | Ý nghĩa |

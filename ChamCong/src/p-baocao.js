@@ -111,16 +111,21 @@
     phep: function () {
       var y = App.ky.y;
       var rows = App.db.nhanVien.filter(function (nv) { return nv.trangThai !== 'nghi_viec' || (nv.ngayNghi && nv.ngayNghi >= y + '-01-01'); }).map(function (nv) {
-        var p = TL.phepNam(App.db, nv, y), r = { ma: nv.ma, hoTen: nv.hoTen, pb: TL.tenPhongBan(App.db, nv.phongBan), duoc: p.duoc, ton: p.ton, daNghi: p.daNghi, conLai: p.conLai };
+        var p = TL.phepNam(App.db, nv, y), r = { ma: nv.ma, hoTen: nv.hoTen, pb: TL.tenPhongBan(App.db, nv.phongBan), coBan: p.coBan, thamNien: p.thamNien, thang: p.dangThuViec ? 0 : p.thang,
+          duoc: p.duoc, tichLuy: p.tichLuy, ton: p.ton, daNghi: p.daNghi, conLai: p.conLai, ghiChu: p.dangThuViec ? 'Đang thử việc' : p.thang < 12 ? 'Chính thức từ ' + TL.hienNgay(p.chinhThuc) : '' };
         p.theoThang.forEach(function (v, i) { r['t' + (i + 1)] = v; });
         return r;
       });
       var cot = [{ t: 'STT', stt: true, w: 5, kieu: 'giua' }, { t: 'Họ và tên', k: 'hoTen', w: 22 }, { t: 'Mã NV', k: 'ma', w: 8 }, { t: 'Phòng / đội', k: 'pb', w: 22 },
-        { t: 'Phép năm', k: 'duoc', kieu: 'cong', w: 7 }, { t: 'Tồn năm trước', k: 'ton', kieu: 'cong', w: 7 }];
+        { t: 'Cơ bản', k: 'coBan', kieu: 'cong', w: 6, khongTong: true }, { t: 'Thâm niên (+)', k: 'thamNien', kieu: 'cong', w: 7, khongTong: true },
+        { t: 'Tháng làm việc', k: 'thang', kieu: 'cong', w: 7, khongTong: true },
+        { t: 'Được hưởng', k: 'duoc', kieu: 'cong', w: 8 }, { t: 'Tích lũy đến nay', k: 'tichLuy', kieu: 'cong', w: 8 }, { t: 'Tồn năm trước', k: 'ton', kieu: 'cong', w: 7 }];
       for (var i = 1; i <= 12; i++) cot.push({ t: 'T' + i, k: 't' + i, kieu: 'cong', w: 5 });
-      cot.push({ t: 'Đã nghỉ', k: 'daNghi', kieu: 'cong', w: 7 }, { t: 'Còn lại', k: 'conLai', kieu: 'cong', w: 7 });
-      var keys = ['duoc', 'ton', 'daNghi', 'conLai']; for (i = 1; i <= 12; i++) keys.push('t' + i);
-      return { tieuDe: 'BẢNG THEO DÕI NGHỈ PHÉP NĂM ' + y, phuDe: 'Tính theo ngày dương lịch (P = 1 ngày, P/2 = 0,5 ngày)', cot: cot, rows: rows, tong: cong(rows, keys) };
+      cot.push({ t: 'Đã nghỉ', k: 'daNghi', kieu: 'cong', w: 7 }, { t: 'Còn lại', k: 'conLai', kieu: 'cong', w: 7 }, { t: 'Ghi chú', k: 'ghiChu', w: 18 });
+      var keys = ['duoc', 'tichLuy', 'ton', 'daNghi', 'conLai']; for (i = 1; i <= 12; i++) keys.push('t' + i);
+      var cd = App.db.caiDat;
+      return { tieuDe: 'BẢNG THEO DÕI NGHỈ PHÉP NĂM ' + y, cot: cot, rows: rows, tong: cong(rows, keys),
+        phuDe: 'Đủ 12 tháng: ' + (cd.phepNam || 12) + ' ngày, cứ đủ ' + (cd.phepThamNienNam || 5) + ' năm làm việc thêm 1 ngày; mới vào hợp đồng chính thức: 1 tháng = 1 ngày. Nghỉ theo ngày dương lịch (P = 1 ngày, P/2 = 0,5 ngày)' };
     },
     cong: function () {
       var y = App.ky.y, m = App.ky.m, bl = TL.tinhBangLuong(App.db, y, m);

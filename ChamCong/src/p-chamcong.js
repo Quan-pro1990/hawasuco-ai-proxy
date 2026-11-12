@@ -69,7 +69,7 @@
         ? 'Chọn ô (kéo chuột để chọn nhiều ô, nhiều người) rồi bấm ký hiệu ở trên. Hoặc gõ ký hiệu trên bàn phím (vd <b>+</b> hoặc <b>x</b>, <b>sp</b>, <b>p</b>, <b>o</b> = Ô) rồi Enter. Dán được vùng ký hiệu từ Excel (Ctrl+V).'
         : st.che === 'ot' ? 'Chọn ô rồi gõ <b>khung giờ làm ngoài giờ</b>: <b>17:30-21:00</b>, <b>17h-21h</b>; nhiều khung cách nhau dấu phẩy: <b>17-19, 22-2</b> (qua nửa đêm: <b>22-2</b>). ' +
           'Hoặc gõ số giờ (vd 2 hoặc 1,5 – tính là ban ngày). Phần mềm tự tính số giờ và tách giờ <b>ban đêm ' + khDem + '</b>. ' +
-          'Hệ số: ngày thường ' + App.so(+hs.thuong || 150) + '% (đêm ' + App.so(hsd.thuong) + '%, ' + App.so(hsd.thuong2) + '% nếu trong ngày đã làm thêm ban ngày), nghỉ hằng tuần ' + App.so(+hs.nghi || 200) + '% (đêm ' + App.so(hsd.nghi) + '%), lễ, Tết ' + App.so(+hs.le || 300) + '% (đêm ' + App.so(hsd.le) + '%). Enter để xuống dòng, Delete để xoá.'
+          'Hệ số: ngày thường ' + App.so(+hs.thuong || 150) + '%, ngày nghỉ ' + App.so(+hs.nghi || 200) + '%, ban đêm ' + App.so(cdem.heSo) + '%, lễ, Tết ' + App.so(+hs.le || 300) + '%. Enter để xuống dòng, Delete để xoá.'
         : 'Chọn ô rồi gõ số phút đi muộn / về sớm của ngày đó. Enter để xuống dòng, Delete để xoá.') +
       '</div></div>' +
       App.dauIn(st.che === 'kh' ? 'BẢNG CHẤM CÔNG' : st.che === 'ot' ? 'BẢNG CHẤM CÔNG LÀM THÊM GIỜ' : 'BẢNG THEO DÕI ĐI MUỘN / VỀ SỚM',
@@ -607,7 +607,7 @@
         ds.push({ ma: nv.ma, hoTen: nv.hoTen, ngay: TL.hienNgay(x.iso), thu: TL.TEN_THU[TL.thuTrongTuan(x.y, x.m, x.d)], loai: TEN[loai],
           khung: g.khung ? g.khung.replace(/,/g, ', ') : '(nhập số giờ)', gio: g.gio, ngayG: g.ngay, dem: g.dem,
           hsNgay: g.ngay ? (+hs[loai] || { thuong: 150, nghi: 200, le: 300 }[loai]) + '%' : '',
-          hsDem: g.dem ? (loai === 'thuong' ? (g.ngay > 0 ? hsd.thuong2 : hsd.thuong) : hsd[loai]) + '%' : '' });
+          hsDem: g.dem ? hsd[loai] + '%' : '' });
         tong.gio += g.gio; tong.ngayG += g.ngay; tong.dem += g.dem;
       });
     });

@@ -75,7 +75,7 @@
         cachTinhThue: 'luy_tien', trangThai: 'dang_lam', loaiHD: 'Không xác định thời hạn', luongBH: 0,
         cccd: '0010' + (90000000 + i * 7919), sdt: '09' + String(10000000 + i * 1234567).slice(0, 8), email: '', diaChi: '',
         mst: '80' + String(10000000 + i * 271828).slice(0, 8), nganHang: i % 3 ? 'Công thương (VietinBank)' : 'Nông nghiệp (Agribank)', chiNhanhNH: 'Chi nhánh Hậu Giang', soTK: '10' + String(20000000 + i * 3141592).slice(0, 10),
-        phepNam: i < 3 ? 14 : 12, phepTon: i % 4 === 0 ? 2 : 0, ghiChu: ''
+        phepNam: '', phepTon: i % 4 === 0 ? 2 : 0, ghiChu: ''
       };
     });
     var nv3 = db.nhanVien[2], nv14 = db.nhanVien[13], nv15 = db.nhanVien[14], nv16 = db.nhanVien[15], nv17 = db.nhanVien[16];

@@ -6,7 +6,7 @@
 ## Các thẻ
 - **Đơn vị & chữ ký**: logo, tên đơn vị, mã số thuế, địa chỉ, địa danh, mẫu biểu (TT 133 / TT 200), tiêu đề bảng lương,
   người ký bảng lương và bảng chấm công; bật / tắt **nói câu hỏi bằng micro** cho trợ lý ảo.
-- **Kỳ công & giờ làm**: ngày bắt đầu kỳ công (mặc định 21), ngày nghỉ hằng tuần, thứ bảy nửa ngày, phép năm mặc định,
+- **Kỳ công & giờ làm**: ngày bắt đầu kỳ công (mặc định 21), ngày nghỉ hằng tuần, thứ bảy nửa ngày, phép năm cơ bản (12 ngày) và số năm thâm niên được cộng 1 ngày phép (5 năm),
   giờ vào – ra, ngưỡng đủ / nửa công, làm thêm, *không trả lương thời gian quá công chuẩn*.
 - **Lương & làm thêm**: hệ số làm thêm (150 / 200 / 300%), giờ ban đêm (22:00 – 06:00) và mức cộng thêm khi làm thêm ban đêm (30% + 20%),
   cảnh báo làm thêm vượt 40 giờ/tháng, tiền làm thêm chi bảng riêng, ngừng việc, hệ số đi làm ngày lễ / Tết,

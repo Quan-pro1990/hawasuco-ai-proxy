@@ -211,8 +211,7 @@
       // làm thêm ban đêm: hệ số ngày + 30% + 20% lương giờ ban ngày (Điều 57 NĐ 145/2020)
       var dem = false;
       if (/(ban dem|lam dem|ca dem|( |^)dem( |$)|nua dem|dem khuya)/.test(q) && TL.heSoOTDem) {
-        var hsd = TL.heSoOTDem(cd);
-        hs = { thuong: /(ban ngay|ca ngay|da lam them)/.test(q) ? hsd.thuong2 : hsd.thuong, nghi: hsd.nghi, le: hsd.le };
+        hs = TL.heSoOTDem(cd);
         dem = true;
       }
       var cc = docSoTruoc(goc, 'cong') || (/cong nhan/.test(q) ? 26 : /van phong/.test(q) ? 22 : ((cd.loaiLD || [])[0] || {}).congChuan || 26);
@@ -222,15 +221,15 @@
       var gk = kg && TL.gioOT ? TL.gioOT(kg[1] + '-' + kg[2], cd) : null;
       if (gk && gk.khung && gk.gio) {
         var hsK = TL.heSoOTDem(cd), hsN = +(cd.heSoOT || {})[loai] || { thuong: 150, nghi: 200, le: 300 }[loai];
-        var hsD = loai === 'thuong' ? (gk.ngay > 0 ? hsK.thuong2 : hsK.thuong) : hsK[loai], t1 = donGia * gk.ngay * hsN / 100, t2 = donGia * gk.dem * hsD / 100;
+        var hsD = hsK[loai], t1 = donGia * gk.ngay * hsN / 100, t2 = donGia * gk.dem * hsD / 100;
         return { cx: ['gat', 1500, '🧮'], html: 'Làm thêm <b>' + h(gk.khung) + '</b> vào <b>' + ({ thuong: 'ngày thường', nghi: 'ngày nghỉ hằng tuần', le: 'ngày lễ, Tết' })[loai] + '</b> = <b>' + so(gk.gio) + ' giờ</b>' + (gk.dem ? ' (ban đêm ' + so(gk.dem) + ' giờ)' : '') + ':' +
           dongBang([['Lương giờ = ' + tien(l) + ' ÷ ' + cc + ' công ÷ ' + gioNgay + ' giờ', tien(donGia)]].concat(gk.ngay ? [['Ban ngày ' + so(gk.ngay) + ' giờ × ' + so(hsN) + '%', tien(t1)]] : [], gk.dem ? [['Ban đêm ' + so(gk.dem) + ' giờ × ' + so(hsD) + '%', tien(t2)]] : [], [['<b>Tiền làm thêm</b>', '<b>' + tien(t1 + t2) + '</b>', 1]])) +
-          '<div class="mo nho">Ban đêm ' + h(TL.hhmm(TL.cauHinhDem(cd).tu)) + '–' + h(TL.hhmm(TL.cauHinhDem(cd).den)) + ': hệ số ngày + 30% + 20% lương giờ ban ngày (Điều 98 BLLĐ 2019, Điều 57 NĐ 145/2020). Phần trả cao hơn giờ làm bình thường (' + tien(t1 + t2 - donGia * gk.gio) + ') được miễn thuế TNCN.</div>' +
+          '<div class="mo nho">Ban đêm ' + h(TL.hhmm(TL.cauHinhDem(cd).tu)) + '–' + h(TL.hhmm(TL.cauHinhDem(cd).den)) + ': hệ số làm thêm ban đêm ' + so(TL.cauHinhDem(cd).heSo) + '% theo quy chế công ty (Cài đặt → Lương & làm thêm). Phần trả cao hơn giờ làm bình thường (' + tien(t1 + t2 - donGia * gk.gio) + ') được miễn thuế TNCN.</div>' +
           '<div class="mo nho">Chấm trong phần mềm: Bảng chấm công → <b>Làm thêm ngoài giờ</b>, gõ “' + h(gk.khung) + '” vào ô của ngày đó.</div>' };
       }
       return { cx: ['gat', 1500, '🧮'], html: 'Tiền làm thêm ' + so(gio) + ' giờ' + (dem ? ' <b>ban đêm</b>' : '') + ' vào <b>' + ({ thuong: 'ngày thường', nghi: 'ngày nghỉ hằng tuần', le: 'ngày lễ, Tết' })[loai] + '</b> (hệ số ' + hs[loai] + '%):' +
         dongBang([['Lương giờ = ' + tien(l) + ' ÷ ' + cc + ' công ÷ ' + gioNgay + ' giờ', tien(donGia)], ['× ' + so(gio) + ' giờ × ' + hs[loai] + '%', ''], ['<b>Tiền làm thêm</b>', '<b>' + tien(tienOT) + '</b>', 1]]) +
-        '<div class="mo nho">Theo Điều 98 BLLĐ 2019 và hệ số trong Cài đặt. ' + (dem ? 'Ban đêm = hệ số ngày + 30% + 20% lương giờ ban ngày (Điều 57 NĐ 145/2020). ' : 'Làm thêm ban đêm (22h–6h) được cộng thêm – hỏi “làm thêm ban đêm …” để tính. ') + 'Phần trả cao hơn giờ làm bình thường (' + tien(donGia * gio * (hs[loai] - 100) / 100) + ') được miễn thuế TNCN.</div>' +
+        '<div class="mo nho">Theo Điều 98 BLLĐ 2019 và hệ số trong Cài đặt. ' + (dem ? 'Hệ số làm thêm ban đêm theo quy chế công ty (Cài đặt → Lương & làm thêm). ' : 'Làm thêm ban đêm (22h–6h) tính hệ số ban đêm – hỏi “làm thêm ban đêm …” để tính. ') + 'Phần trả cao hơn giờ làm bình thường (' + tien(donGia * gio * (hs[loai] - 100) / 100) + ') được miễn thuế TNCN.</div>' +
         hang(nutHoi('Làm thêm giờ tối đa bao nhiêu')) };
     } },
     // trợ cấp thôi việc / mất việc
@@ -366,9 +365,9 @@
       nd: function () { var hs = CD().heSoOT || { thuong: 150, nghi: 200, le: 300 }; return '<ul><li>Phải được người lao động đồng ý. Không quá <b>50%</b> số giờ làm bình thường trong 1 ngày (tổng không quá 12 giờ/ngày), không quá <b>40 giờ/tháng</b>, ' +
         'không quá <b>200 giờ/năm</b> (một số ngành, nghề được đến 300 giờ/năm) – Điều 107.</li>' +
         '<li>Tiền làm thêm (Điều 98): ngày thường ít nhất <b>150%</b>, ngày nghỉ hằng tuần ít nhất <b>200%</b>, ngày lễ, Tết, ngày nghỉ có hưởng lương ít nhất <b>300%</b>.</li>' +
-        '<li>Làm thêm <b>ban đêm</b> (22h–6h): hệ số trên + 30% + 20% lương giờ ban ngày của ngày đó (Điều 57 NĐ 145/2020) → ngày thường <b>200%</b> (<b>210%</b> nếu trong ngày đã làm thêm ban ngày), nghỉ hằng tuần <b>270%</b>, lễ, Tết <b>390%</b>.</li>' +
+        '<li>Làm thêm <b>ban đêm</b> (22h–6h): công ty áp dụng <b>' + TL.cauHinhDem(CD()).heSo + '%</b> (đêm ngày lễ, Tết theo hệ số ngày lễ).</li>' +
         '<li>Phần tiền làm thêm trả cao hơn so với giờ làm bình thường được <b>miễn thuế TNCN</b>.</li></ul>' +
-        '<div class="mo nho">Công ty đang áp dụng: ngày thường ' + hs.thuong + '%, ngày nghỉ ' + hs.nghi + '%, lễ Tết ' + hs.le + '%. ' +
+        '<div class="mo nho">Công ty đang áp dụng: ngày thường ' + hs.thuong + '%, ngày nghỉ ' + hs.nghi + '%, ban đêm ' + TL.cauHinhDem(CD()).heSo + '%, lễ Tết ' + hs.le + '%. ' +
         'Trong phần mềm: <b>Bảng chấm công → Làm thêm ngoài giờ</b>, gõ khung giờ (vd 17:30-21:00, 22-2) – tự tính số giờ và tách giờ ban đêm. Hỏi “làm thêm 4 giờ chủ nhật lương 8 triệu” để tôi tính tiền.</div>'; },
       ng: 'Điều 98, 107 Bộ luật Lao động 2019', lk: ['vaora', 'chamcong'] },
     { ma: 'phep_nam', td: 'Nghỉ phép năm', tu: 'phep nam|nghi phep|ngay phep|nghi hang nam|phep tham nien|phep con lai|chua nghi het phep|thanh toan phep',
@@ -376,7 +375,8 @@
         '<li><b>14 ngày</b> – người chưa thành niên, người khuyết tật, nghề nặng nhọc, độc hại, nguy hiểm</li><li><b>16 ngày</b> – nghề đặc biệt nặng nhọc, độc hại, nguy hiểm</li></ul>' +
         'Chưa đủ 12 tháng thì tính theo tỷ lệ số tháng làm việc. Cứ đủ <b>5 năm</b> làm việc cho một người sử dụng lao động được thêm <b>1 ngày</b>. ' +
         'Thôi việc, mất việc mà chưa nghỉ hết phép thì được thanh toán tiền lương những ngày chưa nghỉ.' +
-        '<div class="mo nho">Trong phần mềm: phép năm mặc định ' + (+CD().phepNam || 12) + ' ngày; xem phép còn lại ở hồ sơ → tab Nghỉ phép hoặc Báo cáo lương → Theo dõi phép năm.</div>'; },
+        '<div class="mo nho">Trong phần mềm (tự tính): làm đủ 12 tháng được ' + (+CD().phepNam || 12) + ' ngày, cứ đủ ' + (+CD().phepThamNienNam || 5) + ' năm làm việc cộng thêm 1 ngày; ' +
+        'người mới vào hợp đồng chính thức 1 tháng làm việc được 1 ngày. Xem phép còn lại ở hồ sơ → tab Nghỉ phép hoặc Báo cáo lương → Theo dõi phép năm.</div>'; },
       ng: 'Điều 113, 114 Bộ luật Lao động 2019', lk: ['nghiphep'] },
     { ma: 'nghi_le', td: 'Nghỉ lễ, Tết theo luật', tu: 'nghi le|nghi tet|ngay le|le tet|tet nghi may ngay|nghi le bao nhieu ngay|nghi bu|quoc khanh|30 4|1 5|gio to|tet duong lich|tet am lich',
       nd: function () {

@@ -389,7 +389,8 @@
           '<div class="ca"><div class="mo nho" style="margin-bottom:6px">Ngày nghỉ hằng tuần (chung – cho nhân viên chưa chọn loại lao động)</div><div class="hang">' +
           thu.map(function (t) { return '<label class="chk"><input type="checkbox" data-nghi="' + t + '"' + (cd.nghiTuan.indexOf(t) >= 0 ? ' checked' : '') + '> ' + TL.TEN_THU_DAY[t] + '</label>'; }).join('') + '</div></div>' +
           o('Thứ bảy làm nửa ngày (0,5 công chuẩn)', 'caiDat.nuaNgayT7', 'bool') +
-          o('Số ngày phép năm mặc định', 'caiDat.phepNam', 'so') +
+          o('Phép năm cơ bản (ngày, làm đủ 12 tháng)', 'caiDat.phepNam', 'so', 'Mặc định 12. Người mới vào hợp đồng chính thức: 1 tháng làm việc = 1 ngày') +
+          o('Cứ làm đủ (năm) được cộng thêm 1 ngày phép', 'caiDat.phepThamNienNam', 'so', 'Mặc định 5 năm (tính từ ngày vào làm đến hết năm)') +
           '</div><p class="mo nho">Kỳ ' + App.tenKy(App.ky.y, App.ky.m).toLowerCase() + ' (' + TL.hienNgay(TL.batDauKy(db, App.ky.y, App.ky.m)) + ' – ' + TL.hienNgay(TL.ketThucKy(db, App.ky.y, App.ky.m)) + '): ' +
           (cd.loaiLD || []).map(function (l) { return h(l.ten) + ' <b>' + App.so(TL.congChuan(db, App.ky.y, App.ky.m, { loaiLD: l.ma })) + '</b> công'; }).join(' · ') +
           ' · chung <b>' + App.so(TL.congChuan(db, App.ky.y, App.ky.m)) + '</b> công.</p></div>' +
@@ -410,13 +411,12 @@
           o('Làm thêm ngày thường (%)', 'caiDat.heSoOT.thuong', 'so') + o('Làm thêm ngày nghỉ tuần (%)', 'caiDat.heSoOT.nghi', 'so') + o('Làm thêm ngày lễ, Tết (%)', 'caiDat.heSoOT.le', 'so') +
           o('Giờ ban đêm từ', 'caiDat.otDem.tu', 'gio', 'Mặc định 22:00 (Điều 106 BLLĐ 2019)') + o('Giờ ban đêm đến', 'caiDat.otDem.den', 'gio', 'Mặc định 06:00 sáng hôm sau') +
           o('Cảnh báo làm thêm vượt (giờ / tháng)', 'caiDat.otToiDaThang', 'so', 'Tối đa 40 giờ/tháng – Điều 107 BLLĐ 2019; ô vượt hiện màu đỏ trên bảng chấm công') +
-          o('Làm thêm ban đêm: cộng thêm (% lương giờ)', 'caiDat.otDem.phuCap', 'so', 'Mặc định 30% – tiền làm việc ban đêm') +
-          o('… và cộng thêm (% lương giờ ban ngày của ngày đó)', 'caiDat.otDem.themNgay', 'so', 'Mặc định 20% (Điều 98 BLLĐ 2019, Điều 57 NĐ 145/2020)') +
+          o('Làm thêm ban đêm (%)', 'caiDat.otDem.heSo', 'so', 'Mặc định 200% cho giờ làm thêm trong khung ban đêm; làm đêm ngày lễ, Tết tính theo hệ số ngày lễ') +
           o('Lương ngày nghỉ / ngừng việc (ký hiệu N) (%)', 'caiDat.tiLeNgungViec', 'so') +
           o('Đi làm (lương thời gian) ngày lễ được tính (công)', 'caiDat.heSoCongLe', 'so', 'Mặc định 2 công; nghỉ lễ (L) vẫn 1 công; làm SP không nhân. Từng ngày chọn riêng ×1 / ×2 / ×3 ở Danh mục → Ngày lễ, Tết') +
           o('Đi làm (lương thời gian) ngày Tết được tính (công)', 'caiDat.heSoCongTet', 'so', 'Mặc định 3 công; tiền cơm vẫn tính 1 ngày. Ngày có hệ số riêng không theo mức này') +
           '</div><p class="mo nho">Theo Bộ luật Lao động 2019: làm thêm ngày thường ít nhất 150%, ngày nghỉ hằng tuần 200%, ngày lễ 300% (chưa kể lương ngày lễ). ' +
-          'Làm thêm ban đêm (hệ số đang dùng): ngày thường <b>' + App.so(TL.heSoOTDem(cd).thuong) + '%</b> (<b>' + App.so(TL.heSoOTDem(cd).thuong2) + '%</b> nếu trong ngày đã làm thêm ban ngày), nghỉ hằng tuần <b>' + App.so(TL.heSoOTDem(cd).nghi) + '%</b>, lễ, Tết <b>' + App.so(TL.heSoOTDem(cd).le) + '%</b>. ' +
+          'Đang áp dụng: ngày thường <b>' + App.so(+cd.heSoOT.thuong || 150) + '%</b>, ngày nghỉ <b>' + App.so(+cd.heSoOT.nghi || 200) + '%</b>, ban đêm <b>' + App.so(TL.cauHinhDem(cd).heSo) + '%</b>, lễ, Tết <b>' + App.so(+cd.heSoOT.le || 300) + '%</b>. ' +
           'Giờ ban đêm chỉ tách được khi chấm làm thêm theo khung giờ (Bảng chấm công → Làm thêm ngoài giờ, gõ vd 17:30-21:00). Phần chênh lệch so với lương giờ bình thường không chịu thuế TNCN.</p></div>' +
           '<div class="the"><h3>Thử việc</h3><div class="form ba">' +
           '<label class="o">Số tháng thử việc mặc định<input value="' + TL.soThangThuViec(App.db) + ' tháng" disabled><span class="gc">Theo giai đoạn HĐ thử việc – sửa ở <a href="#danhmuc" onclick="App.moDanhMuc(\'hd\');return false">Danh mục → Giai đoạn hợp đồng</a></span></label>' +

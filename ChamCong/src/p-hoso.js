@@ -314,7 +314,8 @@
         App.NGAN_HANG.map(function (n) { return '<option value="' + h(n) + '">'; }).join('') + '</datalist>') +
       F.o('Chi nhánh', F.txt('chiNhanhNH', d.chiNhanhNH, 'placeholder="vd Chi nhánh Hậu Giang"')) +
       '<h4>Phép năm</h4>' +
-      F.o('Số ngày phép năm', F.txt('phepNam', d.phepNam, 'type="number" min="0" step="0.5" placeholder="' + db.caiDat.phepNam + '"'), 'Để trống = ' + db.caiDat.phepNam + ' ngày') +
+      F.o('Phép năm cơ bản (ngày / năm)', F.txt('phepNam', d.phepNam, 'type="number" min="0" step="0.5" placeholder="' + db.caiDat.phepNam + '"'),
+        'Để trống = ' + db.caiDat.phepNam + ' ngày (nặng nhọc, độc hại: 14). Thâm niên (+1 ngày mỗi ' + (db.caiDat.phepThamNienNam || 5) + ' năm) và người mới (1 tháng chính thức = 1 ngày) phần mềm tự tính') +
       F.o('Phép tồn năm trước', F.txt('phepTon', d.phepTon, 'type="number" min="0" step="0.5"')) + '<span></span>' +
       F.o('Ghi chú', F.vung('ghiChu', d.ghiChu), '', 'ca') +
       '</div></div>';
@@ -553,8 +554,9 @@
     var y = App.ky.y, pn = TL.phepNam(App.db, nv, y);
     var don = (App.db.donNghi || []).filter(function (x) { return x.nvId === nv.id; }).sort(function (a, b) { return a.tuNgay < b.tuNgay ? 1 : -1; });
     el.innerHTML = '<div class="the"><h3>Phép năm ' + y + '</h3><div class="kpis" style="margin-bottom:10px">' +
-      [['Được hưởng', pn.duoc], ['Tồn năm trước', pn.ton], ['Đã nghỉ', pn.daNghi], ['Còn lại', pn.conLai]].map(function (k) { return '<div class="kpi"><div class="nhan">' + k[0] + '</div><div class="gt">' + App.so(k[1]) + '</div><div class="phu">ngày</div></div>'; }).join('') +
-      '</div><div class="cuon"><table class="bang"><thead><tr>' + pn.theoThang.map(function (_, i) { return '<th>T' + (i + 1) + '</th>'; }).join('') + '</tr></thead><tbody><tr>' +
+      [['Được hưởng', pn.duoc], ['Tồn năm trước', pn.ton], ['Đã nghỉ', pn.daNghi], ['Còn lại', pn.conLai]].concat(pn.tichLuy < pn.duoc ? [['Tích lũy đến nay', pn.tichLuy]] : [])
+        .map(function (k) { return '<div class="kpi"><div class="nhan">' + k[0] + '</div><div class="gt">' + App.so(k[1]) + '</div><div class="phu">ngày</div></div>'; }).join('') +
+      '</div><p class="mo nho" style="margin:0 0 10px">' + h(TL.moTaPhepNam(pn)) + '</p><div class="cuon"><table class="bang"><thead><tr>' + pn.theoThang.map(function (_, i) { return '<th>T' + (i + 1) + '</th>'; }).join('') + '</tr></thead><tbody><tr>' +
       pn.theoThang.map(function (v) { return '<td class="giua">' + App.soRong(v) + '</td>'; }).join('') + '</tr></tbody></table></div></div>' +
       '<div class="the"><h3>Đơn xin nghỉ<span class="phai"><button class="nut nho chinh" id="dn-them">' + App.icon('them') + 'Tạo đơn nghỉ</button></span></h3>' +
       App.bangDonNghi(don, true) + '</div>';
