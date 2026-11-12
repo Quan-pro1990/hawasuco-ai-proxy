@@ -45,10 +45,15 @@ Trò chuyện vui: “bạn là ai”, “bạn khỏe không”, “nhảy đi�
 - Bấm **micro** 🎤 cạnh ô nhập rồi nói câu hỏi tiếng Việt – nói xong trợ lý tự gửi và **đọc câu trả lời** (robot há miệng khi nghe,
   nhép miệng khi nói). Lần đầu trình duyệt hỏi quyền dùng micro: chọn *Cho phép*.
 - Nút **loa** 🔊 trên đầu khung: bật để đọc cả câu trả lời của câu hỏi gõ tay; bấm khi đang đọc để dừng. Nút loa nhỏ trên từng câu trả lời: đọc lại.
-- Nút **cài đặt giọng nói**: chọn giọng đọc, tốc độ, **nói chuyện liên tục** (đọc xong tự nghe câu tiếp theo).
+- Nút **cài đặt giọng nói**: chọn giọng đọc, tốc độ, **nói chuyện liên tục** (đọc xong tự nghe câu tiếp theo), nút *Nghe thử*.
   Lệnh nói: “dừng”, “đọc lại”, “kết thúc”.
-- Đọc câu trả lời dùng **giọng tiếng Việt cài trên máy**. Máy chưa có: Windows → Cài đặt → Thời gian & ngôn ngữ → Giọng nói →
-  Thêm giọng nói → Tiếng Việt (hoặc chọn giọng “trực tuyến” của Edge – văn bản câu trả lời được gửi tới dịch vụ đọc của trình duyệt).
+- **Giọng đọc tiếng Việt tích hợp sẵn**: phần mềm có bộ đọc tiếng Việt riêng (eSpeak NG) chạy ngay trong trình duyệt – không cần
+  cài giọng cho Windows, không cần Internet, văn bản không gửi ra ngoài. Chọn được giọng **miền Nam** (mặc định), **miền Nam giọng nữ**,
+  **miền Bắc**, **miền Bắc giọng nữ**, **miền Trung**. Giọng tích hợp nghe còn “máy”; máy nào đã cài giọng tiếng Việt của Windows
+  (vd *Microsoft An*: Cài đặt → Thời gian & ngôn ngữ → Giọng nói → Thêm giọng nói → Tiếng Việt) thì phần mềm dùng giọng đó trước
+  vì tự nhiên hơn. Giọng “trực tuyến” của Edge (HoaiMy, NamMinh) chỉ dùng khi tự chọn – văn bản câu trả lời được gửi tới dịch vụ đọc của trình duyệt.
+- Trên máy chủ, giọng tích hợp cần bản máy chủ từ 12/11/2026 trở đi (cho phép WebAssembly); bản cũ thì trợ lý báo
+  *Máy chủ đang chặn giọng đọc tích hợp* – chạy lại `CaiDat-MayChu-IIS.bat` của bộ cài mới.
 - Nói câu hỏi: trình duyệt chuyển giọng nói thành chữ (Chrome, Edge gửi âm thanh câu hỏi tới dịch vụ nhận dạng giọng nói của
   Google / Microsoft, cần Internet). Dữ liệu nhân sự vẫn chỉ xử lý trên máy. Đơn vị có thể tắt micro ở
   **Cài đặt & dữ liệu → Đơn vị & chữ ký → Trợ lý ảo**. Micro cần trang mở bằng https (máy chủ) hoặc mở file trực tiếp trên máy.
@@ -374,6 +379,8 @@ Hãy đối chiếu lại với văn bản hiện hành của cơ quan thuế, B
 
 ## Dành cho người sửa phần mềm
 
+- Giọng đọc tích hợp: `giong-doc/` (eSpeak NG 1.51 biên dịch sang WebAssembly, chỉ dữ liệu tiếng Việt; giấy phép GNU GPL v3 –
+  xem `giong-doc/DOC_TOI.md`, dựng lại bằng `giong-doc/dung.sh`), `src/giongdoc.js` phát âm thanh; kiểm thử `node test/giongdoc.test.js`.
 - Mã nguồn trong `src/`. Sửa xong chạy `node build.js` để đóng gói lại thành `ChamCong_TinhLuong.html`
   (1 file duy nhất, không dùng thư viện ngoài) và `HUONG_DAN_SU_DUNG.html` (tài liệu hướng dẫn từ `huong-dan/*.md`).
 - Hướng dẫn từng phần: `huong-dan/NN-ten-phan.md`, dòng đầu `# Tiêu đề`, dòng 2 `<!-- trang: id trang | nhom: Nhóm | them: id trang -->`

@@ -327,10 +327,17 @@
 <h2>Nói chuyện bằng giọng nói (Chrome, Edge)</h2>
 <ol><li>Bấm <b>micro</b> 🎤 rồi nói câu hỏi tiếng Việt – lần đầu chọn <i>Cho phép</i> dùng micro.
 </li><li>Trợ lý trả lời và <b>đọc to</b>. Nút <b>loa</b> 🔊 bật đọc cả câu hỏi gõ tay; nút loa nhỏ trên câu trả lời để đọc lại.
-</li><li>Nút <b>cài đặt giọng nói</b>: giọng đọc, tốc độ, <b>nói chuyện liên tục</b>; tắt / bật chuyển động của robot.
+</li><li>Nút <b>cài đặt giọng nói</b>: chọn giọng đọc, tốc độ, <b>nói chuyện liên tục</b>, <b>Nghe thử</b>; tắt / bật chuyển động của robot.
 </li><li>Lệnh nói: <i>dừng</i>, <i>đọc lại</i>, <i>kết thúc</i>.
 </li></ol>
-<div class="hd-ghichu">Đọc câu trả lời cần giọng tiếng Việt cài trong Windows (Cài đặt → Thời gian &amp; ngôn ngữ → Giọng nói → Thêm giọng nói → Tiếng Việt).<br>Nói câu hỏi: Chrome / Edge gửi âm thanh tới dịch vụ nhận dạng giọng nói (cần Internet).</div></section><section id="cau-hoi-thuong-gap"><a class="len" href="#muc-luc">↑ Mục lục</a><h1>Câu hỏi thường gặp</h1>
+<h2>Giọng đọc tiếng Việt tích hợp sẵn</h2>
+<ul><li>Phần mềm có sẵn bộ đọc tiếng Việt: <b>không cần cài giọng cho Windows, không cần Internet, văn bản không gửi ra ngoài</b>.
+</li><li>Chọn ở <b>cài đặt giọng nói</b> → <i>Giọng đọc</i>, nhóm <i>Tích hợp sẵn</i>: <b>miền Nam</b> (mặc định), <b>miền Nam, giọng nữ</b>, <b>miền Bắc</b>,
+ <b>miền Bắc, giọng nữ</b>, <b>miền Trung</b> → bấm <b>Nghe thử</b>.
+</li><li>Máy đã cài giọng tiếng Việt của Windows (vd <i>Microsoft An</i>) thì phần mềm dùng giọng đó trước vì tự nhiên hơn; muốn dùng giọng tích hợp thì chọn lại.
+</li><li>Trợ lý báo <i>Máy chủ đang chặn giọng đọc tích hợp</i>: máy chủ còn bản cũ – nhờ người quản trị chạy lại <code>CaiDat-MayChu-IIS.bat</code> của bộ cài mới.
+</li></ul>
+<div class="hd-ghichu">Nói câu hỏi (micro): Chrome / Edge gửi âm thanh câu hỏi tới dịch vụ nhận dạng giọng nói (cần Internet). Đọc câu trả lời bằng giọng tích hợp thì không gửi gì ra ngoài.</div></section><section id="cau-hoi-thuong-gap"><a class="len" href="#muc-luc">↑ Mục lục</a><h1>Câu hỏi thường gặp</h1>
 <h2>Không thêm được tài khoản người dùng / tài khoản chấm công</h2>
 <p>Chỉ <b>tài khoản quản trị</b> trên <b>máy chủ</b> mới thêm được: Cài đặt &amp; dữ liệu → <b>Dữ liệu &amp; tài khoản</b> → <i>Tài khoản đăng nhập</i> → <b>Thêm tài khoản</b> hoặc <b>Tạo tài khoản cho từng phòng / đội…</b>. Chạy 1 file trên máy thì không có tài khoản. Tài khoản cấp phòng / đội phải đánh dấu ít nhất 1 phòng / đội; tên đăng nhập không có dấu cách; mật khẩu từ 6 ký tự. Chi tiết: <a href="#tai-khoan-phan-quyen">Tài khoản &amp; phân quyền</a>.</p>
 <h2>Sao lưu, khôi phục dữ liệu</h2>
@@ -350,4 +357,7 @@
 <h2>Đổi máy / chạy 1 file bị mất dữ liệu</h2>
 <p>Chạy 1 file: dữ liệu nằm trong trình duyệt – thường xuyên <b>Sao lưu ra file</b>, sang máy mới <b>Khôi phục từ file</b>. Trên máy chủ dữ liệu nằm ở ổ D và tự sao lưu mỗi ngày.</p>
 <h2>Micro / giọng đọc của trợ lý không chạy</h2>
-<p>Dùng Chrome / Edge, cho phép micro trên thanh địa chỉ; cài giọng tiếng Việt trong Windows; kiểm tra Cài đặt → Đơn vị &amp; chữ ký → Trợ lý ảo.</p></section></div></body></html>
+<ul><li>Micro: dùng Chrome / Edge, cho phép micro trên thanh địa chỉ; kiểm tra Cài đặt → Đơn vị &amp; chữ ký → Trợ lý ảo.
+</li><li>Giọng đọc: phần mềm có sẵn giọng tiếng Việt tích hợp (cài đặt giọng nói → <i>Tích hợp – miền Nam</i>…) – bấm <b>Nghe thử</b>, kiểm tra loa / âm lượng máy.
+ Báo <i>Máy chủ đang chặn giọng đọc tích hợp</i>: chạy lại <code>CaiDat-MayChu-IIS.bat</code> của bộ cài mới trên máy chủ.
+</li></ul></section></div></body></html>

@@ -645,16 +645,23 @@
   var GN = { rec: null, nghe: false, noi: false, tuMic: false, cuoi: '', trenMay: false, daBao: false,
     hoatDong: docKho('tl_hoatdong', '1') === '1', docTuDong: docKho('tl_doc', '0') === '1', lienTuc: docKho('tl_lientuc', '0') === '1', tenGiong: docKho('tl_giong', ''), toc: +docKho('tl_toc', '1') || 1 };
   function choNoi() { return !!SR && App.db && App.db.caiDat.troLyGiongNoi !== false; }
-  function coDoc() { return 'speechSynthesis' in window && typeof window.SpeechSynthesisUtterance === 'function'; }
-  function dsGiong() {
-    if (!coDoc()) return [];
+  /** Giọng của máy / trình duyệt (Web Speech) */
+  function coHT() { return 'speechSynthesis' in window && typeof window.SpeechSynthesisUtterance === 'function'; }
+  /** Giọng đọc tiếng Việt tích hợp sẵn trong phần mềm (src/giongdoc.js) */
+  function coTH() { return !!(App.GiongDoc && App.GiongDoc.coThe()); }
+  function coDoc() { return coHT() || coTH(); }
+  function dsGiongMay() {
+    if (!coHT()) return [];
     return speechSynthesis.getVoices().filter(function (v) { return /^vi([-_]|$)/i.test(v.lang); })
       .sort(function (a, b) { return (b.localService - a.localService) || ((/natural|neural/i.test(b.name)) - (/natural|neural/i.test(a.name))); });
   }
-  /** Giọng đọc: giọng đã chọn; mặc định chỉ dùng giọng cài trên máy (giọng trực tuyến gửi văn bản ra dịch vụ của trình duyệt) */
+  function dsGiongTH() { return coTH() ? App.GiongDoc.ds.map(function (g) { return { name: g.ten, lang: 'vi-VN', localService: true, tichHop: g.ma }; }) : []; }
+  function dsGiong() { return dsGiongTH().concat(dsGiongMay()); }
+  /** Giọng đọc: giọng đã chọn; mặc định giọng tiếng Việt cài trên máy (thường tự nhiên hơn), không có thì giọng tích hợp sẵn.
+      Giọng "trực tuyến" của trình duyệt gửi văn bản ra ngoài nên chỉ dùng khi người dùng tự chọn. */
   function giong() {
     var ds = dsGiong();
-    return ds.filter(function (v) { return v.name === GN.tenGiong; })[0] || ds.filter(function (v) { return v.localService; })[0] || null;
+    return ds.filter(function (v) { return v.name === GN.tenGiong; })[0] || dsGiongMay().filter(function (v) { return v.localService; })[0] || dsGiongTH()[0] || null;
   }
   // (không gọi SpeechRecognition.available để dò nhận dạng trên máy: trên một số bản Chromium lệnh này làm treo trang)
 
@@ -668,10 +675,14 @@
     Array.prototype.forEach.call(d.querySelectorAll('li, p, div, tr'), function (x) { x.insertAdjacentText('afterbegin', ' '); x.insertAdjacentText('beforeend', '. '); });
     var t = d.textContent.replace(/\s+/g, ' ');
     t = t.replace(/(\d{1,3})((?:\.\d{3})+)(?!\d)/g, function (_, a, b) { return a + b.replace(/\./g, ''); })
+      // số văn bản 12/2026/HĐLĐ, 05/QĐ-CNHG: đọc từng phần, không nhầm thành ngày tháng
+      .replace(/(\d{1,4})\/(\d{4})\/([\p{L}\-]+)/gu, '$1, năm $2, $3').replace(/(\d{1,4})\/([\p{Lu}][\p{L}\-]*)/gu, '$1, $2')
       .replace(/(\d{1,2})\/(\d{1,2})\/(\d{4})/g, 'ngày $1 tháng $2 năm $3').replace(/tháng (\d{1,2})\/(\d{4})/g, 'tháng $1 năm $2')
       .replace(/(\d{1,2})\/(\d{4})/g, 'tháng $1 năm $2').replace(/(\d{1,2})\/(\d{1,2})(?![\d\/])/g, 'ngày $1 tháng $2')
       .replace(/ đ\/ngày/g, ' đồng một ngày').replace(/ đ\/tháng/g, ' đồng một tháng').replace(/(\d) ?đ(?![\p{L}])/gu, '$1 đồng')
+      .replace(/Hawasuco/gi, 'Ha oa su cô').replace(/\p{Extended_Pictographic}|\uFE0F/gu, '')
       .replace(/−\s?/g, 'trừ ').replace(/→/g, ', sang ').replace(/[–·•]/g, ', ').replace(/×/g, ' nhân ').replace(/÷/g, ' chia ').replace(/=/g, ' bằng ').replace(/[“”"*_`]/g, '');
+    t = t.replace(/([\p{L}\d])-(?=\p{L})/gu, '$1 ').replace(/(ngày|tháng|năm) \1 /g, '$1 ');
     VIET_TAT.forEach(function (x) { t = t.replace(new RegExp('(^|[^\\p{L}\\p{N}])' + x[0] + '(?=[^\\p{L}]|$)', 'gu'), '$1' + x[1] + ' '); });
     t = t.replace(/(\s*\.\s*){2,}/g, '. ').replace(/:\s*\./g, ':').replace(/\s+/g, ' ').replace(/\s+([.,:;])/g, '$1').replace(/,\s*,/g, ',').trim();
     if (t.length > 700) { var cat = t.slice(0, 700), vt = cat.lastIndexOf('. '); t = (vt > 300 ? cat.slice(0, vt + 1) : cat) + ' Mời bạn xem chi tiết trên màn hình.'; }
@@ -687,8 +698,18 @@
     if (!coDoc()) return false;
     var g = giong();
     if (!g) return false;
-    speechSynthesis.cancel();
+    dungDoc();
     var t = chuDoc(html); if (!t) return false;
+    if (g.tichHop) {
+      var xongTH = false;
+      App.GiongDoc.noi(t, {
+        giong: g.tichHop, toc: GN.toc,
+        batDau: function () { datNoi(true); },
+        xong: function () { if (xongTH) return; xongTH = true; datNoi(false); if (sauKhi) sauKhi(); },
+        loi: function (m) { xongTH = true; datNoi(false); them('tl', '<span class="mo nho">🔇 Không đọc được bằng giọng tích hợp: ' + h(m) + '</span>'); }
+      });
+      return true;
+    }
     var cau = t.match(/[^.!?;]+[.!?;]*/g) || [t], xong = false;   // chia câu ngắn: trình duyệt hay ngắt giọng đọc dài
     function het() { if (xong) return; xong = true; datNoi(false); if (sauKhi) sauKhi(); }
     cau.forEach(function (c, i) {
@@ -700,7 +721,8 @@
     });
     return true;
   }
-  function ngungDoc() { if (coDoc()) speechSynthesis.cancel(); datNoi(false); }
+  function dungDoc() { if (coHT()) speechSynthesis.cancel(); if (App.GiongDoc) App.GiongDoc.dung(); }
+  function ngungDoc() { dungDoc(); datNoi(false); }
   function datNghe(v) {
     GN.nghe = v; if (nutLV) nutLV.classList.toggle('dang-nghe', v); trangThaiLV('nghe', v); if (v) camXuc('🎤');
     var m = el && el.querySelector('.tl-mic'), o = el && el.querySelector('.tl-f input');
@@ -744,17 +766,22 @@
   function moCaiDatGiong() {
     var p = el.querySelector('.tl-cdgn');
     if (!p.hidden) { p.hidden = true; return; }
-    var ds = dsGiong(), g = giong();
+    var ds = dsGiong(), g = giong(), th = dsGiongTH(), may = dsGiongMay(), loiTH = App.GiongDoc && App.GiongDoc.loi();
+    function opt(v) { return '<option value="' + h(v.name) + '"' + (g && g.name === v.name ? ' selected' : '') + '>' + h(v.name) + (v.localService ? '' : ' (trực tuyến)') + '</option>'; }
     p.innerHTML = '<b>Giọng nói &amp; linh vật</b>' +
       '<label class="chk"><input type="checkbox" data-gn="hoatDong"' + (GN.hoatDong ? ' checked' : '') + '> Linh vật chuyển động, chào hỏi, ngủ gật khi rảnh</label>' +
       '<label class="chk"><input type="checkbox" data-gn="doc"' + (GN.docTuDong ? ' checked' : '') + '> Tự đọc câu trả lời (cả khi gõ câu hỏi)</label>' +
       '<label class="chk"><input type="checkbox" data-gn="lienTuc"' + (GN.lienTuc ? ' checked' : '') + '> Nói chuyện liên tục: đọc xong tự nghe câu tiếp theo (nói “kết thúc” để dừng)</label>' +
-      '<label>Giọng đọc<select data-gn="giong">' + (ds.length ? ds.map(function (v) { return '<option value="' + h(v.name) + '"' + (g && g.name === v.name ? ' selected' : '') + '>' + h(v.name) + (v.localService ? '' : ' (trực tuyến)') + '</option>'; }).join('') +
-        (g ? '' : '<option value="" selected>(Chưa chọn – máy chưa có giọng tiếng Việt cài sẵn)</option>') : '<option>Máy chưa có giọng đọc tiếng Việt</option>') + '</select></label>' +
+      '<label>Giọng đọc<select data-gn="giong">' + (ds.length ?
+        (th.length ? '<optgroup label="Tích hợp sẵn – không cần cài, không gửi ra ngoài">' + th.map(opt).join('') + '</optgroup>' : '') +
+        (may.length ? '<optgroup label="Giọng của máy / trình duyệt">' + may.map(opt).join('') + '</optgroup>' : '') +
+        (g ? '' : '<option value="" selected>(Chưa chọn)</option>') : '<option>Trình duyệt này chưa đọc được tiếng Việt</option>') + '</select></label>' +
       '<label>Tốc độ đọc <input type="range" min="0.7" max="1.5" step="0.1" value="' + GN.toc + '" data-gn="toc"></label>' +
       '<div class="hang"><button type="button" class="nut nho" data-tl="thugiong"' + (ds.length ? '' : ' disabled') + '>Nghe thử</button><button type="button" class="nut nho" data-tl="cdgn">Đóng</button></div>' +
-      '<p class="mo nho" style="margin:0">' + (ds.length ? 'Giọng “trực tuyến” gửi văn bản câu trả lời tới dịch vụ đọc của trình duyệt; giọng cài trên máy thì không. ' : '') +
-      'Thêm giọng tiếng Việt trên Windows: Cài đặt → Thời gian &amp; ngôn ngữ → Giọng nói → Thêm giọng nói → Tiếng Việt.' + (choNoi() ? '' : '<br>Nói câu hỏi bằng micro đang tắt ở Cài đặt của đơn vị.') + '</p>';
+      '<p class="mo nho" style="margin:0">' + (loiTH ? '<b style="color:var(--do)">' + h(loiTH) + '</b><br>' : '') +
+      (th.length ? '<b>Giọng tích hợp sẵn</b> chạy ngay trong phần mềm: không cần cài, không cần Internet, chọn được giọng miền Nam / Bắc / Trung. ' : '') +
+      'Giọng tiếng Việt cài trên Windows (vd Microsoft An) thường tự nhiên hơn – có thì phần mềm dùng trước: Cài đặt → Thời gian &amp; ngôn ngữ → Giọng nói → Thêm giọng nói → Tiếng Việt. ' +
+      (may.some(function (v) { return !v.localService; }) ? 'Giọng “trực tuyến” gửi văn bản câu trả lời tới dịch vụ đọc của trình duyệt.' : '') + (choNoi() ? '' : '<br>Nói câu hỏi bằng micro đang tắt ở Cài đặt của đơn vị.') + '</p>';
     p.hidden = false;
   }
   function nutLoa() {
@@ -811,7 +838,7 @@
       if (v === 'thugiong') { if (!doc('Xin chào, tôi là trợ lý ảo Hawasuco. Lương cơ sở hiện nay là 2.530.000 đ/tháng.')) them('tl', 'Chưa chọn được giọng đọc tiếng Việt.'); return; }
       if (v === 'loa') {
         if (GN.noi) { ngungDoc(); return; }
-        if (!giong()) { moCaiDatGiong(); them('tl', 'Máy chưa có <b>giọng đọc tiếng Việt</b> cài sẵn. Trên Windows: Cài đặt → Thời gian &amp; ngôn ngữ → Giọng nói → Thêm giọng nói → <b>Tiếng Việt</b>; hoặc chọn giọng “trực tuyến” trong ô Giọng đọc.'); return; }
+        if (!giong()) { moCaiDatGiong(); them('tl', 'Trình duyệt này chưa đọc được tiếng Việt. Hãy dùng <b>Chrome</b> hoặc <b>Edge</b> bản mới (có sẵn giọng đọc tích hợp của phần mềm).'); return; }
         GN.docTuDong = !GN.docTuDong; ghiKho('tl_doc', GN.docTuDong ? 1 : 0); nutLoa();
         if (GN.docTuDong) { var cuoiTN = el.querySelectorAll('.tl-tn.tl'); if (cuoiTN.length) doc(cuoiTN[cuoiTN.length - 1].innerHTML); }
         return;
@@ -946,6 +973,8 @@
       var mic = el.querySelector('.tl-mic'); if (mic) mic.hidden = !choNoi();
       if (!daChao) { them('tl', chao()); daChao = true; }
       setTimeout(function () { el.querySelector('input').focus(); }, 40);
+      // nạp sẵn giọng đọc tích hợp (khoảng 0,1 giây) để câu trả lời đầu tiên đọc ngay
+      var gd = giong(); if (gd && gd.tichHop) App.GiongDoc.tai().catch(function () { /* báo khi đọc */ });
     } else { cuChi('tambiet', 1300, '👋'); ngungDoc(); GN.phien = false; if (GN.nghe) try { GN.rec.abort(); } catch (e) { /* bỏ qua */ } }
   }
   function them(ai, html) {

@@ -9,6 +9,7 @@ function chay(lenh) { cp.execFileSync(process.execPath, [path.join(goc, lenh)], 
 
 chay('build.js');
 chay('test/tinhluong.test.js');
+chay('test/giongdoc.test.js');
 
 var d = new Date(), pad = function (n) { return String(n).padStart(2, '0'); };
 var ngay = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
@@ -44,6 +45,9 @@ var tep = [
   ['ChamCong/ChamCong_TinhLuong.html', 'ChamCong_TinhLuong.html'],
   ['ChamCong/HUONG_DAN.md', 'HUONG_DAN.md'],
   ['ChamCong/HUONG_DAN_SU_DUNG.html', 'HUONG_DAN_SU_DUNG.html'],
+  // giọng đọc tích hợp (eSpeak NG, GPL v3): giấy phép và nguồn gốc đi kèm bản phân phối
+  ['ChamCong/giong-doc/DOC_TOI.md', 'giong-doc/DOC_TOI.md'],
+  ['ChamCong/giong-doc/COPYING-espeak-ng.txt', 'giong-doc/COPYING-espeak-ng.txt'],
   ['ChamCong/iis/CaiDat-IIS.bat', 'iis/CaiDat-IIS.bat'],
   ['ChamCong/iis/CaiDat-IIS.ps1', 'iis/CaiDat-IIS.ps1'],
   ['ChamCong/iis/MayChuChamCong.cs', 'iis/MayChuChamCong.cs'],

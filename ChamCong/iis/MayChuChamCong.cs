@@ -252,7 +252,8 @@ namespace ChamCong
                 if (!File.Exists(tep)) return TraLoi.Loi(404, "Thiếu index.html trong thư mục chương trình.");
                 var tl = new TraLoi { Status = 200, Than = File.ReadAllBytes(tep), Loai = "text/html; charset=utf-8" };
                 tl.Header["Cache-Control"] = "no-cache";
-                tl.Header["Content-Security-Policy"] = "default-src 'self' 'unsafe-inline' data: blob:; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'";
+                // 'wasm-unsafe-eval': cho phép giọng đọc tiếng Việt tích hợp (WebAssembly), vẫn chặn eval của JavaScript
+                tl.Header["Content-Security-Policy"] = "default-src 'self' 'unsafe-inline' data: blob:; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'";
                 tl.Header["X-Frame-Options"] = "DENY";
                 return tl;
             }

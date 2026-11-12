@@ -31,4 +31,6 @@ Chạy 1 file: dữ liệu nằm trong trình duyệt – thường xuyên **Sao
 nằm ở ổ D và tự sao lưu mỗi ngày.
 
 ## Micro / giọng đọc của trợ lý không chạy
-Dùng Chrome / Edge, cho phép micro trên thanh địa chỉ; cài giọng tiếng Việt trong Windows; kiểm tra Cài đặt → Đơn vị & chữ ký → Trợ lý ảo.
+- Micro: dùng Chrome / Edge, cho phép micro trên thanh địa chỉ; kiểm tra Cài đặt → Đơn vị & chữ ký → Trợ lý ảo.
+- Giọng đọc: phần mềm có sẵn giọng tiếng Việt tích hợp (cài đặt giọng nói → *Tích hợp – miền Nam*…) – bấm **Nghe thử**, kiểm tra loa / âm lượng máy.
+  Báo *Máy chủ đang chặn giọng đọc tích hợp*: chạy lại `CaiDat-MayChu-IIS.bat` của bộ cài mới trên máy chủ.

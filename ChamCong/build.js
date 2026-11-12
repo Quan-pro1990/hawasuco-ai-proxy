@@ -1,7 +1,7 @@
 /* Đóng gói toàn bộ phần mềm thành 1 file HTML duy nhất (mở bằng trình duyệt, không cần cài đặt, chạy offline).
    Cách dùng:  node build.js   -> tạo file ChamCong_TinhLuong.html */
 'use strict';
-var fs = require('fs'), path = require('path');
+var fs = require('fs'), path = require('path'), zlib = require('zlib');
 var src = path.join(__dirname, 'src');
 var html = fs.readFileSync(path.join(src, 'index.html'), 'utf8');
 function anh(f) { return 'data:image/png;base64,' + fs.readFileSync(path.join(src, 'anh', f)).toString('base64'); }
@@ -17,6 +17,9 @@ html = html.replace(/<script src="([^"]+)"><\/script>/g, function (_, f) {
   // hướng dẫn sử dụng đóng gói kèm để trợ lý ảo tìm và trả lời
   var js = f === 'huongdan.md.js' ? 'window.HUONG_DAN_MD = ' + JSON.stringify(fs.readFileSync(path.join(__dirname, 'HUONG_DAN.md'), 'utf8')) + ';'
     // ảnh linh vật trợ lý ảo (giống trợ lý ảo trên web.capnuochaugiang.vn)
+    // giọng đọc tiếng Việt tích hợp (eSpeak NG WebAssembly, thư mục giong-doc/): mã nạp + bộ đọc nén gzip
+    : f === 'giongdoc-vi.js' ? fs.readFileSync(path.join(__dirname, 'giong-doc', 'espeakng-vi.js'), 'utf8') +
+      '\nwindow.GIONG_DOC_WASM = "' + zlib.gzipSync(fs.readFileSync(path.join(__dirname, 'giong-doc', 'espeakng-vi.wasm')), { level: 9 }).toString('base64') + '";'
     : f === 'huongdan-phan.js' ? 'window.HUONG_DAN_PHAN = ' + JSON.stringify(phanHD) + ';'
     : f === 'anh-troly.js' ? 'window.ANH_TROLY = ' + JSON.stringify({ than: anh('robot-than.png'), dau: anh('robot-dau.png') }) + ';'
     : fs.readFileSync(path.join(src, f), 'utf8');
