@@ -11,7 +11,9 @@
 3. Kiểm tra số hợp đồng, ngày ký, chức danh, mức lương, phụ cấp, địa điểm, công việc. HĐ thử việc: nhập **% lương thử việc** (≥ 85%).
 4. Giữ đánh dấu **Cập nhật hồ sơ theo hợp đồng này**. Mức lương khác hiện tại thì có thể đánh dấu *Áp dụng mức lương này từ ngày hiệu lực*
    (tự lập quyết định điều chỉnh lương).
-5. **Lưu hợp đồng**. Bấm 🖨 để **In hợp đồng** theo mẫu tham khảo; tải bản scan đã ký lên cột *Bản scan*.
+5. **Tệp hợp đồng đính kèm**: kéo thả hoặc **Chọn tệp…** bản scan hợp đồng đã ký (PDF, ảnh, Word, Excel ≤ 25 MB, nhiều tệp) – tệp lưu vào
+   *Hồ sơ scan* của nhân viên, gắn với hợp đồng này khi bấm Lưu. Sửa hợp đồng: bấm tên tệp để xem, ✕ để xoá tệp đính kèm sai.
+6. **Lưu hợp đồng**. Bấm 🖨 để **In hợp đồng** theo mẫu tham khảo; cũng có thể tải bản scan đã ký lên sau ở cột *Bản scan*.
 
 ## Phần mềm nhắc theo Bộ luật Lao động 2019 (không chặn lưu)
 - Hợp đồng xác định thời hạn không quá 36 tháng; đã ký 2 lần HĐ xác định thời hạn thì lần sau phải ký **không xác định thời hạn** (Điều 20).

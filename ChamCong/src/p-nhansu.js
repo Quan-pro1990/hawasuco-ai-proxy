@@ -97,7 +97,7 @@
       x.denNgay = denHD(g0, x.loai, x.tuNgay);
     } else if (!timGD(x.giaiDoan)) { var gCu = TL.giaiDoanCuaHD(db, nv, hdCu); x.giaiDoan = gCu ? gCu.ma : ''; }
     if (x.tiLeTV == null) x.tiLeTV = tvNV ? tvNV.tiLe : (+mdTV.tiLe || 85);
-    var f = F();
+    var f = F(), dk = App.dinhKem({ loai: 'hop_dong', truong: 'hopDongId', id: x.id, nhan: 'Tệp hợp đồng đính kèm (bản scan đã ký)' });
     App.hop({
       tieuDe: (moi ? 'Ký hợp đồng – ' : 'Sửa hợp đồng – ') + nv.hoTen, co: 'rong',
       than: '<form class="form ba" onsubmit="return false">' +
@@ -110,7 +110,7 @@
         f.o('Mức lương theo hợp đồng (đ)', f.tien('luongCB', x.luongCB), '<span id="hd-tvtinh"></span>') +
         '<span id="hd-tv">' + f.o('Lương thử việc (% mức lương)', f.txt('tiLeTV', x.tiLeTV, 'type="number" min="1" max="100" step="1"'), 'Ít nhất 85% (Điều 26 BLLĐ 2019)') + '</span>' + f.o('Phụ cấp, thưởng (ghi trong HĐ)', f.txt('phuCap', x.phuCap, 'placeholder="vd Cơm trưa 50.000 đ/ngày làm việc"'), '', '') +
         f.o('Địa điểm làm việc', f.txt('diaDiem', x.diaDiem)) +
-        f.o('Công việc phải làm', f.vung('congViec', x.congViec), '', 'ca') + f.o('Ghi chú', f.txt('ghiChu', x.ghiChu), '', 'ca') +
+        f.o('Công việc phải làm', f.vung('congViec', x.congViec), '', 'ca') + f.o('Ghi chú', f.txt('ghiChu', x.ghiChu), '', 'ca') + dk.html +
         '<div class="ca" id="hd-cn">' +
         f.chk('capNhat', true, 'Cập nhật hồ sơ theo hợp đồng này (loại HĐ, ngày hết hạn, chức danh; HĐ thử việc thì ghi thời gian và lương thử việc; HĐ chính thức thì kết thúc thử việc, chuyển “Đang làm việc”, hưởng 100% lương)') + '<br>' +
         '<span id="hd-luong">' + f.chk('apLuong', false, 'Áp dụng mức lương này từ ngày hiệu lực (tạo quyết định điều chỉnh lương; các kỳ trước giữ lương cũ ' + App.tien(nv.luongCB) + ' đ)') + '</span></div>' +
@@ -161,6 +161,7 @@
         fm.luongCB.addEventListener('blur', capNhat);
         capNhat();
         if (!moi) { var cn = App.$('[name=capNhat]', el); cn.checked = App.hdHieuLuc(nv) === nv.hopDong[i]; }
+        dk.gan(el, function () { return nv; });
       },
       nut: [{ ten: 'Huỷ' }, {
         ten: 'Lưu hợp đồng', loai: 'chinh', bam: function (el) {
@@ -205,6 +206,7 @@
           }
           luuVaVe(nv);
           App.bao('Đã lưu hợp đồng ' + hd.so + (tb.length ? ' (' + tb.join(', ') + ')' : ''), 'tot');
+          dk.luu(nv, hd.id);
           if (sauKhiLuu) sauKhiLuu();
         }
       }]
@@ -353,7 +355,7 @@
       }
       return x;
     }
-    var dsNV = !nv;
+    var dsNV = !nv, dk = App.dinhKem({ loai: 'quyet_dinh', truong: 'quyetDinhId', id: q.id, nhan: 'Tệp quyết định đính kèm (bản scan đã ký)' });
     App.hop({
       tieuDe: (moi ? 'Thêm quyết định' : 'Sửa quyết định') + (nv ? ' – ' + nv.hoTen : ''), co: '',
       than: '<form class="form" onsubmit="return false">' +
@@ -361,7 +363,7 @@
         f.o('Loại quyết định', moi ? f.sel('loai', q.loai, f.cap(TL.LOAI_QD)) : '<input readonly value="' + h(TL.LOAI_QD[q.loai]) + '"><input type="hidden" name="loai" value="' + q.loai + '">') +
         f.o('Số quyết định', f.txt('so', q.so, 'placeholder="vd 25/QĐ-CT"')) + f.o('Ngày ký', f.ngay('ngay', q.ngay)) + '<span></span>' +
         '<div class="ca form" id="qd-phan" style="padding:0">' + phan(q.loai) + '</div>' +
-        f.o('Nội dung / trích yếu', f.vung('noiDung', q.noiDung), '', 'ca') + '</form>',
+        f.o('Nội dung / trích yếu', f.vung('noiDung', q.noiDung), '', 'ca') + dk.html + '</form>',
       moRa: function (el) {
         var fm = App.$('form', el);
         var nvHT = function () { return nv || App.timNV(fm.nvId.value); };
@@ -392,6 +394,7 @@
           if (bx.b.apDung !== 'cb' || db.caiDat.bhTheoBac !== false) fm.luongBHMoi.value = App.tien(gt.tien);
         });
         ve2();
+        dk.gan(el, nvHT);
       },
       nut: [{ ten: 'Huỷ' }, {
         ten: 'Lưu quyết định', loai: 'chinh', bam: function (el) {
@@ -454,12 +457,28 @@
               if (y0.loai === 'bo_nhiem' || y0.loai === 'dieu_chuyen') { y0.phongBanMoi = v.phongBanMoi; y0.chucVuMoi = v.chucVuMoi.trim(); nvx.phongBan = v.phongBanMoi; if (y0.chucVuMoi) nvx.chucVu = y0.chucVuMoi; }
             }
           }
+          var qdLuu = moi ? x : nvx.quyetDinh[i];
+          if (qdLuu && !qdLuu.id) qdLuu.id = App.uid();
           luuVaVe(nvx);
           App.bao('Đã lưu quyết định' + (tb.length ? ': ' + tb.join('; ') : ''), 'tot');
+          if (qdLuu) dk.luu(nvx, qdLuu.id);
           if (sauKhiLuu) sauKhiLuu();
         }
       }]
     });
+  };
+
+  /** Ô "Tệp" của 1 quyết định trong danh sách: số tệp đính kèm (bấm để xem) và nút đính kèm thêm */
+  App.oTepQD = function (nv, q) {
+    var n = q.id ? (nv.hoSoTep || []).filter(function (t) { return t.quyetDinhId === q.id; }).length : 0;
+    return '<span style="white-space:nowrap">' + (n ? '<span class="lk" data-a="xemtep" title="Xem tệp quyết định">📎 ' + n + ' tệp</span> ' : '') +
+      '<button class="nut nho" data-a="tep" title="Đính kèm tệp quyết định (bản scan)">' + App.icon('nhap') + '</button></span>';
+  };
+  App.xuLyTepQD = function (nv, q, a) {
+    if (a === 'tep') { if (!q.id) q.id = App.uid(); App.chonTepHoSo(nv, { loai: 'quyet_dinh', quyetDinhId: q.id }); return; }
+    var ds = (nv.hoSoTep || []).filter(function (t) { return q.id && t.quyetDinhId === q.id; });
+    if (ds.length === 1 && App.TEP.xemDuoc(ds[0])) App.TEP.xem(nv, ds[0]).catch(function (e) { App.bao(e.message, 'loi'); });
+    else App.moHoSo(nv.id, 'scan');
   };
 
   App.xoaQuyetDinh = function (nv, i) {
@@ -468,8 +487,11 @@
     var them = q.loai === 'nang_luong' && moiNhat ? '<br>Mức lương sẽ trở về ' + App.tien(q.luongCu) + ' đ.' :
       q.loai === 'thoi_viec' ? '<br>Nhân viên sẽ được chuyển lại trạng thái đang làm việc.' :
         (q.loai === 'bo_nhiem' || q.loai === 'dieu_chuyen') && moiNhat ? '<br>Phòng / đội, chức vụ trở về như trước quyết định.' : '';
+    var tepQD = q.id ? (nv.hoSoTep || []).filter(function (t) { return t.quyetDinhId === q.id; }) : [];
+    if (tepQD.length) them += '<br><span class="mo">' + tepQD.length + ' tệp đính kèm vẫn giữ trong tab Hồ sơ scan của nhân viên.</span>';
     App.xacNhan('Xoá quyết định <b>' + h(TL.LOAI_QD[q.loai]) + '</b> ' + h(q.so || '') + '?' + them, { nut: 'Xoá', nguy: true }).then(function (ok) {
       if (!ok) return;
+      tepQD.forEach(function (t) { t.quyetDinhId = ''; });
       if (q.loai === 'nang_luong' && moiNhat) {
         nv.luongCB = +q.luongCu || 0; if (q.luongBHCu != null && q.luongBHCu !== '') nv.luongBH = +q.luongBHCu;
         if ('xepLuongCu' in q) { if (q.xepLuongCu) nv.xepLuong = Object.assign({}, q.xepLuongCu); else delete nv.xepLuong; }
@@ -706,12 +728,13 @@
       '<div class="mo nho" style="margin-top:8px">' + ds.length + ' quyết định' + (tong.khen_thuong ? ' · tiền thưởng ' + App.tien(tong.khen_thuong) + ' đ' : '') + (tong.ky_luat ? ' · tiền phạt / bồi thường ' + App.tien(tong.ky_luat) + ' đ' : '') +
       '. Nâng lương tự áp dụng từ kỳ có ngày hiệu lực; thưởng / phạt có tiền tự vào bảng lương kỳ đã chọn.</div></div>' +
       App.dauIn('DANH SÁCH QUYẾT ĐỊNH', nam === 'all' ? '' : 'Năm ' + nam) +
-      '<div class="cuon cao"><table class="bang"><thead><tr><th>Hiệu lực</th><th>Loại</th><th>Số QĐ</th><th>Ngày ký</th><th style="min-width:160px">Nhân viên</th><th>Phòng / đội</th><th style="min-width:300px">Nội dung</th><th class="khong-in"></th></tr></thead><tbody>' +
+      '<div class="cuon cao"><table class="bang"><thead><tr><th>Hiệu lực</th><th>Loại</th><th>Số QĐ</th><th>Ngày ký</th><th style="min-width:160px">Nhân viên</th><th>Phòng / đội</th><th style="min-width:300px">Nội dung</th><th class="khong-in">Tệp</th><th class="khong-in"></th></tr></thead><tbody>' +
       (ds.length ? ds.map(function (o) {
         return '<tr data-nv="' + o.nv.id + '" data-i="' + o.i + '"><td class="giua">' + TL.hienNgay(o.q.hieuLuc) + '</td><td><span class="the-tt ' + App.mauQD(o.q.loai) + '">' + h(TL.LOAI_QD[o.q.loai]) + '</span></td><td>' + h(o.q.so) + '</td><td class="giua">' + TL.hienNgay(o.q.ngay) + '</td>' +
           '<td class="ten"><span class="lk" data-hs="' + o.nv.id + '">' + h(o.nv.hoTen) + '</span></td><td>' + h(TL.tenPhongBan(db, o.nv.phongBan)) + '</td><td style="white-space:normal">' + App.tomTatQD(o.q) + '</td>' +
+          '<td class="khong-in">' + App.oTepQD(o.nv, o.q) + '</td>' +
           '<td class="khong-in" style="white-space:nowrap"><button class="nut nho" data-a="sua">' + App.icon('sua') + '</button> <button class="nut nho nguy" data-a="xoa">' + App.icon('xoa') + '</button></td></tr>';
-      }).join('') : '<tr><td colspan="8" class="trong">Chưa có quyết định.</td></tr>') + '</tbody></table></div>';
+      }).join('') : '<tr><td colspan="9" class="trong">Chưa có quyết định.</td></tr>') + '</tbody></table></div>';
     App.$('#qd-nam').onchange = function () { stQD.nam = this.value; App.veLai(); };
     App.$('#qd-loai').onchange = function () { stQD.loai = this.value; App.veLai(); };
     App.$('#qd-tim').oninput = function () { stQD.tim = this.value; var v = this.value; App.veLai(); var i = App.$('#qd-tim'); i.focus(); i.setSelectionRange(v.length, v.length); };
@@ -730,6 +753,7 @@
       var hs = e.target.closest('[data-hs]'); if (hs) { App.moHoSo(hs.dataset.hs, 'quatrinh'); return; }
       var b = e.target.closest('[data-a]'), tr = e.target.closest('tr[data-nv]'); if (!b || !tr) return;
       var nv = App.timNV(tr.dataset.nv), i = +tr.dataset.i;
+      if (b.dataset.a === 'tep' || b.dataset.a === 'xemtep') { App.xuLyTepQD(nv, nv.quyetDinh[i], b.dataset.a); return; }
       if (b.dataset.a === 'sua') App.formQuyetDinh(nv, i); else App.xoaQuyetDinh(nv, i);
     };
   }

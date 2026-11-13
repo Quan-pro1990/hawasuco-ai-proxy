@@ -25,7 +25,8 @@
 
 ## Các tab khác trong hồ sơ
 - **Hợp đồng lao động**: lộ trình ký hợp đồng, **Ký hợp đồng tiếp theo** – xem [Hợp đồng lao động](#huongdan?p=hop-dong-lao-dong).
-- **Hồ sơ scan**: kéo thả hoặc **Chọn tệp…** (PDF, ảnh, Word, Excel ≤ 25 MB), chọn loại giấy tờ, **Xem**, **Tải về**, **Tải tất cả (.zip)**.
+- **Hồ sơ scan**: kéo thả hoặc **Chọn tệp…** (PDF, ảnh, Word, Excel ≤ 25 MB), chọn loại giấy tờ, gắn với hợp đồng / quyết định, **Xem**, **Tải về**,
+  **Tải tất cả (.zip)**. Tệp đính kèm ngay trong hộp ký hợp đồng, thêm quyết định cũng nằm ở đây.
 - **Quá trình công tác** (quyết định), **Nghỉ phép** (phép năm còn lại, đơn nghỉ), **Lương các kỳ** (12 kỳ gần nhất).
 
 ## Lưu ý

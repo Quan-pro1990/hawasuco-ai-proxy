@@ -456,24 +456,33 @@
     });
     var tong = ds.reduce(function (s, o) { return s + (+o.x.kichThuoc || 0); }, 0);
     var hdTen = function (x) { return (x.so || 'Không số') + ' – ' + (x.loai || '') + (x.tuNgay ? ' từ ' + TL.hienNgay(x.tuNgay) : ''); };
-    var optHD = function (chon) { return '<option value="">(Không gắn)</option>' + (nv.hopDong || []).filter(function (x) { return x.id; }).map(function (x) { return '<option value="' + h(x.id) + '"' + (x.id === chon ? ' selected' : '') + '>' + h(hdTen(x)) + '</option>'; }).join(''); };
+    var qdTen = function (q) { return (TL.LOAI_QD[q.loai] || 'Quyết định') + ' ' + (q.so || 'không số') + (q.hieuLuc ? ' – ' + TL.hienNgay(q.hieuLuc) : ''); };
+    (nv.quyetDinh || []).forEach(function (x) { if (!x.id) x.id = App.uid(); });
+    // giá trị "hd:<mã HĐ>" hoặc "qd:<mã QĐ>"
+    var optHD = function (chon) {
+      var hd = (nv.hopDong || []).filter(function (x) { return x.id; }), qd = (nv.quyetDinh || []).slice().sort(function (a, b) { return (b.hieuLuc || '') < (a.hieuLuc || '') ? -1 : 1; });
+      var op = function (v, ten) { return '<option value="' + h(v) + '"' + (v === chon ? ' selected' : '') + '>' + h(ten) + '</option>'; };
+      return '<option value="">(Không gắn)</option>' + (hd.length ? '<optgroup label="Hợp đồng">' + hd.map(function (x) { return op('hd:' + x.id, hdTen(x)); }).join('') + '</optgroup>' : '') +
+        (qd.length ? '<optgroup label="Quyết định">' + qd.map(function (x) { return op('qd:' + x.id, qdTen(x)); }).join('') + '</optgroup>' : '');
+    };
+    var ganCua = function (t) { return t.hopDongId ? 'hd:' + t.hopDongId : t.quyetDinhId ? 'qd:' + t.quyetDinhId : ''; };
     var optLoai = function (chon) { return Object.keys(T.LOAI).map(function (k) { return '<option value="' + k + '"' + (k === chon ? ' selected' : '') + '>' + h(T.LOAI[k]) + '</option>'; }).join(''); };
     (nv.hopDong || []).forEach(function (x) { if (!x.id) x.id = App.uid(); });
     var trongTD = ds.filter(function (o) { return o.x.noiLuu !== 'may_chu'; }).length;
     el.innerHTML = '<div class="the"><h3>Hồ sơ scan, tài liệu lưu trữ<span class="phai">' + ds.length + ' tệp' + (tong ? ' · ' + T.dungLuong(tong) : '') +
       (ds.length ? ' <button class="nut nho" id="sc-zip" title="Tải toàn bộ hồ sơ scan của nhân viên thành 1 tệp nén, chia thư mục theo loại">' + App.icon('tai') + 'Tải tất cả (.zip)</button>' : '') + '</span></h3>' +
       '<div class="vung-tha" id="sc-tha"><div style="margin-bottom:8px">' + App.icon('nhap') + ' <b>Kéo thả tệp scan vào đây</b> hoặc <button class="nut chinh" id="sc-chon">Chọn tệp…</button></div>' +
-      '<div class="hang" style="justify-content:center">Loại: <select id="sc-loai">' + optLoai(stScan.loai) + '</select> Gắn với hợp đồng: <select id="sc-hd">' + optHD(stScan.hd) + '</select></div></div>' +
+      '<div class="hang" style="justify-content:center">Loại: <select id="sc-loai">' + optLoai(stScan.loai) + '</select> Gắn với: <select id="sc-hd">' + optHD(stScan.hd) + '</select></div></div>' +
       '<p class="mo nho">Nhận PDF, ảnh (JPG, PNG…), Word, Excel; tối đa 25 MB / tệp; chọn được nhiều tệp một lần. ' +
       (T.mayChu() ? 'Tệp lưu trên <b>máy chủ</b> (thư mục dữ liệu, kèm 1 bản trong thư mục sao lưu) – máy nào đăng nhập cũng xem, tải về được.'
         : 'Đang chạy 1 file trên máy: tệp lưu trong <b>trình duyệt của máy này</b> (không nằm trong file sao lưu .json). Để lưu trữ lâu dài, nên dùng phần mềm qua máy chủ.') + '</p>' +
-      '<div class="cuon"><table class="bang" id="sc-bang"><thead><tr><th>Loại</th><th style="min-width:220px">Tên tệp</th><th>Gắn với hợp đồng</th><th style="min-width:160px">Ghi chú</th><th>Ngày tải lên</th><th class="so">Dung lượng</th><th></th></tr></thead><tbody>' +
+      '<div class="cuon"><table class="bang" id="sc-bang"><thead><tr><th>Loại</th><th style="min-width:220px">Tên tệp</th><th>Gắn với hợp đồng / quyết định</th><th style="min-width:160px">Ghi chú</th><th>Ngày tải lên</th><th class="so">Dung lượng</th><th></th></tr></thead><tbody>' +
       (ds.length ? ds.map(function (o) {
         var x = o.x, xem = T.xemDuoc(x), td = x.noiLuu !== 'may_chu';
         return '<tr data-i="' + o.i + '"><td><select data-f="loai" style="min-width:150px">' + optLoai(x.loai) + '</select></td>' +
           '<td class="ten">' + (xem ? '<span class="lk" data-a="xem" title="Mở xem">' + h(x.ten) + '</span>' : h(x.ten)) +
             (td && T.mayChu() ? ' <span class="the-tt cam" title="Tệp đang nằm trong trình duyệt của máy đã tải lên trước khi dùng máy chủ">trong trình duyệt</span>' : '') + '</td>' +
-          '<td><select data-f="hopDongId">' + optHD(x.hopDongId) + '</select></td>' +
+          '<td><select data-f="ganVoi" style="max-width:260px">' + optHD(ganCua(x)) + '</select></td>' +
           '<td><input class="o-nhap chu" data-f="ghiChu" value="' + h(x.ghiChu || '') + '" placeholder="vd bản gốc lưu tủ 2" style="width:100%"></td>' +
           '<td class="giua nho">' + (x.ngay ? new Date(x.ngay).toLocaleDateString('vi-VN') : '') + (x.nguoi ? '<div class="mo">' + h(x.nguoi) + '</div>' : '') + '</td>' +
           '<td class="so">' + T.dungLuong(+x.kichThuoc || 0) + '</td>' +
@@ -484,9 +493,9 @@
       }).join('') : '<tr><td colspan="7" class="trong">Chưa có tệp. Kéo thả bản scan hợp đồng, quyết định, CCCD, bằng cấp… vào khung trên.</td></tr>') +
       '</tbody></table></div>' + (trongTD && T.mayChu() ? '<p class="mo nho">' + trongTD + ' tệp chưa nằm trên máy chủ: mở hồ sơ này trên máy đã tải tệp lên rồi bấm “Đưa lên máy chủ”.</p>' : '') + '</div>';
 
-    var tha = App.$('#sc-tha', el), chon = function () { return { loai: App.$('#sc-loai', el).value, hopDongId: App.$('#sc-hd', el).value }; };
+    var tha = App.$('#sc-tha', el), chon = function () { var g = App.$('#sc-hd', el).value; return { loai: App.$('#sc-loai', el).value, hopDongId: /^hd:/.test(g) ? g.slice(3) : '', quyetDinhId: /^qd:/.test(g) ? g.slice(3) : '' }; };
     App.$('#sc-loai', el).onchange = function () { stScan.loai = this.value; };
-    App.$('#sc-hd', el).onchange = function () { stScan.hd = this.value; if (this.value) { stScan.loai = 'hop_dong'; App.$('#sc-loai', el).value = 'hop_dong'; } };
+    App.$('#sc-hd', el).onchange = function () { stScan.hd = this.value; if (this.value) { stScan.loai = /^qd:/.test(this.value) ? 'quyet_dinh' : 'hop_dong'; App.$('#sc-loai', el).value = stScan.loai; } };
     App.$('#sc-chon', el).onclick = function () { App.chonTepHoSo(nv, chon()); };
     tha.ondragover = function (e) { e.preventDefault(); tha.classList.add('keo'); };
     tha.ondragleave = function () { tha.classList.remove('keo'); };
@@ -501,7 +510,11 @@
       var f = e.target.dataset.f, tr = e.target.closest('tr[data-i]'); if (!f || !tr) return;
       var t = nv.hoSoTep[+tr.dataset.i];
       t[f] = f === 'ghiChu' ? e.target.value.trim() : e.target.value;
-      if (f === 'hopDongId' && t.hopDongId) t.loai = 'hop_dong';
+      if (f === 'ganVoi') {
+        var g = e.target.value; delete t.ganVoi;
+        t.hopDongId = /^hd:/.test(g) ? g.slice(3) : ''; t.quyetDinhId = /^qd:/.test(g) ? g.slice(3) : '';
+        if (t.hopDongId) t.loai = 'hop_dong'; if (t.quyetDinhId) t.loai = 'quyet_dinh';
+      }
       App.dongBoHoSo(nv); App.luu(); App.bao('Đã lưu'); if (f !== 'ghiChu') App.veLai();
     };
     App.$('#sc-bang', el).onclick = function (e) {
@@ -512,7 +525,7 @@
       else if (b.dataset.a === 'dualen') {
         T.layBlob(nv, t).then(function (blob) {
           var cu = Object.assign({}, t), f = new File([blob], t.ten, { type: blob.type });
-          return T.taiLen(nv, f, { loai: t.loai, hopDongId: t.hopDongId, ghiChu: t.ghiChu, ngay: t.ngay, nguoi: t.nguoi }).then(function (moi) {
+          return T.taiLen(nv, f, { loai: t.loai, hopDongId: t.hopDongId, quyetDinhId: t.quyetDinhId || '', ghiChu: t.ghiChu, ngay: t.ngay, nguoi: t.nguoi }).then(function (moi) {
             nv.hoSoTep[nv.hoSoTep.indexOf(t)] = moi;
             App.dongBoHoSo(nv); App.luuNgay(); App.veLai(); App.bao('Đã đưa “' + t.ten + '” lên máy chủ.', 'tot');
             return T.xoa(nv, cu).catch(function () { /* giữ bản trong trình duyệt nếu không xoá được */ });
@@ -533,18 +546,19 @@
   function tabQuaTrinh(el, d, nv) {
     var ds = (nv.quyetDinh || []).map(function (x, i) { return { x: x, i: i }; }).sort(function (a, b) { return (b.x.hieuLuc || b.x.ngay || '') < (a.x.hieuLuc || a.x.ngay || '') ? -1 : 1; });
     el.innerHTML = '<div class="the"><h3>Quá trình công tác, khen thưởng, kỷ luật<span class="phai"><button class="nut nho chinh" id="qd-them">' + App.icon('them') + 'Thêm quyết định</button></span></h3>' +
-      '<div class="cuon"><table class="bang"><thead><tr><th>Hiệu lực</th><th>Loại</th><th>Số quyết định</th><th>Ngày ký</th><th style="min-width:280px">Nội dung</th><th></th></tr></thead><tbody>' +
+      '<div class="cuon"><table class="bang"><thead><tr><th>Hiệu lực</th><th>Loại</th><th>Số quyết định</th><th>Ngày ký</th><th style="min-width:280px">Nội dung</th><th>Tệp</th><th></th></tr></thead><tbody>' +
       (ds.length ? ds.map(function (o) {
         var x = o.x;
         return '<tr data-i="' + o.i + '"><td class="giua">' + TL.hienNgay(x.hieuLuc) + '</td><td><span class="the-tt ' + App.mauQD(x.loai) + '">' + h(TL.LOAI_QD[x.loai] || x.loai) + '</span></td>' +
-          '<td>' + h(x.so) + '</td><td class="giua">' + TL.hienNgay(x.ngay) + '</td><td style="white-space:normal">' + App.tomTatQD(x) + '</td>' +
+          '<td>' + h(x.so) + '</td><td class="giua">' + TL.hienNgay(x.ngay) + '</td><td style="white-space:normal">' + App.tomTatQD(x) + '</td><td>' + App.oTepQD(nv, x) + '</td>' +
           '<td style="white-space:nowrap"><button class="nut nho" data-a="sua">' + App.icon('sua') + '</button> <button class="nut nho nguy" data-a="xoa">' + App.icon('xoa') + '</button></td></tr>';
-      }).join('') : '<tr><td colspan="6" class="trong">Chưa có quyết định nào.</td></tr>') + '</tbody></table></div>' +
+      }).join('') : '<tr><td colspan="7" class="trong">Chưa có quyết định nào.</td></tr>') + '</tbody></table></div>' +
       '<p class="mo nho">Quyết định nâng lương: các kỳ lương kết thúc trước ngày hiệu lực vẫn tính lương cũ. Khen thưởng / kỷ luật có số tiền được đưa vào bảng lương của kỳ đã chọn.</p></div>';
     el.onclick = function (e) {
       if (e.target.closest('#qd-them')) { App.formQuyetDinh(nv, null); return; }
       var b = e.target.closest('[data-a]'); if (!b) return;
       var i = +b.closest('tr').dataset.i;
+      if (b.dataset.a === 'tep' || b.dataset.a === 'xemtep') { App.xuLyTepQD(nv, nv.quyetDinh[i], b.dataset.a); return; }
       if (b.dataset.a === 'sua') App.formQuyetDinh(nv, i); else App.xoaQuyetDinh(nv, i);
     };
   }

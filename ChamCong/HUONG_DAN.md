@@ -124,8 +124,10 @@ Bấm 1 người trong danh sách để mở hồ sơ gồm các tab:
   tính theo số tháng đã làm. Hồ sơ → *Nghỉ phép* diễn giải cách tính và số ngày tích lũy đến nay; mức 12 ngày, 5 năm sửa ở Cài đặt → Kỳ công & giờ làm.
 - **Hồ sơ scan**: lưu trữ bản scan hợp đồng, quyết định, CCCD, sơ yếu lý lịch, bằng cấp, giấy khám sức khoẻ, sổ BHXH…
   để khi cần thì xem, tải xuống. Kéo thả hoặc **Chọn tệp…** (PDF, ảnh, Word, Excel; tối đa 25 MB/tệp; nhiều tệp một lần), chọn loại
-  và hợp đồng gắn kèm; sửa loại, ghi chú (vd *bản gốc lưu tủ 2*); **Xem**, **Tải về**, **Tải tất cả (.zip)** (chia thư mục theo loại).
+  và hợp đồng / quyết định gắn kèm; sửa loại, ghi chú (vd *bản gốc lưu tủ 2*); **Xem**, **Tải về**, **Tải tất cả (.zip)** (chia thư mục theo loại).
   Ở tab Hợp đồng lao động mỗi hợp đồng có cột *Bản scan* và nút tải bản scan lên; trang Hợp đồng lao động cho biết hợp đồng nào chưa có bản scan.
+  **Đính kèm ngay khi nhập**: hộp *Ký / Sửa hợp đồng* và *Thêm / Sửa quyết định* có ô **Tệp … đính kèm** – kéo thả hoặc *Chọn tệp…*, tệp tải lên
+  khi bấm Lưu và tự gắn với hợp đồng / quyết định đó; bấm tên tệp để xem, ✕ để xoá tệp gắn nhầm. Danh sách quyết định có cột **Tệp** (📎 xem, ⬆ đính kèm thêm).
   Trên máy chủ, tệp lưu ở thư mục dữ liệu (`D:\ChamCongData\TepHoSo`) và chép thêm 1 bản vào thư mục sao lưu (xoá trong phần mềm thì bản sao lưu vẫn giữ);
   tài khoản chấm công không xem được. Chạy 1 file trên máy: tệp lưu trong trình duyệt của máy đó (không nằm trong file sao lưu .json).
 - **In sơ yếu lý lịch** (A4, có ảnh). Sửa xong bấm **Lưu hồ sơ** (rời trang thì phần mềm tự lưu).
@@ -189,6 +191,7 @@ Tiếp nhận, bổ nhiệm, điều chuyển, **nâng lương**, **khen thưở
   "Áp dụng từ kỳ lương tháng …"): các kỳ trước vẫn tính chức danh, bậc, lương cũ. Chỉ đổi chức danh thì thời gian hưởng bậc giữ nguyên.
   Trang *Xếp lương, nâng bậc* có nút **Nâng / chuyển bậc…** trên từng người.
 - **Bổ nhiệm, điều chuyển** cập nhật phòng / đội, chức vụ; **Thôi việc** đặt ngày nghỉ việc = ngày trước ngày hiệu lực.
+- **Tệp quyết định đính kèm**: chọn / kéo thả bản scan quyết định đã ký ngay trong hộp quyết định (lưu vào Hồ sơ scan, loại Quyết định).
 - Xoá quyết định mới nhất thì lương, bậc / phòng, đội / trạng thái trở về như trước.
 
 ### Phòng, đội – chuyển nhân viên qua lại

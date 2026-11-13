@@ -712,6 +712,12 @@ td.bac-tat { background: repeating-linear-gradient(135deg, var(--soc1), var(--so
 .vung-tha.keo { border-color: var(--chinh); background: var(--chinh-nhat); color: var(--chinh); }
 .vung-tha > div > svg { width: 22px; height: 22px; vertical-align: middle; }
 .vung-tha select { max-width: 360px; }
+.dk-ds { display: flex; flex-direction: column; gap: 4px; }
+.dk-dong { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border: 1px solid var(--vien); border-radius: 8px; background: var(--mat); color: var(--chu); font-size: 13px; }
+.dk-dong .dk-ten { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dk-dong.bo .dk-ten { text-decoration: line-through; color: var(--mo); }
+.dk-tha { padding: 10px; font-size: 13px; }
+.dk-tha svg { width: 18px; height: 18px; vertical-align: middle; }
 
 /* ============ Hướng dẫn sử dụng từng phần ============ */
 .tb-hd { flex: none; gap: 5px; color: var(--chinh); border-color: var(--gy-vien); background: var(--chinh-nhat); }
