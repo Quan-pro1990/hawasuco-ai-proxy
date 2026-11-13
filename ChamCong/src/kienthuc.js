@@ -558,8 +558,27 @@
     }).join('') + (dau.b.quyChe ? '<div class="mo nho tl-nguon">📚 Theo Quy chế trả lương (QĐ ' + h(dau.b.quyChe) + ').</div>' : '') + hang(nutTrang('nangbac', 'Mở Xếp lương, nâng bậc')) };
   }
 
+  /* ================= Kiến thức dạng chữ thuần (gửi cho "bộ não AI" của trợ lý trên máy chủ) =================
+     Chỉ gồm kiến thức chung và số liệu cài đặt của công ty (tỷ lệ BH, hệ số làm thêm…), không có dữ liệu của nhân viên. */
+  function chuThuan(html) {
+    var d = document.createElement('div');
+    d.innerHTML = String(html || '').replace(/<li[^>]*>/gi, '\n- ').replace(/<br\s*\/?>/gi, '\n').replace(/<\/(p|div|ul|ol|tr|h\d)>/gi, '\n')
+      .replace(/<(b|strong)>/gi, '**').replace(/<\/(b|strong)>/gi, '**');
+    Array.prototype.forEach.call(d.querySelectorAll('button, .tl-nuts, .tl-goi, .tl-lq'), function (x) { x.remove(); });
+    return d.textContent.replace(/\*{4}/g, '').replace(/[ \t]+\n/g, '\n').replace(/\n[ \t]+/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+  }
+  function vanBan() {
+    var kq = ['## ' + TEN + ' làm được gì\n' + chuThuan(lamDuocGi())];
+    KT.forEach(function (k) {
+      var nd; try { nd = chuThuan(k.nd()); } catch (e) { return; }
+      kq.push('## ' + k.td + '\n' + nd + (k.ng ? '\nCăn cứ: ' + k.ng : '') +
+        (k.lk && k.lk.length ? '\nTrang trong phần mềm: ' + k.lk.map(function (id) { return '#' + id; }).join(', ') : ''));
+    });
+    return kq.join('\n\n');
+  }
+
   App.KienThuc = {
     ten: TEN, banThan: banThan, tinh: tinh, tim: tim, ve: veKT, bacLuong: bacLuong, chuDe: function () { return KT.map(function (k) { return k.td; }); },
-    lamDuocGi: lamDuocGi, docTien: docTien
+    lamDuocGi: lamDuocGi, docTien: docTien, vanBan: vanBan, chuThuan: chuThuan
   };
 })();

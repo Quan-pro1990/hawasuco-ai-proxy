@@ -24,7 +24,7 @@ Mỗi phần của phần mềm có hướng dẫn riêng từng bước (Dùng 
 ## Trợ lý ảo Hawasuco
 
 Linh vật robot ở góc phải dưới (giống trợ lý ảo trên web.capnuochaugiang.vn) – bấm vào hoặc nhấn **Ctrl + K** để hỏi.
-Trợ lý chạy ngay trong phần mềm, **không gửi dữ liệu ra ngoài**, trả lời theo quyền của tài khoản đang dùng:
+Trợ lý chạy ngay trong phần mềm, **không gửi dữ liệu nhân sự ra ngoài**, trả lời theo quyền của tài khoản đang dùng:
 - **Hướng dẫn cách làm**: "cách chấm công", "nâng bậc lương thế nào", "sao lưu dữ liệu", "sửa tỷ lệ bảo hiểm ở đâu"… – trả lời từ
   hướng dẫn sử dụng này, kèm nút mở đúng trang / thẻ cài đặt.
 - **Tìm nhanh**: gõ tên, mã NV, số điện thoại, số hợp đồng, quyết định, tên phòng / đội ("đội 1").
@@ -33,6 +33,16 @@ Trợ lý chạy ngay trong phần mềm, **không gửi dữ liệu ra ngoài**
   lương cơ sở, tiền cơm, tạm ứng kỳ I, ngày lễ sắp tới, tỷ lệ bảo hiểm, giảm trừ gia cảnh, ký hiệu chấm công, quyền của tôi.
 - **Mở trang**: "mở bảng lương", "vào chấm công".
 Gõ không dấu cũng được. Mũi tên lên / xuống để gọi lại câu đã hỏi; Esc để đóng.
+
+**Bộ não AI Claude** (chế độ máy chủ, như trợ lý ảo trên web.capnuochaugiang.vn):
+- Người quản trị bật ở **Cài đặt & dữ liệu → Dữ liệu & tài khoản → Trợ lý ảo AI (Claude)**: chọn *Trực tiếp Anthropic* (dán khóa API, tạo ở console.anthropic.com)
+  hoặc *Qua máy chủ AI trung gian của công ty* (hawasuco-ai-proxy: địa chỉ `https://<máy chủ AI>:3000/v1/messages` + mã PROXY_AUTH_TOKEN), chọn mô hình
+  (Claude Opus 5.5 mặc định / Sonnet 5.5 / Haiku 5.5), đánh dấu **Bật** → **Lưu & thử kết nối**. Khóa chỉ lưu trên máy chủ (`DuLieu\troly-ai.json`), không gửi về trình duyệt.
+- Khi bật, trợ lý có nhãn **AI**: câu hỏi cách làm, chế độ lao động – tiền lương, yêu cầu viết / soạn / giải thích được **AI Claude** trả lời tự nhiên với hiệu ứng gõ chữ,
+  kèm nút mở trang; câu hỏi về dữ liệu nhân viên vẫn trả lời ngay trên máy. AI lỗi hoặc chưa bật: dùng bộ trả lời có sẵn.
+- Gửi tới AI: câu hỏi (tên nhân viên, số điện thoại / CCCD / số tài khoản được che), hướng dẫn sử dụng, kiến thức chung, cài đặt của công ty – **không gửi**
+  hồ sơ, chấm công, lương. Máy chủ cần ra Internet (HTTPS) tới api.anthropic.com hoặc máy chủ AI trung gian; mỗi tài khoản tối đa 40 câu / 10 phút;
+  số token từng lần hỏi ghi ở Nhật ký máy chủ. Mỗi máy tắt / bật AI ở nút **Cài đặt trợ lý**.
 
 **Trợ lý ảo Hawasuco hiểu biết rộng**:
 - Hỏi về trợ lý: “bạn là ai”, “Hawasuco là gì”, “bạn làm được gì”, “ai tạo ra bạn”, “dữ liệu có gửi ra ngoài không”…; về công ty: tên, địa chỉ, mã số thuế (lấy từ Cài đặt).

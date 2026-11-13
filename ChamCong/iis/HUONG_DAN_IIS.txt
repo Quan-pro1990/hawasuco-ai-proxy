@@ -89,6 +89,7 @@ lẫn nhau; máy kế toán đang sửa mà tổ vừa chấm công thì phần 
 - Hồ sơ scan nhân viên: D:\ChamCongData\TepHoSo\<mã NV>\ (hợp đồng, quyết định, CCCD… tải lên trong hồ sơ);
                         mỗi tệp chép thêm 1 bản vào D:\ChamCongData\SaoLuu\TepHoSo (xoá trong phần mềm thì bản này vẫn giữ).
 - Nhật ký truy cập IIS: D:\ChamCongData\IISLogs
+- Cấu hình trợ lý AI:   D:\ChamCongData\troly-ai.json (khóa API / mã truy cập AI – không gửi về trình duyệt)
 - Trên C chỉ có chương trình (C:\inetpub\ChamCong; kèm giọng đọc AI ~75 MB).
 Trang quản trị (Cài đặt & dữ liệu → Dữ liệu & tài khoản) hiện thư mục dữ liệu, sao lưu, chỗ trống từng ổ, và cảnh báo
 nếu dữ liệu / sao lưu nằm ở ổ C.
@@ -117,6 +118,12 @@ Giọng đọc AI tiếng Việt cho trợ lý ảo: bộ cài tự tải 2 tệ
 (từ huggingface.co và cdn.jsdelivr.net / unpkg.com, kiểm tra mã SHA-256 – xem giong-doc\ai\NGUON.json; đã có thì bỏ qua).
 Máy chủ không ra được Internet: tải 2 tệp đó trên máy khác, chép vào thư mục giong-doc\ai của bộ cài rồi chạy lại bộ cài.
 
+Bộ não AI (Claude) cho trợ lý ảo – tùy chọn, như trợ lý ảo trên web.capnuochaugiang.vn: tài khoản quản trị vào
+Cài đặt & dữ liệu → Dữ liệu & tài khoản → Trợ lý ảo AI (Claude): dán khóa API Anthropic (tạo ở console.anthropic.com)
+hoặc nhập địa chỉ + mã truy cập máy chủ AI trung gian của công ty (hawasuco-ai-proxy, https://<máy chủ AI>:3000/v1/messages),
+chọn mô hình → Bật → "Lưu & thử kết nối". Máy chủ cần ra Internet HTTPS (cổng 443) tới api.anthropic.com hoặc tới máy chủ
+AI trung gian (mở tường lửa / proxy chiều đi). Chưa bật hoặc AI lỗi: trợ lý tự dùng bộ trả lời có sẵn.
+
 7. KHI CÓ SỰ CỐ
 ---------------
 - CaiDat-MayChu-IIS.bat -KiemTra    gọi thử https và http.
@@ -131,3 +138,6 @@ Máy chủ không ra được Internet: tải 2 tệp đó trên máy khác, ch�
 - Mật khẩu lưu dạng băm PBKDF2; phiên đăng nhập 12 giờ (cookie HttpOnly, SameSite); sai mật khẩu
   nhiều lần bị khoá 10 phút.
 - Thư mục dữ liệu chỉ quản trị máy chủ và app pool ChamCong đọc / ghi được.
+- Trợ lý AI: khóa API / mã truy cập chỉ nằm trên máy chủ (troly-ai.json). Trình duyệt chỉ gửi cho AI câu hỏi (đã che tên nhân viên,
+  số điện thoại, CCCD, số tài khoản), hướng dẫn sử dụng, kiến thức chung, cài đặt công ty – không gửi hồ sơ, chấm công, lương.
+  Mỗi tài khoản tối đa 40 câu hỏi AI / 10 phút; số token từng lần hỏi ghi ở nhật ký.

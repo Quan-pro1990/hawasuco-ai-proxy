@@ -46,6 +46,12 @@ Chọn **Tải bản mới nhất** (bỏ thay đổi vừa làm, làm lại) ho
 Chạy 1 file: dữ liệu nằm trong trình duyệt – thường xuyên **Sao lưu ra file**, sang máy mới **Khôi phục từ file**. Trên máy chủ dữ liệu
 nằm ở ổ D và tự sao lưu mỗi ngày.
 
+## Trợ lý không trả lời bằng AI (không thấy nhãn AI)
+- Bộ não AI chỉ có khi dùng **máy chủ**; người quản trị bật ở Cài đặt & dữ liệu → Dữ liệu & tài khoản → **Trợ lý ảo AI (Claude)** → **Lưu & thử kết nối**.
+- *Khóa / mã truy cập không hợp lệ*: nhập lại khóa API (hoặc mã PROXY_AUTH_TOKEN). *Không kết nối được*: máy chủ cần ra Internet (HTTPS) tới api.anthropic.com
+  hoặc máy chủ AI trung gian – kiểm tra tường lửa, proxy.
+- Trên máy mình đã tắt: nút **Cài đặt trợ lý** → chọn lại *Dùng AI Claude…*. Câu hỏi về dữ liệu nhân viên luôn trả lời trên máy, không qua AI.
+
 ## Micro / giọng đọc của trợ lý không chạy
 - Micro: dùng Chrome / Edge, cho phép micro trên thanh địa chỉ; kiểm tra Cài đặt → Đơn vị & chữ ký → Trợ lý ảo.
 - Giọng đọc: cài đặt giọng nói → chọn **Giọng AI tiếng Việt** → **Nghe thử**; kiểm tra loa / âm lượng máy. Lần đầu phải chờ tải giọng AI (~63 MB).

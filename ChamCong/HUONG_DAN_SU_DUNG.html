@@ -326,7 +326,7 @@
  người ký bảng lương và bảng chấm công; bật / tắt <b>nói câu hỏi bằng micro</b> cho trợ lý ảo.
 </li><li><b>Kỳ công &amp; giờ làm</b>: ngày bắt đầu kỳ công (mặc định 21), ngày nghỉ hằng tuần, thứ bảy nửa ngày, phép năm cơ bản (12 ngày) và số năm thâm niên được cộng 1 ngày phép (5 năm),
  giờ vào – ra, ngưỡng đủ / nửa công, làm thêm, <i>không trả lương thời gian quá công chuẩn</i>.
-</li><li><b>Lương &amp; làm thêm</b>: hệ số làm thêm (150 / 200 / 300%), giờ ban đêm (22:00 – 06:00) và mức cộng thêm khi làm thêm ban đêm (30% + 20%),
+</li><li><b>Lương &amp; làm thêm</b>: hệ số làm thêm (150 / 200 / 300%), giờ ban đêm (22:00 – 06:00) và hệ số làm thêm ban đêm (200%; đêm ngày lễ, Tết theo hệ số ngày lễ),
  cảnh báo làm thêm vượt 40 giờ/tháng, tiền làm thêm chi bảng riêng, ngừng việc, hệ số đi làm ngày lễ / Tết,
  <b>thử việc</b> (% lương mặc định, không đóng BH khi thử việc), làm tròn, phạt đi muộn.
 </li><li><b>Bảo hiểm &amp; công đoàn</b>: tỷ lệ đóng, vùng và lương tối thiểu vùng, lương cơ sở (ẩn khi công ty không dùng), ngưỡng nghỉ không lương không đóng BH,
@@ -334,7 +334,8 @@
 </li><li><b>Thuế TNCN</b>: giảm trừ bản thân, người phụ thuộc, biểu thuế lũy tiến, khấu trừ 10%.
 </li><li><b>Sao lưu dữ liệu</b> (trên máy chủ: <b>Dữ liệu &amp; tài khoản</b>): sao lưu ra file / khôi phục; trên máy chủ còn có bản sao lưu hằng ngày
  (thẻ <i>Nơi lưu dữ liệu và bản sao lưu</i> cho biết dữ liệu nằm ở ổ nào, còn trống bao nhiêu; nằm ở ổ C thì cảnh báo và chỉ cách chuyển sang ổ D),
- <b>tài khoản đăng nhập</b> và nhật ký – xem <a href="#tai-khoan-phan-quyen">Tài khoản &amp; phân quyền</a>.
+ <b>tài khoản đăng nhập</b> và nhật ký – xem <a href="#tai-khoan-phan-quyen">Tài khoản &amp; phân quyền</a>; khung <b>Trợ lý ảo AI (Claude)</b> để bật bộ não AI
+ cho trợ lý (khóa API hoặc máy chủ AI trung gian) – xem <a href="#tro-ly-ao">Trợ lý ảo</a>.
 </li></ul>
 <div class="hd-ghichu">Thay đổi tỷ lệ, mức pháp lý chỉ ảnh hưởng các kỳ chưa chốt. Lương cơ sở đổi từ một tháng: dùng <a href="#muc-luong-theo-ky">Mức lương theo kỳ</a>.</div></section><section id="tai-khoan-phan-quyen"><a class="len" href="#muc-luc">↑ Mục lục</a><h1>Tài khoản &amp; phân quyền</h1>
 <p><b>Dùng để:</b> cấp tài khoản đăng nhập cho từng người / từng phòng, đội và giới hạn phần được xem, được sửa. Chỉ có khi phần mềm <b>chạy trên máy chủ</b> (https://qlns.capnuochaugiang.vn/) và chỉ <b>tài khoản quản trị</b> làm được.</p>
@@ -364,7 +365,7 @@
 </li><li>Vừa cập nhật phần mềm mà máy chủ vẫn chạy bản cũ: chạy lại <code>CaiDat-MayChu-IIS.bat</code> của bộ cài mới (dữ liệu, tài khoản giữ nguyên).
 </li></ul>
 <div class="hd-ghichu">Máy chủ kiểm tra lại quyền: phần không được xem thì không gửi về máy; phần chỉ được xem thì không lưu thay đổi;<br>tài khoản đội không sửa được người ngoài đội, không sửa kỳ đã chốt.</div></section><section id="tro-ly-ao"><a class="len" href="#muc-luc">↑ Mục lục</a><h1>Trợ lý ảo Hawasuco</h1>
-<p><b>Dùng để:</b> hỏi cách làm, tìm nhanh thông tin, hỏi số liệu bằng chữ hoặc giọng nói. Trả lời theo quyền của tài khoản; dữ liệu nhân sự không gửi ra ngoài.</p>
+<p><b>Dùng để:</b> hỏi cách làm, tìm nhanh thông tin, hỏi số liệu bằng chữ hoặc giọng nói. Trả lời theo quyền của tài khoản; dữ liệu nhân sự không gửi ra ngoài. Có máy chủ thì bật được <b>bộ não AI Claude</b> để trả lời tự nhiên như trợ lý ảo trên web.capnuochaugiang.vn.</p>
 <h2>Cách dùng</h2>
 <ol><li>Bấm vào <b>robot</b> ở góc phải dưới (hoặc <b>Ctrl + K</b>), gõ câu hỏi rồi Enter. Gõ không dấu cũng được.
 </li><li>Ví dụ: <i>ai sắp hết hạn hợp đồng</i>, <i>ai đang thử việc</i>, <i>hôm nay ai nghỉ</i>, <i>lương của</i> + họ tên, <i>cách nâng bậc lương</i>,
@@ -375,10 +376,30 @@
  <i>nữ sinh tháng 5/1975 bao giờ nghỉ hưu</i>, <i>âm lịch hôm nay</i>, <i>còn bao nhiêu ngày đến Tết</i>), hỏi về trợ lý (<i>bạn là ai</i>, <i>bạn làm được gì</i>).
  Câu trả lời về luật có ghi nguồn (điều luật); số liệu (tỷ lệ BH, giảm trừ, biểu thuế…) lấy từ Cài đặt của công ty.
 </li></ol>
+<h2>Bộ não AI Claude (như trợ lý ảo trên web.capnuochaugiang.vn)</h2>
+<ul><li>Khi người quản trị bật <b>bộ não AI</b>, cạnh tên trợ lý có nhãn <b>AI</b>: câu hỏi cách làm, chế độ lao động – tiền lương, yêu cầu <i>viết, soạn, giải thích, tư vấn…</i>
+ được <b>AI Claude</b> trả lời tự nhiên, chữ hiện dần như đang gõ (bấm vào câu trả lời để hiện hết ngay), kèm nút mở trang, hướng dẫn liên quan.
+</li><li>Câu hỏi <b>về dữ liệu</b> (ai sắp hết hạn hợp đồng, lương của một người, ai nghỉ hôm nay…) vẫn trả lời <b>ngay trên máy</b>, không gửi cho AI.
+</li><li>Gửi tới AI (qua máy chủ của công ty): câu hỏi – <b>tên nhân viên, số điện thoại, CCCD, số tài khoản trong câu hỏi được che</b> thành <i>[tên nhân viên]</i>, <i>[số]</i> –
+ cùng hướng dẫn sử dụng, kiến thức chung, cài đặt của công ty. <b>Không gửi</b> hồ sơ, chấm công, lương của nhân viên. Khóa API chỉ lưu trên máy chủ.
+</li><li>AI chưa bật, mất mạng hoặc lỗi: trợ lý tự trả lời bằng bộ trả lời có sẵn. Mỗi tài khoản hỏi AI tối đa 40 câu / 10 phút.
+</li><li>Không muốn dùng AI trên máy mình: nút <b>Cài đặt trợ lý</b> (biểu tượng thanh trượt) → bỏ chọn <i>Dùng AI Claude…</i>. Chạy 1 file trên máy (không có máy chủ): không có bộ não AI.
+</li></ul>
+<h3>Người quản trị bật bộ não AI</h3>
+<ol><li>Đăng nhập tài khoản <b>quản trị</b> → <b>Cài đặt &amp; dữ liệu</b> → thẻ <b>Dữ liệu &amp; tài khoản</b> → khung <b>Trợ lý ảo AI (Claude)</b>.
+</li><li>Chọn <b>Cách kết nối</b>:
+<ul><li><b>Trực tiếp Anthropic</b>: dán <b>khóa API</b> (tạo ở console.anthropic.com → API Keys).
+</li><li><b>Qua máy chủ AI trung gian của công ty</b> (hawasuco-ai-proxy, dùng chung với trợ lý trên web): nhập địa chỉ <code>https://&lt;máy chủ AI&gt;:3000/v1/messages</code> và <b>mã truy cập</b> (PROXY_AUTH_TOKEN).
+</li></ul>
+</li><li>Chọn <b>Mô hình AI</b>: <i>Claude Opus 5.5</i> (thông minh nhất, mặc định), <i>Claude Sonnet 5.5</i> (nhanh, chi phí vừa) hoặc <i>Claude Haiku 5.5</i> (nhanh nhất, rẻ nhất).
+</li><li>Đánh dấu <b>Bật bộ não AI cho trợ lý ảo</b> → <b>Lưu &amp; thử kết nối</b>: thấy ✅ <i>Kết nối được</i> là xong.
+</li><li>Máy chủ phải ra được Internet (HTTPS, cổng 443) tới <code>api.anthropic.com</code> hoặc tới máy chủ AI trung gian. Số token mỗi lần hỏi ghi ở <b>Nhật ký máy chủ</b>;
+ phần hướng dẫn, kiến thức được lưu đệm phía AI nên các câu hỏi sau nhanh và rẻ hơn.
+</li></ol>
 <h2>Nói chuyện bằng giọng nói (Chrome, Edge)</h2>
 <ol><li>Bấm <b>micro</b> 🎤 rồi nói câu hỏi tiếng Việt – lần đầu chọn <i>Cho phép</i> dùng micro.
 </li><li>Trợ lý trả lời và <b>đọc to</b>. Nút <b>loa</b> 🔊 bật đọc cả câu hỏi gõ tay; nút loa nhỏ trên câu trả lời để đọc lại.
-</li><li>Nút <b>cài đặt giọng nói</b>: chọn giọng đọc, tốc độ, <b>nói chuyện liên tục</b>, <b>Nghe thử</b>; tắt / bật chuyển động của robot.
+</li><li>Nút <b>cài đặt trợ lý</b>: bật / tắt AI trên máy này, chọn giọng đọc, tốc độ, <b>nói chuyện liên tục</b>, <b>Nghe thử</b>; tắt / bật chuyển động của robot.
 </li><li>Lệnh nói: <i>dừng</i>, <i>đọc lại</i>, <i>kết thúc</i>.
 </li></ol>
 <h2>Giọng đọc AI tiếng Việt</h2>
@@ -418,6 +439,12 @@
 <p>Chọn <b>Tải bản mới nhất</b> (bỏ thay đổi vừa làm, làm lại) hoặc <b>Ghi đè</b> (mất thay đổi của người kia). Chấm công theo ô thì phần mềm tự ghép.</p>
 <h2>Đổi máy / chạy 1 file bị mất dữ liệu</h2>
 <p>Chạy 1 file: dữ liệu nằm trong trình duyệt – thường xuyên <b>Sao lưu ra file</b>, sang máy mới <b>Khôi phục từ file</b>. Trên máy chủ dữ liệu nằm ở ổ D và tự sao lưu mỗi ngày.</p>
+<h2>Trợ lý không trả lời bằng AI (không thấy nhãn AI)</h2>
+<ul><li>Bộ não AI chỉ có khi dùng <b>máy chủ</b>; người quản trị bật ở Cài đặt &amp; dữ liệu → Dữ liệu &amp; tài khoản → <b>Trợ lý ảo AI (Claude)</b> → <b>Lưu &amp; thử kết nối</b>.
+</li><li><i>Khóa / mã truy cập không hợp lệ</i>: nhập lại khóa API (hoặc mã PROXY_AUTH_TOKEN). <i>Không kết nối được</i>: máy chủ cần ra Internet (HTTPS) tới api.anthropic.com
+ hoặc máy chủ AI trung gian – kiểm tra tường lửa, proxy.
+</li><li>Trên máy mình đã tắt: nút <b>Cài đặt trợ lý</b> → chọn lại <i>Dùng AI Claude…</i>. Câu hỏi về dữ liệu nhân viên luôn trả lời trên máy, không qua AI.
+</li></ul>
 <h2>Micro / giọng đọc của trợ lý không chạy</h2>
 <ul><li>Micro: dùng Chrome / Edge, cho phép micro trên thanh địa chỉ; kiểm tra Cài đặt → Đơn vị &amp; chữ ký → Trợ lý ảo.
 </li><li>Giọng đọc: cài đặt giọng nói → chọn <b>Giọng AI tiếng Việt</b> → <b>Nghe thử</b>; kiểm tra loa / âm lượng máy. Lần đầu phải chờ tải giọng AI (~63 MB).

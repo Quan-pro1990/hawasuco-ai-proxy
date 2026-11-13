@@ -417,6 +417,9 @@
   /* ================= Xử lý câu hỏi ================= */
   var CX = null;
   function cx(c) { CX = c; }
+  // Mức chắc chắn của câu trả lời có sẵn: 'chac' = trả lời từ dữ liệu / tính toán (giữ nguyên, không hỏi AI);
+  // 'kt' = kiến thức, hướng dẫn tìm được (có AI thì để AI trả lời tự nhiên hơn, PHU = nút / liên kết gắn thêm); 'khong' = chưa hiểu câu hỏi
+  var MUC = 'chac', PHU = '';
   // cảm xúc theo loại câu trả lời dữ liệu: [cử chỉ, ms, biểu tượng]
   var CX_YD = { hd_het: ['ngac', 1500, '📋'], chua_hd: ['ngac', 1500, '📄'], thu_viec: ['gat', 1200, '📝'], nghi_nay: ['gat', 1200, '🏖️'], don_cho: ['gat', 1200, '📨'],
     cc_trong: ['gat', 1200, '🗓️'], sinh_nhat: ['mua', 1800, '🎂'], nghi_huu: ['gat', 1200, '🌅'], quan_so: ['gat', 1200, '👥'], luong_cs: ['gat', 1200, '💰'], com: ['yeu', 1400, '🍚'],
@@ -434,7 +437,7 @@
     return null;
   }
   function traLoi(goc) {
-    CX = null;
+    CX = null; MUC = 'chac'; PHU = '';
     var q = cn(goc);
     if (!q) return chao();
     // về bản thân Trợ lý ảo Hawasuco, về công ty (kienthuc.js)
@@ -460,8 +463,10 @@
     if (mt) { cx(mt.cx); return mt.html; }
     var nguoi = timNguoi(q), dv = nguoi.length ? null : timDonVi(q), ctx = { nv: nguoi.length === 1 ? nguoi[0] : null, dv: dv };
     var hoiCach = laHoiCach(q);
+    // yêu cầu soạn, giải thích, tư vấn… (không phải tra dữ liệu): bỏ qua câu trả lời dữ liệu để bộ não AI trả lời (không có AI: tìm trong hướng dẫn, kiến thức)
+    var soan = !nguoi.length && /^((hay|giup|giup toi|nho|ban|em|lam on) )*(viet|soan|soan thao|giai thich|so sanh|tu van|goi y|tom tat|de xuat|phan tich|lap ke hoach|lam the nao de|tai sao|vi sao)( |$)/.test(q);
     // câu hỏi dữ liệu
-    for (var i = 0; i < Y.length; i++) {
+    for (var i = 0; i < Y.length && !soan; i++) {
       var y = Y[i];
       if (!y.dk(q, ctx)) continue;
       if (y.quyen && App.quyen(y.quyen) < 1) { cx(['lac', 1200, '🔒']); return khongQuyen(y.quyen); }
@@ -500,19 +505,30 @@
     var hoiLuat = /(^| )(bao lau|toi da|toi thieu|quy dinh|theo luat|luat|may lan|bao nhieu|may ngay|may thang|duoc khong|co duoc|la gi|dieu kien|che do|muc huong|duoc huong|duoc nghi)( |$)/.test(q);
     if (kt.length && !hoiPM && !(kt[0].k.pm && !hoiLuat && hd.length)) {
       var rk = App.KienThuc.ve(kt[0].k, kt.slice(1, 3));
+      MUC = 'kt'; PHU = nutHang(nutKT(kt[0].k)) + lienQuan(q, 2);
       cx(rk.cx); return rk.html + lienQuan(q, 2);
     }
     // hỏi cách làm / tìm trong hướng dẫn và nơi thiết lập
     var lqKT = kt.length ? '<div class="tl-lq">Kiến thức liên quan: ' + kt.slice(0, 2).map(function (x) { return '<a href="#" data-tl="hoi:' + h(x.k.td) + '">' + h(x.k.td) + '</a>'; }).join(' · ') + '</div>' : '';
-    if (hd.length || noi) cx(['gat', 1200, '📖']);
+    if (hd.length || noi) { cx(['gat', 1200, '📖']); MUC = 'kt'; PHU = phuHuongDan(hd, noi) + lqKT; }
     if (hd.length || noi) return veHuongDan(hd, noi, !!noi && ((noi.diem >= 7 && !laHoiCach(q)) || noi.diem >= 10 || /(sua|o dau|cai dat|thiet lap|thay doi|chinh|them)( |$)/.test(q))) + lqKT;
-    if (kt.length) { var rk2 = App.KienThuc.ve(kt[0].k, kt.slice(1, 3)); cx(rk2.cx); return rk2.html; }
+    if (kt.length) { var rk2 = App.KienThuc.ve(kt[0].k, kt.slice(1, 3)); cx(rk2.cx); MUC = 'kt'; PHU = nutHang(nutKT(kt[0].k)); return rk2.html; }
     // tìm rộng: tên nhân viên gần đúng
     var gan = timGanDung(q);
+    MUC = 'khong';
+    if (gan.length) PHU = '<div class="tl-lq">Hay bạn tìm nhân viên: ' + gan.slice(0, 5).map(lienKetNV).join(' · ') + '</div>';
     if (gan.length) cx(['ngac', 1200, '🤔']);
     if (gan.length) return 'Tôi chưa hiểu rõ câu hỏi. Có phải bạn tìm:' + dsGon(gan, function (nv) { return lienKetNV(nv) + ' – ' + h(nv.ma) + ', ' + h(TL.tenPhongBan(App.db, nv.phongBan)); }, 8);
     cx(['lac', 1200, '🤔']);
     return 'Tôi chưa tìm thấy thông tin phù hợp. Bạn thử hỏi ngắn gọn theo mẫu:' + '<div class="tl-goi">' + GOI_Y.slice(0, 6).map(hoi).join('') + '</div>';
+  }
+  /** Nút mở trang liên quan của 1 mục kiến thức */
+  function nutKT(k) { return (k.lk || []).map(function (id) { return nutTrang(id); }).join(''); }
+  /** Nút / liên kết gắn sau câu trả lời của AI cho câu hỏi cách làm: mở nơi thiết lập, mở trang, hướng dẫn từng bước */
+  function phuHuongDan(hd, noi) {
+    var c = hd.length ? hd[0].c : null, tr = c ? trangCuaMuc(c.tieuDe) || trangCuaMuc(c.muc) : null, nuts = [];
+    [noi ? nutNoi(noi) : '', tr ? nutNoi(tr) : '', c ? nutHDPhan(tr || noi, c) : ''].forEach(function (x) { if (x && nuts.indexOf(x) < 0) nuts.push(x); });
+    return nutHang(nuts.join('')) + (hd.length ? '<div class="tl-lq">Hướng dẫn liên quan: ' + hd.map(function (x) { return '<a href="#" data-tl="hd:' + x.c.i + '">' + h(x.c.tieuDe) + '</a>'; }).join(' · ') + '</div>' : '');
   }
   function lienQuan(q, n) {
     var hd = timHuongDan(q, n);
@@ -740,7 +756,7 @@
     if (t.length > 700) { var cat = t.slice(0, 700), vt = cat.lastIndexOf('. '); t = (vt > 300 ? cat.slice(0, vt + 1) : cat) + ' Mời bạn xem chi tiết trên màn hình.'; }
     return t;
   }
-  function trangThai(chu) { var s = el && el.querySelector('.tl-tt'); if (s) s.textContent = chu || 'Hướng dẫn, tìm thông tin trong phần mềm'; }
+  function trangThai(chu) { var s = el && el.querySelector('.tl-tt'); if (s) s.textContent = chu || (aiSan() ? 'Trả lời bằng AI Claude' : 'Hướng dẫn, tìm thông tin trong phần mềm'); }
   function datNoi(v) {
     GN.noi = v; if (nutLV) nutLV.classList.toggle('dang-noi', v); trangThaiLV('noi', v); trangThai(v ? 'Đang nói… (bấm 🔊 để dừng)' : '');
     var l = el && el.querySelector('.tl-loa'); if (l) l.classList.toggle('dang', v);
@@ -834,7 +850,9 @@
     if (!p.hidden) { p.hidden = true; return; }
     var ds = dsGiong(), g = giong(), th = dsGiongTH(), may = dsGiongMay(), loiTH = App.GiongDoc && App.GiongDoc.loi(), ttAI = coAI() ? App.GiongAI.trangThai() : null;
     function opt(v) { return '<option value="' + h(v.name) + '"' + (g && g.name === v.name ? ' selected' : '') + '>' + h(v.name) + (v.localService ? '' : ' (trực tuyến)') + '</option>'; }
-    p.innerHTML = '<b>Giọng nói &amp; linh vật</b>' +
+    p.innerHTML = (AI.bat && App.mayChu && App.mayChu.bat ? '<b>Bộ não AI</b><label class="chk"><input type="checkbox" data-gn="aiTL"' + (docKho('tl_ai', '1') === '1' ? ' checked' : '') + '> Dùng AI Claude trả lời câu hỏi hướng dẫn, kiến thức cho tự nhiên</label>' +
+        '<p class="mo nho" style="margin:0">Chỉ gửi câu hỏi (đã che tên nhân viên, số điện thoại, CCCD, số tài khoản) cùng hướng dẫn sử dụng, kiến thức chung; câu hỏi về dữ liệu nhân viên vẫn trả lời ngay trên máy.</p>' : '') +
+      '<b>Giọng nói &amp; linh vật</b>' +
       '<label class="chk"><input type="checkbox" data-gn="hoatDong"' + (GN.hoatDong ? ' checked' : '') + '> Linh vật chuyển động, chào hỏi, ngủ gật khi rảnh</label>' +
       '<label class="chk"><input type="checkbox" data-gn="doc"' + (GN.docTuDong ? ' checked' : '') + '> Tự đọc câu trả lời (cả khi gõ câu hỏi)</label>' +
       '<label class="chk"><input type="checkbox" data-gn="lienTuc"' + (GN.lienTuc ? ' checked' : '') + '> Nói chuyện liên tục: đọc xong tự nghe câu tiếp theo (nói “kết thúc” để dừng)</label>' +
@@ -876,9 +894,9 @@
     nutLV.innerHTML = '<span class="tl-noi" aria-hidden="true">Xin chào! 👋</span><span class="tl-emo" aria-hidden="true"></span>' + svgLinhVat() + '<span class="tl-nhan">Hỏi đáp</span>';
     el = document.createElement('section');
     el.className = 'tl-khung khong-in'; el.setAttribute('aria-label', 'Trợ lý ảo'); el.hidden = true;
-    el.innerHTML = '<header><span class="tl-av">' + svgAvatar() + '<i class="tl-on"></i></span><div><b>Trợ lý ảo Hawasuco</b><small class="tl-tt">Hướng dẫn, tìm thông tin trong phần mềm</small></div>' +
+    el.innerHTML = '<header><span class="tl-av">' + svgAvatar() + '<i class="tl-on"></i></span><div><b>Trợ lý ảo Hawasuco</b><span class="tl-dong2"><span class="tl-ai-nhan" hidden title="Trả lời bằng AI Claude qua máy chủ công ty">AI</span><small class="tl-tt">Hướng dẫn, tìm thông tin trong phần mềm</small></span></div>' +
       (coDoc() ? '<button type="button" class="tl-x tl-loa" data-tl="loa" aria-label="Đọc câu trả lời bằng giọng nói">' + ICON_LOA + '</button>' : '') +
-      ((coDoc() || SR) ? '<button type="button" class="tl-x tl-icon" data-tl="cdgn" title="Cài đặt giọng nói" aria-label="Cài đặt giọng nói">' + ICON_CD + '</button>' : '') +
+      '<button type="button" class="tl-x tl-icon" data-tl="cdgn" title="Cài đặt trợ lý: AI, giọng nói, linh vật" aria-label="Cài đặt trợ lý">' + ICON_CD + '</button>' +
       '<button type="button" class="tl-x" data-tl="xoa" title="Bắt đầu lại" aria-label="Bắt đầu lại">⟲</button><button type="button" class="tl-x" data-tl="dong" title="Đóng (Esc)" aria-label="Đóng">×</button></header>' +
       '<div class="tl-cdgn" hidden></div><div class="tl-ds" aria-live="polite"></div>' +
       '<form class="tl-f" onsubmit="return false"><input maxlength="300" autocomplete="off" placeholder="Nhập câu hỏi, tên, mã NV, số HĐ…" aria-label="Câu hỏi">' +
@@ -886,7 +904,7 @@
       '<button aria-label="Gửi">' + ICON_GUI + '</button></form>' +
       '<p class="tl-note">Trả lời từ dữ liệu trong phần mềm và hướng dẫn sử dụng, theo quyền tài khoản; dữ liệu nhân sự không gửi ra ngoài.</p>';
     document.body.appendChild(nutLV); document.body.appendChild(el);
-    nutLoa();
+    nutLoa(); layTTAI();
     // tiến độ tải giọng AI (lần đầu ~63 MB)
     if (coAI()) App.GiongAI.theoDoi(function (t) {
       var x = el.querySelector('[data-ai-tt]'); if (x) x.innerHTML = moTaAI(t);
@@ -905,6 +923,7 @@
           function (er) { them('tl', '<span class="mo nho">⚠️ ' + h(er.message) + '</span>'); });
       }
       else if (k === 'toc') { GN.toc = +i.value || 1; ghiKho('tl_toc', GN.toc); }
+      else if (k === 'aiTL') { ghiKho('tl_ai', i.checked ? 1 : 0); capNhatAI(); }
     });
     nutLV.onclick = function () { bat(el.hidden); };
     var o = el.querySelector('input'), lichSu = [], vt = -1;
@@ -929,7 +948,7 @@
         return;
       }
       if (v === 'doc') { var tn = a.closest('.tl-tn'); if (tn) doc(tn.innerHTML); return; }
-      if (v === 'xoa') { el.querySelector('.tl-ds').innerHTML = ''; them('tl', chao()); return; }
+      if (v === 'xoa') { el.querySelector('.tl-ds').innerHTML = ''; AI.ht = []; them('tl', chao()); return; }
       if (v.indexOf('hoi:') === 0) { hoiTL(v.slice(4)); return; }
       if (v === 'mk') { var l = document.getElementById('doi-mk'); if (l) l.click(); return; }
       if (v.indexOf('hd:') === 0) { var c = khoHuongDan().ds[+v.slice(3)]; if (c) them('tl', veHuongDan([{ c: c }], null)); return; }
@@ -941,6 +960,181 @@
     });
     veMat(); songDong();
   }
+  /* ================= Bộ não AI (Claude) qua máy chủ – như trợ lý ảo trên web.capnuochaugiang.vn =================
+     Câu hỏi hướng dẫn, kiến thức (và câu chưa hiểu) được gửi tới máy chủ của công ty; máy chủ giữ khóa API và hỏi AI Claude.
+     Gửi đi: câu hỏi (đã che tên nhân viên, dãy số dài), hướng dẫn sử dụng, kiến thức chung, cài đặt của công ty.
+     Không gửi: hồ sơ, chấm công, lương của nhân viên (câu hỏi dữ liệu luôn trả lời ngay trên máy).
+     Không có AI / AI lỗi: dùng câu trả lời có sẵn. */
+  var AI = { bat: false, moHinh: '', hoiLuc: 0, ht: [] };
+  function aiSan() { return AI.bat && !!(App.mayChu && App.mayChu.bat) && docKho('tl_ai', '1') === '1'; }
+  function layTTAI() {
+    if (!(App.mayChu && App.mayChu.bat && App.mayChu.api)) { AI.bat = false; capNhatAI(); return; }
+    if (Date.now() - AI.hoiLuc < 60000) return;
+    AI.hoiLuc = Date.now();
+    App.mayChu.api('troly/trangthai').then(function (r) {
+      AI.bat = !!(r.ok && r.data && r.data.bat); AI.moHinh = (r.data && r.data.moHinh) || ''; capNhatAI();
+    }, function () { AI.hoiLuc = 0; });
+  }
+  function capNhatAI() {
+    if (!el) return;
+    var on = aiSan(), b = el.querySelector('.tl-ai-nhan'), n = el.querySelector('.tl-note');
+    if (b) b.hidden = !on;
+    if (n) n.textContent = on ? 'Câu hỏi hướng dẫn, kiến thức được AI Claude trả lời qua máy chủ công ty; hồ sơ, chấm công, lương của nhân viên không gửi ra ngoài.' :
+      'Trả lời từ dữ liệu trong phần mềm và hướng dẫn sử dụng, theo quyền tài khoản; dữ liệu nhân sự không gửi ra ngoài.';
+    if (!GN.noi && !GN.nghe) trangThai('');
+  }
+  /** Che tên nhân viên, số điện thoại / CCCD / số tài khoản trong câu hỏi trước khi gửi AI */
+  function che(s) {
+    var t = String(s || '');
+    ((App.db && App.db.nhanVien) || []).forEach(function (nv) {
+      var ten = String(nv.hoTen || '').trim();
+      if (ten.length >= 5 && t.toLowerCase().indexOf(ten.toLowerCase()) >= 0) t = t.replace(new RegExp(ten.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '[tên nhân viên]');
+    });
+    return t.replace(/(^|\D)\d{9,15}(?!\d)/g, '$1[số]');
+  }
+  function nhoHT(cau, tl) {
+    AI.ht.push({ vaiTro: 'user', noiDung: String(cau).slice(0, 1000) },
+      { vaiTro: 'assistant', noiDung: tl ? String(tl).slice(0, 3000) : '[Trợ lý đã trả lời bằng dữ liệu trong phần mềm; nội dung không gửi ra ngoài]' });
+    if (AI.ht.length > 12) AI.ht = AI.ht.slice(-12);
+  }
+  var THU_AI = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'];
+  function phanTram(v) { return App.so(+v || 0) + '%'; }
+  /** Cài đặt của công ty (số liệu chung, không có dữ liệu cá nhân) */
+  function caiDatAI() {
+    var cd = App.db.caiDat || {}, hs = cd.heSoOT || {}, dem = cd.otDem || {}, bh = cd.bh || {}, nv = bh.nv || {}, dn = bh.dn || {}, tv = cd.thuViec || {}, tien = function (v) { return App.tien(+v || 0) + ' đ'; };
+    var bt = (cd.bieuThue || []).map(function (b, i, a) { var tr = i ? a[i - 1].den : 0; return (b.den ? (tr ? 'trên ' + tien(tr) + ' đến ' : 'đến ') + tien(b.den) : 'trên ' + tien(tr)) + ': ' + b.ts + '%'; }).join('; ');
+    var ds = [
+      'Giờ làm việc: ' + (cd.gioVao || '') + '–' + (cd.gioRa || '') + ', nghỉ trưa ' + (cd.nghiTruaTu || '') + '–' + (cd.nghiTruaDen || '') + ', ' + (cd.gioLamNgay || 8) + ' giờ/ngày' +
+        (cd.nuaNgayT7 ? '; thứ bảy làm nửa ngày (đến ' + (cd.gioRaT7 || '') + ')' : '') + '; đi muộn / về sớm dưới ' + (+cd.phutChoPhep || 0) + ' phút bỏ qua',
+      'Ngày nghỉ hằng tuần: ' + (cd.nghiTuan || [0]).map(function (i) { return THU_AI[i]; }).join(', '),
+      'Kỳ công: ' + (+cd.ngayDauKy > 1 ? 'từ ngày ' + cd.ngayDauKy + ' tháng trước đến ngày ' + (cd.ngayDauKy - 1) + ' tháng này' : 'theo tháng dương lịch'),
+      'Hệ số làm thêm giờ: ngày thường ' + phanTram(hs.thuong) + ', ngày nghỉ hằng tuần ' + phanTram(hs.nghi) + ', ngày lễ, Tết ' + phanTram(hs.le) +
+        '; làm thêm ban đêm (' + (dem.tu || '22:00') + '–' + (dem.den || '06:00') + ') ' + phanTram(dem.heSo || 200) + ' (ngày có hệ số cao hơn thì theo hệ số ngày)' +
+        '; tính từ ' + (+cd.otToiThieuPhut || 0) + ' phút, làm tròn theo ' + (+cd.otLamTronPhut || 0) + ' phút; cảnh báo khi vượt ' + (+cd.otToiDaThang || 40) + ' giờ/tháng',
+      'Đi làm ngày lễ được tính ' + (+cd.heSoCongLe || 1) + ' công, ngày Tết ' + (+cd.heSoCongTet || 1) + ' công (lương thời gian)',
+      'Phép năm: làm đủ 12 tháng được ' + (+cd.phepNam || 12) + ' ngày hưởng nguyên lương; cứ đủ ' + (+cd.phepThamNienNam || 5) + ' năm làm việc được cộng thêm 1 ngày; ' +
+        'chưa đủ 12 tháng (mới vào hợp đồng chính thức) thì mỗi tháng làm việc được ' + App.so(Math.round((+cd.phepNam || 12) / 12 * 100) / 100) + ' ngày',
+      'Bảo hiểm – người lao động đóng: BHXH ' + phanTram(nv.bhxh) + ', BHYT ' + phanTram(nv.bhyt) + ', BHTN ' + phanTram(nv.bhtn) + (+bh.doanPhi ? ', đoàn phí công đoàn ' + phanTram(bh.doanPhi) : '') +
+        '; doanh nghiệp đóng: BHXH ' + phanTram(dn.bhxh) + ', BHYT ' + phanTram(dn.bhyt) + ', BHTN ' + phanTram(dn.bhtn) + ', KPCĐ ' + phanTram(dn.kpcd) +
+        (cd.bhTheoBac !== false ? '; lương đóng BH = bậc lương hiện tại theo thang, bảng lương của công ty + phụ cấp tính đóng BH' : '') +
+        '; nghỉ không lương từ ' + (+cd.nguongNghiKhongDongBH || 14) + ' ngày trong tháng thì tháng đó không đóng BHXH',
+      'Lương tối thiểu vùng ' + (cd.vung || 'I') + ': ' + tien(cd.luongToiThieuVung) + (App.hienLuongCoSo && App.hienLuongCoSo() ? '; lương cơ sở: ' + tien(TL.luongCoSoKy(App.db)) : ''),
+      'Thử việc: lương bằng ' + phanTram(tv.tiLe || 85) + ' lương chính thức' + (tv.khongDongBH !== false ? ', hợp đồng thử việc riêng không đóng BHXH, BHYT, BHTN' : ''),
+      'Thuế TNCN: giảm trừ bản thân ' + tien(cd.giamTruBanThan) + '/tháng, mỗi người phụ thuộc ' + tien(cd.giamTruNPT) + '/tháng; biểu thuế lũy tiến từng phần (thu nhập tính thuế/tháng): ' + bt +
+        '; khấu trừ ' + phanTram(cd.thueKhauTru) + ' với thu nhập từ ' + tien(cd.nguongKhauTru) + ' của lao động không ký hợp đồng hoặc hợp đồng dưới 3 tháng',
+      'Tiền ăn giữa ca không tính thuế TNCN tối đa ' + tien(cd.mienThueAnCa) + '/tháng'
+    ];
+    return ds.map(function (x) { return '- ' + x; }).join('\n');
+  }
+  /** Phần ít thay đổi (máy chủ lưu đệm phía AI: trả lời nhanh, đỡ tốn): danh sách trang, cài đặt công ty, hướng dẫn sử dụng, kiến thức */
+  function kienThucAI() {
+    var trang = App.MENU.filter(function (x) { return x.id; }).map(function (x) { return '- ' + x.ten + ': #' + x.id; }).join('\n');
+    var hd = (window.HUONG_DAN_PHAN || []).map(function (x) { return String(x.md || '').replace(/<!--[\s\S]*?-->/g, '').trim(); }).join('\n\n');
+    return '===== CÔNG TY =====\n' + ((App.db.congTy && App.db.congTy.ten) || '') +
+      '\n\n===== DANH SÁCH TRANG (mã trang để viết liên kết [Tên trang](#mã-trang)) =====\n' + trang +
+      '\n\n===== CÀI ĐẶT CỦA CÔNG TY (số liệu đang áp dụng trong phần mềm) =====\n' + caiDatAI() +
+      '\n\n===== HƯỚNG DẪN SỬ DỤNG =====\n' + hd +
+      '\n\n===== KIẾN THỨC =====\n' + (App.KienThuc && App.KienThuc.vanBan ? App.KienThuc.vanBan() : '');
+  }
+  /** Phần thay đổi theo lúc hỏi: ngày, kỳ, trang đang mở, quyền của tài khoản (không có tên, dữ liệu nhân viên) */
+  function hienTaiAI() {
+    var d = new Date(), id = location.hash.replace(/^#/, '').split('?')[0], m = App.MENU.filter(function (x) { return x.id === id; })[0];
+    var toi = App.mayChu && App.mayChu.toi, MQ = ['Không', 'Xem', 'Sửa'];
+    var vt = !toi ? 'toàn quyền' : toi.vaiTro === 'quan_tri' ? 'quản trị (toàn quyền)' : toi.vaiTro === 'cham_cong' ? 'cấp phòng / đội' : 'cấp công ty';
+    return ['Hôm nay: ' + THU_AI[d.getDay()] + ', ' + TL.hienNgay(App.homNay()),
+      'Kỳ công đang xem: ' + App.tenKy(App.ky.y, App.ky.m),
+      'Trang đang mở: ' + (m ? m.ten + ' (#' + m.id + ')' : '(không rõ)'),
+      'Tài khoản đang hỏi: ' + vt + '; quyền Chấm công: ' + MQ[App.quyen('cc')] + ', Nhân sự: ' + MQ[App.quyen('ns')] + ', Tiền lương: ' + MQ[App.quyen('lg')] + ', Thiết lập: ' + MQ[App.quyen('tl')],
+      'Trang tài khoản này mở được (chỉ liên kết tới các trang này): ' + App.MENU.filter(function (x) { return x.id && App.duocXem(x.id); }).map(function (x) { return '#' + x.id; }).join(', '),
+      'Số nhân viên đang làm việc trong phạm vi tài khoản: ' + dangLam().length].join('\n');
+  }
+  function hoiAI(cau, xong) {
+    var daXong = false, hen = setTimeout(function () { het({ ok: false, ma: 'cham' }); }, 90000);
+    function het(r) { if (daXong) return; daXong = true; clearTimeout(hen); xong(r); }
+    var tin = AI.ht.slice(-10).concat([{ vaiTro: 'user', noiDung: cau }]), body;
+    try { body = { tinNhan: tin, kienThuc: kienThucAI(), hienTai: hienTaiAI() }; } catch (e) { het({ ok: false, ma: 'loi' }); return; }
+    App.mayChu.api('troly', { method: 'POST', json: body }).then(function (r) {
+      het(r && r.ok && r.data && r.data.ok && r.data.traLoi ? r.data : { ok: false, ma: r && r.data && r.data.ma, loi: r && r.data && r.data.loi });
+    }, function () { het({ ok: false, ma: 'mang' }); });
+  }
+  function ghiChuLoiAI(r) {
+    var ma = r && r.ma;
+    if (ma === 'gioihan') return '<div class="mo nho tl-nguon">⏳ Đã hỏi AI nhiều lần liên tiếp – tạm trả lời bằng dữ liệu có sẵn, vài phút nữa hỏi lại nhé.</div>';
+    if (ma === 'khoa') return '<div class="mo nho tl-nguon">⚠️ AI chưa dùng được (khóa / mã truy cập không hợp lệ) – báo người quản trị kiểm tra Cài đặt → Dữ liệu &amp; tài khoản → Trợ lý ảo AI.</div>';
+    return '';
+  }
+  /** Markdown của AI -> HTML: đoạn, gạch đầu dòng, danh sách số, chữ đậm, liên kết trang (#mã-trang) */
+  function dongAI(s) {
+    return h(s).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/__([^_]+)__/g, '<b>$1</b>')
+      .replace(/(^|[^*\w])\*([^*\s][^*]*?)\*(?![\w*])/g, '$1<i>$2</i>').replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/\[([^\]]+)\]\(([^)\s]*)\)/g, function (_, t, u) {
+        var m = /^#([a-z0-9_-]+)(\?.*)?$/.exec(u);
+        if (m && App.MENU.some(function (x) { return x.id === m[1]; }) && App.duocXem(m[1])) return '<a href="#" data-tl="trang:' + m[1] + '">' + t + '</a>';
+        return t;
+      });
+  }
+  function mdAI(md) {
+    var out = '', ds = null, bang = [];
+    function dongDS() { if (ds) { out += '</' + ds + '>'; ds = null; } }
+    function dongBang() {
+      if (!bang.length) return;
+      var hang = bang.filter(function (l) { return !/^\|[\s:|-]+\|$/.test(l); }).map(function (l) { return l.replace(/^\||\|$/g, '').split('|').map(function (x) { return x.trim(); }); });
+      out += '<div class="cuon"><table class="bang tl-bang">' + hang.map(function (r, i) { return '<tr>' + r.map(function (x) { return i ? '<td>' + dongAI(x) + '</td>' : '<th>' + dongAI(x) + '</th>'; }).join('') + '</tr>'; }).join('') + '</table></div>';
+      bang = [];
+    }
+    String(md || '').replace(/\r/g, '').split('\n').forEach(function (l) {
+      var m;
+      if (/^\s*\|.*\|\s*$/.test(l)) { dongDS(); bang.push(l.trim()); return; }
+      dongBang();
+      if (!l.trim() || /^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(l)) { dongDS(); return; }
+      if ((m = /^\s*#{1,6}\s+(.*)$/.exec(l))) { dongDS(); out += '<div class="tl-muc">' + dongAI(m[1].replace(/\*\*/g, '')) + '</div>'; return; }
+      if ((m = /^(\s*)([-*+•]|(\d+)[.)])\s+(.*)$/.exec(l))) {
+        if (m[1].length >= 2 && ds) { out += '<li class="tl-li2">' + dongAI(m[4]) + '</li>'; return; }
+        var loai = m[3] ? 'ol' : 'ul';
+        if (ds !== loai) { dongDS(); out += '<' + loai + '>'; ds = loai; }
+        out += '<li' + (m[3] ? ' value="' + (+m[3]) + '"' : '') + '>' + dongAI(m[4]) + '</li>'; return;
+      }
+      if (ds && /^\s{2,}\S/.test(l)) { out = out.replace(/<\/li>$/, '<br>' + dongAI(l.trim()) + '</li>'); return; }
+      dongDS(); out += '<p>' + dongAI(l.replace(/^\s*>\s?/, '')) + '</p>';
+    });
+    dongBang(); dongDS();
+    return out;
+  }
+  /** Hiệu ứng gõ chữ (như trợ lý ảo trên web): câu trả lời hiện dần; bấm vào câu trả lời để hiện hết ngay */
+  function goChu(d) {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var NGOAI = '.tl-doclai, .tl-nuts, .tl-lq, .tl-goi, .tl-nguon', ds = [], an = [], tong = 0, w = document.createTreeWalker(d, NodeFilter.SHOW_TEXT, null), n;
+    while ((n = w.nextNode())) { if (!n.parentNode.closest(NGOAI) && n.nodeValue) { ds.push({ n: n, t: n.nodeValue }); tong += n.nodeValue.length; } }
+    if (tong < 30) return;
+    Array.prototype.forEach.call(d.querySelectorAll('*'), function (x) { if (!x.closest('.tl-doclai')) { x.classList.add('tl-an'); an.push(x); } });
+    ds.forEach(function (x) { x.n.nodeValue = ''; });
+    var i = 0, j = 0, buoc = Math.max(2, Math.ceil(tong / 170)), xong = false, khung = el.querySelector('.tl-ds');
+    function het() {
+      if (xong) return; xong = true; d.classList.remove('dang-go'); d.removeEventListener('click', het);
+      ds.forEach(function (x) { x.n.nodeValue = x.t; }); an.forEach(function (x) { x.classList.remove('tl-an'); });
+      cuon();
+    }
+    function cuon() {
+      var rd = d.getBoundingClientRect(), rk = khung.getBoundingClientRect();
+      if (rd.bottom > rk.bottom && rd.top > rk.top + 8) khung.scrollTop += Math.min(rd.bottom - rk.bottom, rd.top - rk.top - 8);
+    }
+    function go() {
+      if (xong) return;
+      if (document.hidden || !d.isConnected) { het(); return; }
+      var con = buoc;
+      while (con > 0 && i < ds.length) {
+        var x = ds[i];
+        if (j === 0) for (var p = x.n.parentNode; p && p !== d; p = p.parentNode) p.classList.remove('tl-an');
+        var lay = Math.min(con, x.t.length - j); j += lay; con -= lay; x.n.nodeValue = x.t.slice(0, j);
+        if (j >= x.t.length) { i++; j = 0; }
+      }
+      cuon();
+      if (i < ds.length) setTimeout(go, 16); else het();
+    }
+    d.classList.add('dang-go'); d.addEventListener('click', het);
+    go();
+  }
+
   /* ================= Cảm xúc, cử chỉ của linh vật ================= */
   // cử chỉ = chuyển động + nét mặt [mắt, miệng]; trạng thái kéo dài (đang nói, đang nghe, ngủ gật) dùng khi không có cử chỉ
   var CU_CHI = {
@@ -1057,6 +1251,7 @@
       cuChi('nhay', 900); nutLV.querySelector('.tl-noi').classList.remove('hien');
       var mic = el.querySelector('.tl-mic'); if (mic) mic.hidden = !choNoi();
       if (!daChao) { them('tl', chao()); daChao = true; }
+      layTTAI();
       setTimeout(function () { el.querySelector('input').focus(); }, 40);
       // nạp sẵn giọng đọc tích hợp (khoảng 0,1 giây) để câu trả lời đầu tiên đọc ngay
       var gd = giong();
@@ -1084,14 +1279,36 @@
     var dang = them('tl go', '<span></span><span></span><span></span>'), loi = camXucLoi(qn);
     if (loi) bieuCam(loi); else cuChi('nghi', 600, '🔍');
     setTimeout(function () {
-      var kq;
-      try { kq = traLoi(cau); } catch (e) { kq = 'Xin lỗi, có lỗi khi tìm câu trả lời: ' + h(e.message); if (window.console) console.error(e); }
-      dang.remove();
-      them('tl', kq); GN.cuoi = kq;
-      bieuCam(CX || ['noi', 1400]);
-      // hỏi bằng giọng nói (hoặc bật tự đọc) thì đọc câu trả lời; nói chuyện liên tục: đọc xong tự nghe tiếp
-      var tiep = GN.phien && GN.lienTuc ? function () { if (GN.phien && !el.hidden) setTimeout(batNghe, 350); } : null;
-      if ((tuMic || GN.docTuDong) && !doc(kq, tiep)) { if (tiep) tiep(); }
+      var kq, muc = 'chac', phu = '', cxv = null;
+      try { kq = traLoi(cau); muc = MUC; phu = PHU; cxv = CX; } catch (e) { kq = 'Xin lỗi, có lỗi khi tìm câu trả lời: ' + h(e.message); if (window.console) console.error(e); }
+      var cauGui = che(cau);
+      function hien(html, tuAI) {
+        dang.remove();
+        var d = them('tl', html); GN.cuoi = html;
+        bieuCam(tuAI ? (muc === 'khong' || !cxv ? ['gat', 1300, '💡'] : cxv) : cxv || ['noi', 1400]);
+        // hỏi bằng giọng nói (hoặc bật tự đọc) thì đọc câu trả lời; nói chuyện liên tục: đọc xong tự nghe tiếp
+        var tiep = GN.phien && GN.lienTuc ? function () { if (GN.phien && !el.hidden) setTimeout(batNghe, 350); } : null;
+        if ((tuMic || GN.docTuDong) && !doc(html, tiep)) { if (tiep) tiep(); }
+        if (tuAI) goChu(d);
+      }
+      if (muc !== 'chac' && aiSan()) {
+        trangThai('AI đang soạn câu trả lời…');
+        hoiAI(cauGui, function (r) {
+          if (!GN.noi && !GN.nghe) trangThai('');
+          if (r && r.ok) {
+            nhoHT(cauGui, r.traLoi);
+            hien(mdAI(r.traLoi) + (r.catNgang ? '<p class="mo nho">… (câu trả lời dài, đã cắt bớt)</p>' : '') +
+              '<div class="mo nho tl-nguon">✨ AI Claude trả lời dựa trên hướng dẫn và kiến thức của phần mềm – khi áp dụng nên đối chiếu quy định hiện hành, quy chế của công ty.</div>' + phu, true);
+            return;
+          }
+          if (r && r.ma === 'tat') { AI.bat = false; capNhatAI(); }
+          nhoHT(cauGui, null);
+          hien(kq + ghiChuLoiAI(r), false);
+        });
+        return;
+      }
+      nhoHT(cauGui, null);
+      hien(kq, false);
     }, 350);
   }
   function dieuHuong(v) {
@@ -1110,5 +1327,5 @@
   // gắn sau khi giao diện chính đã dựng (có dữ liệu, đã đăng nhập)
   var goc = App.batDauGiaoDien;
   App.batDauGiaoDien = function () { var r = goc.apply(this, arguments); gan(); return r; };
-  App.TroLy = { cuChi: function (g, ms, emo) { gan(); cuChi(g, ms, emo); }, netMat: function (f, ms) { gan(); netMat(f, ms); }, chuDoc: chuDoc, traLoi: traLoi, timHuongDan: timHuongDan, timNguoi: timNguoi, timDonVi: timDonVi, bat: function (mo) { gan(); bat(mo !== false); }, hoi: function (c) { gan(); bat(true); hoiTL(c); } };
+  App.TroLy = { cuChi: function (g, ms, emo) { gan(); cuChi(g, ms, emo); }, netMat: function (f, ms) { gan(); netMat(f, ms); }, chuDoc: chuDoc, traLoi: traLoi, mdAI: mdAI, che: che, kienThucAI: kienThucAI, hienTaiAI: hienTaiAI, mucCuoi: function () { return MUC; }, capNhatAI: function () { AI.hoiLuc = 0; layTTAI(); }, timHuongDan: timHuongDan, timNguoi: timNguoi, timDonVi: timDonVi, bat: function (mo) { gan(); bat(mo !== false); }, hoi: function (c) { gan(); bat(true); hoiTL(c); } };
 })();

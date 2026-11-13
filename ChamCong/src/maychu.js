@@ -438,6 +438,74 @@
   }
   App.veTrangThaiMayChu = veTrangThai;
 
+  /* ---------------- Trợ lý ảo AI (Claude): khóa API / mã truy cập chỉ lưu trên máy chủ ---------------- */
+  var TEN_MH = { 'claude-opus-5-5': 'Claude Opus 5.5 – thông minh nhất (mặc định)', 'claude-sonnet-5-5': 'Claude Sonnet 5.5 – nhanh, chi phí vừa', 'claude-haiku-5-5': 'Claude Haiku 5.5 – nhanh nhất, rẻ nhất' };
+  function veTroLyAI(el) {
+    var o = App.$('#mc-ai', el); if (!o) return;
+    var f = App.F;
+    api('troly/cauhinh').then(function (r) {
+      if (!r.ok || !r.data || typeof r.data !== 'object') {
+        o.innerHTML = '<h3>Trợ lý ảo AI (Claude)</h3><p class="mo nho" style="margin:0">Máy chủ đang chạy bản cũ, chưa có bộ não AI cho trợ lý ảo. Chạy lại bộ cài máy chủ bản mới (CaiDat-MayChu-IIS.bat) để cập nhật.</p>';
+        return;
+      }
+      var c = r.data, on = c.bat && c.sanSang;
+      o.innerHTML = '<h3>Trợ lý ảo AI (Claude)<span class="phai"><span class="the-tt' + (on ? ' xanh">Đang bật' : '">Đang tắt') + '</span></span></h3>' +
+        '<p class="mo nho" style="margin-top:0">Giống trợ lý ảo trên web.capnuochaugiang.vn: câu hỏi hướng dẫn, lao động – tiền lương được AI Claude trả lời tự nhiên, có hiệu ứng gõ chữ; ' +
+        'câu hỏi về dữ liệu nhân viên vẫn trả lời ngay trên máy. Chưa bật hoặc AI lỗi thì trợ lý tự dùng bộ trả lời có sẵn.</p>' +
+        '<form class="form" onsubmit="return false">' +
+        '<div class="ca">' + f.chk('bat', c.bat, '<b>Bật bộ não AI cho trợ lý ảo</b>') + '</div>' +
+        f.o('Cách kết nối', f.sel('kieu', c.kieu === 'proxy' ? 'proxy' : 'anthropic', [['anthropic', 'Trực tiếp Anthropic (khóa API)'], ['proxy', 'Qua máy chủ AI trung gian của công ty (hawasuco-ai-proxy)']])) +
+        f.o('Mô hình AI', f.sel('moHinh', c.moHinh, (c.dsMoHinh || [c.moHinh]).map(function (m) { return [m, TEN_MH[m] || m]; }))) +
+        f.o('Khóa API Anthropic', '<input name="khoa" type="password" autocomplete="new-password" spellcheck="false" placeholder="' + (c.coKhoa ? 'Đã lưu …' + h(c.khoaCuoi) + ' (để trống = giữ nguyên)' : 'sk-ant-…') + '">',
+          'Tạo ở console.anthropic.com → API Keys. Khóa chỉ lưu trên máy chủ, không gửi về trình duyệt; gõ dấu - rồi Lưu để xóa.', 'ca ai-anthropic') +
+        f.o('Địa chỉ máy chủ AI trung gian', f.txt('url', c.url || '', 'spellcheck="false" placeholder="https://may-chu-ai:3000/v1/messages"'), 'Địa chỉ hawasuco-ai-proxy, kết thúc bằng /v1/messages.', 'ai-proxy') +
+        f.o('Mã truy cập (PROXY_AUTH_TOKEN)', '<input name="token" type="password" autocomplete="new-password" spellcheck="false" placeholder="' + (c.coToken ? 'Đã lưu …' + h(c.tokenCuoi) + ' (để trống = giữ nguyên)' : 'Mã trong tệp .env của máy chủ AI') + '">',
+          'Gõ dấu - rồi Lưu để xóa.', 'ai-proxy') +
+        '</form>' +
+        '<div class="hang" style="margin-top:10px"><button class="nut chinh" id="ai-luu">Lưu</button><button class="nut" id="ai-thu">Lưu &amp; thử kết nối</button></div>' +
+        '<div id="ai-kq" class="mo nho" style="margin-top:6px"></div>' +
+        (c.capNhat ? '<p class="mo nho">Sửa lần cuối: ' + new Date(c.capNhat).toLocaleString('vi-VN') + (c.nguoi ? ' bởi <b>' + h(c.nguoi) + '</b>' : '') + '.</p>' : '') +
+        '<p class="mo nho" style="margin-bottom:0">🔒 <b>Gửi tới AI</b>: câu hỏi (đã che tên nhân viên, dãy số điện thoại / CCCD / số tài khoản), hướng dẫn sử dụng, kiến thức chung, cài đặt của công ty (giờ làm, hệ số làm thêm, tỷ lệ bảo hiểm…). ' +
+        '<b>Không gửi</b> hồ sơ, chấm công, lương của nhân viên. Máy chủ phải ra được Internet (HTTPS, cổng 443) tới <b>api.anthropic.com</b> hoặc tới máy chủ AI trung gian. ' +
+        'Mỗi tài khoản hỏi AI tối đa 40 câu / 10 phút; chi phí tính theo lượng chữ – phần hướng dẫn, kiến thức được lưu đệm nên các câu hỏi sau rẻ hơn (số token từng lần hỏi ghi ở Nhật ký máy chủ).</p>';
+      var form = App.$('form', o), kq = App.$('#ai-kq', o);
+      function hienKieu() {
+        var px = form.elements.kieu.value === 'proxy';
+        App.$$('.ai-anthropic', o).forEach(function (x) { x.hidden = px; });
+        App.$$('.ai-proxy', o).forEach(function (x) { x.hidden = !px; });
+      }
+      form.elements.kieu.onchange = hienKieu; hienKieu();
+      function luu(sau) {
+        var v = f.doc(form);
+        kq.textContent = 'Đang lưu…';
+        return api('troly/cauhinh', { method: 'PUT', json: v }).then(function (r) {
+          if (!r.ok || !r.data || r.data.ok === false) { kq.innerHTML = '<b style="color:var(--do)">⚠️ ' + h((r.data && r.data.loi) || 'Không lưu được.') + '</b>'; return false; }
+          if (App.TroLy && App.TroLy.capNhatAI) App.TroLy.capNhatAI();
+          if (!sau) { App.bao('Đã lưu cấu hình trợ lý ảo AI.', 'ok'); veTroLyAI(el); }
+          return true;
+        }, function () { kq.textContent = 'Không kết nối được máy chủ.'; return false; });
+      }
+      App.$('#ai-luu', o).onclick = function () { luu(false); };
+      App.$('#ai-thu', o).onclick = function () {
+        var b = this; b.disabled = true;
+        luu(true).then(function (daLuu) {
+          if (!daLuu) { b.disabled = false; return; }
+          kq.textContent = '⏳ Đang hỏi thử AI…';
+          api('troly/thu', { method: 'POST', json: {} }).then(function (r) {
+            var d = r.data || {}; b.disabled = false;
+            kq.innerHTML = d.ok ? '✅ Kết nối được – ' + h(d.moHinh || '') + ', ' + App.so(Math.round((+d.thoiGianMs || 0) / 100) / 10) + ' giây. AI trả lời: “' + h(String(d.traLoi || '').replace(/\*\*|__|`|^#+\s*/gm, '').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1').replace(/\s+/g, ' ').trim().slice(0, 300)) + '”' :
+              '<b style="color:var(--do)">⚠️ ' + h(d.ma === 'tat' ? 'Chưa nhập khóa API (hoặc địa chỉ và mã truy cập máy chủ AI trung gian).' : d.loi || 'Không kết nối được.') + '</b>';
+            veTrangThaiAI(o, d.ok);
+          }, function () { b.disabled = false; kq.textContent = 'Không kết nối được máy chủ.'; });
+        });
+      };
+    });
+  }
+  function veTrangThaiAI(o, ok) {
+    var form = App.$('form', o), t = App.$('h3 .the-tt', o);
+    if (t && form) { var on = form.elements.bat.checked && ok; t.className = 'the-tt' + (on ? ' xanh' : ''); t.textContent = on ? 'Đang bật' : form.elements.bat.checked ? 'Đã bật – kiểm tra kết nối' : 'Đang tắt'; }
+  }
+
   /* ---------------- Cài đặt → máy chủ: sao lưu, tài khoản, nhật ký ---------------- */
   App.veMayChuCaiDat = function (el) {
     var qt = MC.toi && MC.toi.vaiTro === 'quan_tri';
@@ -449,6 +517,7 @@
       '<label class="nut">' + App.icon('nhap') + 'Khôi phục từ file…<input type="file" id="dl-mo" accept=".json" class="an"></label>' +
       '<button class="nut" id="mc-doimk">Đổi mật khẩu của tôi</button><button class="nut" id="mc-dx">Đăng xuất</button></div></div>' +
       (qt ? '<div class="the"><h3>Nơi lưu dữ liệu và bản sao lưu hằng ngày trên máy chủ</h3><div id="mc-luutru" class="mo nho">Đang tải…</div><div class="cuon" style="max-height:300px"><table class="bang" id="mc-sl"><tbody><tr><td class="trong">Đang tải…</td></tr></tbody></table></div></div>' +
+        '<div class="the" id="mc-ai"><h3>Trợ lý ảo AI (Claude)</h3><p class="mo nho" style="margin:0">Đang tải…</p></div>' +
         '<div class="the"><h3>Tài khoản đăng nhập<span class="phai"><button class="nut nho" id="mc-tk-nhanh">Tạo tài khoản cho từng phòng / đội…</button> <button class="nut nho chinh" id="mc-tk-them">' + App.icon('them') + 'Thêm tài khoản</button></span></h3><div class="cuon"><table class="bang" id="mc-tk"><tbody><tr><td class="trong">Đang tải…</td></tr></tbody></table></div>' +
         '<p class="mo nho"><b>Quản trị</b>: mọi chức năng, quản lý tài khoản, sao lưu. <b>Cấp công ty</b>: mọi phòng, đội. <b>Cấp phòng / đội</b>: chỉ nhân viên của đơn vị được giao (tiền lương tối đa được xem, không sửa danh mục, cài đặt). ' +
         'Mỗi phần <b>Chấm công, Nhân sự, Tiền lương, Thiết lập</b> chọn Không / Xem / Sửa; máy chủ kiểm tra lại quyền: phần không được xem thì không gửi về máy, phần chỉ được xem thì thay đổi không được lưu. ' +
@@ -462,7 +531,7 @@
     App.$('#mc-dx', el).onclick = App.dangXuat;
     App.$('#mc-doimk', el).onclick = doiMatKhau;
     if (!qt) return;
-    veSaoLuu(el); veTaiKhoan(el);
+    veSaoLuu(el); veTaiKhoan(el); veTroLyAI(el);
     api('nhatky').then(function (r) { App.$('#mc-nk', el).textContent = r.ok ? r.data : 'Không đọc được.'; });
     App.$('#mc-tk-them', el).onclick = function () { formTaiKhoan(null, el); };
     App.$('#mc-tk-nhanh', el).onclick = function () { taoNhanh(el); };
