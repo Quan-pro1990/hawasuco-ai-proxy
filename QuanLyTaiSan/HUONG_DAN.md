@@ -3,6 +3,8 @@
 Mỗi tài sản dán 1 tem QR. Quét tem bằng điện thoại → thấy ngay thông tin, ảnh, thông số kỹ thuật, lịch sử kiểm tra / sửa chữa;
 ghi kiểm tra, báo hỏng, bảo dưỡng, chụp ảnh tại chỗ; **mỗi năm kiểm kê 1 lần — quét tem là ghi nhận đã kiểm kê**; in tem, nhập / xuất Excel.
 Điện thoại dùng trình duyệt, hoặc **app Android "Quản lý tài sản"** kết nối máy chủ (quét tem bằng camera của app — xem mục [App Android](#app-android)).
+**Trợ lý ảo Hawasuco** (robot ở góc màn hình, chép từ website của Công ty) trả lời 24/7: tìm tài sản, tổng quan, tài sản hỏng,
+đến hạn bảo dưỡng, tiến độ kiểm kê, khấu hao, báo hỏng, hướng dẫn sử dụng — xem mục [Trợ lý ảo](#trợ-lý-ảo-hawasuco).
 Thiết kế chi tiết: [THIET_KE.md](THIET_KE.md).
 
 | Điện thoại: quét tem → đã ghi nhận kiểm kê | Quét liên tục (kiểm kê) | Máy tính: trang tài sản |
@@ -210,6 +212,38 @@ nhiều tài sản → **Điều chuyển (n)**.
 - **Tổng quan**: số tài sản, nguyên giá, giá trị còn lại, hỏng / đang sửa, đến hạn bảo dưỡng (7 ngày), chưa kiểm tra lâu, chưa có ảnh;
   biểu đồ theo tình trạng, loại, đơn vị (chia theo khối) — bấm từng ô / từng thanh để ra danh sách tương ứng.
 - Trang **Tài sản** → **Xuất Excel**: xuất đúng danh sách đang lọc (hoặc các tài sản đã chọn), có tổng nguyên giá, khấu hao, giá trị còn lại.
+
+## Trợ lý ảo Hawasuco
+
+Robot **Trợ lý ảo Hawasuco** ở góc dưới bên trái (cả trang đăng nhập) — chép toàn bộ trợ lý ảo của website Công ty sang
+phần mềm: linh vật cử động (vẫy tay, gật đầu, nhảy, ngủ gật khi lâu không dùng, mắt nhìn theo chuột, kéo thả đi chỗ khác,
+bấm đúp để về chỗ cũ), chữ hiện như đang gõ, nút gợi ý chủ đề. Bấm vào robot để hỏi; gõ chữ hoặc bấm **micro 🎤** để nói.
+
+| Hỏi (ví dụ) | Trợ lý làm |
+|---|---|
+| `tổng quan tài sản`, `tình hình tài sản đội 2` | số liệu như trang Tổng quan / Theo đơn vị (đọc thẳng trên máy chủ, theo quyền của tài khoản) |
+| `MB-00012`, `tìm máy bơm đội 2`, `máy phát điện ở đâu`, `có bao nhiêu máy bơm` | tìm tài sản; rê chuột vào tên để **xem nhanh** (ảnh, tình trạng), bấm để mở trang tài sản |
+| `tài sản hỏng`, `đến hạn bảo dưỡng`, `lâu chưa kiểm tra`, `chưa có ảnh` | danh sách theo bộ lọc, kèm liên kết mở đủ danh sách |
+| `tiến độ kiểm kê`, `hoạt động gần đây` | kiểm kê năm nay (đã kiểm / chưa kiểm), thao tác mới nhất |
+| `tính khấu hao 120 triệu 8 năm`, `khấu hao MB-00012` | khấu hao đường thẳng mỗi năm / tháng, luỹ kế, giá trị còn lại |
+| `báo hỏng MB-00012` | hỏi mô tả hư hỏng → xác nhận → ghi **kiểm tra: Hỏng, cần sửa chữa** (quyền *Nhân viên kiểm tra* trở lên) |
+| `để lại lời nhắn` | gửi lời nhắn cho quản trị (kèm tên tài khoản); quản trị xem ở **Cài đặt → Trợ lý ảo** hoặc hỏi `xem lời nhắn` |
+| `mở trang kiểm kê`, `vào in tem` | mở trang tương ứng |
+| `cách in tem`, `quên mật khẩu`, `điều chuyển như thế nào`, `phân quyền`… | trả lời theo kho kiến thức (hướng dẫn sử dụng) |
+| `kể chuyện vui`, `chuyện Bác Ba Phi`, `đố vui`, `nhảy hip hop` | chuyện cười, chuyện kể kiểu Bác Ba Phi (có tiếng cười đồng thanh), đố vui (vỗ tay, pháo giấy khi đoán đúng), nhảy hip hop có nhạc |
+
+- **Đọc to câu trả lời**: nút **loa 🔊** ở đầu khung chat (bật / tắt), nút loa nhỏ cạnh mỗi câu để đọc lại. Giọng **AI tiếng Việt**
+  khi máy chủ đã tải bộ giọng đọc (`trien-khai\TAI-GIONG-AI.bat`, cùng bộ giọng với website và phần mềm QLNS), không thì giọng
+  của trình duyệt; trong **app Android** dùng giọng đọc tiếng Việt của điện thoại.
+- **Rảnh tay**: bật nút **tai 👂** rồi chỉ cần nói **"Xin chào"** là hỏi được (trình duyệt Chrome / Edge, cần https).
+- **Micro trong app Android** (từ app 1.0.2): dùng nhận dạng giọng nói của điện thoại, chạy cả khi máy chủ chưa có https.
+- **AI (tùy chọn)**: quản trị vào **Cài đặt → Trợ lý ảo**, dán **khóa API Claude** (tạo tại console.anthropic.com) → **Lưu** →
+  **Thử AI**. Khi bật, câu hỏi về cách dùng mà bộ có sẵn không trả lời được sẽ do AI trả lời (có dòng *"Trả lời bởi AI"*);
+  số liệu tài sản vẫn do trợ lý tra trực tiếp trên máy chủ. Khóa chỉ lưu trên máy chủ; AI chỉ nhận câu hỏi, hướng dẫn phần
+  mềm, quyền của người hỏi (và số liệu tổng hợp nếu quản trị bật) — không gửi tên người, ảnh, mật khẩu. Giới hạn số câu / ngày
+  để kiểm soát chi phí; AI lỗi hoặc hết lượt thì tự quay về bộ có sẵn.
+- **Sửa kho kiến thức**: chép `web/troly-kien-thuc.json` vào thư mục dữ liệu `…\tro-ly-ao\kien-thuc.json` rồi sửa (mỗi mục:
+  `k` từ khoá, `a` câu trả lời). Tài liệu riêng cho AI học (quy trình, quy định nội bộ): tệp `.md` trong `…\tro-ly-ao\tai-lieu\`.
 
 ## Quyền người dùng
 

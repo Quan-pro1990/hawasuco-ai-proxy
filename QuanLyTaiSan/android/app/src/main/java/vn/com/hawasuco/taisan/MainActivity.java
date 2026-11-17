@@ -97,11 +97,12 @@ import java.util.Locale;
 public class MainActivity extends Activity {
     static final String KHOA_DIA_CHI = "diaChi", KHOA_VAN_TAY = "vanTay";
     static final int MA_CHON_TEP = 11, MA_LUU = 12;
-    static final int XIN_QUET = 21, XIN_CHUP = 22, XIN_CAMERA_WEB = 23, XIN_VI_TRI = 24, XIN_VI_TRI_WEB = 25;
+    static final int XIN_QUET = 21, XIN_CHUP = 22, XIN_CAMERA_WEB = 23, XIN_VI_TRI = 24, XIN_VI_TRI_WEB = 25, XIN_MICRO = 26;
     static final int MAU_CHINH = 0xFF1D5F95, MAU_CHINH_DAM = 0xFF174E7B, MAU_DO = 0xFFC02626, MAU_MO = 0xFF5F6875, MAU_NEN = 0xFFF3F5F8;
     static final String TEN_APK = "QuanLyTaiSan-DienThoai.apk";
 
     final Handler ui = new Handler(Looper.getMainLooper());
+    GiongNoi giong;   // trợ lý ảo: nghe / đọc tiếng Việt
     SharedPreferences cauHinh;
     String diaChi = "";          // địa chỉ gốc máy chủ đã kiểm tra, luôn kết thúc bằng "/"
     String vanTay = "";          // SHA-256 chứng chỉ tự ký đã tin (rỗng: chỉ tin chứng chỉ hệ thống)
@@ -830,6 +831,9 @@ public class MainActivity extends Activity {
         } else if (ma == XIN_VI_TRI_WEB) {
             if (goiViTriWeb != null) goiViTriWeb.invoke(nguonViTriWeb, coViTri(), false);
             goiViTriWeb = null;
+        } else if (ma == XIN_MICRO) {
+            if (coQuyen(Manifest.permission.RECORD_AUDIO)) layGiong().nghe();
+            else layGiong().baoNghe("loi", "not-allowed");
         }
     }
 
@@ -1011,6 +1015,43 @@ public class MainActivity extends Activity {
             ui.post(new Runnable() {
                 @Override
                 public void run() { MainActivity.this.capNhat(); }
+            });
+        }
+
+        /** Trợ lý ảo: nghe câu hỏi bằng nhận dạng giọng nói tiếng Việt của Android (kết quả gửi về window.ungDungNghe). */
+        @JavascriptInterface
+        public void batNghe() {
+            ui.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (coQuyen(Manifest.permission.RECORD_AUDIO)) layGiong().nghe();
+                    else xinQuyen(new String[] { Manifest.permission.RECORD_AUDIO }, XIN_MICRO);
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void dungNghe() {
+            ui.post(new Runnable() {
+                @Override
+                public void run() { if (giong != null) giong.dungNghe(); }
+            });
+        }
+
+        /** Trợ lý ảo: đọc câu trả lời bằng giọng tiếng Việt của Android (đọc xong gọi window.ungDungDocXong). */
+        @JavascriptInterface
+        public void docChu(final String chu) {
+            ui.post(new Runnable() {
+                @Override
+                public void run() { layGiong().doc(chu); }
+            });
+        }
+
+        @JavascriptInterface
+        public void dungDoc() {
+            ui.post(new Runnable() {
+                @Override
+                public void run() { if (giong != null) giong.dungDoc(); }
             });
         }
     }
@@ -1357,8 +1398,14 @@ public class MainActivity extends Activity {
         if (apkCho != null && (Build.VERSION.SDK_INT < 26 || getPackageManager().canRequestPackageInstalls())) caiDat(apkCho);
     }
 
+    GiongNoi layGiong() {
+        if (giong == null) giong = new GiongNoi(this);
+        return giong;
+    }
+
     @Override
     protected void onPause() {
+        if (giong != null) { giong.dungNghe(); giong.dungDoc(); }
         if (quet != null) quet.dung();
         if (web != null) web.onPause();
         super.onPause();
@@ -1366,6 +1413,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        if (giong != null) giong.huy();
         if (quet != null) quet.dung();
         if (web != null) {
             goc.removeView(web);

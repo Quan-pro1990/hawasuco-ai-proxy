@@ -1,0 +1,518 @@
+/* Quản lý tài sản – Trợ lý ảo Hawasuco (chép từ website HAWASUCO, chỉnh cho phần mềm Quản lý tài sản) */
+/* BOT-CSS-START */
+/* ---- Trợ lý ảo */
+.bot-btn{position:fixed;left:18px;bottom:18px;z-index:40;display:flex;align-items:center;gap:8px;height:52px;padding:0 18px 0 7px;border:0;border-radius:26px;background:var(--blue,#1f7fc6);color:#fff;font:700 15px/1 inherit;font-family:inherit;box-shadow:0 6px 18px rgba(10,50,100,.3);cursor:pointer;transition:transform .15s}
+.bot-btn:hover{transform:translateY(-2px)}.bot-logo{width:38px;height:38px;border-radius:50%;background:#fff;padding:0;object-fit:contain;box-shadow:0 0 0 2px rgba(255,255,255,.6)}.bot-btn.on{background:#135f99}
+.bot-panel{position:fixed;left:18px;bottom:82px;z-index:41;width:370px;max-width:calc(100vw - 32px);height:min(560px,calc(100vh - 110px));display:flex;flex-direction:column;background:#fff;border-radius:12px;box-shadow:0 12px 40px rgba(10,40,80,.28);overflow:hidden;border:1px solid #dde5ee}
+.bot-panel[hidden]{display:none!important}
+.bot-panel header{display:flex;align-items:center;gap:10px;padding:12px 14px;background:linear-gradient(135deg,#135f99,#1f7fc6);color:#fff}
+.bot-panel header div{flex:1;min-width:0;display:flex;flex-direction:column}.bot-panel header b{font-size:15px}.bot-panel header small{opacity:.85;font-size:12px}
+.bot-av{width:38px;height:38px;border-radius:50%;background:#fff;display:grid;place-items:center;flex:none;box-shadow:0 0 0 2px rgba(255,255,255,.5)}.bot-av img{width:34px;height:34px;object-fit:contain;border-radius:50%}
+#botX{border:0;background:transparent;color:#fff;font-size:26px;line-height:1;cursor:pointer;padding:0 4px}
+.bot-msgs{flex:1;overflow-y:auto;padding:14px 12px;background:#f3f6fa;display:flex;flex-direction:column;gap:8px}
+.bm{max-width:88%;padding:9px 12px;border-radius:12px;font-size:14px;line-height:1.5;word-wrap:break-word}
+.bm p{margin:0 0 4px}.bm p:last-child{margin:0}.bm ul{margin:4px 0;padding-left:18px}.bm li{margin:2px 0}
+.bm-u{align-self:flex-end;background:var(--blue,#1f7fc6);color:#fff;border-bottom-right-radius:4px}
+.bm-b,.bm-sys{align-self:flex-start;background:#fff;color:#26323f;border:1px solid #e1e8f0;border-bottom-left-radius:4px}
+.bm a{color:#135f99;font-weight:600}.bm-u a{color:#fff}
+.bm-cur{display:inline-block;width:2px;height:1em;margin-left:2px;vertical-align:-2px;background:#1f7fc6;animation:botcur .6s steps(2) infinite}@keyframes botcur{to{opacity:0}}.bm-ai.bm-writing::after{display:none}
+.bm-ai::after{content:"Trả lời bởi AI";display:block;margin-top:4px;font-size:11px;color:#8894a0}
+.bot-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.bot-chips button{font:inherit;font-size:13px;padding:5px 10px;border-radius:14px;border:1px solid #9cc4e6;background:#eef6fd;color:#135f99;cursor:pointer}
+.bot-chips button:hover{background:#1f7fc6;color:#fff;border-color:#1f7fc6}
+.bm-typing{display:flex;gap:4px;padding:12px 14px}.bm-typing span{width:7px;height:7px;border-radius:50%;background:#9aa8b6;animation:botdot 1s infinite}
+.bm-typing span:nth-child(2){animation-delay:.15s}.bm-typing span:nth-child(3){animation-delay:.3s}
+@keyframes botdot{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+.bot-f{display:flex;gap:6px;padding:10px;border-top:1px solid #e1e8f0;background:#fff}
+.bot-f input{flex:1;min-width:0;font:inherit;font-size:14px;padding:10px 12px;border:1px solid #c5d4e3;border-radius:20px;outline:none}
+.bot-f input:focus{border-color:#1f7fc6;box-shadow:0 0 0 3px rgba(31,127,198,.15)}
+.bot-f button{width:40px;height:40px;border:0;border-radius:50%;background:#1f7fc6;color:#fff;cursor:pointer;display:grid;place-items:center}.bot-f button svg{width:18px;height:18px}
+.bot-note{margin:0;padding:0 12px 8px;font-size:11px;color:#8894a0;background:#fff}
+@media (max-width:600px){.bot-btn{left:12px;bottom:12px;height:56px;width:56px;padding:0;justify-content:center}.bot-logo{width:48px;height:48px}.bot-btn span{display:none}
+ .bot-panel{left:0;right:0;bottom:0;width:100%;max-width:none;height:min(88vh,calc(100vh - 20px));border-radius:14px 14px 0 0}}
+@media print{#bot{display:none}}
+/* BOT-CSS-END */
+.bm .bm-red{color:#d9262c;font-weight:600}.bm .bm-red b{color:#c01818}.bm li:has(.bm-red){background:#fff1f1;border-left:3px solid #d9262c;padding:2px 6px;border-radius:3px}
+/* xem trước tài sản khi rê chuột vào liên kết tài sản trong khung chat (thay cho xem trước hóa đơn PDF của website) */
+#tsPrev{position:fixed;z-index:45;width:300px;background:#fff;border-radius:12px;box-shadow:0 14px 44px rgba(10,40,80,.35);overflow:hidden;border:1px solid #cfe0ef;font-size:13.5px;color:#26323f}
+#tsPrev[hidden]{display:none}
+#tsPrev .tsp-h{display:flex;align-items:center;gap:8px;padding:9px 12px;background:#135f99;color:#fff;font-weight:700}
+#tsPrev .tsp-h span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#tsPrev .tsp-anh{display:block;width:100%;height:170px;object-fit:cover;background:#eef3f8}
+#tsPrev .tsp-khong{height:70px;display:grid;place-items:center;background:#eef3f8;color:#7d8b99;font-size:12.5px}
+#tsPrev .tsp-b{padding:9px 12px 11px;display:grid;gap:3px}
+#tsPrev .tsp-b b{font-size:14.5px}
+#tsPrev .tsp-tt{display:inline-block;padding:1px 8px;border-radius:10px;color:#fff;font-size:12px;font-weight:600;background:#8a8f98}
+#tsPrev .tsp-ld{padding:18px 12px;color:#56708a}
+
+/* ---- Linh vật trợ lý ảo (logo công ty làm mặt, có tai, tay, chân) */
+.bot-btn.mascot{background:none;box-shadow:none;height:auto;width:auto;padding:0;border-radius:0;flex-direction:column;gap:0;align-items:center;left:10px;bottom:8px;overflow:visible}
+.bot-btn.mascot:hover{transform:none}
+.bot-btn.mascot .bm-bot{width:96px;height:120px;display:block;filter:drop-shadow(0 4px 6px rgba(10,40,80,.18));overflow:visible}
+.bot-btn.mascot .bm-label{margin-top:-6px;background:#135f99;color:#fff;font:700 13px/1 inherit;font-family:inherit;padding:6px 12px;border-radius:14px;box-shadow:0 3px 10px rgba(10,50,100,.3)}
+.bot-btn.mascot.on .bm-label{background:#0b4f8a}
+.bm-say{position:absolute;left:84px;bottom:114px;white-space:nowrap;background:#fff;color:#14304d;font:700 14px/1.2 inherit;font-family:inherit;padding:9px 13px;border-radius:14px;box-shadow:0 6px 18px rgba(10,40,80,.22);opacity:0;transform:translateY(6px) scale(.9);transform-origin:left bottom;transition:opacity .25s,transform .25s;pointer-events:none}
+.bm-say::after{content:"";position:absolute;left:10px;bottom:-6px;width:12px;height:12px;background:#fff;transform:rotate(45deg);box-shadow:3px 3px 6px rgba(10,40,80,.08)}
+.bm-say.show{opacity:1;transform:none}
+.bot-btn.mascot:hover .bm-say{opacity:1;transform:none}
+/* ---- Linh vật: chuyển động nền */
+.bm-body{animation:bmBob 2.6s ease-in-out infinite;transform-origin:60px 142px}
+.bm-shadow{animation:bmShadow 2.6s ease-in-out infinite;transform-origin:60px 146px}
+.bm-arm-l{animation:bmWave 2.6s ease-in-out infinite;transform-origin:39px 82px}
+.bm-arm-r{animation:bmArmR 2.6s ease-in-out infinite;transform-origin:81px 82px}
+.bm-look{transform-origin:60px 76px;transition:transform .35s ease-out}
+.bm-head{transform-origin:60px 76px;animation:bmHead 5.2s ease-in-out infinite}
+.bm-ear-l{animation:bmEarL 3.2s ease-in-out infinite;transform-origin:15px 47px}
+.bm-ear-r{animation:bmEarR 3.2s ease-in-out infinite;transform-origin:105px 47px}
+.bm-bot{transform-origin:50% 95%}
+.bot-btn.mascot:hover .bm-arm-l{animation-duration:.9s}
+@keyframes bmBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes bmShadow{0%,100%{transform:scaleX(1);opacity:1}50%{transform:scaleX(.82);opacity:.7}}
+@keyframes bmWave{0%,60%,100%{transform:rotate(0)}70%{transform:rotate(-22deg)}80%{transform:rotate(8deg)}90%{transform:rotate(-18deg)}}
+@keyframes bmArmR{0%,100%{transform:rotate(0)}50%{transform:rotate(-8deg)}}
+@keyframes bmHead{0%,40%,100%{transform:rotate(0)}50%{transform:rotate(-4deg)}60%{transform:rotate(3deg)}70%{transform:rotate(0)}}
+@keyframes bmEarL{0%,100%{transform:rotate(0)}50%{transform:rotate(-3deg)}}
+@keyframes bmEarR{0%,100%{transform:rotate(0)}50%{transform:rotate(3deg)}}
+
+/* ---- Trạng thái kéo dài */
+/* suy nghĩ: nghiêng đầu, gãi đầu */
+.st-think .bm-head{animation:bmThinkHead 1.6s ease-in-out infinite}
+.st-think .bm-arm-r{animation:bmScratch .5s ease-in-out infinite alternate}
+.st-think .bm-arm-l{animation:none;transform:rotate(18deg)}
+@keyframes bmThinkHead{0%,100%{transform:rotate(9deg)}50%{transform:rotate(5deg)}}
+@keyframes bmScratch{from{transform:rotate(-112deg)}to{transform:rotate(-126deg)}}
+/* đang nói: nhún nhịp nhanh, tay diễn tả */
+.st-talk .bm-body{animation:bmTalk .36s ease-in-out infinite alternate}
+.st-talk .bm-head{animation:bmTalkHead .72s ease-in-out infinite}
+.st-talk .bm-arm-r{animation:bmGesture .9s ease-in-out infinite}
+.st-talk .bm-arm-l{animation:bmGestureL 1.1s ease-in-out infinite}
+@keyframes bmTalk{from{transform:translateY(0) scale(1)}to{transform:translateY(-3px) scale(1.015,.99)}}
+@keyframes bmTalkHead{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg) translateY(1px)}}
+@keyframes bmGesture{0%,100%{transform:rotate(-20deg)}50%{transform:rotate(-60deg)}}
+@keyframes bmGestureL{0%,100%{transform:rotate(10deg)}50%{transform:rotate(-12deg)}}
+/* đang nghe: nghiêng tai, tai dựng và rung */
+.st-listen .bm-head{animation:none;transform:rotate(-11deg)}
+.st-listen .bm-ear-l,.st-listen .bm-ear-r{animation:bmPerk .45s ease-in-out infinite alternate}
+.st-listen .bm-ear-l{transform-origin:15px 47px}.st-listen .bm-ear-r{transform-origin:105px 47px}
+.st-listen .bm-arm-r{animation:none;transform:rotate(-70deg)}
+.st-listen .bm-arm-l{animation:none;transform:rotate(14deg)}
+@keyframes bmPerk{from{transform:scale(1.04)}to{transform:scale(1.12)}}
+/* ngủ gật */
+.st-sleep .bm-body{animation:bmBreathe 3.4s ease-in-out infinite}
+.st-sleep .bm-head{animation:bmDoze 3.4s ease-in-out infinite}
+.st-sleep .bm-arm-l{animation:none;transform:rotate(55deg)}
+.st-sleep .bm-arm-r{animation:none;transform:rotate(8deg)}
+.st-sleep .bm-ear-l,.st-sleep .bm-ear-r{animation:none;transform:none;opacity:.85}
+.st-sleep .bm-look{transform:none!important}
+@keyframes bmBreathe{0%,100%{transform:scale(1,1)}50%{transform:scale(1.02,.985)}}
+@keyframes bmDoze{0%,100%{transform:rotate(13deg) translateY(3px)}50%{transform:rotate(16deg) translateY(4px)}}
+
+/* ---- Động tác ngắn (data-g) – đặt sau để ưu tiên hơn trạng thái */
+.bot-btn[data-g=jump] .bm-body{animation:bmJump .8s cubic-bezier(.3,.7,.4,1)}
+.bot-btn[data-g=jump] .bm-shadow,.bot-btn[data-g=cheer] .bm-shadow,.bot-btn[data-g=love] .bm-shadow{animation:bmJumpShadow .8s ease-out}
+.bot-btn[data-g=jump] .bm-arm-r{animation:bmArmUp .8s ease-out}
+@keyframes bmJump{0%{transform:translateY(0) scale(1,1)}15%{transform:translateY(2px) scale(1.08,.9)}45%{transform:translateY(-20px) scale(.95,1.06)}70%{transform:translateY(0) scale(1.06,.93)}85%{transform:translateY(-3px) scale(1)}100%{transform:none}}
+@keyframes bmJumpShadow{0%,100%{transform:scaleX(1);opacity:1}45%{transform:scaleX(.55);opacity:.4}}
+@keyframes bmArmUp{0%,100%{transform:rotate(0)}45%{transform:rotate(-95deg)}}
+.bot-btn[data-g=wave] .bm-arm-l,.bot-btn[data-g=bye] .bm-arm-l{animation:bmWaveFast .35s ease-in-out 4 alternate}
+.bot-btn[data-g=wave] .bm-head,.bot-btn[data-g=bye] .bm-head{animation:none;transform:rotate(-7deg)}
+@keyframes bmWaveFast{from{transform:rotate(12deg)}to{transform:rotate(-34deg)}}
+.bot-btn[data-g=nod] .bm-head{animation:bmNod .45s ease-in-out 2}
+@keyframes bmNod{0%,100%{transform:translateY(0) scaleY(1)}50%{transform:translateY(4px) scaleY(.96)}}
+.bot-btn[data-g=shake] .bm-head{animation:bmShake .3s ease-in-out 3}
+@keyframes bmShake{0%,100%{transform:rotate(0)}25%{transform:rotate(-9deg)}75%{transform:rotate(9deg)}}
+.bot-btn[data-g=cheer] .bm-body,.bot-btn[data-g=love] .bm-body{animation:bmHop .4s ease-in-out 2}
+.bot-btn[data-g=cheer] .bm-arm-l{animation:bmCheerL .4s ease-in-out 4 alternate}
+.bot-btn[data-g=cheer] .bm-arm-r{animation:bmCheerR .4s ease-in-out 4 alternate}
+@keyframes bmHop{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes bmCheerL{from{transform:rotate(20deg)}to{transform:rotate(40deg)}}
+@keyframes bmCheerR{from{transform:rotate(-95deg)}to{transform:rotate(-120deg)}}
+.bot-btn[data-g=love] .bm-head{animation:none;transform:rotate(8deg)}
+.bot-btn[data-g=love] .bm-arm-l{animation:none;transform:rotate(60deg)}
+.bot-btn[data-g=love] .bm-arm-r{animation:none;transform:rotate(-55deg)}
+.bot-btn[data-g=dance] .bm-bot{animation:bmDance .45s ease-in-out 4 alternate}
+.bot-btn[data-g=dance] .bm-arm-l{animation:bmCheerL .225s ease-in-out 8 alternate}
+.bot-btn[data-g=dance] .bm-arm-r{animation:bmGesture .45s ease-in-out 4}
+.bot-btn[data-g=dance] .bm-head{animation:bmShake .45s ease-in-out 4}
+@keyframes bmDance{from{transform:rotate(-7deg) translateX(-3px)}to{transform:rotate(7deg) translateX(3px)}}
+
+/* ---- Biểu cảm nổi trên đầu */
+.bm-emo{position:absolute;left:4px;bottom:114px;font-size:22px;line-height:1;opacity:0;pointer-events:none;filter:drop-shadow(0 2px 3px rgba(10,40,80,.25))}
+.bm-emo.pop{animation:bmEmo 1.7s ease-out}
+.bm-emo.loop{animation:bmZz 2.4s ease-in-out infinite}
+@keyframes bmEmo{0%{opacity:0;transform:translateY(8px) scale(.4)}15%{opacity:1;transform:translateY(0) scale(1.15)}25%{transform:scale(1)}75%{opacity:1;transform:translateY(-10px)}100%{opacity:0;transform:translateY(-18px) scale(.9)}}
+@keyframes bmZz{0%{opacity:0;transform:translate(0,6px) scale(.6)}30%{opacity:1}100%{opacity:0;transform:translate(10px,-22px) scale(1.1)}}
+.bot-btn.mascot.on .bm-emo{left:auto;right:-10px}
+
+/* ---- Khuôn mặt: mắt, mũi, miệng, má, chân mày – mỗi cảm xúc chọn 1 kiểu mắt + 1 kiểu miệng */
+.bm-e,.bm-m{opacity:0;transition:opacity .12s}
+.bm-e.e-norm,.bm-m.m-smile{opacity:1}
+.bm-cheeks{opacity:.7;transition:opacity .3s}
+.bm-brow{transition:transform .25s}.bm-brow-l{transform-origin:39px 36px}.bm-brow-r{transform-origin:81px 36px}
+.bm-gaze{transition:transform .25s ease-out}
+.bm-eyes{transform-origin:60px 48px;transition:transform .07s}
+.bot-btn.blink .bm-eyes{transform:scaleY(.12)}
+.bm-belly{transform-origin:60px 112px;animation:bmBelly 2.6s ease-in-out infinite}@keyframes bmBelly{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.bm-tie{transform-origin:60px 88px}.bot-btn[data-g=jump] .bm-tie,.bot-btn[data-g=cheer] .bm-tie,.bot-btn[data-g=dance] .bm-tie{animation:bmTie .3s ease-in-out 4 alternate}@keyframes bmTie{from{transform:rotate(-12deg)}to{transform:rotate(12deg)}}
+.bm-drop{transform-origin:60px 22px;animation:bmDrop 2.6s ease-in-out infinite}
+@keyframes bmDrop{0%,100%{transform:rotate(0)}30%{transform:rotate(-10deg)}60%{transform:rotate(7deg)}}
+.m-talk{transform-origin:60px 64.5px}
+.st-talk .m-talk{animation:bmMouth .16s ease-in-out infinite alternate}
+@keyframes bmMouth{from{transform:scale(.8,.25)}to{transform:scale(1.05,1.15)}}
+.st-sleep .m-o{transform-origin:60px 65px;animation:bmSnore 3.4s ease-in-out infinite}
+@keyframes bmSnore{0%,100%{transform:scale(.55)}50%{transform:scale(.9)}}
+.st-think .bm-gaze{transform:translate(2.5px,-3px)!important}
+.st-sleep .bm-gaze,.st-drag .bm-gaze{transform:none!important}
+.st-talk .bm-e,.st-talk .bm-m{opacity:0}.st-talk .bm-e.e-norm,.st-talk .bm-m.m-talk{opacity:1}
+.st-think .bm-e,.st-think .bm-m{opacity:0}.st-think .bm-e.e-norm,.st-think .bm-m.m-flat{opacity:1}.st-think .bm-brow-l{transform:translateY(1px)}.st-think .bm-brow-r{transform:rotate(12deg) translateY(-3px)}
+.st-listen .bm-e,.st-listen .bm-m{opacity:0}.st-listen .bm-e.e-wow,.st-listen .bm-m.m-o{opacity:1}.st-listen .bm-brow-l{transform:translateY(-3px)}.st-listen .bm-brow-r{transform:translateY(-3px)}
+.st-sleep .bm-e,.st-sleep .bm-m{opacity:0}.st-sleep .bm-e.e-closed,.st-sleep .bm-m.m-o{opacity:1}.st-sleep .bm-brow-l{transform:translateY(1.5px)}.st-sleep .bm-brow-r{transform:translateY(1.5px)}
+.st-drag .bm-e,.st-drag .bm-m{opacity:0}.st-drag .bm-e.e-wow,.st-drag .bm-m.m-o{opacity:1}.st-drag .bm-brow-l{transform:translateY(-3px)}.st-drag .bm-brow-r{transform:translateY(-3px)}
+.bot-btn[data-g=jump] .bm-e,.bot-btn[data-g=jump] .bm-m{opacity:0}.bot-btn[data-g=jump] .bm-e.e-happy,.bot-btn[data-g=jump] .bm-m.m-open{opacity:1}.bot-btn[data-g=jump] .bm-brow-l{transform:translateY(-3px)}.bot-btn[data-g=jump] .bm-brow-r{transform:translateY(-3px)}
+.bot-btn[data-g=wave] .bm-e,.bot-btn[data-g=wave] .bm-m{opacity:0}.bot-btn[data-g=wave] .bm-e.e-happy,.bot-btn[data-g=wave] .bm-m.m-open{opacity:1}
+.bot-btn[data-g=bye] .bm-e,.bot-btn[data-g=bye] .bm-m{opacity:0}.bot-btn[data-g=bye] .bm-e.e-happy,.bot-btn[data-g=bye] .bm-m.m-smile{opacity:1}
+.bot-btn[data-g=nod] .bm-e,.bot-btn[data-g=nod] .bm-m{opacity:0}.bot-btn[data-g=nod] .bm-e.e-happy,.bot-btn[data-g=nod] .bm-m.m-smile{opacity:1}
+.bot-btn[data-g=shake] .bm-e,.bot-btn[data-g=shake] .bm-m{opacity:0}.bot-btn[data-g=shake] .bm-e.e-norm,.bot-btn[data-g=shake] .bm-m.m-sad{opacity:1}.bot-btn[data-g=shake] .bm-brow-l{transform:rotate(-16deg) translateY(-1px)}.bot-btn[data-g=shake] .bm-brow-r{transform:rotate(16deg) translateY(-1px)}
+.bot-btn[data-g=cheer] .bm-e,.bot-btn[data-g=cheer] .bm-m{opacity:0}.bot-btn[data-g=cheer] .bm-e.e-happy,.bot-btn[data-g=cheer] .bm-m.m-open{opacity:1}.bot-btn[data-g=cheer] .bm-brow-l{transform:translateY(-3px)}.bot-btn[data-g=cheer] .bm-brow-r{transform:translateY(-3px)}.bot-btn[data-g=cheer] .bm-cheeks{opacity:0.9}
+.bot-btn[data-g=love] .bm-e,.bot-btn[data-g=love] .bm-m{opacity:0}.bot-btn[data-g=love] .bm-e.e-heart,.bot-btn[data-g=love] .bm-m.m-smile{opacity:1}.bot-btn[data-g=love] .bm-cheeks{opacity:1}
+.bot-btn[data-g=dance] .bm-e,.bot-btn[data-g=dance] .bm-m{opacity:0}.bot-btn[data-g=dance] .bm-e.e-wink,.bot-btn[data-g=dance] .bm-m.m-tongue{opacity:1}.bot-btn[data-g=dance] .bm-cheeks{opacity:0.8}
+.bot-btn[data-g=giggle] .bm-e,.bot-btn[data-g=giggle] .bm-m{opacity:0}.bot-btn[data-g=giggle] .bm-e.e-happy,.bot-btn[data-g=giggle] .bm-m.m-open{opacity:1}.bot-btn[data-g=giggle] .bm-cheeks{opacity:1}
+.bot-btn[data-g=spin] .bm-e,.bot-btn[data-g=spin] .bm-m{opacity:0}.bot-btn[data-g=spin] .bm-e.e-dizzy,.bot-btn[data-g=spin] .bm-m.m-o{opacity:1}.bot-btn[data-g=spin] .bm-brow-l{transform:translateY(-3px)}.bot-btn[data-g=spin] .bm-brow-r{transform:translateY(-3px)}
+.bot-btn.mascot.fx-wink .bm-e,.bot-btn.mascot.fx-wink .bm-m{opacity:0}.bot-btn.mascot.fx-wink .bm-e.e-wink,.bot-btn.mascot.fx-wink .bm-m.m-tongue{opacity:1}.bot-btn.mascot.fx-wink .bm-cheeks{opacity:0.8}
+.bot-btn.mascot.fx-dizzy .bm-e,.bot-btn.mascot.fx-dizzy .bm-m{opacity:0}.bot-btn.mascot.fx-dizzy .bm-e.e-dizzy,.bot-btn.mascot.fx-dizzy .bm-m.m-flat{opacity:1}.bot-btn.mascot.fx-dizzy .bm-brow-l{transform:rotate(-16deg) translateY(-1px)}.bot-btn.mascot.fx-dizzy .bm-brow-r{transform:rotate(16deg) translateY(-1px)}
+.bot-btn.mascot.fx-laugh .bm-e,.bot-btn.mascot.fx-laugh .bm-m{opacity:0}.bot-btn.mascot.fx-laugh .bm-e.e-happy,.bot-btn.mascot.fx-laugh .bm-m.m-open{opacity:1}.bot-btn.mascot.fx-laugh .bm-cheeks{opacity:0.9}
+.bot-btn.mascot.fx-love .bm-e,.bot-btn.mascot.fx-love .bm-m{opacity:0}.bot-btn.mascot.fx-love .bm-e.e-heart,.bot-btn.mascot.fx-love .bm-m.m-smile{opacity:1}.bot-btn.mascot.fx-love .bm-cheeks{opacity:1}
+.bot-btn.mascot.fx-wow .bm-e,.bot-btn.mascot.fx-wow .bm-m{opacity:0}.bot-btn.mascot.fx-wow .bm-e.e-wow,.bot-btn.mascot.fx-wow .bm-m.m-o{opacity:1}.bot-btn.mascot.fx-wow .bm-brow-l{transform:translateY(-3px)}.bot-btn.mascot.fx-wow .bm-brow-r{transform:translateY(-3px)}
+.bot-btn.mascot.fx-shy .bm-e,.bot-btn.mascot.fx-shy .bm-m{opacity:0}.bot-btn.mascot.fx-shy .bm-e.e-happy,.bot-btn.mascot.fx-shy .bm-m.m-smile{opacity:1}.bot-btn.mascot.fx-shy .bm-cheeks{opacity:1}
+/* động tác mới: cười khúc khích, xoay vòng */
+.bot-btn[data-g=giggle] .bm-body{animation:bmGiggle .12s linear 10 alternate}
+.bot-btn[data-g=giggle] .bm-arm-r{animation:none;transform:rotate(-115deg)}
+@keyframes bmGiggle{from{transform:translateX(-1.5px) rotate(-2deg)}to{transform:translateX(1.5px) rotate(2deg)}}
+.bot-btn[data-g=spin] .bm-bot{animation:bmSpin .9s cubic-bezier(.5,0,.3,1)}
+.bot-btn[data-g=spin] .bm-arm-l,.bot-btn[data-g=spin] .bm-arm-r{animation:bmCheerL .15s ease-in-out 6 alternate}
+@keyframes bmSpin{0%{transform:rotate(0) translateY(0)}40%{transform:rotate(200deg) translateY(-14px)}100%{transform:rotate(360deg) translateY(0)}}
+.bot-btn.mascot.fx-dizzy .bm-head{animation:bmDizzy .6s linear 2}
+@keyframes bmDizzy{0%,100%{transform:rotate(0)}25%{transform:rotate(-7deg) translateX(-2px)}75%{transform:rotate(7deg) translateX(2px)}}
+.bot-btn.mascot.fx-shy .bm-head{animation:none;transform:rotate(10deg)}
+.bot-btn.mascot.fx-shy .bm-arm-r{animation:none;transform:rotate(-120deg)}
+@media (prefers-reduced-motion:reduce){.bot-btn.mascot *{animation:none!important;transition:none!important}.bm-look{transform:none!important}}
+@media (max-width:600px){.bot-btn.mascot{left:6px;width:auto;height:auto;bottom:calc(58px + env(safe-area-inset-bottom))}.bot-btn.mascot .bm-bot{width:70px;height:88px}.bot-btn.mascot .bm-label{display:none}.bm-say{left:62px;bottom:74px;font-size:13px}.bm-emo{bottom:76px;font-size:18px}}
+@media (min-width:601px){.bot-panel{bottom:156px;height:min(560px,calc(100vh - 176px))}}
+.bot-btn.mascot.on .bm-say{display:none}
+.bot-f .bot-mic{background:#eaf4fc;color:#1f7fc6;position:relative}
+.bot-f .bot-mic:hover{background:#d6eafa}
+.bot-f .bot-mic.on{background:#d9262c;color:#fff;animation:botMicPulse 1.2s ease-out infinite}
+@keyframes botMicPulse{0%{box-shadow:0 0 0 0 rgba(217,38,44,.55)}100%{box-shadow:0 0 0 12px rgba(217,38,44,0)}}
+@media (prefers-reduced-motion:reduce){.bot-f .bot-mic.on{animation:none}}
+
+/* ---- Kéo thả linh vật */
+.bot-btn.mascot{touch-action:none;cursor:grab;-webkit-user-select:none;user-select:none}
+.bot-btn.mascot.dragging{cursor:grabbing;transition:none}
+.bot-btn.mascot.dragging .bm-say{display:none}
+.bot-btn.mascot.moved .bm-label{white-space:nowrap}
+.bot-btn.mascot.flip .bm-say{left:auto;right:84px;transform-origin:right bottom}
+.bot-btn.mascot.flip .bm-say::after{left:auto;right:10px}
+.bot-btn.mascot img,.bot-btn.mascot svg{-webkit-user-drag:none;pointer-events:none}
+/* đang bị kéo: lủng lẳng, tay chân quơ */
+.st-drag .bm-bot{animation:bmDangle .5s ease-in-out infinite alternate}
+.st-drag .bm-body{animation:none}
+.st-drag .bm-arm-l{animation:bmCheerL .18s ease-in-out infinite alternate}
+.st-drag .bm-arm-r{animation:bmCheerR .2s ease-in-out infinite alternate}
+.st-drag .bm-head{animation:none;transform:rotate(-6deg)}
+.st-drag .bm-shadow{animation:none;opacity:.25;transform:scaleX(.5)}
+@keyframes bmDangle{from{transform:rotate(-9deg)}to{transform:rotate(9deg)}}
+@media (max-width:600px){.bot-btn.mascot.flip .bm-say{right:62px}}
+/* tay chỉ: nhịp chỉ trỏ khi vui */
+.bot-btn[data-g=cheer] .bm-arm-l,.bot-btn[data-g=dance] .bm-arm-l{animation:bmPoint .25s ease-in-out infinite alternate!important}
+@keyframes bmPoint{from{transform:rotate(-4deg)}to{transform:rotate(-24deg)}}
+.st-sleep .bm-arm-l{transform:rotate(20deg)!important}
+.bot-btn[data-g=love] .bm-arm-l{transform:rotate(-12deg)!important}
+.st-listen .bm-ear ellipse+ellipse,.st-talk .bm-ear ellipse+ellipse{stroke:#38d6ff;animation:bmLed .35s ease-in-out infinite alternate}
+@keyframes bmLed{from{opacity:.35}to{opacity:1}}
+.st-sleep .bm-eyes,.st-sleep .bm-mouth{opacity:.6}
+/* ---- Robot dạng ảnh (bm-photo): toạ độ theo ảnh 360x360 */
+.bm-photo .bm-body{transform-origin:182px 330px}
+.bm-photo .bm-shadow{transform-origin:182px 334px}
+.bm-photo .bm-look,.bm-photo .bm-head{transform-origin:182px 192px}
+.bm-photo .bm-eyes{transform:none!important}
+.bm-photo .m-talk{transform-origin:182px 171px}
+.st-sleep .bm-photo .m-o,.bm-photo .m-o{transform-origin:182px 172px}
+.bot-btn.blink .bm-photo .bm-e.e-closed{opacity:1}
+.bm-photo .bm-gaze{transform:none!important}
+.bm-photo{transform-origin:50% 95%}
+@keyframes bmNodP{0%,100%{transform:translateY(0)}50%{transform:translateY(8px)}}
+.bot-btn[data-g=nod] .bm-photo .bm-head{animation:bmNodP .45s ease-in-out 2}
+@keyframes bmJumpP{0%{transform:translateY(0) scale(1,1)}15%{transform:translateY(4px) scale(1.06,.92)}45%{transform:translateY(-46px) scale(.96,1.05)}70%{transform:translateY(0) scale(1.05,.94)}85%{transform:translateY(-6px)}100%{transform:none}}
+.bot-btn[data-g=jump] .bm-photo .bm-body{animation:bmJumpP .8s cubic-bezier(.3,.7,.4,1)}
+@keyframes bmHopP{0%,100%{transform:translateY(0)}50%{transform:translateY(-24px)}}
+.bot-btn[data-g=cheer] .bm-photo .bm-body,.bot-btn[data-g=love] .bm-photo .bm-body{animation:bmHopP .4s ease-in-out 2}
+@keyframes bmBobP{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.bm-photo .bm-body{animation:bmBobP 2.6s ease-in-out infinite}
+.st-talk .bm-photo .bm-body{animation:bmTalk .36s ease-in-out infinite alternate}
+.st-sleep .bm-photo .bm-body{animation:bmBreathe 3.4s ease-in-out infinite}
+.st-sleep .bm-photo .bm-eyes,.st-sleep .bm-photo .bm-mouth{opacity:1}
+
+/* ---- Hiệu ứng trợ lý ảo đang trả lời: ảnh robot ở đầu khung chat và cạnh từng câu trả lời */
+.bot-av{position:relative;background:#eaf6fd;overflow:visible}
+.bot-av .bav{width:36px;height:30px}
+.bav{display:block}
+.bav .bav-t,.bav .bav-e{opacity:0}
+.bot-on{position:absolute;right:-1px;bottom:0;width:10px;height:10px;border-radius:50%;background:#2ecc71;border:2px solid #1f7fc6}
+.bot-panel header small.busy{color:#d7f6ff;font-weight:600}
+.bot-dots{display:inline-flex;gap:3px;margin-left:4px;vertical-align:middle}.bot-dots i{width:4px;height:4px;border-radius:50%;background:currentColor;animation:botdot 1s infinite}.bot-dots i:nth-child(2){animation-delay:.15s}.bot-dots i:nth-child(3){animation-delay:.3s}
+/* miệng nói, mắt cười khi đang trả lời */
+.bav-t{transform-origin:182px 171px}
+.is-talk .bav-s,.bm-writing .bm-avatar .bav-s,.bm-typing .bm-avatar .bav-s{opacity:0}
+.is-talk .bav-t,.bm-writing .bm-avatar .bav-t{opacity:1;animation:bavTalk .16s ease-in-out infinite alternate}
+@keyframes bavTalk{from{transform:scale(.85,.25)}to{transform:scale(1.05,1.2)}}
+.is-talk .bav,.bm-writing .bm-avatar .bav{animation:bavBob .32s ease-in-out infinite alternate}
+@keyframes bavBob{from{transform:translateY(0) rotate(-2deg)}to{transform:translateY(-1.5px) rotate(2deg)}}
+.is-think .bav,.bm-typing .bm-avatar .bav{animation:bavThink 1.2s ease-in-out infinite;transform-origin:50% 90%}
+@keyframes bavThink{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(6deg)}}
+.is-think .bav-t,.bm-typing .bm-avatar .bav-t{opacity:1;transform:scale(.6,.35)}
+.is-think .bav-s{opacity:0}
+.bm-done .bm-avatar .bav-e{opacity:1;animation:bavHappy 1.2s ease-out forwards}
+@keyframes bavHappy{0%,70%{opacity:1}100%{opacity:0}}
+.is-listen .bav{animation:bavThink 1.6s ease-in-out infinite}
+.is-talk::after,.is-think::after,.is-listen::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid #3ee0ff;animation:bavRing 1.1s ease-out infinite;pointer-events:none}
+@keyframes bavRing{from{transform:scale(.9);opacity:.9}to{transform:scale(1.35);opacity:0}}
+/* ảnh robot nhỏ bên trái câu trả lời */
+.bm.bm-av{position:relative;margin-left:36px}
+.bm-avatar{position:absolute;left:-38px;bottom:-2px;width:32px;height:32px;border-radius:50%;background:#fff;border:1px solid #d6e6f3;display:grid;place-items:center;box-shadow:0 2px 6px rgba(10,40,80,.12)}
+.bm-avatar .bav{width:28px;height:23px}
+.bm-av:has(+ .bm-av) .bm-avatar{visibility:hidden}
+.bm-av+.bm-av{margin-top:-4px}
+.bm-writing{box-shadow:0 0 0 2px rgba(62,224,255,.35),0 4px 14px rgba(31,127,198,.12);transition:box-shadow .3s}
+.bm-typing{align-items:center}
+.bm-typing .bt-txt{font-style:normal;font-size:12.5px;color:#5d6b79;margin-right:4px}
+.bm-typing>span:not(.bm-avatar){width:6px;height:6px}
+@media (prefers-reduced-motion:reduce){.bav,.bav-t,.bot-av::after{animation:none!important}}
+.bm-typing .bm-avatar{width:32px;height:32px;background:#fff;animation:none;opacity:1;transform:none;border-radius:50%}
+
+/* ---- Khi khách hỏi: robot mở sổ, lật từng trang tra cứu */
+.bm-book{opacity:0;transform:translateY(30px) scale(.4);transform-origin:182px 300px;transition:opacity .25s,transform .35s cubic-bezier(.3,1.4,.5,1);pointer-events:none}
+.st-think .bm-photo .bm-book{opacity:1;transform:none}
+.bm-flip{transform-origin:182px 264px;opacity:0}
+.st-think .bm-photo .bm-flip1{animation:bmFlip .9s ease-in-out infinite}
+.st-think .bm-photo .bm-flip2{animation:bmFlip .9s ease-in-out .45s infinite}
+@keyframes bmFlip{0%{transform:scaleX(1);opacity:1;filter:brightness(1)}45%{transform:scaleX(.08) skewY(-6deg);filter:brightness(.82)}55%{transform:scaleX(-.08) skewY(6deg);filter:brightness(.82)}96%{transform:scaleX(-1);opacity:1;filter:brightness(1)}100%{transform:scaleX(-1);opacity:0}}
+.st-think .bm-photo .bm-e{opacity:0}.st-think .bm-photo .bm-e.e-read{opacity:1}
+.st-think .bm-photo .bm-head{animation:bmRead 1.8s ease-in-out infinite}
+@keyframes bmRead{0%,100%{transform:translateY(6px) rotate(-3deg)}50%{transform:translateY(7px) rotate(3deg)}}
+.st-think .bm-photo .bm-m{opacity:0}.st-think .bm-photo .bm-m.m-o{opacity:1;transform:scale(.6);transform-origin:182px 172px}
+.st-think .bm-photo .bm-body{animation:none}
+/* sổ nhỏ trong ô "đang tra cứu" */
+.bt-book{display:inline-block;position:relative;width:16px;height:12px;margin-right:6px;vertical-align:-2px;background:#135f99;border-radius:2px;perspective:40px}
+.bt-book::before{content:"";position:absolute;inset:1.5px 8px 1.5px 1.5px;background:#fff;border-radius:1px}
+.bt-book::after{content:"";position:absolute;inset:1.5px 1.5px 1.5px 8px;background:#fff;border-radius:1px}
+.bt-book s{position:absolute;top:1.5px;bottom:1.5px;left:8px;width:6.5px;background:#eaf4fc;transform-origin:0 50%;animation:btFlip .6s ease-in-out infinite;z-index:1;text-decoration:none}
+@keyframes btFlip{0%{transform:rotateY(0)}100%{transform:rotateY(-180deg)}}
+@media (prefers-reduced-motion:reduce){.bm-flip,.bt-book s{animation:none!important}}
+
+/* ---- Tai nghe + micro: đèn micro nhấp nháy khi nghe / nói */
+.bm-mic-led{transition:opacity .2s}
+.st-talk .bm-mic-led,.st-listen .bm-mic-led,.is-talk .bm-mic-led,.is-listen .bm-mic-led,.bm-writing .bm-mic-led{animation:bmMicLed .3s ease-in-out infinite alternate}
+.st-listen .bm-mic-led,.is-listen .bm-mic-led{fill:#ff4d5e}
+@keyframes bmMicLed{from{opacity:.35}to{opacity:1}}
+.st-sleep .bm-mic-led{opacity:.2}
+
+/* ---- Loa: đọc câu trả lời bằng giọng nói AI */
+.bot-spk{border:0;background:rgba(255,255,255,.14);color:#fff;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;cursor:pointer;margin-right:4px;flex:none;transition:background .2s}
+.bot-spk:hover{background:rgba(255,255,255,.26)}
+.bot-spk svg{width:20px;height:20px}
+.bot-spk .spk-w{display:none}.bot-spk.on .spk-w{display:inline}.bot-spk.on .spk-x{display:none}
+.bot-spk.on{background:#fff;color:#1f7fc6}
+.bot-spk.talking{animation:spkPulse .9s ease-in-out infinite}
+@keyframes spkPulse{0%,100%{box-shadow:0 0 0 0 rgba(62,224,255,.7)}50%{box-shadow:0 0 0 6px rgba(62,224,255,0)}}
+.bm-say-btn{position:absolute;right:-12px;top:-10px;width:26px;height:26px;border-radius:50%;border:1px solid #d6e6f3;background:#fff;color:#1f7fc6;display:grid;place-items:center;cursor:pointer;opacity:0;transition:opacity .2s;box-shadow:0 2px 6px rgba(10,40,80,.15);padding:0}
+.bm-say-btn svg{width:15px;height:15px}.bm-say-btn .spk-x{display:none}
+.bm-b:hover .bm-say-btn,.bm-say-btn:focus{opacity:1}
+@media (hover:none){.bm-say-btn{opacity:.85}}
+.bm-writing .bm-say-btn{display:none}
+
+/* ---- Rảnh tay: "Xin chào" */
+.bot-wake .ear-x{display:inline}.bot-wake.on .ear-x{display:none}
+.bot-btn.mascot.wake .bm-label{background:#0f8a4a;animation:wakePulse 1.6s ease-in-out infinite}
+.bot-btn.mascot.wake .bm-label::before{content:"👂 "}
+@keyframes wakePulse{0%,100%{box-shadow:0 3px 10px rgba(10,50,100,.3),0 0 0 0 rgba(46,204,113,.6)}50%{box-shadow:0 3px 10px rgba(10,50,100,.3),0 0 0 8px rgba(46,204,113,0)}}
+@media (max-width:600px){.bot-btn.mascot.wake .bm-label{display:block;font-size:11px;padding:4px 8px}}
+
+/* ---- Cười đồng thanh sau chuyện vui */
+.bot-laugh{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:5}
+.bot-laugh span{position:absolute;bottom:90px;animation:botLaughUp 2.2s ease-out forwards;opacity:0}
+.bot-laugh b{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%) scale(.6);font:900 34px/1 var(--f-head,inherit);color:#ff8a00;text-shadow:0 2px 0 #fff,0 0 12px rgba(255,255,255,.9);animation:botLaughTxt 2.2s ease-out forwards;opacity:0}
+@keyframes botLaughUp{0%{opacity:0;transform:translateY(0) scale(.6)}15%{opacity:1}100%{opacity:0;transform:translateY(-260px) rotate(20deg) scale(1.1)}}
+@keyframes botLaughTxt{0%{opacity:0;transform:translate(-50%,-50%) scale(.6) rotate(-6deg)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.1) rotate(3deg)}40%{transform:translate(-50%,-50%) scale(1) rotate(-3deg)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-70%) scale(1)}}
+
+.bot-btn.mascot,.bot-btn.mascot.on,.bot-btn.mascot:hover,.bot-btn.mascot:focus{background:transparent!important;box-shadow:none!important}
+.bot-btn.mascot:focus-visible{outline:2px dashed rgba(31,127,198,.6);outline-offset:4px}
+/* ---- Tay robot tách lớp (bm-parm): vỗ tay khi đoán đúng đố vui, ôm bụng cười khi cười */
+.bm-photo .bm-parm{transition:transform .35s ease}
+.bm-photo .bm-parm-l{transform-origin:130px 204px}
+.bm-photo .bm-parm-r{transform-origin:236px 204px}
+.bot-btn[data-g=clap] .bm-photo .bm-parm-l{animation:bmClapL .26s ease-in-out infinite alternate}
+.bot-btn[data-g=clap] .bm-photo .bm-parm-r{animation:bmClapR .26s ease-in-out infinite alternate}
+.bot-btn[data-g=clap] .bm-photo .bm-body{animation:bmClapBob .26s ease-in-out infinite alternate}
+.bot-btn[data-g=clap] .bm-photo .bm-head{animation:bmClapHead .52s ease-in-out infinite alternate}
+@keyframes bmClapL{from{transform:rotate(-48deg)}to{transform:rotate(-84deg)}}
+@keyframes bmClapR{from{transform:rotate(48deg)}to{transform:rotate(84deg)}}
+@keyframes bmClapBob{from{transform:translateY(0)}to{transform:translateY(-4px)}}
+@keyframes bmClapHead{from{transform:rotate(-4deg)}to{transform:rotate(4deg)}}
+/* ôm bụng cười: hai tay đặt lên bụng, người gập tới gập lui, đầu ngửa ra sau */
+.bot-btn[data-g=belly] .bm-photo .bm-parm-l{animation:bmBellyL .18s ease-in-out infinite alternate}
+.bot-btn[data-g=belly] .bm-photo .bm-parm-r{animation:bmBellyR .18s ease-in-out infinite alternate}
+.bot-btn[data-g=belly] .bm-photo .bm-body{animation:bmBelly .7s ease-in-out infinite}
+.bot-btn[data-g=belly] .bm-photo .bm-head{animation:bmBellyHead .18s ease-in-out infinite alternate}
+@keyframes bmBellyL{from{transform:rotate(-56deg)}to{transform:rotate(-62deg)}}
+@keyframes bmBellyR{from{transform:rotate(56deg)}to{transform:rotate(62deg)}}
+@keyframes bmBelly{0%,100%{transform:rotate(0) translateY(0)}25%{transform:rotate(-3deg) translateY(3px) scaleY(.97)}50%{transform:rotate(0) translateY(0)}75%{transform:rotate(3deg) translateY(3px) scaleY(.97)}}
+@keyframes bmBellyHead{from{transform:rotate(-7deg) translateY(-2px)}to{transform:rotate(-2deg) translateY(1px)}}
+.bot-btn[data-g=belly] .bm-e,.bot-btn[data-g=belly] .bm-m,.bot-btn[data-g=clap] .bm-e,.bot-btn[data-g=clap] .bm-m{opacity:0}
+.bot-btn[data-g=belly] .bm-e.e-happy,.bot-btn[data-g=clap] .bm-e.e-happy,.bot-btn[data-g=belly] .bm-m.m-open,.bot-btn[data-g=clap] .bm-m.m-open{opacity:1}
+.bot-btn[data-g=belly] .bm-cheeks,.bot-btn[data-g=clap] .bm-cheeks{opacity:1}
+/* pháo giấy khi trả lời đúng */
+.bot-clap i{position:absolute;top:-12px;width:8px;height:12px;border-radius:2px;opacity:0;animation:botConfetti 2s ease-in forwards}
+@keyframes botConfetti{0%{opacity:1;transform:translate(0,0) rotate(0)}85%{opacity:1}100%{opacity:0;transform:translate(var(--x,0),460px) rotate(var(--r,360deg))}}
+.bot-clap b{color:#e8364d}
+@media (prefers-reduced-motion:reduce){.bot-btn[data-g=clap] .bm-photo *,.bot-btn[data-g=belly] .bm-photo *{animation:none!important}}
+/* ---- Nhảy hip hop (96 BPM: 1 phách = .625s). Mỗi lần nhảy một điệu (data-hh), xoay vòng không trùng */
+.bm-photo .bm-shades{opacity:0;transform:translateY(-30px);transition:opacity .25s,transform .3s cubic-bezier(.3,1.6,.5,1)}
+.bot-btn[data-g=hiphop] .bm-photo .bm-shades{opacity:1;transform:none}
+.bm-photo .bm-pleg-l{transform-origin:148px 258px}.bm-photo .bm-pleg-r{transform-origin:205px 258px}
+.bot-btn[data-g=hiphop] .bm-photo .bm-parm,.bot-btn[data-g=hiphop] .bm-photo .bm-pleg{transition:none}
+.bot-btn[data-g=hiphop] .bm-shadow{animation:bmHHShadow .625s ease-in-out infinite}
+.bot-btn[data-g=hiphop] .bm-e,.bot-btn[data-g=hiphop] .bm-m{opacity:0}
+.bot-btn[data-g=hiphop] .bm-m.m-tongue{opacity:1}
+@keyframes bmHHBounce{0%,100%{transform:translateY(0)}45%{transform:translateY(7px) scaleY(.95)}70%{transform:translateY(-3px)}}
+@keyframes bmHHHead{0%,100%{transform:rotate(0) translateY(0)}50%{transform:rotate(-7deg) translateY(4px)}}
+@keyframes bmHHShadow{0%,100%{transform:scaleX(1)}45%{transform:scaleX(1.08)}}
+
+/* 1. Toprock (mặc định) */
+.bot-btn[data-g=hiphop] .bm-photo{animation:bmHHStep 5s linear infinite}
+.bot-btn[data-g=hiphop] .bm-photo .bm-body{animation:bmHHBounce .625s cubic-bezier(.4,0,.6,1) infinite}
+.bot-btn[data-g=hiphop] .bm-photo .bm-head{animation:bmHHHead .625s ease-in-out infinite}
+.bot-btn[data-g=hiphop] .bm-photo .bm-parm-l{animation:bmHHArmL 2.5s steps(1,end) infinite}
+.bot-btn[data-g=hiphop] .bm-photo .bm-parm-r{animation:bmHHArmR 2.5s steps(1,end) infinite}
+.bot-btn[data-g=hiphop] .bm-photo .bm-pleg-l{animation:bmHHTapL 1.25s ease-in-out infinite}
+.bot-btn[data-g=hiphop] .bm-photo .bm-pleg-r{animation:bmHHTapR 1.25s ease-in-out infinite}
+@keyframes bmHHStep{0%{transform:translateX(0) rotate(0)}6%{transform:translateX(-7px) rotate(-5deg)}12.5%{transform:translateX(0) rotate(0)}19%{transform:translateX(7px) rotate(5deg)}25%{transform:translateX(0)}31%{transform:translateX(-7px) rotate(-5deg)}37.5%{transform:translateX(0)}44%{transform:translateX(7px) rotate(5deg)}50%{transform:translateX(0)}56%{transform:translateX(-9px) rotate(-7deg)}62.5%{transform:translateX(0)}69%{transform:translateX(9px) rotate(7deg)}75%{transform:scaleX(1)}81%{transform:scaleX(-.15)}87.5%{transform:scaleX(-1)}94%{transform:scaleX(-.15)}100%{transform:scaleX(1)}}
+@keyframes bmHHArmL{0%{transform:rotate(118deg)}12.5%{transform:rotate(100deg)}25%{transform:rotate(15deg)}37.5%{transform:rotate(-10deg)}50%{transform:rotate(-80deg)}62.5%{transform:rotate(-70deg)}75%{transform:rotate(122deg)}87.5%{transform:rotate(60deg)}}
+@keyframes bmHHArmR{0%{transform:rotate(-15deg)}12.5%{transform:rotate(10deg)}25%{transform:rotate(-118deg)}37.5%{transform:rotate(-100deg)}50%{transform:rotate(80deg)}62.5%{transform:rotate(70deg)}75%{transform:rotate(-122deg)}87.5%{transform:rotate(-60deg)}}
+@keyframes bmHHTapL{0%,50%,100%{transform:none}25%{transform:translateY(-8px) rotate(14deg)}}
+@keyframes bmHHTapR{0%,50%,100%{transform:none}75%{transform:translateY(-8px) rotate(-14deg)}}
+
+/* 2. Headspin: lộn ngược, chống đầu xoay tít, hai chân dạng chữ V */
+.bot-btn[data-g=hiphop][data-hh=headspin] .bm-photo{transform-origin:50% 50%;animation:bmHSFlip 5s ease-in-out infinite}
+.bot-btn[data-g=hiphop][data-hh=headspin] .bm-photo .bm-body{transform-origin:182px 190px;animation:bmHSSpin .42s linear infinite}
+.bot-btn[data-g=hiphop][data-hh=headspin] .bm-photo .bm-head{animation:none}
+.bot-btn[data-g=hiphop][data-hh=headspin] .bm-photo .bm-parm-l{animation:none;transform:rotate(70deg)}
+.bot-btn[data-g=hiphop][data-hh=headspin] .bm-photo .bm-parm-r{animation:none;transform:rotate(-70deg)}
+.bot-btn[data-g=hiphop][data-hh=headspin] .bm-photo .bm-pleg-l{animation:bmHSLegL .84s ease-in-out infinite alternate}
+.bot-btn[data-g=hiphop][data-hh=headspin] .bm-photo .bm-pleg-r{animation:bmHSLegR .84s ease-in-out infinite alternate}
+.bot-btn[data-g=hiphop][data-hh=headspin] .bm-shadow{animation:none;opacity:0}
+@keyframes bmHSFlip{0%,100%{transform:none}12%,86%{transform:rotate(180deg) translateY(12px)}}
+@keyframes bmHSSpin{0%{transform:scaleX(1)}25%{transform:scaleX(.1)}50%{transform:scaleX(-1)}75%{transform:scaleX(.1)}100%{transform:scaleX(1)}}
+@keyframes bmHSLegL{from{transform:rotate(25deg)}to{transform:rotate(45deg)}}
+@keyframes bmHSLegR{from{transform:rotate(-25deg)}to{transform:rotate(-45deg)}}
+
+/* 3. Xoay đầu robot: đầu quay tròn 360°, người nhún, tay vỗ đùi */
+.bot-btn[data-g=hiphop][data-hh=headroll] .bm-photo{animation:bmHRSway 1.25s ease-in-out infinite}
+.bot-btn[data-g=hiphop][data-hh=headroll] .bm-photo .bm-head{transform-origin:182px 120px;animation:bmHRSpin 2.5s cubic-bezier(.6,0,.4,1) infinite}
+.bot-btn[data-g=hiphop][data-hh=headroll] .bm-photo .bm-parm-l{animation:bmHRArmL .625s ease-in-out infinite alternate}
+.bot-btn[data-g=hiphop][data-hh=headroll] .bm-photo .bm-parm-r{animation:bmHRArmR .625s ease-in-out infinite alternate}
+.bot-btn[data-g=hiphop][data-hh=headroll] .bm-photo .bm-pleg-l{animation:bmHHTapL .625s ease-in-out infinite}
+.bot-btn[data-g=hiphop][data-hh=headroll] .bm-photo .bm-pleg-r{animation:bmHHTapR .625s ease-in-out infinite}
+@keyframes bmHRSpin{0%,20%{transform:rotate(0)}70%,100%{transform:rotate(360deg)}}
+@keyframes bmHRSway{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
+@keyframes bmHRArmL{from{transform:rotate(-20deg)}to{transform:rotate(30deg)}}
+@keyframes bmHRArmR{from{transform:rotate(30deg)}to{transform:rotate(-20deg)}}
+
+/* 4. Running Man: nhấc gối luân phiên, tay đánh ngược chân */
+.bot-btn[data-g=hiphop][data-hh=running] .bm-photo{animation:bmRMLean .625s ease-in-out infinite}
+.bot-btn[data-g=hiphop][data-hh=running] .bm-photo .bm-body{animation:bmHHBounce .3125s ease-in-out infinite}
+.bot-btn[data-g=hiphop][data-hh=running] .bm-photo .bm-pleg-l{animation:bmRMLegL .625s ease-in-out infinite}
+.bot-btn[data-g=hiphop][data-hh=running] .bm-photo .bm-pleg-r{animation:bmRMLegR .625s ease-in-out infinite}
+.bot-btn[data-g=hiphop][data-hh=running] .bm-photo .bm-parm-l{animation:bmRMArmL .625s ease-in-out infinite}
+.bot-btn[data-g=hiphop][data-hh=running] .bm-photo .bm-parm-r{animation:bmRMArmR .625s ease-in-out infinite}
+@keyframes bmRMLean{0%,100%{transform:translateX(-3px)}50%{transform:translateX(3px)}}
+@keyframes bmRMLegL{0%,100%{transform:translateY(-22px) rotate(10deg)}50%{transform:translateY(3px) rotate(-6deg)}}
+@keyframes bmRMLegR{0%,100%{transform:translateY(3px) rotate(6deg)}50%{transform:translateY(-22px) rotate(-10deg)}}
+@keyframes bmRMArmL{0%,100%{transform:rotate(-45deg)}50%{transform:rotate(55deg)}}
+@keyframes bmRMArmR{0%,100%{transform:rotate(-55deg)}50%{transform:rotate(45deg)}}
+
+/* 5. Footwork – quay chân: người nghiêng qua lại, hai chân quét vòng rộng */
+.bot-btn[data-g=hiphop][data-hh=footwork] .bm-photo{animation:bmFWTilt 1.25s ease-in-out infinite}
+.bot-btn[data-g=hiphop][data-hh=footwork] .bm-photo .bm-body{animation:bmFWCrouch .625s ease-in-out infinite}
+.bot-btn[data-g=hiphop][data-hh=footwork] .bm-photo .bm-pleg-l{animation:bmFWLegL 1.25s linear infinite}
+.bot-btn[data-g=hiphop][data-hh=footwork] .bm-photo .bm-pleg-r{animation:bmFWLegR 1.25s linear infinite}
+.bot-btn[data-g=hiphop][data-hh=footwork] .bm-photo .bm-parm-l{animation:bmFWArmL 1.25s ease-in-out infinite}
+.bot-btn[data-g=hiphop][data-hh=footwork] .bm-photo .bm-parm-r{animation:bmFWArmR 1.25s ease-in-out infinite}
+.bot-btn[data-g=hiphop][data-hh=footwork] .bm-photo .bm-head{animation:bmHHHead .625s ease-in-out infinite}
+@keyframes bmFWTilt{0%,100%{transform:rotate(-14deg) translateX(-6px)}50%{transform:rotate(14deg) translateX(6px)}}
+@keyframes bmFWCrouch{0%,100%{transform:translateY(6px)}50%{transform:translateY(0)}}
+@keyframes bmFWLegL{0%{transform:rotate(0)}25%{transform:rotate(55deg) translateY(-6px)}50%{transform:rotate(15deg)}75%{transform:rotate(-20deg)}100%{transform:rotate(0)}}
+@keyframes bmFWLegR{0%{transform:rotate(20deg)}25%{transform:rotate(0)}50%{transform:rotate(-15deg)}75%{transform:rotate(-55deg) translateY(-6px)}100%{transform:rotate(20deg)}}
+@keyframes bmFWArmL{0%,100%{transform:rotate(80deg)}50%{transform:rotate(20deg)}}
+@keyframes bmFWArmR{0%,100%{transform:rotate(-20deg)}50%{transform:rotate(-80deg)}}
+
+/* 6. Popping – điệu robot giật cục */
+.bot-btn[data-g=hiphop][data-hh=popping] .bm-photo{animation:bmPPBody 2.5s steps(1,end) infinite}
+.bot-btn[data-g=hiphop][data-hh=popping] .bm-photo .bm-body{animation:bmPPHit .3125s ease-out infinite}
+.bot-btn[data-g=hiphop][data-hh=popping] .bm-photo .bm-head{animation:bmPPHead 1.25s steps(1,end) infinite}
+.bot-btn[data-g=hiphop][data-hh=popping] .bm-photo .bm-parm-l{animation:bmPPArmL 2.5s steps(1,end) infinite}
+.bot-btn[data-g=hiphop][data-hh=popping] .bm-photo .bm-parm-r{animation:bmPPArmR 2.5s steps(1,end) infinite}
+.bot-btn[data-g=hiphop][data-hh=popping] .bm-photo .bm-pleg-l{animation:bmPPLegL 2.5s steps(1,end) infinite}
+.bot-btn[data-g=hiphop][data-hh=popping] .bm-photo .bm-pleg-r{animation:bmPPLegR 2.5s steps(1,end) infinite}
+@keyframes bmPPBody{0%{transform:none}25%{transform:translateX(-8px)}50%{transform:translateX(8px) rotate(4deg)}75%{transform:translateX(0) rotate(-4deg)}}
+@keyframes bmPPHit{0%{transform:scale(1.04,.96)}30%,100%{transform:none}}
+@keyframes bmPPHead{0%{transform:rotate(0)}25%{transform:rotate(-14deg)}50%{transform:rotate(0) translateY(3px)}75%{transform:rotate(14deg)}}
+@keyframes bmPPArmL{0%{transform:rotate(90deg)}12.5%{transform:rotate(90deg)}25%{transform:rotate(0)}37.5%{transform:rotate(-90deg)}50%{transform:rotate(135deg)}62.5%{transform:rotate(45deg)}75%{transform:rotate(-45deg)}87.5%{transform:rotate(90deg)}}
+@keyframes bmPPArmR{0%{transform:rotate(0)}12.5%{transform:rotate(-90deg)}25%{transform:rotate(-135deg)}37.5%{transform:rotate(90deg)}50%{transform:rotate(-45deg)}62.5%{transform:rotate(-90deg)}75%{transform:rotate(45deg)}87.5%{transform:rotate(-135deg)}}
+@keyframes bmPPLegL{0%{transform:none}25%{transform:rotate(25deg)}50%{transform:none}75%{transform:translateY(-10px)}}
+@keyframes bmPPLegR{0%{transform:rotate(-25deg)}25%{transform:none}50%{transform:translateY(-10px)}75%{transform:rotate(-25deg)}}
+
+/* 7. Moonwalk: lướt lùi, chân thay nhau trượt */
+.bot-btn[data-g=hiphop][data-hh=moonwalk] .bm-photo{animation:bmMWSlide 2.5s linear infinite}
+.bot-btn[data-g=hiphop][data-hh=moonwalk] .bm-photo .bm-body{animation:bmMWLean .625s ease-in-out infinite}
+.bot-btn[data-g=hiphop][data-hh=moonwalk] .bm-photo .bm-pleg-l{animation:bmMWLegL .625s ease-in-out infinite}
+.bot-btn[data-g=hiphop][data-hh=moonwalk] .bm-photo .bm-pleg-r{animation:bmMWLegR .625s ease-in-out infinite}
+.bot-btn[data-g=hiphop][data-hh=moonwalk] .bm-photo .bm-parm-l{animation:bmMWArmL .625s ease-in-out infinite}
+.bot-btn[data-g=hiphop][data-hh=moonwalk] .bm-photo .bm-parm-r{animation:bmMWArmR .625s ease-in-out infinite}
+.bot-btn[data-g=hiphop][data-hh=moonwalk] .bm-photo .bm-head{animation:bmHHHead .625s ease-in-out infinite}
+@keyframes bmMWSlide{0%{transform:translateX(16px)}50%{transform:translateX(-16px)}50.01%{transform:translateX(-16px) scaleX(-1)}100%{transform:translateX(16px) scaleX(-1)}}
+@keyframes bmMWLean{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(-1deg) translateY(2px)}}
+@keyframes bmMWLegL{0%,100%{transform:translateY(-9px) rotate(-8deg)}50%{transform:translateX(6px) rotate(6deg)}}
+@keyframes bmMWLegR{0%,100%{transform:translateX(6px) rotate(6deg)}50%{transform:translateY(-9px) rotate(-8deg)}}
+@keyframes bmMWArmL{0%,100%{transform:rotate(-20deg)}50%{transform:rotate(15deg)}}
+@keyframes bmMWArmR{0%,100%{transform:rotate(15deg)}50%{transform:rotate(-20deg)}}
+
+/* 8. Wave – sóng nước chạy từ tay trái, qua đầu, sang tay phải */
+.bot-btn[data-g=hiphop][data-hh=wave] .bm-photo{animation:bmHRSway 2.5s ease-in-out infinite}
+.bot-btn[data-g=hiphop][data-hh=wave] .bm-photo .bm-body{animation:bmHHBounce .625s ease-in-out infinite}
+.bot-btn[data-g=hiphop][data-hh=wave] .bm-photo .bm-parm-l{animation:bmWVArmL 2.5s ease-in-out infinite}
+.bot-btn[data-g=hiphop][data-hh=wave] .bm-photo .bm-parm-r{animation:bmWVArmR 2.5s ease-in-out infinite}
+.bot-btn[data-g=hiphop][data-hh=wave] .bm-photo .bm-head{animation:bmWVHead 2.5s ease-in-out infinite}
+.bot-btn[data-g=hiphop][data-hh=wave] .bm-photo .bm-pleg-l{animation:bmHHTapL 1.25s ease-in-out infinite}
+.bot-btn[data-g=hiphop][data-hh=wave] .bm-photo .bm-pleg-r{animation:bmHHTapR 1.25s ease-in-out infinite}
+@keyframes bmWVArmL{0%,100%{transform:rotate(85deg)}15%{transform:rotate(110deg)}30%{transform:rotate(70deg)}50%{transform:rotate(90deg)}}
+@keyframes bmWVArmR{0%,100%{transform:rotate(-90deg)}40%{transform:rotate(-90deg)}55%{transform:rotate(-110deg)}70%{transform:rotate(-70deg)}85%{transform:rotate(-90deg)}}
+@keyframes bmWVHead{0%,25%,100%{transform:rotate(0)}35%{transform:rotate(-10deg) translateY(-3px)}45%{transform:rotate(10deg) translateY(-3px)}55%{transform:rotate(0)}}
+.bot-hiphop span{animation-duration:2.6s}
+.bot-hiphop b{color:#8338ec}
+@media (prefers-reduced-motion:reduce){.bot-btn[data-g=hiphop] .bm-photo,.bot-btn[data-g=hiphop] .bm-photo *{animation:none!important}}
+.st-think .bm-photo .bm-parm{opacity:0}
+
+/* ---- Bố cục riêng của phần mềm Quản lý tài sản: điện thoại / màn hình hẹp có thanh điều hướng dưới (cao ~62px) */
+#bot{font-family:inherit}
+@media (max-width:899px){
+ .bot-btn.mascot{left:4px;bottom:calc(66px + env(safe-area-inset-bottom))}
+ .bot-btn.mascot .bm-bot{width:70px;height:88px}.bot-btn.mascot .bm-label{display:none}
+ .bm-say{left:62px;bottom:74px;font-size:13px}.bm-emo{bottom:76px;font-size:18px}
+ .bot-btn.mascot.flip .bm-say{right:62px}
+}
+@media (min-width:601px) and (max-width:899px){.bot-panel{bottom:calc(160px + env(safe-area-inset-bottom));height:min(540px,calc(100vh - 230px))}}
+@media (min-width:900px){.bot-btn.mascot{left:14px;bottom:10px}}
+/* đang quét QR (khung camera chiếm màn hình): tạm ẩn linh vật, vẫn mở lại được khung chat nếu đang mở */
+#bot.an-quet .bot-btn.mascot:not(.on){display:none}
+/* trong app Android: khung chat cao đúng màn hình (bàn phím ảo đẩy lên) */
+.trong-app .bot-panel{height:min(88vh,calc(100vh - 20px))}

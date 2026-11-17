@@ -176,6 +176,15 @@ namespace QuanLyTaiSan
                 string ma = MaTaiSan.Chuan(d.Substring(3).Trim('/'));
                 return TraLoi.ChuyenHuong(duongUngDung + "/#/ma/" + Uri.EscapeDataString(ma));
             }
+            // Trợ lý ảo: kho kiến thức (bản quản trị sửa trong thư mục dữ liệu hoặc bản nhúng), giọng đọc AI (thư mục giong-doc\ cạnh .exe)
+            if (d.Equals("/troly-kien-thuc.json", StringComparison.OrdinalIgnoreCase))
+            {
+                var kt = new TraLoi { Status = 200, Than = TroLyAo.TepKienThuc(dv), Loai = "application/json; charset=utf-8" };
+                kt.Header["Cache-Control"] = "no-cache";
+                return kt;
+            }
+            if (d.StartsWith("/giong-doc/", StringComparison.OrdinalIgnoreCase))
+                return TroLyAo.TepGiongDoc(d) ?? TraLoi.Loi(404, "Máy chủ chưa có giọng đọc AI (chạy trien-khai\\TAI-GIONG-AI.bat).");
             if (d == "/" || d.Length == 0) d = "/index.html";
             string ten = d.TrimStart('/');
             if (ten.IndexOf('/') >= 0 || ten.IndexOf("..", StringComparison.Ordinal) >= 0) return TraLoi.Loi(404, "Không có trang này.");
@@ -186,15 +195,16 @@ namespace QuanLyTaiSan
             if (ten == "index.html")
             {
                 tl.Header["Content-Security-Policy"] = "default-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; style-src 'self' 'unsafe-inline'; " +
-                                                      "script-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'";
-                tl.Header["Permissions-Policy"] = "camera=(self), geolocation=(self), microphone=()";
+                                                      "script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; connect-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'";
+                // micro: trợ lý ảo nhận câu hỏi bằng giọng nói; wasm-unsafe-eval, worker blob: giọng đọc AI chạy trong trình duyệt (ONNX Runtime Web)
+                tl.Header["Permissions-Policy"] = "camera=(self), geolocation=(self), microphone=(self)";
             }
             return tl;
         }
 
         static readonly Dictionary<string, byte[]> boNhoWeb = new Dictionary<string, byte[]>();
 
-        static byte[] TepWeb(string ten)
+        internal static byte[] TepWeb(string ten)
         {
             // khi sửa giao diện: QLTS_WEB = thư mục web\ của mã nguồn → đọc thẳng tệp, không cần biên dịch lại
             string thu = Environment.GetEnvironmentVariable("QLTS_WEB");
@@ -240,6 +250,7 @@ namespace QuanLyTaiSan
 
         static void Gui(Stream ra, TraLoi tl, bool head, bool giu, bool gzip = false)
         {
+            if (tl.TepDuong != null) { GuiTep(ra, tl, head, giu); return; }
             byte[] b = tl.Than ?? new byte[0];
             string loaiGoc = (tl.Loai ?? "").Split(';')[0].Trim();
             bool nen = gzip && b.Length > 1024 && NenDuoc.Contains(loaiGoc);
@@ -266,6 +277,25 @@ namespace QuanLyTaiSan
             ra.Flush();
         }
 
+        /// <summary>Gửi tệp lớn trên đĩa (mô hình giọng đọc ~63 MB) theo từng khúc, không nạp cả tệp vào bộ nhớ.</summary>
+        static void GuiTep(Stream ra, TraLoi tl, bool head, bool giu)
+        {
+            using (var f = new FileStream(tl.TepDuong, FileMode.Open, FileAccess.Read, FileShare.Read, 65536))
+            {
+                var sb = new StringBuilder();
+                sb.Append("HTTP/1.1 200 OK\r\n");
+                if (tl.Loai != null) sb.Append("Content-Type: ").Append(tl.Loai).Append("\r\n");
+                sb.Append("Content-Length: ").Append(f.Length).Append("\r\n");
+                sb.Append("X-Content-Type-Options: nosniff\r\nReferrer-Policy: no-referrer\r\n");
+                foreach (var h in tl.Header) sb.Append(h.Key).Append(": ").Append(h.Value.Replace("\r", "").Replace("\n", "")).Append("\r\n");
+                sb.Append("Connection: ").Append(giu ? "keep-alive" : "close").Append("\r\n\r\n");
+                byte[] hb = Encoding.UTF8.GetBytes(sb.ToString());
+                ra.Write(hb, 0, hb.Length);
+                if (!head) f.CopyTo(ra, 65536);
+                ra.Flush();
+            }
+        }
+
         static string LyDo(int s)
         {
             switch (s)
@@ -282,6 +312,8 @@ namespace QuanLyTaiSan
                 case 413: return "Payload Too Large";
                 case 429: return "Too Many Requests";
                 case 500: return "Internal Server Error";
+                case 501: return "Not Implemented";
+                case 503: return "Service Unavailable";
                 default: return "Status";
             }
         }
@@ -358,6 +390,7 @@ namespace QuanLyTaiSan
         public int Status = 200;
         public string Loai;
         public byte[] Than;
+        public string TepDuong;   // gửi thẳng tệp trên đĩa (tệp lớn), thay cho Than
         public readonly Dictionary<string, string> Header = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         public static TraLoi Json(object o, int status = 200)

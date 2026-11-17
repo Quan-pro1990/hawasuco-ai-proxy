@@ -223,6 +223,13 @@ hr { border: 0; border-top: 1px solid var(--vien); margin: 2em 0; }
 <tr><td><code>cai-dat-may-chu.json</code></td><td>câu trả lời của trình cài đặt</td></tr>
 </tbody></table></div>
 <p>Đặt / đổi lịch sao lưu mỗi đêm: nhấp đúp <code>trien-khai\SAO-LUU-DAT-LICH.bat</code> (chọn thư mục đích, giờ chạy). Nên chép tiếp thư mục sao lưu ra nơi khác định kỳ (ổ cứng ngoài, Google Drive…). Khôi phục: cài lại theo bước 5, 6 rồi chép thư mục dữ liệu về chỗ cũ (dừng site <strong>QuanLyTaiSan</strong> trong IIS Manager trước khi chép, chép xong bật lại).</p>
+<h3 id="trợ-lý-ảo-bật-ai-giọng-đọc-ai">Trợ lý ảo: bật AI, giọng đọc AI</h3>
+<p>Trợ lý ảo Hawasuco (robot ở góc màn hình) chạy sẵn, không cần cài thêm gì. Hai phần tùy chọn:</p>
+<ul>
+<li><strong>AI trả lời tự nhiên hơn</strong>: cần khóa API Claude. Vào <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a> → tạo tài khoản, nạp tiền / đăng ký thanh toán → <strong>API Keys</strong> → <strong>Create Key</strong> → chép khóa. Đăng nhập phần mềm bằng tài khoản quản trị → <strong>Cài đặt → Trợ lý ảo</strong> → dán vào ô *Khóa API Claude* → <strong>Lưu</strong> → <strong>Thử AI</strong> (thấy dòng ✓ là được). Đặt *Số câu hỏi AI tối đa mỗi ngày* để giới hạn chi phí. Máy chủ phải ra được Internet tới <code>api.anthropic.com</code> (cổng 443). Khóa lưu trên máy chủ trong thư mục dữ liệu (<code>C:\QuanLyTaiSanData\tro-ly-ao\cau-hinh.json</code>, bản sao lưu cũng có) — đổi hoặc <strong>Xoá khóa</strong> ở cùng chỗ trong Cài đặt; khóa không bao giờ gửi về trình duyệt.</li>
+<li><strong>Giọng đọc AI tiếng Việt</strong> (cùng bộ giọng với website, phần mềm QLNS): trên máy chủ nhấp đúp <code>trien-khai\TAI-GIONG-AI.bat</code> (tải ~73 MB từ <code>https://qlns.capnuochaugiang.vn</code> vào thư mục <code>giong-doc</code> cạnh <code>QuanLyTaiSan.exe</code>). Chưa tải thì trợ lý dùng giọng của trình duyệt / điện thoại.</li>
+<li><strong>Lời nhắn</strong> nhân viên gửi qua trợ lý: <strong>Cài đặt → Trợ lý ảo → Lời nhắn gửi quản trị</strong>.</li>
+</ul>
 <h3 id="quên-mật-khẩu-quản-trị">Quên mật khẩu quản trị</h3>
 <p>Nhấp đúp <code>trien-khai\DAT-LAI-MAT-KHAU-QUAN-TRI.bat</code> (trong thư mục bộ cài trên máy chủ), nhập tên tài khoản quản trị và mật khẩu mới. Mật khẩu của nhân viên thì quản trị đặt lại trong trang <strong>Tài khoản</strong> của phần mềm.</p>
 <h3 id="xem-nhật-ký-khi-có-lỗi">Xem nhật ký khi có lỗi</h3>

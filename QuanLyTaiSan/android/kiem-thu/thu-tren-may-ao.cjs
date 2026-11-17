@@ -1,6 +1,6 @@
 // Kiểm thử app Android trên máy ảo (GitHub Actions, .github/workflows/quanlytaisan-android.yml): kết nối máy chủ https
 // chứng chỉ tự ký (hỏi mã nhận dạng rồi ghim), đăng nhập trong app, quét kiểm kê bằng camera của app, GPS, tải Excel,
-// phím Back, báo cập nhật app; máy chủ bản cũ 1.1.0 qua http: trang Quét vẫn dùng camera của app (assets/tuong-thich.js). Điều khiển app bằng Playwright (_android: giao diện Android + WebView qua cổng gỡ lỗi).
+// phím Back, báo cập nhật app, trợ lý ảo (micro / giọng đọc của Android); máy chủ bản cũ 1.1.0 qua http: trang Quét vẫn dùng camera của app (assets/tuong-thich.js). Điều khiển app bằng Playwright (_android: giao diện Android + WebView qua cổng gỡ lỗi).
 // Cần bản app gỡ lỗi (GO_LOI=1 ./build-apk.sh) đã cài, máy chủ thử ở 10.0.2.2. Biến môi trường:
 //   RA              thư mục ảnh chụp màn hình            MAY_CHU_NHAP  địa chỉ gõ ở màn hình kết nối (10.0.2.2:18443)
 //   MA_CHUNG_CHI    mã nhận dạng chứng chỉ mong đợi      APK_MOI       bản app "mới hơn" để thử báo cập nhật
@@ -101,6 +101,40 @@ async function layTrang() {
     await choTrang(() => !document.querySelector('.dangtai'), null, 15000).catch(() => null);
     await ngu(2500);
     await chup('tong-quan');
+  });
+
+  await buoc('trợ lý ảo trong app: hỏi đáp, micro và giọng đọc của Android', async () => {
+    await dev.shell(`pm grant ${GOI} android.permission.RECORD_AUDIO`);
+    await page.waitForSelector('#botBtn', { timeout: 15000 });
+    const cau = await page.evaluate(() => typeof window.QuanLyTaiSanApp.batNghe + ' ' + typeof window.QuanLyTaiSanApp.docChu);
+    kiem(cau === 'function function', 'cầu nối giọng nói của app: batNghe / docChu');
+    await page.click('#botBtn');
+    await page.waitForSelector('#botMsgs .bm', { timeout: 10000 });
+    kiem(await page.$eval('#botMic', b => !b.hidden), 'nút micro hiện (nhận dạng giọng nói của Android, chạy cả với máy chủ http)');
+    await page.fill('#botIn', 'tổng quan tài sản');
+    await page.press('#botIn', 'Enter');
+    await choTrang(() => Array.prototype.some.call(document.querySelectorAll('#botMsgs .bm-b'), e => /Tổng quan tài sản/.test(e.textContent)), null, 25000);
+    kiem(true, 'trợ lý trả lời bằng số liệu trên máy chủ (Tổng quan tài sản)');
+    await ngu(2500);
+    await chup('tro-ly');
+    // micro: Android nghe; máy ảo thường không có dịch vụ nhận dạng giọng nói → trợ lý báo chưa hỗ trợ (không được treo)
+    await page.click('#botMic');
+    await choTrang(() => document.getElementById('botMic').classList.contains('on') ||
+      Array.prototype.some.call(document.querySelectorAll('#botMsgs .bm-sys'), e => /giọng nói|micro|Micr/.test(e.textContent)), null, 15000);
+    const nghe = await page.evaluate(() => document.getElementById('botMic').classList.contains('on') ? 'đang nghe' :
+      Array.prototype.slice.call(document.querySelectorAll('#botMsgs .bm-sys')).pop().textContent);
+    kiem(true, 'bấm micro → ' + nghe.slice(0, 90));
+    if (nghe === 'đang nghe') await page.click('#botMic');
+    // đọc: docChu → app gọi lại ungDungDocXong (đọc xong, hoặc máy không có giọng tiếng Việt)
+    const xong = await page.evaluate(() => new Promise(r => {
+      const t = setTimeout(() => r(false), 25000);
+      window.ungDungDocXong = () => { clearTimeout(t); r(true); };
+      window.QuanLyTaiSanApp.docChu('Xin chào anh chị, tôi là trợ lý ảo.');
+    }));
+    kiem(xong, 'docChu → app báo đọc xong (ungDungDocXong)');
+    await page.click('#botX');
+    // ẩn robot để không che nút khi bấm thử các bước sau
+    await page.evaluate(() => { const b = document.getElementById('bot'); if (b) b.style.display = 'none'; });
   });
 
   await buoc('quét kiểm kê bằng camera của app', async () => {

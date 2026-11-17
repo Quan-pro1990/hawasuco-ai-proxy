@@ -284,6 +284,21 @@ Chỉ cần sao lưu thư mục `C:\QuanLyTaiSanData`:
 mục sao lưu ra nơi khác định kỳ (ổ cứng ngoài, Google Drive…). Khôi phục: cài lại theo bước 5, 6 rồi chép thư mục dữ liệu
 về chỗ cũ (dừng site **QuanLyTaiSan** trong IIS Manager trước khi chép, chép xong bật lại).
 
+### Trợ lý ảo: bật AI, giọng đọc AI
+
+Trợ lý ảo Hawasuco (robot ở góc màn hình) chạy sẵn, không cần cài thêm gì. Hai phần tùy chọn:
+
+- **AI trả lời tự nhiên hơn**: cần khóa API Claude. Vào [console.anthropic.com](https://console.anthropic.com) → tạo tài khoản,
+  nạp tiền / đăng ký thanh toán → **API Keys** → **Create Key** → chép khóa. Đăng nhập phần mềm bằng tài khoản quản trị →
+  **Cài đặt → Trợ lý ảo** → dán vào ô *Khóa API Claude* → **Lưu** → **Thử AI** (thấy dòng ✓ là được). Đặt *Số câu hỏi AI tối đa
+  mỗi ngày* để giới hạn chi phí. Máy chủ phải ra được Internet tới `api.anthropic.com` (cổng 443).
+  Khóa lưu trên máy chủ trong thư mục dữ liệu (`C:\QuanLyTaiSanData\tro-ly-ao\cau-hinh.json`, bản sao lưu cũng có) — đổi hoặc
+  **Xoá khóa** ở cùng chỗ trong Cài đặt; khóa không bao giờ gửi về trình duyệt.
+- **Giọng đọc AI tiếng Việt** (cùng bộ giọng với website, phần mềm QLNS): trên máy chủ nhấp đúp `trien-khai\TAI-GIONG-AI.bat`
+  (tải ~73 MB từ `https://qlns.capnuochaugiang.vn` vào thư mục `giong-doc` cạnh `QuanLyTaiSan.exe`). Chưa tải thì trợ lý dùng
+  giọng của trình duyệt / điện thoại.
+- **Lời nhắn** nhân viên gửi qua trợ lý: **Cài đặt → Trợ lý ảo → Lời nhắn gửi quản trị**.
+
 ### Quên mật khẩu quản trị
 
 Nhấp đúp `trien-khai\DAT-LAI-MAT-KHAU-QUAN-TRI.bat` (trong thư mục bộ cài trên máy chủ), nhập tên tài khoản quản trị và mật

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- App Android "Quản lý tài sản": kết nối máy chủ Quản lý tài sản (IIS) — mở trang web trong WebView,
-     quét tem QR bằng camera của app (chạy cả khi máy chủ dùng HTTP), tải / chia sẻ file Excel, in tem, lấy vị trí GPS. -->
+     quét tem QR bằng camera của app (chạy cả khi máy chủ dùng HTTP), tải / chia sẻ file Excel, in tem, lấy vị trí GPS,
+     nghe / đọc tiếng Việt cho Trợ lý ảo Hawasuco. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
@@ -8,6 +9,8 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- trợ lý ảo: hỏi bằng giọng nói (nhận dạng giọng nói tiếng Việt của Android) -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!-- cập nhật app: tải bản mới từ máy chủ rồi mở trình cài đặt của Android -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
@@ -16,6 +19,17 @@
     <uses-feature android:name="android.hardware.location.gps" android:required="false" />
     <uses-feature android:name="android.hardware.location" android:required="false" />
     <uses-feature android:name="android.hardware.location.network" android:required="false" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
+
+    <!-- Android 11+: được thấy dịch vụ nhận dạng giọng nói và đọc văn bản (TTS) của máy -->
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+    </queries>
 
     <application
         android:allowBackup="false"

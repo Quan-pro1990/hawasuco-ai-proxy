@@ -1,0 +1,754 @@
+{
+ "_huong_dan": "Kho kiến thức của Trợ lý ảo Hawasuco trong phần mềm Quản lý tài sản. Sửa 'a' (câu trả lời) và 'k' (từ khóa, viết thường, có hoặc không dấu đều được); 'quyen' (tùy chọn) = cấp quyền tối thiểu để thấy mục (1 kiểm tra, 2 cán bộ quản lý, 3 quản trị); 'chips' (tùy chọn) = nút gợi ý [nhãn, câu hỏi]. Định dạng: **chữ đậm**, [chữ](#/trang) hoặc [chữ](https://...), xuống dòng bằng \\n, gạch đầu dòng bằng '- '. Muốn sửa trên máy chủ: chép tệp này vào thư mục dữ liệu …\\tro-ly-ao\\kien-thuc.json rồi sửa (lưu UTF-8). AI cũng đọc toàn bộ tệp này để trả lời.",
+ "capNhat": "17/11/2026",
+ "items": [
+  {
+   "id": "tro-ly-ao",
+   "k": [
+    "trợ lý ảo là ai",
+    "bạn là ai",
+    "bạn tên gì",
+    "chatbot",
+    "trợ lý ảo làm được gì",
+    "trợ lý ảo"
+   ],
+   "a": "Tôi là **Trợ lý ảo Hawasuco** – trợ lý tự động trong phần mềm Quản lý tài sản (cũng là trợ lý trên website của Công ty).\n- Trực **24/7**; gõ chữ hoặc bấm **micro 🎤** để nói.\n- Tìm tài sản, xem tổng quan, tài sản hỏng, đến hạn bảo dưỡng, tiến độ kiểm kê, khấu hao; báo hỏng; nhắn quản trị; hướng dẫn mọi chức năng.\n- Số liệu tôi đọc trên máy chủ theo đúng quyền của tài khoản đang đăng nhập."
+  },
+  {
+   "id": "phan-mem",
+   "k": [
+    "phần mềm quản lý tài sản",
+    "phần mềm này là gì",
+    "phần mềm làm được gì",
+    "tính năng",
+    "chức năng",
+    "giới thiệu phần mềm",
+    "phần mềm có gì"
+   ],
+   "a": "**Phần mềm Quản lý tài sản** quản lý từng tài sản bằng **tem mã QR**:\n- Mỗi tài sản 1 tem; quét tem bằng điện thoại là thấy ngay thông tin, ảnh, thông số kỹ thuật, lịch sử.\n- Ghi **kiểm tra**, **báo hỏng**, **bảo dưỡng / sửa chữa** (chi phí), chụp ảnh, vị trí GPS tại chỗ.\n- **Kiểm kê hằng năm**: quét tem là ghi nhận đã kiểm kê; tiến độ theo đội / phòng ban; biên bản Excel.\n- **Điều chuyển** nhiều tài sản 1 phiếu, biên bản giao nhận; **thanh lý**.\n- In tem (6 mẫu), tem trắng in trước; nhập / xuất Excel; sổ tài sản theo đơn vị.\n- Dùng trên máy tính, trình duyệt điện thoại, hoặc **app Android**."
+  },
+  {
+   "id": "dang-nhap",
+   "k": [
+    "đăng nhập",
+    "không đăng nhập được",
+    "quên mật khẩu",
+    "sai mật khẩu",
+    "bị khóa",
+    "tài khoản bị khóa",
+    "tạm khóa",
+    "mất mật khẩu",
+    "lấy lại mật khẩu"
+   ],
+   "a": "**Đăng nhập** bằng tên và mật khẩu do quản trị cấp.\n- Nhập sai **5 lần** thì tài khoản **tạm khoá 10 phút**, chờ rồi thử lại.\n- **Quên mật khẩu**: nhờ người quản trị phần mềm đặt lại (trang Tài khoản của quản trị).\n- Quản trị quên mật khẩu: trên máy chủ chạy **trien-khai\\DAT-LAI-MAT-KHAU-QUAN-TRI.bat**.\n- Tài khoản bị **khoá** (nhân viên nghỉ việc) thì không đăng nhập được nữa."
+  },
+  {
+   "id": "doi-mat-khau",
+   "k": [
+    "đổi mật khẩu",
+    "thay mật khẩu",
+    "mật khẩu mới",
+    "đổi pass",
+    "mật khẩu"
+   ],
+   "a": "Đổi mật khẩu: vào trang [Tài khoản](#/taikhoan) (điện thoại: **Thêm → Tài khoản**) → **Đổi mật khẩu** → nhập mật khẩu hiện tại, mật khẩu mới (**ít nhất 6 ký tự**) 2 lần → **Đổi mật khẩu**."
+  },
+  {
+   "id": "quet-qr",
+   "k": [
+    "quét",
+    "quét mã",
+    "quét qr",
+    "quét tem",
+    "cách quét",
+    "mở camera",
+    "đọc mã qr",
+    "quét mã qr"
+   ],
+   "a": "**Quét tem QR**:\n- Điện thoại: bấm nút tròn **Quét QR** giữa thanh dưới (máy tính: nút **Quét mã QR** ở menu trái) → đưa tem vào khung; đọc được thì máy rung và mở trang tài sản. Mở nhanh: [Quét mã QR](#/quet).\n- Tài khoản từ **Nhân viên kiểm tra** trở lên: mỗi lần quét là **ghi nhận kiểm kê năm nay**.\n- Chỗ tối bấm **Đèn**; không mở được camera thì bấm **Chụp ảnh mã QR** hoặc gõ mã vào ô bên dưới.\n- Cũng có thể dùng **ứng dụng Camera** có sẵn của điện thoại: tem chứa địa chỉ trang tài sản nên mở thẳng trình duyệt.\n- Lần đầu trình duyệt hỏi quyền **Camera**: chọn **Cho phép**."
+  },
+  {
+   "id": "quet-loi",
+   "k": [
+    "không quét được",
+    "camera không mở",
+    "camera không chạy",
+    "không đọc được tem",
+    "quét không ra",
+    "báo lỗi camera",
+    "không thấy camera",
+    "tem khó đọc",
+    "quét chậm"
+   ],
+   "a": "Không quét được tem, anh/chị thử:\n- Trang web phải mở bằng **https** thì camera trong trình duyệt mới chạy (máy chủ http: dùng **app Android**, app có camera riêng).\n- Cho phép quyền **Camera** (biểu tượng ổ khoá trên thanh địa chỉ → Camera → Cho phép).\n- Giữ tem cách **10–20 cm**, đủ sáng (bấm **Đèn**), **chạm màn hình** để lấy nét; trong app có nút **Chụp để đọc**.\n- Vẫn không được: bấm **Chụp ảnh mã QR**, hoặc gõ mã in dưới tem vào ô bên dưới camera."
+  },
+  {
+   "id": "in-tem",
+   "k": [
+    "in tem",
+    "in mã qr",
+    "cách in tem",
+    "in tem qr",
+    "tem qr",
+    "dán tem",
+    "làm tem"
+   ],
+   "a": "**In tem QR**: trang [Tài sản](#/ds) → lọc (vd theo đơn vị) hoặc đánh dấu chọn tài sản → **In tem** (hoặc nút In tem trên trang 1 tài sản). Mở nhanh: [In tem QR](#/nhan).\n- Chọn **mẫu tem**: giấy decal A4 24 tem (70×37 mm), 40 tem, 12 tem lớn, 65 tem nhỏ, máy in tem cuộn 50×30 / 60×40 mm.\n- Bật / tắt tên công ty, tên tài sản, đơn vị; **Bỏ qua ô đầu tờ** khi tờ decal đã dùng dở.\n- Bấm **In** → chọn máy in, khổ giấy đúng mẫu, tỷ lệ **100%** (không \"vừa trang\"), lề **không**.\n- Trước khi in lần đầu, quản trị đặt **Địa chỉ in trong mã QR** ở [Cài đặt](#/caidat).",
+   "chips": [
+    [
+     "🏷️ Tem trắng",
+     "tem trắng là gì"
+    ],
+    [
+     "🧾 Mẫu tem ngoài trời",
+     "tem ngoài trời"
+    ]
+   ]
+  },
+  {
+   "id": "tem-trang",
+   "k": [
+    "tem trắng",
+    "in tem trước",
+    "cấp trước mã",
+    "tem chưa có tài sản",
+    "in sẵn tem",
+    "khai báo tài sản với mã này"
+   ],
+   "a": "**Tem trắng** = tem in trước, chưa gắn tài sản: ở trang [In tem QR](#/nhan) mở mục **In tem trắng**, chọn loại, số tem → phần mềm cấp trước dãy mã (vd MB-00031 … MB-00054).\nDán tem lên tài sản ngoài hiện trường, rồi quét tem → **Khai báo tài sản với mã này** → điền thông tin, chụp ảnh, lấy GPS tại chỗ. (Cần quyền **Cán bộ quản lý tài sản**.)"
+  },
+  {
+   "id": "mau-tem",
+   "k": [
+    "mẫu tem",
+    "khổ tem",
+    "giấy decal",
+    "máy in tem",
+    "tem ngoài trời",
+    "tem bị mờ",
+    "chống bẩn",
+    "tem nhôm",
+    "tem inox",
+    "tem bền"
+   ],
+   "a": "Mẫu tem: decal A4 24 / 40 / 12 / 65 tem, hoặc tem cuộn 50×30, 60×40 mm.\n- Tem ngoài trời, nơi ẩm (máy bơm giếng, van, trụ cứu hoả): chọn **mức chống bẩn / xước** *Cao* hoặc *Rất cao*; dùng decal PVC phủ màng chống UV, hoặc đặt tem **nhôm / inox khắc laser** theo đúng mã in ra.\n- Tem mờ, bong: in lại tem đúng mã ở trang tài sản → **In tem**."
+  },
+  {
+   "id": "them-tai-san",
+   "k": [
+    "thêm tài sản",
+    "khai báo tài sản",
+    "tạo tài sản",
+    "tài sản mới",
+    "nhập tài sản mới",
+    "đăng ký tài sản"
+   ],
+   "a": "**Thêm tài sản** (quyền **Cán bộ quản lý tài sản**): trang [Tài sản](#/ds) → **Thêm tài sản** (hoặc [mở ngay](#/moi)) → chọn loại (mã tự cấp theo tiền tố của loại), điền tên, đơn vị, vị trí, hãng, model, số seri, nguyên giá, ngày đưa vào sử dụng, thông số kỹ thuật → bấm **Vị trí hiện tại** để lấy GPS, chụp ảnh → **Lưu**.\nNhiều tài sản: dùng **Nhập từ Excel**."
+  },
+  {
+   "id": "nhap-excel",
+   "k": [
+    "nhập excel",
+    "nhập từ excel",
+    "file mẫu",
+    "mẫu excel",
+    "đưa dữ liệu vào",
+    "sổ tài sản cố định",
+    "import"
+   ],
+   "a": "**Nhập từ Excel** (quyền **Cán bộ quản lý tài sản**): mở [Nhập từ Excel](#/nhap) → tải **file mẫu**, hoặc dùng luôn file sổ tài sản cố định đang có – phần mềm tự nhận cột theo tiêu đề (Mã, Tên, Loại, Đơn vị, Vị trí, Hãng, Model, Số seri, Năm SX, Ngày sử dụng, Nguyên giá, Số năm khấu hao, Tình trạng, Ghi chú, cột thông số như \"Công suất (kW)\"…).\n- Xem trước số dòng **thêm / cập nhật / lỗi** rồi mới bấm **Nhập**.\n- Dòng có mã đã có = cập nhật (ô trống giữ nguyên); loại / đơn vị chưa có được tạo mới."
+  },
+  {
+   "id": "xuat-excel",
+   "k": [
+    "xuất excel",
+    "tải excel",
+    "báo cáo excel",
+    "xuất danh sách",
+    "sổ tài sản",
+    "in danh sách",
+    "báo cáo"
+   ],
+   "a": "Xuất Excel:\n- Trang [Tài sản](#/ds) → **Xuất Excel**: đúng danh sách đang lọc (hoặc tài sản đã chọn), có tổng nguyên giá, khấu hao, giá trị còn lại.\n- **Sổ tài sản** cả công ty / khối / 1 đơn vị: trang [Theo đơn vị](#/donvi) → nút **Sổ Excel** (có trang tổng hợp và chỗ ký).\n- **Biên bản kiểm kê**: trang [Kiểm kê](#/kiemke) → **Xuất biên bản**.\n- **Biên bản giao nhận**: trang [Điều chuyển](#/dieuchuyen) → mở phiếu.\nTrong app Android: app hỏi **Mở / Chia sẻ (Zalo, email) / Lưu vào máy**."
+  },
+  {
+   "id": "tim-tai-san",
+   "k": [
+    "cách tìm tài sản",
+    "tìm tài sản như thế nào",
+    "lọc tài sản",
+    "ô tìm",
+    "tìm theo tên",
+    "tìm theo mã",
+    "sắp xếp"
+   ],
+   "a": "Tìm tài sản: trang [Tài sản](#/ds) → gõ vào ô tìm (mã, tên, hãng, số seri, vị trí…), lọc theo **loại, đơn vị (cả khối), tình trạng** và mục **Thêm** (đến hạn bảo dưỡng, lâu chưa kiểm tra, chưa có ảnh, đang quản lý); sắp xếp theo mã, tên, mới sửa, giá.\nHỏi tôi cũng được, ví dụ: \"**tìm máy bơm đội 2**\", \"**MB-00012**\", \"**máy phát điện ở đâu**\"."
+  },
+  {
+   "id": "trang-tai-san",
+   "k": [
+    "trang tài sản",
+    "thông tin tài sản",
+    "lịch sử tài sản",
+    "thông số kỹ thuật",
+    "hồ sơ tài sản",
+    "xem lịch sử",
+    "sửa thông tin tài sản"
+   ],
+   "a": "**Trang tài sản** (mở khi quét tem hoặc bấm vào tài sản):\n- Thông tin, **thông số kỹ thuật** theo loại, nguyên giá, giá trị còn lại, vị trí GPS (mở bản đồ).\n- **Ảnh**: bấm để xem toàn màn hình, *Chụp ảnh / Thêm ảnh*.\n- Nút: **Kiểm tra**, **Bảo dưỡng / sửa**, **Sửa thông tin**, **Điều chuyển**, **Thanh lý**, **In tem**.\n- **Lịch sử**: mọi lần khai báo, sửa (trường nào đổi từ gì sang gì), kiểm tra, bảo dưỡng, điều chuyển, kiểm kê, thêm ảnh – có ảnh, vị trí."
+  },
+  {
+   "id": "chup-anh",
+   "k": [
+    "chụp ảnh",
+    "thêm ảnh",
+    "ảnh tài sản",
+    "ảnh chính",
+    "xóa ảnh",
+    "tải ảnh",
+    "cách chụp ảnh tài sản",
+    "chưa có ảnh"
+   ],
+   "a": "Ảnh tài sản: trên trang tài sản bấm **Chụp ảnh** (điện thoại) hoặc **Thêm ảnh** → ảnh vào **bộ ảnh**. Điện thoại tự thu nhỏ ảnh trước khi gửi (nhẹ, gửi nhanh qua 4G).\n- Cán bộ quản lý đặt **ảnh chính** hoặc bỏ ảnh khỏi bộ ảnh.\n- Bấm ảnh để xem toàn màn hình (vuốt / phím ← → để chuyển), **Tải về**.\n- Khi ghi kiểm tra, bảo dưỡng cũng chụp kèm ảnh được."
+  },
+  {
+   "id": "kiem-tra",
+   "k": [
+    "ghi kiểm tra",
+    "kiểm tra tài sản",
+    "cách ghi kiểm tra tài sản",
+    "ghi tình trạng",
+    "cập nhật tình trạng",
+    "kiểm tra định kỳ"
+   ],
+   "a": "**Ghi kiểm tra** (quyền **Nhân viên kiểm tra** trở lên): quét tem → trang tài sản → **Kiểm tra** → chọn tình trạng (tốt, cần theo dõi, hỏng…), ghi chú, chụp ảnh, **Ghi vị trí GPS** → Lưu.\nTài sản quá lâu chưa kiểm tra (theo số ngày ở Cài đặt, mặc định 180 ngày) hiện ở Tổng quan → **lâu chưa kiểm tra**.",
+   "chips": [
+    [
+     "🕒 Tài sản lâu chưa kiểm tra",
+     "tài sản lâu chưa kiểm tra"
+    ]
+   ]
+  },
+  {
+   "id": "bao-hong-cach",
+   "k": [
+    "cách báo hỏng",
+    "báo hỏng như thế nào",
+    "tài sản hỏng thì làm gì",
+    "máy hư thì làm sao",
+    "báo hư hỏng"
+   ],
+   "a": "**Báo hỏng** = ghi kiểm tra với tình trạng **Hỏng, cần sửa chữa**: quét tem → **Kiểm tra** → chọn *Hỏng, cần sửa chữa*, ghi mô tả, chụp ảnh → Lưu. Tài sản hiện ngay ở Tổng quan → **Hỏng / đang sửa**.\nHoặc nói với tôi: \"**báo hỏng MB-00012**\" – tôi ghi giúp.",
+   "chips": [
+    [
+     "⚠️ Báo hỏng tài sản",
+     "báo hỏng tài sản"
+    ]
+   ]
+  },
+  {
+   "id": "bao-duong",
+   "k": [
+    "bảo dưỡng",
+    "sửa chữa",
+    "ghi bảo dưỡng",
+    "chi phí sửa chữa",
+    "chu kỳ bảo dưỡng",
+    "hạn bảo dưỡng",
+    "bảo trì",
+    "lịch bảo dưỡng như thế nào"
+   ],
+   "a": "**Bảo dưỡng / sửa chữa**: trang tài sản → **Bảo dưỡng / sửa** → ngày thực hiện, nội dung, **chi phí**, tình trạng sau khi làm, ảnh → Lưu.\n- **Hạn bảo dưỡng** tự tính lại theo **chu kỳ** của loại tài sản (sửa ở [Danh mục](#/danhmuc)) hoặc chu kỳ riêng của tài sản.\n- Tài sản quá hạn hoặc đến hạn trong 7 ngày hiện ở Tổng quan → **Đến hạn bảo dưỡng**.",
+   "chips": [
+    [
+     "🛠️ Đến hạn bảo dưỡng",
+     "tài sản đến hạn bảo dưỡng"
+    ]
+   ]
+  },
+  {
+   "id": "tinh-trang",
+   "k": [
+    "tình trạng",
+    "các tình trạng",
+    "cần theo dõi",
+    "ngừng sử dụng",
+    "đang sửa chữa",
+    "mất không tìm thấy",
+    "tình trạng tài sản là gì"
+   ],
+   "a": "Các **tình trạng** tài sản:\n- **Đang sử dụng tốt**\n- **Cần theo dõi** (còn chạy nhưng có dấu hiệu bất thường)\n- **Hỏng, cần sửa chữa**\n- **Đang sửa chữa / bảo dưỡng**\n- **Ngừng sử dụng** (còn quản lý, không tính bảo dưỡng)\n- **Đã thanh lý**, **Mất / không tìm thấy** (không còn quản lý, không vào kiểm kê)"
+  },
+  {
+   "id": "kiem-ke",
+   "k": [
+    "kiểm kê",
+    "cách kiểm kê",
+    "kiểm kê tài sản",
+    "kiểm kê năm",
+    "kiểm kê như thế nào",
+    "bắt đầu kiểm kê",
+    "mở kiểm kê",
+    "kiểm kê cuối năm"
+   ],
+   "a": "**Kiểm kê hằng năm** – quét tem là ghi nhận:\n1. **Bắt đầu**: tự bắt đầu khi có người quét tem đầu tiên trong năm (hoặc cán bộ quản lý bấm [Kiểm kê](#/kiemke) → **Bắt đầu kiểm kê năm …**). Phần mềm chốt **sổ sách** = mọi tài sản đang quản lý lúc bắt đầu.\n2. **Quét tem**: trang tài sản mở với ô xanh **\"Vừa ghi nhận kiểm kê năm …\"**; quét lại không ghi trùng. Nhiều tài sản liền nhau: [Quét liên tục](#/quet?lientuc=1).\n3. Tài sản hỏng, sai vị trí: **Ghi tình trạng kiểm kê**; tem mất: mở trang tài sản → **Xác nhận kiểm kê**.\n4. **Theo dõi** tiến độ theo khối → đội / phòng ban; tab **Chưa kiểm / Đã kiểm / Ngoài sổ**.\n5. **Xuất biên bản** Excel rồi **Kết thúc kiểm kê năm …**.\nTài khoản *Chỉ xem* quét tem chỉ để xem, không ghi nhận kiểm kê.",
+   "chips": [
+    [
+     "📋 Tiến độ kiểm kê",
+     "tiến độ kiểm kê"
+    ]
+   ]
+  },
+  {
+   "id": "quet-lien-tuc",
+   "k": [
+    "quét liên tục",
+    "kiểm kê nhiều tài sản",
+    "quét nhiều tem",
+    "vừa quét",
+    "quét hàng loạt"
+   ],
+   "a": "**Quét liên tục (kiểm kê)**: trang Quét → **Quét liên tục** ([mở ngay](#/quet?lientuc=1)). Quét lần lượt từng tem; máy rung, tài sản hiện ngay vào danh sách **Vừa quét** (không chuyển trang). Bấm vào tài sản trong danh sách để ghi tình trạng / ghi chú / ảnh.\nTrong **app Android** camera mở toàn màn hình, báo kết quả từng tem (*Đã kiểm kê MB-00012 · 35 / 120*), bấm **Xong** để về danh sách."
+  },
+  {
+   "id": "kiem-ke-xong",
+   "k": [
+    "biên bản kiểm kê",
+    "xuất biên bản kiểm kê",
+    "kết thúc kiểm kê",
+    "mở lại kiểm kê",
+    "đóng kiểm kê",
+    "xong kiểm kê",
+    "ký biên bản kiểm kê"
+   ],
+   "a": "Khi kiểm kê xong: trang [Kiểm kê](#/kiemke) → **Xuất biên bản** (theo khối → đơn vị: sổ sách / thực tế / chênh lệch, tình trạng, người kiểm, thời gian; chữ ký người lập biểu – kế toán trưởng – giám đốc, tên lấy ở Cài đặt) → **Kết thúc kiểm kê năm …**.\nSau khi kết thúc, quét tem chỉ để xem; cần ghi thêm thì **Mở lại kiểm kê**. (Quyền **Cán bộ quản lý tài sản**.)"
+  },
+  {
+   "id": "ngoai-so",
+   "k": [
+    "ngoài sổ",
+    "chưa kiểm",
+    "chưa tìm thấy",
+    "đã kiểm",
+    "chênh lệch kiểm kê",
+    "thiếu tài sản",
+    "thừa tài sản"
+   ],
+   "a": "Trong trang kiểm kê:\n- **Chưa kiểm**: tài sản trong sổ sách đầu kỳ chưa ai quét (chưa tìm thấy) – bấm từng đơn vị để giao cho tổ kiểm kê của đội.\n- **Đã kiểm**: đã quét / xác nhận.\n- **Ngoài sổ**: quét được nhưng không có trong sổ sách đầu kỳ (vd khai báo sau khi bắt đầu kiểm kê… hoặc đã thanh lý).\nBiên bản Excel có cột **chênh lệch** giữa sổ sách và thực tế."
+  },
+  {
+   "id": "dieu-chuyen",
+   "k": [
+    "điều chuyển",
+    "chuyển tài sản",
+    "chuyển sang đội khác",
+    "chuyển phòng",
+    "phiếu điều chuyển",
+    "cách điều chuyển",
+    "luân chuyển"
+   ],
+   "a": "**Điều chuyển** (quyền **Cán bộ quản lý tài sản**):\n1. Trang Quét → **Điều chuyển** ([mở ngay](#/quet?dc=1)); quét lần lượt tem các tài sản cần chuyển (tem không quét được thì gõ mã).\n2. Bấm **Điều chuyển n tài sản…** → chọn **đội / phòng ban nhận**, vị trí mới, người sử dụng mới, số quyết định / lý do → **Điều chuyển**.\n3. Phần mềm lập **phiếu** (DC-2026-001…) và đổi đơn vị ngay; bấm **Biên bản giao nhận** để tải Excel cho hai bên ký.\nCách khác: trang 1 tài sản → **Điều chuyển**; máy tính: trang Tài sản chọn nhiều → **Điều chuyển (n)**. Xem lại các phiếu ở [Điều chuyển](#/dieuchuyen).\nTài khoản giới hạn 1 đơn vị chỉ chuyển được tài sản **của đơn vị mình**."
+  },
+  {
+   "id": "thanh-ly",
+   "k": [
+    "thanh lý",
+    "thanh lý tài sản",
+    "bán thanh lý",
+    "hủy tài sản",
+    "giá trị thu hồi",
+    "tài sản hết dùng"
+   ],
+   "a": "**Thanh lý** (quyền **Cán bộ quản lý tài sản**): trang tài sản → **Thanh lý** → số quyết định / biên bản thanh lý, giá trị thu hồi → Lưu. Tài sản chuyển sang **Đã thanh lý**: không còn quản lý, không vào kiểm kê, không điều chuyển được; hồ sơ và lịch sử vẫn giữ nguyên."
+  },
+  {
+   "id": "xoa-tai-san",
+   "k": [
+    "xóa tài sản",
+    "xoá tài sản",
+    "nhập nhầm",
+    "tạo nhầm tài sản",
+    "xóa nhầm"
+   ],
+   "a": "**Xoá tài sản** chỉ dành cho **Quản trị** (trang tài sản → **Xoá**), dùng khi khai báo nhầm. Tài sản thật không còn dùng thì nên **Thanh lý** để giữ hồ sơ, lịch sử."
+  },
+  {
+   "id": "theo-don-vi",
+   "k": [
+    "theo đơn vị",
+    "tài sản từng đội",
+    "tài sản của đội",
+    "tài sản phòng ban",
+    "đơn vị quản lý",
+    "sổ theo đơn vị",
+    "tài sản của phòng"
+   ],
+   "a": "Trang [Theo đơn vị](#/donvi) (điện thoại: **Thêm → Theo đơn vị**): mỗi khối 1 phần, mỗi đội / phòng ban 1 thẻ – số tài sản, nguyên giá, giá trị còn lại, loại nhiều nhất, việc cần xử lý (hỏng / đang sửa, đến hạn bảo dưỡng, lâu chưa kiểm tra, chưa có ảnh). Nút: **Danh sách**, **In tem**, **Sổ Excel** của đơn vị.\nHỏi tôi cũng được: \"**tình hình tài sản đội 2**\"."
+  },
+  {
+   "id": "khoi",
+   "k": [
+    "khối",
+    "các đội cấp nước",
+    "khối văn phòng",
+    "đội cấp nước",
+    "phòng ban"
+   ],
+   "a": "Mỗi tài sản thuộc 1 **đơn vị quản lý**; mỗi đơn vị thuộc 1 **khối**: **Các đội cấp nước** (Đội Cấp nước số 1–6…) hoặc **Khối văn phòng** (Ban Giám đốc, các phòng). Trang Tài sản lọc được **Cả các đội cấp nước / Cả khối văn phòng**. Thêm, sửa đơn vị ở [Danh mục](#/danhmuc)."
+  },
+  {
+   "id": "danh-muc",
+   "k": [
+    "danh mục",
+    "loại tài sản",
+    "thêm loại",
+    "sửa loại",
+    "tiền tố",
+    "thêm đơn vị",
+    "sửa đơn vị",
+    "số năm khấu hao của loại",
+    "thông số theo loại"
+   ],
+   "a": "Trang [Danh mục](#/danhmuc): **loại tài sản** (tên, nhóm, **tiền tố mã** vd MB → MB-00012, **số năm khấu hao**, **chu kỳ bảo dưỡng**, các **thông số kỹ thuật** riêng) và **đơn vị** (chọn khối). Có sẵn 13 loại của ngành nước: máy bơm, tủ điện – biến tần, máy phát, thiết bị xử lý nước, thuỷ lượng kế, van – trụ cứu hoả, đường ống, giếng khoan, nhà trạm – bể chứa, xe, thiết bị văn phòng, dụng cụ, khác. Thêm / sửa cần quyền **Cán bộ quản lý tài sản**."
+  },
+  {
+   "id": "ma-tai-san",
+   "k": [
+    "mã tài sản",
+    "mã tự cấp",
+    "cách đặt mã",
+    "mã trên tem",
+    "đổi mã",
+    "mã bị trùng"
+   ],
+   "a": "**Mã tài sản** tự cấp theo **tiền tố của loại** + số thứ tự (vd máy bơm **MB-00012**), in trên tem QR. Nhập Excel thì dùng mã có sẵn trong file (dòng có mã đã có = cập nhật). Tiền tố sửa ở [Danh mục](#/danhmuc)."
+  },
+  {
+   "id": "khau-hao",
+   "k": [
+    "khấu hao",
+    "cách tính khấu hao",
+    "khấu hao đường thẳng",
+    "khấu hao lũy kế",
+    "giá trị còn lại là gì",
+    "nguyên giá",
+    "tính giá trị còn lại"
+   ],
+   "a": "**Khấu hao** trong phần mềm là **tạm tính theo đường thẳng** để tham khảo: mỗi năm = nguyên giá ÷ số năm khấu hao; tính theo số ngày từ **ngày đưa vào sử dụng**.\n- **Khấu hao luỹ kế** = phần đã khấu hao đến hôm nay; **giá trị còn lại** = nguyên giá − luỹ kế.\n- Số năm lấy theo tài sản (nếu có) hoặc theo loại ở [Danh mục](#/danhmuc).\n- Số chính thức theo **sổ kế toán**.\nTôi tính nhanh được: \"**tính khấu hao 120 triệu 8 năm**\" hoặc \"**khấu hao MB-00012**\".",
+   "chips": [
+    [
+     "🧮 Tính khấu hao",
+     "tính khấu hao"
+    ]
+   ]
+  },
+  {
+   "id": "quyen",
+   "k": [
+    "quyền",
+    "phân quyền",
+    "vai trò",
+    "chỉ xem",
+    "nhân viên kiểm tra",
+    "cán bộ quản lý tài sản",
+    "quản trị",
+    "được làm gì",
+    "không có quyền",
+    "xin quyền"
+   ],
+   "a": "**Quyền người dùng**:\n- **Chỉ xem**: quét QR, xem thông tin / ảnh / lịch sử, xuất Excel.\n- **Nhân viên kiểm tra**: + kiểm tra, báo hỏng, bảo dưỡng / sửa chữa, chụp ảnh, kiểm kê.\n- **Cán bộ quản lý tài sản**: + thêm / sửa, điều chuyển, thanh lý, in tem, tem trắng, nhập Excel, bắt đầu / kết thúc kiểm kê, thêm loại / đơn vị.\n- **Quản trị**: + xoá, tài khoản, cài đặt.\nTài khoản có thể **giới hạn 1 đơn vị** (chỉ thêm / sửa tài sản của đơn vị đó). Cần thêm quyền: **nhắn quản trị**.",
+   "chips": [
+    [
+     "✉️ Nhắn quản trị",
+     "để lại lời nhắn"
+    ]
+   ]
+  },
+  {
+   "id": "tai-khoan",
+   "k": [
+    "tạo tài khoản",
+    "thêm tài khoản",
+    "thêm người dùng",
+    "tài khoản nhân viên",
+    "khóa tài khoản",
+    "nhân viên nghỉ việc",
+    "đặt lại mật khẩu",
+    "giới hạn đơn vị"
+   ],
+   "a": "Quản lý tài khoản (**Quản trị**): trang [Tài khoản](#/taikhoan) → **Thêm tài khoản** (tên đăng nhập, họ tên, quyền, giới hạn đơn vị nếu cần, mật khẩu ≥ 6 ký tự). Bấm vào dòng để sửa, **đặt lại mật khẩu** hoặc **Khoá** khi nhân viên nghỉ việc.",
+   "quyen": 3
+  },
+  {
+   "id": "cai-dat",
+   "k": [
+    "cài đặt",
+    "địa chỉ in trong mã qr",
+    "tên công ty",
+    "người lập biểu",
+    "kế toán trưởng",
+    "địa danh",
+    "số ngày nhắc kiểm tra",
+    "thiết lập"
+   ],
+   "a": "Trang [Cài đặt](#/caidat) (**Quản trị**): tên công ty (in trên tem, biên bản), **Địa chỉ in trong mã QR** (vd https://taisan.congty.vn – đặt **trước khi in tem**), địa danh, người lập biểu, kế toán trưởng, giám đốc (in trên biên bản), số ngày nhắc tài sản chưa kiểm tra; mục **Trợ lý ảo** (khóa AI, lời nhắn); mã QR tải app Android.",
+   "quyen": 3
+  },
+  {
+   "id": "app-android",
+   "k": [
+    "app",
+    "app android",
+    "ứng dụng",
+    "cài app",
+    "tải app",
+    "ứng dụng điện thoại",
+    "file apk",
+    "app quản lý tài sản"
+   ],
+   "a": "**App Android \"Quản lý tài sản\"** – cùng tài khoản, cùng dữ liệu, thêm:\n- Quét tem bằng **camera của app** (chạy cả khi máy chủ chưa có https), quét liên tục khi kiểm kê / điều chuyển, có đèn, **Chụp để đọc**.\n- Xuất Excel, tải ảnh: **Mở / Chia sẻ / Lưu vào máy**; ghi GPS, chụp ảnh, in tem qua máy in Wi-Fi; tự hỏi **cập nhật** khi máy chủ có bản mới.\n**Cài app**: trên điện thoại mở địa chỉ máy chủ bằng Chrome → [Tải app](tai-app) (hoặc quét mã QR ở trang Cài đặt của quản trị); Android hỏi cho phép cài ứng dụng không rõ nguồn → cho phép."
+  },
+  {
+   "id": "app-ket-noi",
+   "k": [
+    "kết nối máy chủ",
+    "địa chỉ máy chủ",
+    "mã nhận dạng chứng chỉ",
+    "chứng chỉ",
+    "tin cậy",
+    "đổi máy chủ",
+    "app không kết nối được",
+    "lần đầu mở app"
+   ],
+   "a": "**Lần đầu mở app**: nhập địa chỉ máy chủ (vd taisan.congty.vn; chưa có tên miền gõ IP, app tự thử cổng 8443 / 8080), hoặc **Quét tem QR để lấy địa chỉ**, hoặc trên Chrome bấm **Mở bằng app**.\n- Máy chủ dùng chứng chỉ tự ký: app hiện **mã nhận dạng chứng chỉ** (vd 3A1B-9C2D-4E5F-6071) – so với mã quản trị cung cấp rồi bấm **Tin cậy**.\n- Đổi máy chủ: **Thêm → App điện thoại → Đổi máy chủ**."
+  },
+  {
+   "id": "dien-thoai-web",
+   "k": [
+    "thêm vào màn hình chính",
+    "iphone",
+    "safari",
+    "dùng trên điện thoại",
+    "mở như app",
+    "chrome điện thoại"
+   ],
+   "a": "Dùng bằng trình duyệt điện thoại: mở địa chỉ máy chủ bằng **Chrome** (iPhone: **Safari**), đăng nhập, menu ⋮ (iPhone: nút Chia sẻ) → **Thêm vào màn hình chính** để mở như app. Android nên dùng **app Android** cho nhanh và quét được cả khi máy chủ chưa có https."
+  },
+  {
+   "id": "gps",
+   "k": [
+    "vị trí",
+    "gps",
+    "tọa độ",
+    "toạ độ",
+    "bản đồ",
+    "ghi vị trí",
+    "lấy vị trí",
+    "định vị"
+   ],
+   "a": "**Vị trí GPS**: khi thêm tài sản bấm **Vị trí hiện tại**; khi ghi kiểm tra bấm **Ghi vị trí GPS**. Trang tài sản có nút mở **bản đồ**. Lần đầu trình duyệt / app hỏi quyền **Vị trí**: chọn Cho phép (trình duyệt chỉ lấy vị trí khi trang mở bằng https; app Android lấy được cả với máy chủ http)."
+  },
+  {
+   "id": "tong-quan",
+   "k": [
+    "trang tổng quan",
+    "biểu đồ",
+    "màn hình tổng quan",
+    "tổng quan có gì",
+    "dashboard"
+   ],
+   "a": "Trang [Tổng quan](#/tongquan): số tài sản, nguyên giá, giá trị còn lại; **hỏng / đang sửa**, **đến hạn bảo dưỡng** (7 ngày), **lâu chưa kiểm tra**, **chưa có ảnh**; tiến độ **kiểm kê** năm nay; biểu đồ theo tình trạng, loại, đơn vị – bấm từng ô / thanh để ra danh sách. Hỏi tôi \"**tổng quan**\" để xem nhanh.",
+   "chips": [
+    [
+     "📊 Tổng quan",
+     "tổng quan tài sản"
+    ]
+   ]
+  },
+  {
+   "id": "hoat-dong",
+   "k": [
+    "trang hoạt động",
+    "nhật ký",
+    "ai đã sửa",
+    "ai sửa tài sản",
+    "lịch sử thao tác",
+    "theo dõi thao tác"
+   ],
+   "a": "Trang [Hoạt động](#/hoatdong): mọi thao tác mới nhất (khai báo, sửa, kiểm tra, bảo dưỡng, điều chuyển, kiểm kê, thanh lý, thêm ảnh) – ai làm, lúc nào, tài sản nào; lọc theo loại hoạt động. Lịch sử của từng tài sản xem trên trang tài sản.",
+   "chips": [
+    [
+     "🕒 Hoạt động mới nhất",
+     "hoạt động gần đây"
+    ]
+   ]
+  },
+  {
+   "id": "sao-luu",
+   "k": [
+    "sao lưu",
+    "dữ liệu lưu ở đâu",
+    "backup",
+    "mất dữ liệu",
+    "thư mục dữ liệu",
+    "khôi phục dữ liệu"
+   ],
+   "a": "Dữ liệu trên máy chủ: thư mục **C:\\QuanLyTaiSanData** (taisan.xml, LichSu\\, Anh\\, taikhoan.xml; chạy thử: thư mục DuLieu cạnh file .exe). Mỗi ngày phần mềm tự giữ 1 bản taisan.xml trong **SaoLuu** (90 ngày); bộ cài có lịch **sao lưu hằng ngày** cả thư mục. Hãy sao lưu thêm ra ổ / máy khác định kỳ (ảnh và lịch sử chỉ có ở đây).",
+   "quyen": 3
+  },
+  {
+   "id": "may-chu",
+   "k": [
+    "cài máy chủ",
+    "cài đặt máy chủ",
+    "iis",
+    "https",
+    "tên miền",
+    "cập nhật phiên bản",
+    "nâng cấp phần mềm",
+    "phiên bản mới",
+    "gói cài"
+   ],
+   "a": "Cài / cập nhật máy chủ (**Quản trị**): chép gói **quanlytaisan-may-chu-<phiên bản>.zip** lên máy chủ Windows → **Extract All** → nhấp đúp **CAI-DAT-MAY-CHU.bat** (bật IIS, tên miền, tài khoản quản trị, lịch sao lưu). Chạy lại tệp này để **cập nhật** – dữ liệu giữ nguyên. Bật HTTPS bằng win-acme rồi chạy lại để tự chuyển http → https. Chi tiết: tệp **HUONG-DAN-CAI-DAT.html** trong gói.",
+   "quyen": 3
+  },
+  {
+   "id": "tro-ly-ai",
+   "k": [
+    "bật ai",
+    "khóa api",
+    "trợ lý ai",
+    "trí tuệ nhân tạo",
+    "claude",
+    "api key",
+    "ai trả lời",
+    "trả lời bởi ai"
+   ],
+   "a": "Trợ lý ảo có 2 bộ não: **bộ có sẵn** (luôn chạy, không gửi gì ra ngoài) và **AI** (tùy chọn, trả lời tự nhiên hơn). Bật AI: quản trị vào [Cài đặt](#/caidat) → mục **Trợ lý ảo** → dán **khóa API** (tạo tại console.anthropic.com) → **Lưu** → **Thử AI**. Câu trả lời của AI có dòng \"Trả lời bởi AI\". AI lỗi hoặc hết hạn mức trong ngày thì tự quay về bộ có sẵn."
+  },
+  {
+   "id": "giong-noi",
+   "k": [
+    "giọng nói",
+    "nói chuyện",
+    "micro",
+    "đọc to",
+    "đọc câu trả lời",
+    "loa",
+    "giọng đọc",
+    "rảnh tay",
+    "xin chào để hỏi",
+    "không nghe được"
+   ],
+   "a": "Nói chuyện với trợ lý:\n- Bấm **micro 🎤** rồi nói câu hỏi (tiếng Việt); nói xong tự gửi. Trình duyệt cần **https** và quyền Micro; trong app Android dùng nhận dạng giọng nói của điện thoại.\n- Nút **loa 🔊** ở đầu khung chat: bật / tắt đọc câu trả lời (giọng AI tiếng Việt nếu máy chủ đã tải bộ giọng đọc, không thì giọng của trình duyệt / điện thoại); nút loa nhỏ cạnh mỗi câu để đọc lại.\n- Nút **tai 👂**: bật **rảnh tay** – chỉ cần nói \"**Xin chào**\" là hỏi được."
+  },
+  {
+   "id": "y-kien",
+   "k": [
+    "góp ý",
+    "phản ánh",
+    "báo lỗi",
+    "gặp quản trị",
+    "liên hệ quản trị",
+    "người quản trị",
+    "hỗ trợ",
+    "người thật",
+    "để lại lời nhắn"
+   ],
+   "a": "Anh/chị có thể **để lại lời nhắn** ngay tại đây – tôi chuyển tới **người quản trị phần mềm** (kèm tên tài khoản của anh/chị). Quản trị xem ở Cài đặt → mục Trợ lý ảo.",
+   "chips": [
+    [
+     "✉️ Để lại lời nhắn",
+     "để lại lời nhắn"
+    ]
+   ]
+  },
+  {
+   "id": "gioi-thieu",
+   "k": [
+    "giới thiệu công ty",
+    "công ty là gì",
+    "hawasuco là",
+    "tên công ty đầy đủ",
+    "tên tiếng anh",
+    "viết tắt",
+    "thành lập",
+    "cổ phần hóa",
+    "về công ty",
+    "hawasuco"
+   ],
+   "a": "**Công ty Cổ phần Cấp thoát nước - Công trình đô thị Hậu Giang (HAWASUCO)**\nTên tiếng Anh: Hau Giang Water Supply and Sewerage - Projects Urban Joint Stock Company.\n- Thành lập ngày 05/01/2004 (chia tách từ Công ty Cấp nước Cần Thơ).\n- 29/06/2004: sáp nhập Ban Công trình đô thị thị xã Vị Thanh.\n- 14/09/2010: chuyển thành Công ty TNHH MTV.\n- 25/04/2011: chuyển thành công ty cổ phần, hoạt động đến nay.\nXem thêm: [Giới thiệu công ty](https://web.capnuochaugiang.vn/#gioi-thieu)"
+  },
+  {
+   "id": "nganh-nghe",
+   "k": [
+    "ngành nghề",
+    "công ty kinh doanh gì",
+    "lĩnh vực",
+    "công ty hoạt động gì",
+    "công ty làm những gì",
+    "chiếu sáng",
+    "cây xanh",
+    "xăng dầu"
+   ],
+   "a": "Lĩnh vực hoạt động chính của Công ty:\n- Sản xuất, cung cấp nước sạch cho sinh hoạt, sản xuất, kinh doanh dịch vụ.\n- Khảo sát, thiết kế, thi công, lắp đặt công trình cấp thoát nước.\n- Thi công, duy tu hệ thống đèn chiếu sáng công cộng và dân dụng.\n- Quản lý, dịch vụ công trình đô thị công cộng: vệ sinh phân rác, cây xanh công viên, cây cảnh.\n- Quảng cáo và cho thuê quảng cáo; sửa chữa cơ khí, thiết bị ngành nước; kinh doanh xăng dầu.\nXem: [Dịch vụ cấp nước](https://web.capnuochaugiang.vn/#dv-cap-nuoc)"
+  },
+  {
+   "id": "lanh-dao",
+   "k": [
+    "lãnh đạo",
+    "chủ tịch",
+    "tổng giám đốc",
+    "phó tổng",
+    "hội đồng quản trị",
+    "hđqt",
+    "ban kiểm soát",
+    "người đại diện",
+    "ban giám đốc",
+    "cơ cấu tổ chức",
+    "sơ đồ tổ chức"
+   ],
+   "a": "**Người đại diện theo pháp luật**: Ông Vũ Minh Đức – Chủ tịch HĐQT; Ông Bùi Trọng Lực – Tổng Giám đốc.\n- Phó Chủ tịch HĐQT: Ông Huỳnh Thông Minh.\n- Phó Tổng Giám đốc: Ông Quách Minh Hiển, Ông Cao Thế Khải, Ông Huỳnh Trung Tín.\n- Trưởng Ban Kiểm soát: Ông Lý Thanh Quang.\nXem đầy đủ: [Cơ cấu tổ chức](https://web.capnuochaugiang.vn/#co-cau)"
+  },
+  {
+   "id": "lien-he",
+   "k": [
+    "liên hệ công ty",
+    "địa chỉ công ty",
+    "trụ sở",
+    "số điện thoại công ty",
+    "hotline",
+    "tổng đài",
+    "email công ty",
+    "phòng hành chính",
+    "phòng kỹ thuật",
+    "văn phòng công ty"
+   ],
+   "a": "**Trụ sở chính**: Số 263, đường Trần Hưng Đạo, phường Vị Tân, thành phố Cần Thơ.\n- **Hotline CSKH lĩnh vực cấp nước: 1900 9114 (phím 9)**\n- Điện thoại: 02933.876357\n- P. Hành chính - Quản trị: 0293.3876357 · P. Tài chính - Kế hoạch: 0293.3870436 · P. Kỹ thuật: 0293.3.870009\n- Văn phòng đại diện tại Cần Thơ: Số 3, đường Nguyễn Văn Cừ, KV Cồn Khương, phường Cái Khế.\nXem: [Liên hệ](https://web.capnuochaugiang.vn/#lien-he)"
+  },
+  {
+   "id": "cong-ty-thanh-vien",
+   "k": [
+    "công ty thành viên",
+    "công ty con",
+    "cấp nước hậu giang",
+    "công trình đô thị hậu giang",
+    "ngô quốc trị"
+   ],
+   "a": "Công ty có 2 công ty thành viên:\n- **Công ty TNHH MTV Cấp nước Hậu Giang** – khai thác, xử lý, cung cấp nước sạch trên địa bàn tỉnh Hậu Giang cũ. Trụ sở: Số 46A, đường Ngô Quốc Trị, khu vực 9, phường Vị Tân, TP. Cần Thơ. ĐT: 02933 582 099.\n- **Công ty TNHH MTV Công trình đô thị Hậu Giang** – công trình đô thị, chiếu sáng, cây xanh, vệ sinh môi trường. Trụ sở: Số 3, đường số 4, cụm CN-TTCN, phường Vị Thanh. ĐT: 0293.3.582269.\nXem: [Cơ cấu tổ chức](https://web.capnuochaugiang.vn/#co-cau)"
+  },
+  {
+   "id": "website",
+   "k": [
+    "website",
+    "trang web công ty",
+    "web công ty",
+    "giá nước",
+    "tra cứu hóa đơn",
+    "lịch cúp nước",
+    "tin tức"
+   ],
+   "a": "Thông tin cho khách hàng dùng nước (giá nước, tính tiền nước, tra cứu hóa đơn, lịch cúp nước, tin tức…) có trên website của Công ty: [web.capnuochaugiang.vn](https://web.capnuochaugiang.vn/) – ở đó cũng có Trợ lý ảo Hawasuco trả lời 24/7. Hotline CSKH: **1900 9114 (phím 9)**."
+  }
+ ]
+}

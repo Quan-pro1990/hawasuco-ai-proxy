@@ -44,13 +44,14 @@ Lần đầu Android hỏi cho phép cài ứng dụng không rõ nguồn → ch
 ```
 android/
   app/build.gradle                 phiên bản app (versionCode, versionName), ký app
-  app/src/main/AndroidManifest.xml quyền: Internet, Camera, Vị trí, Rung, Cài bản cập nhật
+  app/src/main/AndroidManifest.xml quyền: Internet, Camera, Vị trí, Micro (trợ lý ảo), Rung, Cài bản cập nhật
   app/src/main/java/vn/com/hawasuco/taisan/
     MainActivity.java   màn hình kết nối, WebView, cầu nối cho trang web, tải file, chọn / chụp ảnh, in, GPS, cập nhật
     KetNoi.java         tìm máy chủ (api/ping), ghim chứng chỉ tự ký theo SHA-256, mã nhận dạng
     ManQuet.java        màn hình quét tem: camera (TextureView), khung ngắm, đèn, kết quả từng tem
     DocQR.java          đọc mã QR trong khung hình camera / ảnh chụp bằng ZXing (Java thuần — kiểm thử được trên máy tính)
     TepProvider.java    đưa file vừa tải cho ứng dụng khác; nhận ảnh từ ứng dụng Camera
+    GiongNoi.java       trợ lý ảo: nhận dạng giọng nói tiếng Việt (SpeechRecognizer), đọc câu trả lời (TextToSpeech)
   app/src/main/res/                icon (logo công ty + huy hiệu QR), màu, network_security_config (xml/mang.xml)
   app/src/main/assets/tuong-thich.js  chèn vào trang của máy chủ bản cũ: trang Quét dùng camera của app
   build-apk.sh                     build không cần Gradle (Linux)
@@ -71,9 +72,11 @@ App gắn `window.QuanLyTaiSanApp` vào trang (trang web dùng khi có, xem `web
 | `baoQuet(tin, loai)` | trang báo kết quả tem vừa quét lên màn hình camera (`ok` / `loi` / ``) |
 | `taiVe(url, ten, token)` | tải file của máy chủ rồi hỏi mở / chia sẻ / lưu |
 | `rung(mau)`, `inTrang(ten)`, `layViTri()`, `capNhat()`, `doiMayChu()` | rung, in, GPS, cập nhật app, đổi máy chủ |
+| `batNghe()`, `dungNghe()`, `docChu(chu)`, `dungDoc()` | trợ lý ảo (từ 1.0.2): nghe câu hỏi bằng nhận dạng giọng nói tiếng Việt của Android, đọc câu trả lời bằng giọng tiếng Việt của Android (WebView không có Web Speech API) |
 
 App gọi lại trang: `ungDungQuet(maQR)`, `ungDungDongQuet()`, `ungDungViTri({viDo, kinhDo, saiSo} | {loi})`,
-`ungDungInXong()`, `ungDungQuayLai()` (phím Back: trang đóng hộp thoại đang mở → trả 1).
+`ungDungInXong()`, `ungDungQuayLai()` (phím Back: trang đóng hộp thoại đang mở → trả 1),
+`ungDungNghe({tam | xong | loi | het})`, `ungDungDocXong()` (trợ lý ảo).
 
 Máy chủ: `/tai-app` trả file APK; `/api/ping` có `app: {phienBan, ma, kichThuoc}` đọc từ AndroidManifest trong APK
 (`src/AppDienThoai.cs`) — app so `ma` với `versionCode` của chính nó để hỏi cập nhật.
@@ -104,3 +107,6 @@ APK ký bằng khoá `ky-app/quanlytaisan.jks` (mật khẩu mặc định `quan
 xem `.gitignore`): hãy cất giữ file `.jks`. Bản sau phải ký cùng khoá thì mới cài đè được bản trước; ký khoá khác thì
 app báo **"Cần gỡ app cũ"** khi cập nhật — gỡ app rồi cài lại (dữ liệu nằm trên máy chủ nên không mất gì, chỉ phải nhập
 lại địa chỉ máy chủ và đăng nhập).
+
+Từ bản **1.0.2** app ký bằng khoá mới (chứng chỉ SHA-256 `a388d1c6a8338f6d06500d3ab686564c274a93ab0b942afcb8607ba887d3739a`)
+vì khoá của bản 1.0.0 – 1.0.1 không còn: điện thoại đang cài 1.0.1 sẽ được báo **"Cần gỡ app cũ"** một lần khi cập nhật.

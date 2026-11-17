@@ -38,6 +38,7 @@ Công ty TNHH MTV Cấp nước Hậu Giang (HAWASUCO). Phiên bản 1.0 — 10/
 | Tạo QR | `maqr.js` viết riêng (chuẩn ISO/IEC 18004, phiên bản 1–40, mức sửa lỗi L/M/Q/H), vẽ SVG sắc nét khi in | Không phụ thuộc thư viện; đã kiểm bằng 2 bộ đọc độc lập (zxing, jsQR) ở mọi phiên bản |
 | Lưu trữ | XML + tệp ghi thêm (không cần SQL Server) | Đủ cho vài chục nghìn tài sản; sao lưu = chép thư mục; cùng cách với phần mềm thất thoát nước |
 | Excel | Tự đọc / ghi .xlsx (mã đã dùng trong phần mềm thất thoát nước) | Không cần cài Excel trên máy chủ |
+| Trợ lý ảo | `web/troly.js`, `troly.css`, `troly-robot-*.png` chép từ trợ lý ảo của website (linh vật, hiệu ứng, chuyện vui, đố vui, giọng nói); phần nghiệp vụ viết lại cho tài sản (gọi `/api` bằng phiên đăng nhập); kho kiến thức `troly-kien-thuc.json`; AI tùy chọn qua `src/TroLyAo.cs` | Cùng trợ lý với website; bộ có sẵn chạy không cần Internet; khóa AI chỉ ở máy chủ |
 
 Chạy thử không cần IIS: nhấp đúp `QuanLyTaiSan.exe` → mở `http://localhost:18090` (dữ liệu ở thư mục `DuLieu` cạnh file .exe).
 
@@ -177,6 +178,10 @@ C:\QuanLyTaiSanData\
 | `GET/POST/DELETE taikhoan` | quản lý tài khoản |
 | `GET /t/<mã>` (ngoài /api) | địa chỉ trong tem: chuyển tới trang tài sản |
 | `GET /tai-app` (ngoài /api), `GET ping` → `app: {phienBan, ma, kichThuoc}` | tải app Android `QuanLyTaiSan-DienThoai.apk` (đặt cạnh .exe); phiên bản đọc từ AndroidManifest trong APK để app hỏi cập nhật |
+| `POST troly/hoi` (`messages: [{role, content}]`, 10 câu gần nhất) | trợ lý ảo hỏi AI: `{reply}`; 501 `{mode: "off"}` = chưa bật AI; 503 = AI lỗi / hết lượt ngày → trình duyệt dùng bộ có sẵn |
+| `GET/POST troly/caidat`, `POST troly/thu` (quản trị) | khóa API (không bao giờ trả về), model, mức suy nghĩ, giới hạn câu / ngày, gửi số liệu tổng hợp, tạm tắt; hỏi thử AI |
+| `POST troly/loinhan` (`noiDung, dienThoai`), `GET troly/loinhan`, `POST troly/loinhan/doc`, `POST troly/loinhan/xoa` (quản trị) | lời nhắn gửi quản trị qua trợ lý ảo (tối đa 20 lời nhắn / người / ngày, giữ 500 lời nhắn gần nhất) |
+| `GET /troly-kien-thuc.json`, `GET /giong-doc/…` (ngoài /api), `GET ping` → `troLy: {ai, giongDoc}` | kho kiến thức (bản sửa trong thư mục dữ liệu hoặc bản nhúng); bộ giọng đọc AI (thư mục `giong-doc\` cạnh .exe, gửi từng khúc) |
 
 ## 9. Bảo mật
 
@@ -190,6 +195,13 @@ C:\QuanLyTaiSanData\
   Máy chủ chưa có tên miền (chứng chỉ tự ký): app hiện mã nhận dạng (16 ký tự đầu SHA-256 của chứng chỉ, giống bộ cài in ra),
   người dùng đồng ý thì ghim **đúng chứng chỉ đó** (SHA-256 đủ 64 ký tự) cho cả WebView và kết nối của app; chứng chỉ đổi → app
   chặn và hỏi lại. Tin thêm chứng chỉ gốc công ty tự cài lên điện thoại. Bật gỡ lỗi WebView chỉ ở bản gỡ lỗi.
+- Trợ lý ảo: số liệu đọc qua `/api` bằng chính phiên đăng nhập (đúng quyền, đúng đơn vị như trang web); báo hỏng đi qua
+  `POST taisan/{id}/sukien` như nút Kiểm tra. AI (tùy chọn) gọi Claude API (`api.anthropic.com/v1/messages`, phiên bản API
+  `2026-10-21`, model mặc định `claude-opus-5-5`, suy nghĩ mức thấp để trả lời nhanh, phần lời dặn cố định có lưu đệm, chuyển
+  model dự phòng khi bị bộ lọc an toàn từ chối) **từ máy chủ**: khóa lưu ở `…\tro-ly-ao\cau-hinh.json` hoặc biến môi trường
+  `QLTS_CLAUDE_KEY`, không bao giờ gửi về trình duyệt; AI chỉ nhận câu hỏi, kho kiến thức + tài liệu `.md`, tên quyền / đơn vị
+  của người hỏi, số liệu tổng hợp khi quản trị bật (chỉ số đếm) — không gửi tên người, ảnh, mật khẩu; giới hạn câu / ngày.
+  Trang có `microphone=(self)` cho micro; `script-src 'wasm-unsafe-eval'`, `worker-src blob:` cho giọng đọc AI chạy trong trình duyệt.
 - `QuanLyTaiSan.exe` chỉ nghe 127.0.0.1 (chỉ IIS chuyển yêu cầu tới; gói cũ dùng ASP.NET Core Module thì kiểm thêm mã
   `MS-ASPNETCORE-TOKEN`). IIS không phục vụ tệp nào trong thư mục site (mọi yêu cầu qua chương trình), trừ tệp xác minh
   Let's Encrypt trong `.well-known/acme-challenge` do chương trình trả.

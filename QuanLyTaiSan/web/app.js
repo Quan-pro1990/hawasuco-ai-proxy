@@ -2074,12 +2074,77 @@
       o('Địa danh ghi ngày lập biên bản', 'diaDanh') + o('Người lập biểu', 'nguoiLap') + o('Kế toán trưởng', 'keToanTruong') + o('Giám đốc', 'giamDoc') +
       '<label class="nhan">Nhắc tài sản chưa kiểm tra sau (ngày)</label><input data-k="ngayNhacKiemTra" type="number" min="1" max="3650" value="' + c.ngayNhacKiemTra + '">' +
       '<div class="chan" style="position:static"><button class="nut chinh" type="submit">Lưu cài đặt</button></div></form>' +
+      '<div class="the" style="max-width:720px" data-troly><h3>Trợ lý ảo Hawasuco</h3><div class="dangtai">Đang tải…</div></div>' +
       '<p class="mo nho">Phiên bản ' + esc(st.nguoi.phienBanPhanMem) + '. Dữ liệu, ảnh và lịch sử nằm trong thư mục dữ liệu trên máy chủ (mặc định C:\\QuanLyTaiSanData) — sao lưu cả thư mục này định kỳ.</p>' + (APP ? '' : theApp());
     nd.querySelector('form').addEventListener('submit', function (e) {
       e.preventDefault();
       var than = {};
       Array.prototype.forEach.call(this.querySelectorAll('[data-k]'), function (i) { than[i.getAttribute('data-k')] = i.type === 'number' ? +i.value : i.value; });
       api('POST', 'caidat', than).then(function (d) { st.dm = d; thongBao('Đã lưu cài đặt'); }, function (e2) { thongBao(e2.message, true); });
+    });
+    theTroLy(nd.querySelector('[data-troly]'), lan);
+  }
+
+  /** Cài đặt → Trợ lý ảo: bật "bộ não" AI (khóa API Claude chỉ lưu trên máy chủ), xem lời nhắn nhân viên gửi qua trợ lý ảo. */
+  function theTroLy(goc, lan) {
+    Promise.all([api('GET', 'troly/caidat'), api('GET', 'troly/loinhan')]).then(function (kq) {
+      if (!con(lan)) return;
+      veTroLy(goc, kq[0], kq[1]);
+    }, function (e) { goc.innerHTML = '<h3>Trợ lý ảo Hawasuco</h3><div class="loi">' + esc(e.message) + '</div>'; });
+  }
+  function veTroLy(goc, c, ln) {
+    var mucEf = { low: 'Nhanh (low)', medium: 'Vừa (medium)', high: 'Kỹ (high)' };
+    goc.innerHTML = '<h3>Trợ lý ảo Hawasuco</h3>' +
+      '<p class="mo nho" style="margin:0 0 6px">Robot trợ lý ở góc màn hình (chép từ website của Công ty): tìm tài sản, tổng quan, tài sản hỏng, đến hạn bảo dưỡng, kiểm kê, khấu hao, báo hỏng, hướng dẫn sử dụng… ' +
+      'Bộ trả lời có sẵn luôn chạy, không gửi gì ra ngoài. Bật thêm <b>AI</b> (Claude của Anthropic) để trả lời tự nhiên hơn các câu hỏi về cách dùng phần mềm.</p>' +
+      '<div class="bang-tt"><div class="k">AI</div><div class="v">' + (c.bat ? '<b style="color:var(--xanh)">Đang bật</b> · model ' + esc(c.model) + ' · hôm nay ' + c.homNay + (c.gioiHanNgay ? ' / ' + c.gioiHanNgay : '') + ' câu' :
+        c.coKhoa ? 'Đã có khóa nhưng đang tắt' : 'Chưa bật (chưa có khóa API)') + '</div>' +
+      '<div class="k">Khóa API</div><div class="v">' + (c.coKhoa ? 'Đã có (' + esc(c.khoaDuoi) + ')' + (c.khoaTuBien ? ' — lấy từ biến môi trường QLTS_CLAUDE_KEY' : '') : 'Chưa có') + '</div>' +
+      '<div class="k">Giọng đọc AI</div><div class="v">' + (c.giongDoc ? 'Đã có bộ giọng đọc tiếng Việt' : 'Chưa có — dùng giọng của trình duyệt / điện thoại (tải bằng trien-khai\\TAI-GIONG-AI.bat trên máy chủ)') + '</div>' +
+      '<div class="k">Kho kiến thức</div><div class="v">' + (c.kienThucRieng ? 'Bản sửa riêng trong thư mục dữ liệu' : 'Bản có sẵn') + (c.taiLieu.length ? ' + tài liệu: ' + esc(c.taiLieu.join(', ')) : '') + '</div></div>' +
+      '<form data-ai><label class="nhan">Khóa API Claude (tạo tại console.anthropic.com → API Keys)</label><input data-k="apiKey" type="password" autocomplete="off" placeholder="' + (c.coKhoa ? 'Để trống = giữ khóa đang dùng' : 'Dán khóa API vào đây') + '"' + (c.khoaTuBien ? ' disabled' : '') + '>' +
+      '<div class="goiy">Khóa chỉ lưu trên máy chủ (thư mục dữ liệu …\\tro-ly-ao\\cau-hinh.json), không gửi về trình duyệt. AI chỉ nhận câu hỏi, hướng dẫn phần mềm và quyền của người hỏi — không gửi tên người, ảnh, mật khẩu.</div>' +
+      '<label class="nhan">Model</label><input data-k="model" value="' + esc(c.model) + '" placeholder="' + esc(c.modelMacDinh) + '"><div class="goiy">Mặc định ' + esc(c.modelMacDinh) + '.</div>' +
+      '<label class="nhan">Mức suy nghĩ</label><select data-k="effort">' + Object.keys(mucEf).map(function (k) { return '<option value="' + k + '"' + (k === c.effort ? ' selected' : '') + '>' + mucEf[k] + '</option>'; }).join('') + '</select>' +
+      '<label class="nhan">Số câu hỏi AI tối đa mỗi ngày (giới hạn chi phí; 0 = không giới hạn)</label><input data-k="gioiHanNgay" type="number" min="0" max="100000" value="' + c.gioiHanNgay + '">' +
+      '<label class="chon-o" style="display:flex;gap:8px;align-items:flex-start;margin-top:10px"><input type="checkbox" data-k="guiSoLieu"' + (c.guiSoLieu ? ' checked' : '') + ' style="width:auto;min-height:0;margin-top:3px"><span>Cho AI xem <b>số liệu tổng hợp</b> (số tài sản theo tình trạng, loại, đơn vị; tiến độ kiểm kê — không có tên tài sản, tên người) để trả lời câu hỏi thống kê</span></label>' +
+      '<label class="chon-o" style="display:flex;gap:8px;align-items:flex-start;margin-top:6px"><input type="checkbox" data-k="tatAi"' + (c.tatAi ? ' checked' : '') + ' style="width:auto;min-height:0;margin-top:3px"><span>Tạm tắt AI (chỉ dùng bộ trả lời có sẵn)</span></label>' +
+      '<div class="hang" style="margin-top:12px"><button class="nut chinh" type="submit">Lưu</button><button class="nut" type="button" data-thu' + (c.coKhoa ? '' : ' disabled') + '>Thử AI</button>' +
+      (c.coKhoa && !c.khoaTuBien ? '<button class="nut do" type="button" data-xoakhoa>Xoá khóa</button>' : '') + '</div><div data-kq class="goiy"></div></form>' +
+      '<h3 style="margin-top:18px">Lời nhắn gửi quản trị' + (ln.chuaDoc ? ' <span class="the-dem" style="color:var(--do)">(' + ln.chuaDoc + ' mới)</span>' : '') + '</h3>' +
+      (ln.ds.length ? '<div class="ds-ln">' + ln.ds.slice(0, 50).map(function (x) {
+        return '<div class="ln" style="border-top:1px solid var(--vien-nhat);padding:8px 0' + (x.daDoc ? ';opacity:.75' : '') + '"><div class="hang"><b class="gian">' + (x.daDoc ? '' : '🆕 ') + esc(x.hoTen || x.ten) +
+          ' <span class="mo nho">(' + esc(x.ten) + ')</span></b><span class="mo nho">' + esc(luc(x.luc)) + '</span></div>' +
+          '<div style="white-space:pre-wrap;margin:4px 0">' + esc(x.noiDung) + '</div>' + (x.dienThoai ? '<div class="nho">Gọi lại: <a href="tel:' + esc(x.dienThoai) + '">' + esc(x.dienThoai) + '</a></div>' : '') +
+          '<div class="hang" style="margin-top:4px">' + (x.daDoc ? '' : '<button class="nut nho" type="button" data-doc="' + x.id + '">Đã đọc</button>') +
+          '<button class="nut nho" type="button" data-xoaln="' + x.id + '">Xoá</button></div></div>';
+      }).join('') + '</div>' + (ln.chuaDoc > 1 ? '<button class="nut nho" type="button" data-doc="0" style="margin-top:8px">Đánh dấu đã đọc tất cả</button>' : '') :
+        '<p class="mo nho">Chưa có lời nhắn nào. Nhân viên gõ "để lại lời nhắn" với trợ lý ảo để gửi.</p>');
+    var f = goc.querySelector('[data-ai]'), kq = goc.querySelector('[data-kq]');
+    var gui = function (them) {
+      var than = { apiKey: f.querySelector('[data-k=apiKey]').value.trim(), model: f.querySelector('[data-k=model]').value.trim(), effort: f.querySelector('[data-k=effort]').value,
+        gioiHanNgay: +f.querySelector('[data-k=gioiHanNgay]').value || 0, guiSoLieu: f.querySelector('[data-k=guiSoLieu]').checked, tatAi: f.querySelector('[data-k=tatAi]').checked };
+      for (var k in them) than[k] = them[k];
+      return api('POST', 'troly/caidat', than).then(function (c2) { thongBao('Đã lưu cài đặt trợ lý ảo'); try { window.dispatchEvent(new Event('troly-caidat')); } catch (e) { } veTroLy(goc, c2, ln); return c2; }, function (e) { thongBao(e.message, true); throw e; });
+    };
+    f.addEventListener('submit', function (e) { e.preventDefault(); gui({}); });
+    var nutThu = f.querySelector('[data-thu]');
+    if (nutThu) nutThu.onclick = function () {
+      nutThu.disabled = true; kq.textContent = 'Đang hỏi thử AI…';
+      api('POST', 'troly/thu', {}).then(function (r) {
+        kq.innerHTML = r.ok ? '<span style="color:var(--xanh)">✓ AI trả lời (' + esc(r.model) + '):</span> ' + esc(r.traLoi) : '<span style="color:var(--do)">✗ ' + esc(r.loi) + '</span>';
+        nutThu.disabled = false;
+      }, function (e) { kq.innerHTML = '<span style="color:var(--do)">' + esc(e.message) + '</span>'; nutThu.disabled = false; });
+    };
+    var nutXoa = f.querySelector('[data-xoakhoa]');
+    if (nutXoa) nutXoa.onclick = function () {
+      hoi('Xoá khóa API', 'Xoá khóa API Claude khỏi máy chủ? Trợ lý ảo sẽ chỉ dùng bộ trả lời có sẵn.', 'Xoá', true).then(function (ok) { if (ok) gui({ xoaKhoa: true, apiKey: '' }); });
+    };
+    Array.prototype.forEach.call(goc.querySelectorAll('[data-doc]'), function (b) {
+      b.onclick = function () { api('POST', 'troly/loinhan/doc', { id: +b.getAttribute('data-doc') }).then(function (l2) { ln = l2; veTroLy(goc, c, ln); }, function (e) { thongBao(e.message, true); }); };
+    });
+    Array.prototype.forEach.call(goc.querySelectorAll('[data-xoaln]'), function (b) {
+      b.onclick = function () { api('POST', 'troly/loinhan/xoa', { id: +b.getAttribute('data-xoaln') }).then(function (l2) { ln = l2; veTroLy(goc, c, ln); }, function (e) { thongBao(e.message, true); }); };
     });
   }
 

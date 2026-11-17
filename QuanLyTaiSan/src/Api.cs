@@ -65,6 +65,8 @@ namespace QuanLyTaiSan
                 return TraLoi.Loi(404, "Không có địa chỉ này.");
             }
 
+            if (d.StartsWith("/troly/")) return TroLyAo.XuLy(dv, ctx, tk, m, d, b);   // trợ lý ảo: hỏi AI, cài đặt AI, lời nhắn
+
             switch (m + " " + d)
             {
                 case "GET /toi": return TraLoi.Json(Toi(dv, tk));
@@ -177,11 +179,12 @@ namespace QuanLyTaiSan
         static O Ping(DichVu dv)
         {
             O app = AppDienThoai.ThongTin();   // đọc tệp APK ngoài khoá dữ liệu
+            O troLy = TroLyAo.ThongTinCongKhai(dv);
             lock (dv.Khoa)
                 return new O
                 {
                     { "ok", true }, { "ten", "QuanLyTaiSan" }, { "ungDung", "QuanLyTaiSan" }, { "phienBanPhanMem", UngDung.PhienBan }, { "congTy", dv.Dl.CaiDat.TenCongTy },
-                    { "coTaiKhoan", dv.CoTaiKhoan }, { "app", app }
+                    { "coTaiKhoan", dv.CoTaiKhoan }, { "app", app }, { "troLy", troLy }
                 };
         }
 
