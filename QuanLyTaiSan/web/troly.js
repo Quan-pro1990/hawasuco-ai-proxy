@@ -697,7 +697,7 @@ async function botSend(text,label,fromChip){text=String(text||"").trim();if(!tex
   try{botTyping(true);await new Promise(r=>setTimeout(r,700+Math.random()*400));botTyping(false);await botAnswer(text)}catch(e){botTyping(false);console.error(e);botGesture("shake",900,"😥");botAdd("b","Xin lỗi, tôi gặp sự cố khi xử lý câu hỏi này. Anh/chị vui lòng thử lại, hoặc **để lại lời nhắn** cho người quản trị phần mềm.")}finally{BOT.busy=false;if(!matchMedia("(pointer:coarse)").matches)document.getElementById("botIn").focus()}}
 function botToggle(force){const p=document.getElementById("botPanel"),b=document.getElementById("botBtn");BOT.open=force??!BOT.open;p.hidden=!BOT.open;b.setAttribute("aria-expanded",BOT.open);b.classList.toggle("on",BOT.open);if(BOT.open)botPlacePanel();
   if(BOT.open)botGesture("jump",900,"👋");else botGesture("bye",1500);
-  if(BOT.open){if(!BOT.greeted){BOT.greeted=true;const t=tlTen(),nghe=!!(window.SpeechRecognition||window.webkitSpeechRecognition)&&(window.isSecureContext||location.hostname==="localhost");
+  if(BOT.open){if(!BOT.greeted){BOT.greeted=true;const t=tlTen(),nghe=!BOT_APP&&!!(window.SpeechRecognition||window.webkitSpeechRecognition)&&(window.isSecureContext||location.hostname==="localhost");
       botAdd("sys",`Xin chào${t?" anh/chị **"+esc(t)+"**":""}! Tôi là **Trợ lý ảo Hawasuco**, trả lời tự động 24/7 về tài sản: tìm tài sản, tổng quan, tài sản hỏng, đến hạn bảo dưỡng, kiểm kê, khấu hao, cách quét / in tem QR, điều chuyển, thanh lý…\n${tlToken()?"":"(Anh/chị **đăng nhập** để tôi tra cứu được số liệu tài sản.)\n"}Anh/chị chọn chủ đề, nhập câu hỏi bên dưới${nghe||BOT_VOICE_APP.nghe?", hoặc bấm **micro 🎤** để nói.":""}${nghe?"\nBật nút **tai 👂** (góc trên) thì chỉ cần nói **\"Xin chào\"** là hỏi được, không cần bấm":""}.`,{chips:BOT_CHIPS});
       if(!BOT.wakeOpen)BOT_TTS.auto("Xin chào! Tôi là Trợ lý ảo Ha oa su cô, trả lời tự động 24/7. Anh chị cần hỗ trợ gì về tài sản ạ?");
       if(tlQuyen(3))tlApi("troly/loinhan").then(r=>{if(r&&r.chuaDoc)botAdd("sys",`✉️ Có **${r.chuaDoc}** lời nhắn mới gửi quản trị qua trợ lý ảo.`,{chips:[["Xem lời nhắn","xem lời nhắn"]]})}).catch(()=>{})}
@@ -847,7 +847,7 @@ function botToggle(force){const p=document.getElementById("botPanel"),b=document
 //      (cầu nối batNghe / dungNghe, app gọi lại window.ungDungNghe({tam|xong|loi|het})) – chạy cả khi máy chủ chưa có HTTPS.
 (function botVoice(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   const init=()=>{const mic=document.getElementById("botMic"),inp=document.getElementById("botIn");if(!mic||!inp)return setTimeout(init,300);
-    const web=!!SR&&(window.isSecureContext||location.hostname==="localhost"),app=!web&&BOT_VOICE_APP.nghe;
+    const app=BOT_VOICE_APP.nghe,web=!app&&!BOT_APP&&!!SR&&(window.isSecureContext||location.hostname==="localhost");   // WebView của app có webkitSpeechRecognition nhưng không dùng được: luôn dùng của Android
     if(!web&&!app)return;   // trình duyệt không nhận dạng được giọng nói (hoặc chưa có HTTPS)
     mic.hidden=false;let rec=null,on=false,finalTxt="",keep="";
     window.botMicStart=()=>{if(!on&&!BOT.busy)mic.onclick()};window.botMicOn=()=>on;
@@ -1012,7 +1012,7 @@ const BOT_WAKE=(function(){
   function tick(){if(!want||rec)return;if(BOT.busy||BOT.speaking||(window.botMicOn&&window.botMicOn())||document.hidden)return;
     if(Date.now()-lastErr<Math.min(30000,1500*Math.pow(2,fails)))return;start()}
   function init(){const b=document.getElementById("botWake");if(!b)return setTimeout(init,300);
-    if(!SR||!window.isSecureContext&&location.hostname!=="localhost")return;
+    if(!SR||BOT_APP||!window.isSecureContext&&location.hostname!=="localhost")return;   // trong app Android: không có chế độ rảnh tay
     b.hidden=false;b.onclick=()=>{set(!want);if(want)start()};ui();
     setInterval(tick,1000);document.addEventListener("visibilitychange",()=>{if(document.hidden)stopRec()})}
   init();

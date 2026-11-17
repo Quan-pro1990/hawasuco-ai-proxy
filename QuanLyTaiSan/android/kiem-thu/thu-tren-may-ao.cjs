@@ -124,7 +124,8 @@ async function layTrang() {
     await ngu(2500);   // chờ chữ hiện hết (hiệu ứng gõ chữ)
     const nghe = await page.evaluate(n => document.getElementById('botMic').classList.contains('on') ? 'đang nghe (Android đang nhận dạng giọng nói)' :
       (document.querySelectorAll('#botMsgs .bm-sys')[n] || { textContent: '' }).textContent, n0);
-    kiem(nghe.length > 0, 'bấm micro → ' + nghe.slice(0, 110));
+    // trong app phải dùng nhận dạng giọng nói của Android (WebView có webkitSpeechRecognition nhưng không dùng được)
+    kiem(nghe.length > 0 && !/Trình duyệt/.test(nghe), 'bấm micro → dùng giọng nói của Android: ' + nghe.slice(0, 110));
     await chup('tro-ly-micro');
     if (/^đang nghe/.test(nghe)) await page.click('#botMic');
     // đọc: docChu → app gọi lại ungDungDocXong (đọc xong, hoặc máy không có giọng tiếng Việt)
