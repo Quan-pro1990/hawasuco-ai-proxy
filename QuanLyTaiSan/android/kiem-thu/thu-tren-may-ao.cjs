@@ -118,13 +118,15 @@ async function layTrang() {
     await ngu(2500);
     await chup('tro-ly');
     // micro: Android nghe; máy ảo thường không có dịch vụ nhận dạng giọng nói → trợ lý báo chưa hỗ trợ (không được treo)
+    const n0 = await page.$$eval('#botMsgs .bm-sys', a => a.length);
     await page.click('#botMic');
-    await choTrang(() => document.getElementById('botMic').classList.contains('on') ||
-      Array.prototype.some.call(document.querySelectorAll('#botMsgs .bm-sys'), e => /giọng nói|micro|Micr/.test(e.textContent)), null, 15000);
-    const nghe = await page.evaluate(() => document.getElementById('botMic').classList.contains('on') ? 'đang nghe' :
-      Array.prototype.slice.call(document.querySelectorAll('#botMsgs .bm-sys')).pop().textContent);
-    kiem(true, 'bấm micro → ' + nghe.slice(0, 90));
-    if (nghe === 'đang nghe') await page.click('#botMic');
+    await choTrang(n => document.getElementById('botMic').classList.contains('on') || document.querySelectorAll('#botMsgs .bm-sys').length > n, n0, 15000);
+    await ngu(2500);   // chờ chữ hiện hết (hiệu ứng gõ chữ)
+    const nghe = await page.evaluate(n => document.getElementById('botMic').classList.contains('on') ? 'đang nghe (Android đang nhận dạng giọng nói)' :
+      (document.querySelectorAll('#botMsgs .bm-sys')[n] || { textContent: '' }).textContent, n0);
+    kiem(nghe.length > 0, 'bấm micro → ' + nghe.slice(0, 110));
+    await chup('tro-ly-micro');
+    if (/^đang nghe/.test(nghe)) await page.click('#botMic');
     // đọc: docChu → app gọi lại ungDungDocXong (đọc xong, hoặc máy không có giọng tiếng Việt)
     const xong = await page.evaluate(() => new Promise(r => {
       const t = setTimeout(() => r(false), 25000);
