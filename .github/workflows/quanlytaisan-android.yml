@@ -81,8 +81,9 @@ jobs:
           H=$(openssl x509 -in /tmp/cc.pem -outform der | sha256sum | cut -c1-16 | tr a-f A-F)
           echo "MA_CHUNG_CHI=${H:0:4}-${H:4:4}-${H:8:4}-${H:12:4}" >> "$GITHUB_ENV"
           nohup node QuanLyTaiSan/android/kiem-thu/https-thu.cjs /tmp/khoa.pem /tmp/cc.pem 18443 18090 > /tmp/https.log 2>&1 &
-          sleep 1
-          curl -sk https://localhost:18443/api/ping; echo
+          # chờ proxy HTTPS thử sẵn sàng (node khởi động có lúc quá 1 giây khi máy CI bận)
+          for i in $(seq 1 30); do curl -sfk https://localhost:18443/api/ping > /tmp/ping-https.json && break; sleep 1; done
+          cat /tmp/ping-https.json; echo
           # máy chủ bản cũ 1.1.0 (trước khi có app), http cổng 18091: app phải tự cho trang Quét dùng camera của app
           git fetch -q --depth=1 origin 4f0465e37c9c6baf25b686402bb5e63011a2d469
           mkdir -p /tmp/maychu-cu
