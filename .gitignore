@@ -10,3 +10,8 @@ node_modules/
 *.log
 .DS_Store
 Thumbs.db
+
+# Chung chi HTTPS cua tro ly ao (chua khoa bi mat)
+*.pfx
+*.p12
+tro-ly-ao/chungchi.*

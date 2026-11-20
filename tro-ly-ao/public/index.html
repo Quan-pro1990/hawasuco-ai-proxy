@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1d5f95">
+<title>Trợ lý ảo</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<!-- Đăng nhập -->
+<section id="manDangNhap" class="man-dang-nhap" hidden>
+  <form id="formDangNhap" class="the-dang-nhap" autocomplete="on">
+    <img src="icon-192.png" alt="" class="logo">
+    <h1>Trợ lý ảo</h1>
+    <p id="dnCongTy" class="mo"></p>
+    <p id="dnHuongDan" class="mo"></p>
+    <label id="dnHangTen">Tên đăng nhập
+      <input id="dnTen" name="username" autocomplete="username" autocapitalize="none" spellcheck="false">
+    </label>
+    <label>Mật khẩu
+      <input id="dnMatKhau" name="password" type="password" autocomplete="current-password">
+    </label>
+    <p id="dnLoi" class="loi" role="alert"></p>
+    <button id="dnNut" class="nut-chinh" type="submit">Đăng nhập</button>
+  </form>
+</section>
+
+<!-- Màn hình chính -->
+<div id="manChinh" class="man-chinh" hidden>
+  <header class="dau">
+    <img src="icon-192.png" alt="">
+    <div class="tieude">
+      <b>Trợ lý ảo</b>
+      <small id="dauPhu"></small>
+    </div>
+    <button id="nutMoi" class="nut-tron" type="button" aria-label="Cuộc trò chuyện mới" title="Cuộc trò chuyện mới">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+    <button id="nutCaiDat" class="nut-tron" type="button" aria-label="Cài đặt" title="Cài đặt">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+    </button>
+  </header>
+
+  <p id="canhBao" class="canh-bao" hidden></p>
+
+  <main id="hoiThoai" class="hoi-thoai" aria-live="polite">
+    <div id="chao" class="chao">
+      <div class="chao-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M12 2.5c-3 4.2-6 7.6-6 11a6 6 0 0 0 12 0c0-3.4-3-6.8-6-11z"/></svg>
+      </div>
+      <h2 id="chaoTieuDe">Xin chào!</h2>
+      <p class="mo">Chạm vào micro và hỏi bằng giọng nói, em sẽ trả lời và đọc to cho anh chị nghe.</p>
+      <div id="goiY" class="goi-y"></div>
+    </div>
+  </main>
+
+  <footer class="day">
+    <div id="trangThai" class="trang-thai">Chạm micro để nói</div>
+    <div class="hang-nut">
+      <button id="nutBanPhim" class="nut-phu" type="button" aria-label="Gõ chữ" title="Gõ chữ" aria-pressed="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg>
+      </button>
+      <button id="nutMic" class="mic" type="button" aria-label="Bắt đầu nói">
+        <span class="vong" aria-hidden="true"></span>
+        <svg class="i-mic" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+        <svg class="i-dung" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5"/></svg>
+        <span class="i-song" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+      </button>
+      <button id="nutRanhTay" class="nut-phu" type="button" aria-label="Chế độ rảnh tay" title="Rảnh tay: nói xong tự nghe tiếp" aria-pressed="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15.4-6.4M21 12a9 9 0 0 1-15.4 6.4"/><path d="M18.5 2v4h-4M5.5 22v-4h4"/></svg>
+      </button>
+    </div>
+    <form id="oGo" class="o-go" hidden>
+      <input id="oGoChu" type="text" enterkeyhint="send" autocomplete="off" placeholder="Gõ câu hỏi…" aria-label="Câu hỏi">
+      <button class="nut-chinh" type="submit">Gửi</button>
+    </form>
+  </footer>
+</div>
+
+<!-- Cài đặt -->
+<dialog id="hopCaiDat" class="hop">
+  <form method="dialog" class="hop-than">
+    <h2>Cài đặt</h2>
+    <label>Giọng đọc
+      <select id="cdGiong"></select>
+    </label>
+    <p id="cdKhongGiong" class="loi" hidden>Máy này chưa có giọng đọc tiếng Việt. Trên Android: Cài đặt → Chuyển văn bản thành giọng nói → Công cụ của Google → tải tiếng Việt. Trên máy tính: dùng trình duyệt Edge hoặc cài giọng tiếng Việt của Windows.</p>
+    <div class="hang-toc-do"><label for="cdTocDo">Tốc độ đọc</label><output id="cdTocDoSo" for="cdTocDo">1,0</output></div>
+    <input id="cdTocDo" type="range" min="0.7" max="1.6" step="0.1" value="1">
+    <label class="hang-chon"><input id="cdDocTo" type="checkbox" checked> Đọc to câu trả lời</label>
+    <label class="hang-chon"><input id="cdRanhTay" type="checkbox"> Rảnh tay: đọc xong tự nghe câu tiếp theo</label>
+    <button id="cdDocThu" class="nut-phu-chu" type="button">Đọc thử</button>
+    <div class="tai-khoan">
+      <span id="cdNguoi"></span>
+      <button id="cdDangXuat" class="nut-phu-chu" type="button">Đăng xuất</button>
+    </div>
+    <button class="nut-chinh" value="dong">Xong</button>
+  </form>
+</dialog>
+
+<script src="app.js"></script>
+</body>
+</html>
